@@ -5,8 +5,8 @@ after every directive.
 
 ## The implicit EXIT instruction
 
-Every code body is ended by an implicit `EXIT` instruction. The Rexx Parser automatically generated an implicit `EXIT` instruction and adds it at the end
-of the instruction list composing the body.
+Every code body is ended by an implicit `EXIT` instruction. The Rexx Parser automatically generates an implicit `EXIT` instruction at the end
+of each code body.
 
 ## Empty bodies
 
