@@ -7,3 +7,15 @@ after every directive.
 
 Every code body is ended by an implicit exit instruction. The Rexx Parser automatically generated an implicit exit instruction and adds it at the end
 of the instruction list composing the body.
+
+## Empty bodies
+
+A body is said to be _empty_ when it contains no instructions, besides the implicit exit instruction, and additionally it contains no labels.
+
+## exposed
+
+![Syntax diagram for the exposed method of the Code.Body class](../img/Code.Body.exposed.svg)
+
+Returns a Set of variable names which are exposed by an `EXPOSE` instruction at the beginning of a method. 
+The set will be empty in prologs and routine bodies, and when the method does not start by `EXPOSE`.
+
