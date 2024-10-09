@@ -14,10 +14,18 @@ The optional `source` argument is an array of lines; if you do not specify it, t
 parser  = .Rexx.Parser~new(file, source)
 ```
 
-We can now retrieve a representation of the parser program by using the `package` method.
+We can now retrieve a representation of the parser program by using the `package` method. 
 
 ![Syntax diagram for the package method of the Rexx.Parser class](img/Rexx.Parser.package.svg)
 
 ```
 package = parser~package
 ```
+
+The `package` method of the `Rexx.Parser` class returns a `Rexx.Package` object, containing a high-level syntactical representation of our just parsed program.
+
+## Accessing the prolog
+
+
+
+
