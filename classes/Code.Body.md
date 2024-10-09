@@ -16,6 +16,14 @@ A body is said to be _empty_ when it contains no instructions, besides the impli
 
 ![Syntax diagram for the exposed method of the Code.Body class](../img/Code.Body.exposed.svg)
 
-Returns a Set of variable names which are exposed by an `EXPOSE` instruction at the beginning of a method. 
-The set will be empty in prologs and routine bodies, and when the method does not start by `EXPOSE`.
+Returns a Set of variable names which are exposed by an `EXPOSE` instruction at the beginning of a method body. 
+The set will be empty in prologs and `::ROUTINE` bodies, and when the method does not start by `EXPOSE`.
 
+See also method [useLocal](#useLocal).
+
+## useLocal
+
+![Syntax diagram for the useLocal method of the Code.Body class](../img/Code.Body.useLocal.svg)
+
+Returns a possibly empty Set of variable names which are specified in a `USE LOCAL` instruction at the beginning of a method body,
+or `.Nil` if no `USE LOCAL` instruction was present, or the code body is a prolog or a `::ROUTINE` body.
