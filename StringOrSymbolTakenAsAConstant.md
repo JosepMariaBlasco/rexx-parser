@@ -1,0 +1,3 @@
+# Strings or symbols taken as a constant
+
+In a number of contexts, ...
