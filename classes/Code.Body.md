@@ -43,6 +43,12 @@ See also method [useLocal](#useLocal).
 Returns an Array of instructions composing the code body. Please note that the Array will always have at least one
 element, namely, [the implicit `EXIT` instruction](#The-implicit-EXIT-instruction)
 
+## labels
+
+![Syntax diagram for the labels method of the Code.Body class](../img/Code.Body.labels.svg)
+
+Returns an Array containing all the label clauses found in the code body, in their order of appearance.
+
 ## useLocal
 
 ![Syntax diagram for the useLocal method of the Code.Body class](../img/Code.Body.useLocal.svg)
