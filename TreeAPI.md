@@ -22,7 +22,7 @@ We can now retrieve a representation of the parser program by using the `package
 package = parser~package
 ```
 
-The `package` method of the `Rexx.Parser` class returns a `Rexx.Package` object, containing a high-level syntactical representation of our just parsed program.
+The `package` method of the [`Rexx.Parser`](classes/Rexx.Parser.md) class returns a [`Rexx.Package`](classes/Rexx.Package.md) object, containing a high-level syntactical representation of our just parsed program.
 
 ## Accessing the prolog
 
