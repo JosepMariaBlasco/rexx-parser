@@ -3,9 +3,9 @@
 A Code.Body is a specialized form (a subclass) of Block.Instruction, used to represent clause sequences occuring at the beginning of a program (in the main program or prolog) and
 after every directive.
 
-## The implicit exit instruction
+## The implicit EXIT instruction
 
-Every code body is ended by an implicit exit instruction. The Rexx Parser automatically generated an implicit exit instruction and adds it at the end
+Every code body is ended by an implicit `EXIT` instruction. The Rexx Parser automatically generated an implicit `EXIT` instruction and adds it at the end
 of the instruction list composing the body.
 
 ## Empty bodies
@@ -20,6 +20,13 @@ Returns a Set of variable names which are exposed by an `EXPOSE` instruction at 
 The set will be empty in prologs and `::ROUTINE` bodies, and when the method does not start by `EXPOSE`.
 
 See also method [useLocal](#useLocal).
+
+## instructions
+
+![Syntax diagram for the instructions method of the Code.Body class](../img/Code.Body.instructions.svg)
+
+Returns an Array of instructions composing the code body. Please note that the Array will always have at least one
+element, namely, [the implicit `EXIT` instruction](#The-implicit-EXIT-instruction)
 
 ## useLocal
 
