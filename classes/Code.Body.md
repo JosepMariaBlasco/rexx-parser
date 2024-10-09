@@ -10,7 +10,22 @@ of the instruction list composing the body.
 
 ## Empty bodies
 
-A body is said to be _empty_ when it contains no instructions, besides the implicit exit instruction, and additionally it contains no labels.
+A body is said to be _empty_ when it contains no instructions, besides the implicit `EXIT` instruction, and additionally it contains no labels.
+
+__Note__: A label at the end of a body is attached to the implicit `EXIT` instruction. For example, in the following code,
+
+```rexx
+  Do Forever
+    /* Do something      */
+  If condition Then Signal Done
+    /* Do something else */
+  End
+
+Done:
+::Requires "whatever"
+```
+
+control is transferred to the `Done` label, and then the body is exited.
 
 ## exposed
 
