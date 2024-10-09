@@ -12,7 +12,7 @@ of the instruction list composing the body.
 
 A body is said to be _empty_ when it contains no instructions, besides the implicit `EXIT` instruction, and additionally it contains no labels.
 
-__Note__: A label at the end of a body is attached to the implicit `EXIT` instruction. For example, in the following code,
+__Note__: A label at the end of a body is indeed attached to the implicit `EXIT` instruction and identifies it. For example, in the following code,
 
 ```rexx
   Do Forever
@@ -25,7 +25,7 @@ Done:
 ::Requires "whatever"
 ```
 
-control is transferred to the `Done` label, and then the body is exited.
+when control is transferred to the `Done` label, the body is immediately exited.
 
 ## exposed
 
