@@ -1,8 +1,8 @@
 # The Token API
 
-There are two main ways to use [the Rexx Parser](TheRexxParser.md): using [the Token API](TokenAPI.md), described here, and using [the Tree API](TreeAPI.md).
+There are two main ways to use [the Rexx Parser](ReadMe.md): using [the Token API](TokenAPI.md), described here, and using [the Tree API](TreeAPI.md).
 
-To use [the Token API](TokenAPI.md), we will need to make some limited use of the more general [Tree API](TreeAPI.md) first. We will start by [creating an instance](CreatingAnInstance.md) of [the Rexx Parser](TheRexxParser.md) in the usual way, and we will then get its `package`: the `package` method will return a convenient abstraction of the whole parsed program.
+To use [the Token API](TokenAPI.md), we will need to make some limited use of the more general [Tree API](TreeAPI.md) first. We will start by [creating an instance](CreatingAnInstance.md) of [the Rexx Parser](ReadMe.md) in the usual way, and we will then get its `package`: the `package` method will return a convenient abstraction of the whole parsed program.
 
 ```rexx
 parser  = .Rexx.Parser~new(file, source)
@@ -69,4 +69,4 @@ End
 
 ## Structure of a token
 
-Tokens, of course, have [a certain structure](StructureOfAToken.md). This is covered in detail [in the following chapter](StructureOfAToken.md).
+Tokens, of course, have [a certain structure](Token.md). This is covered in detail [in the following chapter](Token.md).
