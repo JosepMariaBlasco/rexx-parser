@@ -23,5 +23,5 @@ for Rexx and Open Object Rexx (ooRexx). The parser offers two different APIs to 
   you can retrieve a StringTable containing all the classes present in the source,
   or all the routines, etc.
 
-The Rexx Parser was written by Josep Maria Blasco Comellas <josep.maria.blasco@epbcn.com>,
+The Rexx Parser was written by Josep Maria Blasco Comellas &lt;josep.maria.blasco@epbcn.com&gt;,
 and is distributed under an [Apache license](LICENSE).
