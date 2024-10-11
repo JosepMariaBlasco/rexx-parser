@@ -1,3 +1,0 @@
-# The Rexx Parser
-
-The Rexx Parser...
