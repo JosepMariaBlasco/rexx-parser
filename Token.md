@@ -77,7 +77,7 @@ The `"<"` operator has been overloaded so that you can use it both with a "is" a
   token < .EXPONENTIAL_NUMBER
 ```
 
-Token class values are represented in a single byte, so that value sets are byte strings, and set membership can be implemented using `set~contains(class)`, which is very efficient.
+Token class values are represented by a single byte, so that value sets are byte strings, and set membership can be implemented using the `set~contains(class)` construct, which is very efficient.
 
 
 ## Normal, instance and class variables
