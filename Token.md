@@ -106,4 +106,4 @@ Variables are classified as *"normal"* variables (i.e., local variables), *insta
 
 ## Special tokens
 
-Some tokens are *special*, in the sense that they have a rich substructure: [compound variables](CompoundVariables.md) have a dual nature, in that they behave as normal variables but, at the same time, they are composed of *parts*; and certain identifiers, like labels, class, routine or method names, are [strings or symbols taken a constants](StringOrSymbolTakenAsAConstant.md). They are both described in separate chapters.
+Some tokens are *special*, in the sense that they have a rich substructure: [compound variables](CompoundVariables.md) have a dual nature, in that they behave as normal variables but, at the same time, they are composed of *parts*; and certain identifiers, like labels, class, routine or method names, are [strings or symbols taken a constants](TakenConstants.md). They are both described in separate chapters.
