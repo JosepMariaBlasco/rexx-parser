@@ -31,7 +31,10 @@ This definition of `from` and `to` was chosen because it is easy to remember and
 
 ## Inserted tokens
 
-[The Rexx Parser](TheRexxParser.md) inserts a number of tokens in the program token sequence. Some of these tokens are inserted following the Rexx language definition: for example, a semicolon is implied by any line end. Some other tokens go beyond these definitions, and they are inserted as a convenience for the programmer. For example, a semicolon is inserted at the beginning of each program: this ensures that all clauses are delimited by a starting and an ending semicolon.
+[The Rexx Parser](TheRexxParser.md) inserts a number of tokens in the program token sequence. Some of these tokens are inserted following the Rexx language definition: 
+for example, a semicolon is implied by any line end, except when inside a classic comment. 
+Some other tokens go beyond these definitions, and they are inserted as a convenience for the programmer. 
+For example, a semicolon is inserted at the beginning of each program: this ensures that all clauses are delimited by a starting and an ending semicolon.
 
 Inserted tokens are characterized by the fact that their extent is null, that is, they occupy no space:
 
