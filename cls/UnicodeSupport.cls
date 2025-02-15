@@ -18,11 +18,11 @@
 /*                                                                            */
 /******************************************************************************/
 
-
 package     = .context~package
 local       =  package~local
 myName      =  package~name
-myPath      =  FileSpec( "Path", myName )
+myDrive     =  FileSpec( "Drive", myName )
+myPath      =  myDrive||FileSpec( "Path", myName )
 
 -- We will ensure that these two files exist, but we will not load them
 -- until they are really needed, because loading them is expensive.
@@ -33,7 +33,7 @@ UnicodeData =  Stream(UnicodeData, "c", "query exists")
 NameAliases =  Stream(NameAliases, "c", "query exists")
 
 If UnicodeData == "" Then Do
-  Say "File UnicodeData-15.0.0.txt not found in 'resources' subdirectory."
+  Say "File UnicodeData-15.0.0.txt not found in the 'resources' subdirectory."
   Raise Halt
 End
 
