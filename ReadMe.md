@@ -4,7 +4,7 @@ The Rexx Parser
 The Rexx Parser documentation is hosted on:
 
 - <https://rexx.epbcn.com/rexx.parser/> (daily builds *and* releases).
-- <https://github.com/JosepMariaBlasco/rexx-parser> (releases only).
+- <https://github.com/JosepMariaBlasco/rexx-parser/> (releases only).
 
 If you want to browse the documentation in all its glory,
 please refer to the <https://rexx.epbcn.com/rexx.parser/> copy:
@@ -44,9 +44,11 @@ under [the Apache 2.0 license](LICENSE).
 Current version and downloads
 -----------------------------
 
-The current version is beta 0.1g, released on 20250128.
+The current release is beta 0.2, released on 20250215.
+Daily builds can be found at <https://rexx.epbcn.com/rexx.parser/>.
 
-- [Download it here](download/).
+- [Download the latest release here](download/).
+- [Download the latest daily build here](https://rexx.epbcn.com/rexx.parser/).
 - [Version history](doc/history/).
 - [Next releases](doc/todo/).
 

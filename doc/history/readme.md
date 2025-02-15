@@ -8,6 +8,9 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20250215<td>0.2<td>
+<ul>
+  <li> First version published simultaneously in rexx.epbcn.com and GitHub.
 <tr><td>20250128<td>0.1g<td>
 <ul>
   <li> **Breaking change**: .TK.xxx variables have been renamed to .EL.xxx.
