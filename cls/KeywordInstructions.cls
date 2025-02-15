@@ -19,6 +19,8 @@
 /* 20241216    0.1f Mutate EL.PERIOD -> EL.PARSE_PERIOD in PARSE templates    */
 /*                  Mark template target variables and USE targets            */
 /*                  as "assigned"                                             */
+/* 20251215    0.2  Fix setAssigned for DROP, EXPOSE, USE LOCAL and           */
+/*                  PROCEDURE EXPOSE                                          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -1978,6 +1980,7 @@ NextElement:
       When name < .EL.END_OF_CLAUSE Then Leave
       When name < .ALL.VAR_SYMBOLS  Then Do
         If name < .EL.COMPOUND_VARIABLE Then Signal 99.948
+        name~setAssigned
         list~append( name )
         UseLocal[] = name~value
       End
@@ -2060,6 +2063,7 @@ GetASymbol:
   c = Left(element~value,1)
   If c == "."                       Then Signal 31.003
   If c >= "0", c <= "9"             Then Signal 31.002
+  element~setAssigned
   Return
 
 -- Variable symbol must not start with a number; found "&1".

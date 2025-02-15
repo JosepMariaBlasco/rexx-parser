@@ -298,6 +298,8 @@ Returns `.True` when the destination element is one of:
 - A counter specified using the `COUNTER` subkeyword
   in a `DO` or `LOOP` instruction.
 - A control variable used in an iterative loop.
+- A variable in an `EXPOSE`, `USE LOCAL`, `PROCEDURE EXPOSE` or `DROP`
+  instruction.
 
 See also method [setAssigned](#setassigned).
 
