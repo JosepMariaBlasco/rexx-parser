@@ -42,10 +42,11 @@ Start:
   -- ::REQUIRES does not work well with "../" paths
   myName  =   package~name
   mypath  =   FileSpec( "Path", myName )
+  myDrive =   FileSpec( "Drive", myName )
   Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
 
   -- Create "..", for legibility
-  package~local["."] = .File~new(mypath"..")~absolutePath
+  package~local["."] = .File~new(myDrive||mypath"..")~absolutePath
 
   Call Requires .."/Rexx.Parser.cls"
   Call Requires .."/modules/print/print.cls"
