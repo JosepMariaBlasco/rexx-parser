@@ -95,6 +95,9 @@
 
 Crumb:
 
+  tutor     = "/tutor"
+  tutordocs = "/tutor/doc"
+
   parser    = "/rexx.parser"
   print     = "/rexx.parser/print"
   doc       = "/rexx.parser/doc"
@@ -105,6 +108,28 @@ Crumb:
   dochlfeat = dochl"/features"
 
   Select Case Arg(1)
+
+    -- TUTOR
+
+    When tutor                     Then Return "TUTOR"
+    When tutordocs                 Then Return "Docs"
+    When tutordocs"/rxu"           Then Return "RXU"
+    When tutordocs"/string-types"  Then Return "New types of strings"
+    When tutordocs"/built-in"      Then Return "Revised and enhanced BIFs"
+    When tutordocs"/stream"        Then Return "Stream functions"
+    When tutordocs"/encodings"     Then Return "Encoding and decoding"
+    When tutordocs"/new-functions" Then Return "New functions"
+    When tutordocs"/new-classes"   Then Return "New classes"
+    When tutordocs"/options"       Then Return "The OPTIONS instruction"
+    When tutordocs"/properties"    Then Return "Unicode properties"
+    When tutordocs"/properties/normalization"
+                                   Then Return "The Unicode.Normalization class"
+    When tutordocs"/multi-stage-table"
+                                   Then Return "The MultiStageTable class"
+    When tutordocs"/persistent-string-table"
+                                   Then Return "The PersistentStringTable class"
+    When tutordocs"/using-tutor-from-classic-rexx"
+                                   Then Return "Using TUTOR from Classic Rexx"
 
     -- "/"
     When ""                        Then Return "Home"
