@@ -1,6 +1,15 @@
 The Rexx Parser
 ===============
 
+The Rexx Parser documentation is hosted on:
+
+- <https://rexx.epbcn.com/rexx.parser/> (daily builds *and* releases).
+- <https://github.com/JosepMariaBlasco/rexx-parser> (releases only).
+
+If you want to browse the documentation in all its glory,
+please refer to the <https://rexx.epbcn.com/rexx.parser/> copy:
+GitHub highlighting of (oo)Rexx programs is quite limited.
+
 ~~~rexx {.numberLines startfrom=93}
 /*******************************************************************************/
 /* This is a sample Rexx code fragment, numbered, starting at line 93.         */
