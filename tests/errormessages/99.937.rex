@@ -1,0 +1,2 @@
+::Attribute A
+  Say "Hi!"

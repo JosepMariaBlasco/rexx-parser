@@ -1,0 +1,214 @@
+/******************************************************************************/
+/*                                                                            */
+/* rexx-dark.css - Sample CSS for Rexx highlighting, dark background          */
+/* =================================================================          */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20241206    0.1  First public release                                      */
+/* 20241209    0.1b New call system                                           */
+/* 20241222    0.1c Line number support                                       */
+/* 20250103    0.1e Add TUTOR-flavored Unicode classes                        */
+/* 20250116    0.1f Add support for sub-keywords                              */
+/*                                                                            */
+/******************************************************************************/
+
+
+/* Support for line numbers                                                   */
+
+.highlight-rexx-dark pre.number-lines    { padding-left: 50px; }
+.highlight-rexx-dark pre.number-lines.w3 { padding-left: 58px; }
+.highlight-rexx-dark pre.number-lines.w4 { padding-left: 65px; }
+.highlight-rexx-dark pre.number-lines.w5 { padding-left: 72px; }
+
+.highlight-rexx-dark pre.number-lines code:before{
+  content: attr(lineno) " | ";
+  position:absolute;
+  left:10px;
+  width:50px;
+  text-align:right;
+  color: #888;
+}
+
+.highlight-rexx-dark pre.number-lines.w3 code:before { width:58px; }
+.highlight-rexx-dark pre.number-lines.w4 code:before { width:65px; }
+.highlight-rexx-dark pre.number-lines.w5 code:before { width:72px; }
+
+/* Default: black background, text at ~80% */
+/* The "rexx" class is applied as a fallback when no suitable class is found */
+.highlight-rexx-dark pre,
+.highlight-rexx-dark .rexx {
+  background-color: #000;
+  color: #aaa;
+}
+
+/* Taken constants that do not have a specific style */
+.highlight-rexx-dark .rx-const {
+  color: #48c;
+}
+
+/* Whitespace. This includes continuations */
+.highlight-rexx-dark .rx-ws {
+  color: #cc0;
+}
+
+/* shebangs */
+.highlight-rexx-dark .rx-shb {
+  color: #f55;
+  font-style: italic;
+}
+
+/* non-doc comments */
+.highlight-rexx-dark .rx-cm,
+.highlight-rexx-dark .rx-lncm {
+  color: #0c0;
+  font-style: italic;
+}
+
+/* doc-comments */
+.highlight-rexx-dark .rx-doc-cm,
+.highlight-rexx-dark .rx-doc-lncm
+{
+  color: #93a1ed;
+  font-style: italic;
+}
+/* Numbers */
+.highlight-rexx-dark .rx-int,
+.highlight-rexx-dark .rx-frac,
+.highlight-rexx-dark .rx-exp {
+  color:#3cc;
+}
+
+/* Special characters, operators */
+.highlight-rexx-dark .rx-spe,
+.highlight-rexx-dark .rx-op {
+  color:#f00;
+}
+
+/* instruction keywords, assignment sequences, and "::" */
+.highlight-rexx-dark .rx-kw,
+.highlight-rexx-dark .rx-skw,
+.highlight-rexx-dark .rx-asg,
+.highlight-rexx-dark .rx-dir {
+  color: #ddd;
+  font-weight: bold;
+}
+
+/* directive keywords */
+.highlight-rexx-dark .rx-dkw {
+  color: #ddd;
+  font-weight: bold;
+  text-decoration:underline;
+}
+
+/* Built-in functions and procedures*/
+.highlight-rexx-dark .rx-bif-func,
+.highlight-rexx-dark .rx-bif-proc {
+  color:#6ad;
+}
+
+/* Internal functions and procedures, labels and block instruction names*/
+.highlight-rexx-dark .rx-int-func,
+.highlight-rexx-dark .rx-int-proc,
+.highlight-rexx-dark .rx-block,
+.highlight-rexx-dark .rx-label {
+  color:#fa0;
+}
+
+/* ::ROUTINE names, ::ROUTINE function and procedure calls, and namespace-qualified ::ROUTINEs */
+.highlight-rexx-dark .rx-routine,
+.highlight-rexx-dark .rx-pkg-func,
+.highlight-rexx-dark .rx-pkg-proc,
+.highlight-rexx-dark .rx-ext-pkg-func,
+.highlight-rexx-dark .rx-ext-pkg-proc {
+  color:#f0a;
+}
+
+/* External calls */
+.highlight-rexx-dark .rx-ext-func,
+.highlight-rexx-dark .rx-ext-proc {
+  color:#f0a;
+  font-style: italic;
+}
+
+/* Message names */
+.highlight-rexx-dark .rx-method {
+  color:#b8fa5c;
+  font-style: italic;
+}
+
+/* Strings */
+.highlight-rexx-dark .rx-str,
+.highlight-rexx-dark .rx-bstr,
+.highlight-rexx-dark .rx-xstr,
+.highlight-rexx-dark .rx-ystr,
+.highlight-rexx-dark .rx-pstr,
+.highlight-rexx-dark .rx-gstr,
+.highlight-rexx-dark .rx-tstr,
+.highlight-rexx-dark .rx-ustr {
+  color:#f63;
+}
+
+/* Local variables */
+.highlight-rexx-dark .rx-var,
+.highlight-rexx-dark .rx-stem,
+.highlight-rexx-dark .rx-cmp {
+  color: #f6f;
+}
+
+/* Exposed variables */
+.highlight-rexx-dark .rx-xvar,
+.highlight-rexx-dark .rx-xstem,
+.highlight-rexx-dark .rx-xcmp {
+  color: #f6f;
+  font-style: italic;
+}
+
+/* Const symbols that are not environment symbols */
+.highlight-rexx-dark .rx-lit {
+  color: #08f;
+}
+
+/* Environment symbols */
+.highlight-rexx-dark .rx-env {
+  color: #fc0;
+  font-style: italic;
+}
+
+/* Resource keyword */
+.highlight-rexx-dark .rx-resource {
+  color: #fc0;
+}
+
+/* Resource ignored stuff */
+.highlight-rexx-dark .rx-res-ignore {
+  color: #ccc;
+  font-style: italic;
+}
+
+/* Resource data */
+.highlight-rexx-dark .rx-res-data {
+  color: #fc0;
+  font-style: italic;
+}
+
+/* Resource delimiter */
+.highlight-rexx-dark .rx-res-delimiter {
+  color: #fc0;
+  text-decoration:underline;
+}
+
+/* Namespace names */
+.highlight-rexx-dark .rx-namespace {
+  color: #cc0;
+}
+

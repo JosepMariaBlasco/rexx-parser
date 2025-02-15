@@ -1,0 +1,1 @@
+Forward class (a) class (b)

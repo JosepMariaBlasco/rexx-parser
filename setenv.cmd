@@ -1,0 +1,3 @@
+@Echo Off
+Echo Adding "%CD%" and "%CD%\utils" to the PATH environment variable...
+Set path=%cd%;%cd%\utils;%path%

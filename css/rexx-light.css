@@ -1,0 +1,193 @@
+/******************************************************************************/
+/*                                                                            */
+/* rexx-light.css - Sample CSS for Rexx highlighting, light background        */
+/* ===================================================================        */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20241208    0.1  First public release                                      */
+/* 20241222    0.1c Line number support                                       */
+/* 20250103    0.1e Add TUTOR-flavored Unicode classes                        */
+/* 20250116    0.1f Add support for sub-keywords                              */
+/*                                                                            */
+/******************************************************************************/
+
+/* Support for line numbers                                                   */
+
+.highlight-rexx-light pre.number-lines    { padding-left: 50px; }
+.highlight-rexx-light pre.number-lines.w3 { padding-left: 58px; }
+.highlight-rexx-light pre.number-lines.w4 { padding-left: 65px; }
+.highlight-rexx-light pre.number-lines.w5 { padding-left: 72px; }
+
+.highlight-rexx-light pre.number-lines code:before{
+  content: attr(lineno) " | ";
+  position:absolute;
+  left:10px;
+  width:50px;
+  text-align:right;
+  color: #888;
+}
+
+.highlight-rexx-light pre.number-lines.w3 code:before { width:58px; }
+.highlight-rexx-light pre.number-lines.w4 code:before { width:65px; }
+.highlight-rexx-light pre.number-lines.w5 code:before { width:72px; }
+
+/* Default: black background, text at ~80% */
+/* The "rexx" class is applied as a fallback when no suitable class is found */
+.highlight-rexx-light pre,
+.highlight-rexx-light .rexx {
+  background-color:#eee;
+  color: #333;
+}
+
+/* Taken constants that do not have a specific style */
+.highlight-rexx-dark .rx-const {
+  color: #48c;
+}
+
+/* comments */
+.highlight-rexx-light .rx-cm,
+.highlight-rexx-light .rx-doc-cm,
+.highlight-rexx-light .rx-lncm,
+.highlight-rexx-light .rx-doc-lncm
+{
+  color: #080;
+  font-style: italic;
+}
+
+/* Numbers */
+.highlight-rexx-light .rx-int,
+.highlight-rexx-light .rx-frac,
+.highlight-rexx-light .rx-exp {
+  color:#f0f;
+}
+
+/* Special characters, operators, assignments */
+.highlight-rexx-light .rx-spe,
+.highlight-rexx-light .rx-op {
+  color:#06f;
+}
+
+/* instruction keywords, assignment sequences, and "::" */
+.highlight-rexx-light .rx-kw,
+.highlight-rexx-light .rx-skw,
+.highlight-rexx-light .rx-asg,
+.highlight-rexx-light .rx-dir {
+  color: #333;
+  font-weight: bold;
+}
+
+/* directive keywords */
+.highlight-rexx-light .rx-dkw {
+  color: #333;
+  font-weight: bold;
+  text-decoration:underline;
+}
+
+
+/* Built-in functions and procedures*/
+.highlight-rexx-light .rx-bif-func,
+.highlight-rexx-light .rx-bif-proc {
+  color:#6ad;
+}
+
+/* Internal functions and procedures, labels and block instruction names*/
+.highlight-rexx-light .rx-int-func,
+.highlight-rexx-light .rx-int-proc,
+.highlight-rexx-light .rx-block,
+.highlight-rexx-light .rx-label {
+  color:#fa0;
+}
+
+/* Internal ::Routines and namespace-qualified routines */
+.highlight-rexx-light .rx-routine {
+  color:#f0a;
+}
+
+/* External calls */
+.highlight-rexx-light .rx-ext-func,
+.highlight-rexx-light .rx-ext-proc {
+  color:#f0a;
+  font-style: italic;
+}
+
+/* Message names */
+.highlight-rexx-light .rx-method {
+  color:#cc0;
+  font-style: italic;
+}
+
+/* Strings */
+.highlight-rexx-light .rx-str,
+.highlight-rexx-light .rx-bstr,
+.highlight-rexx-light .rx-xstr,
+.highlight-rexx-light .rx-ystr,
+.highlight-rexx-light .rx-pstr,
+.highlight-rexx-light .rx-gstr,
+.highlight-rexx-light .rx-tstr,
+.highlight-rexx-light .rx-ustr {
+  color:#f63;
+}
+
+/* Local variables */
+.highlight-rexx-light .rx-var,
+.highlight-rexx-light .rx-stem,
+.highlight-rexx-light .rx-cmp {
+  color: #f6f;
+}
+
+/* Exposed variables */
+.highlight-rexx-light .rx-xvar,
+.highlight-rexx-light .rx-xstem,
+.highlight-rexx-light .rx-xcmp {
+  color: #f6f;
+  font-style: italic;
+}
+
+
+/* Const symbols that are not environment symbols */
+.highlight-rexx-light .rx-lit {
+  color: #08f;
+}
+
+/* Whitespace. This includes continuations */
+.highlight-rexx-light .rx-ws {
+  color: #cc0;
+}
+
+/* Environment symbols */
+.highlight-rexx-light .rx-env {
+  color: #0df;
+}
+
+/* Resource keyword */
+.highlight-rexx-light .rx-resource {
+  color: #fc0;
+}
+
+/* Resource ignored stuff */
+.highlight-rexx-light .rx-res-ignore {
+  color: #ccc;
+  font-style: italic;
+}
+
+/* Resource data */
+.highlight-rexx-light .rx-res-data {
+  color: #fc0;
+  font-style: italic;
+}
+
+/* Resource delimiter */
+.highlight-rexx-light .rx-res-delimiter {
+  color: #fc0;
+  text-decoration:underline;
+}

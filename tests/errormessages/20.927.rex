@@ -1,0 +1,2 @@
+::Method m
+  Use local *
