@@ -15,7 +15,7 @@ Next release (0.2 refresh -- Not released yet)
 ### Bugs
 
 + Fenced code blocks get an ID even when it is not really needed.
-+ Unicode labels like "<Control-000A>"U are not recognized.
++ Unicode labels like "&lt;Control-000A&gt;"U are not recognized.
 
 Following releases (in no special order)
 ----------------------------------------
