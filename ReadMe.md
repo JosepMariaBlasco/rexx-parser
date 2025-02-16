@@ -6,9 +6,8 @@ The Rexx Parser documentation is hosted on:
 - <https://rexx.epbcn.com/rexx.parser/> (daily builds *and* releases).
 - <https://github.com/JosepMariaBlasco/rexx-parser/> (releases only).
 
-If you want to browse the documentation in all its glory,
-please refer to the <https://rexx.epbcn.com/rexx.parser/> copy:
-GitHub highlighting of (oo)Rexx programs is quite limited.
+The copy at <https://rexx.epbcn.com/rexx.parser/> uses the Rexx Highlighter to display Rexx programs,
+while the copy at <https://github.com/JosepMariaBlasco/rexx.parser/> uses the (limited) highlighting provided by GitHub.
 
 ~~~rexx {.numberLines startfrom=93}
 /*******************************************************************************/

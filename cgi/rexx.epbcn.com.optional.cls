@@ -109,6 +109,10 @@ Crumb:
 
   Select Case Arg(1)
 
+    -- Tokenizer
+
+    When "/tokenizer"              Then Return "Tokenizer"
+
     -- TUTOR
 
     When tutor                     Then Return "TUTOR"
@@ -130,6 +134,16 @@ Crumb:
                                    Then Return "The PersistentStringTable class"
     When tutordocs"/using-tutor-from-classic-rexx"
                                    Then Return "Using TUTOR from Classic Rexx"
+    When tutordocs"/0.6-release-notes.md"  Then Return "Release notes for version 0.6"
+    When tutordocs"/0.5-release-notes.md"  Then Return "Release notes for version 0.5"
+    When tutordocs"/0.4a-release-notes.md" Then Return "Release notes for version 0.4a"
+    When tutordocs"/0.4-release-notes.md"  Then Return "Release notes for version 0.4"
+    When tutordocs"/0.3b-release-notes.md" Then Return "Release notes for version 0.3b"
+    When tutordocs"/0.3-release-notes.md"  Then Return "Release notes for version 0.3"
+    When tutordocs"/0.2-release-notes.md"  Then Return "Release notes for version 0.2"
+    When tutordocs"/0.1d-release-notes.md" Then Return "Release notes for version 0.1d"
+    When tutordocs"/0.1-release-notes.md"  Then Return "Release notes for version 0.1"
+    When tutordocs"/pre-0.1-release-notes.md"  Then Return "Release notes for the first version"
 
     -- "/"
     When ""                        Then Return "Home"
