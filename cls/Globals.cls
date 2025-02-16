@@ -276,11 +276,11 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewElements EL.DOC_COMMENT, EL.DOC_COMMENT_MARKDOWN
 
   --
-  Call NewSet ALL.DOC_COMMENTS, -
+  Call NewSet ALL.DOC_COMMENTS,      -
     .EL.DOC_COMMENT, .EL.DOC_COMMENT_MARKDOWN
-  Call NewSet ALL.NON_DOC_COMMENTS, -
+  Call NewSet ALL.NON_DOC_COMMENTS,  -
     .EL.STANDARD_COMMENT, .EL.LINE_COMMENT
-  Call NewSet ALL.COMMENTS, -
+  Call NewSet ALL.COMMENTS,          -
     .EL.STANDARD_COMMENT, .EL.LINE_COMMENT, -
     .EL.DOC_COMMENT, .EL.DOC_COMMENT_MARKDOWN
 
@@ -308,7 +308,7 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   -- Hex_string        := quoted_string RADIX ('x' | 'X')             (6.2.2.23)
   -- Binary_string     := quoted_string RADIX ('b' | 'B')             (6.2.2.24)
   --
-  Call NewElements                        -
+  Call NewElements                      -
     EL.STRING,                          -
     EL.HEX_STRING,                      -
     EL.BINARY_STRING,                   -
@@ -317,7 +317,7 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     EL.GRAPHEMES_STRING,                - -- TUTOR-flavored Unicode
     EL.TEXT_STRING,                     - -- TUTOR-flavored Unicode
     EL.UNICODE_STRING                     -- TUTOR-flavored Unicode
-  Call NewSet ALL.STRINGS,      -
+  Call NewSet ALL.STRINGS,              -
    .EL.STRING,                          -
    .EL.HEX_STRING,                      -
    .EL.BINARY_STRING,                   -
