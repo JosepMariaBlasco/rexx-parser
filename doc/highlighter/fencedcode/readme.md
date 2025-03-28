@@ -203,11 +203,11 @@ An example: the `FencedCode` program source
 The program listing below is produced by inserting the two following lines in the HTML source.
 
 ~~~~
-~~~rexx {source=../../../cls/FencedCode.cls}
+~~~rexx {source=../../../bin/FencedCode.cls}
 ~~~
 ~~~~
 
 Here is the program output:
 
-~~~rexx {source=../../../cls/FencedCode.cls}
+~~~rexx {source=../../../bin/FencedCode.cls}
 ~~~

@@ -33,8 +33,8 @@ local     =  package~local
 mypath    =  FileSpec( "Path", package~name )
 local ~ . = .File~new( mypath"../" )~absolutePath      -- Creates ".."
 
-Call Requires .."/cls/Highlighter.cls"
-Call Requires .."/cls/FencedCode.cls"
+Call Requires .."/bin/Highlighter.cls"
+Call Requires .."/bin/FencedCode.cls"
 
 -- Remember how we were called
 Parse Source . how .

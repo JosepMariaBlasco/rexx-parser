@@ -28,5 +28,5 @@ and are described in the source file which defines them, reproduced below.
 Source program
 --------------
 
-```rexx {source=../../../cls/Globals.cls}
+```rexx {source=../../../bin/Globals.cls}
 ```

@@ -20,13 +20,14 @@
 /* 20241206    0.1  First public release                                      */
 /* 20241228    0.1d Test all .cls and .rex files in utils/ too                */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/*                  Binary directory is now "bin" instead of "cls"            */
 /*                                                                            */
 /******************************************************************************/
 
 mypath      =  FileSpec("Path",.context~package~name)
 parent      = .File~new(mypath"..")      ~absolutePath
-cls         = .File~new(mypath"../cls")  ~absolutePath
-HLDrivers   = .File~new(mypath"../cls/HLDrivers")  ~absolutePath
+cls         = .File~new(mypath"../bin")  ~absolutePath
+HLDrivers   = .File~new(mypath"../bin/HLDrivers")  ~absolutePath
 utils       = .File~new(mypath"../utils")~absolutePath
 
 files = .Array~of( .File~new(parent"/Rexx.Parser.cls")~absolutePath )

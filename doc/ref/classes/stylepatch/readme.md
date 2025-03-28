@@ -86,5 +86,5 @@ are arrays of strings consisting of:
 Program source
 ---------------
 
-~~~rexx {source=../../../../cls/StylePatch.cls}
+~~~rexx {source=../../../../bin/StylePatch.cls}
 ~~~

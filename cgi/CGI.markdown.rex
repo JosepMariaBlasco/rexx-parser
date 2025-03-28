@@ -49,7 +49,7 @@
   mypath    =  FileSpec( "Drive", package~name )FileSpec( "Path", package~name )
   local ~ . = .File~new( mypath"../" )~absolutePath      -- Creates ".."
 
-  Call Requires .."/cls/FencedCode.cls"
+  Call Requires .."/bin/FencedCode.cls"
   Call Requires mypath"rexx.epbcn.com.optional.cls"
 
   Signal SkipOverRequiresAndSyntaxHandler

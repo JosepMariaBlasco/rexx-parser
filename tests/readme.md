@@ -60,7 +60,7 @@ when the comparison succeeds, and 1 otherwise.
 The [`idents.rex`](idents.rex) utility, located in the same subdirectory,
 builds over `ident.rex`, and it checks that the results of
 parsing `Rexx.Parser.cls` and all the files
-in the [`cls`](/rexx-parser/cls/) subdirectory are identical to their own scanning.
+in the [`cls`](/rexx-parser/bin/) subdirectory are identical to their own scanning.
 
 To run `idents.rex`, change to the Rexx Parser directory, and run
 

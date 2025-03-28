@@ -12,5 +12,5 @@ is determined by the values specified in
 the argument stem. The following package contains
 the routine implementing the default HTML class mapping.
 
-```rexx {source=../../../../cls/HTMLClasses.cls}
+```rexx {source=../../../../bin/HTMLClasses.cls}
 ```

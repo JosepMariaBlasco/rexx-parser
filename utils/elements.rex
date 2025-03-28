@@ -19,6 +19,8 @@
 /* 20250103    0.1f Add TUTOR-flavored Unicode support                        */
 /* 20250215    0.1g Rename to elements.rex                                    */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/*                  Binary directory is now "bin" instead of "cls"            */
+/*                  Move "modules" directory inside "bin"                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -50,7 +52,7 @@ Start:
   package~local["."] = .File~new(myDrive||mypath"..")~absolutePath
 
   Call Requires .."/Rexx.Parser.cls"
-  Call Requires .."/modules/print/print.cls"
+  Call Requires .."/bin/modules/print/print.cls"
 
 --------------------------------------------------------------------------------
 -- Main program                                                               --

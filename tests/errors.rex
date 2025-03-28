@@ -16,6 +16,7 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20241206    0.1  First public release                                      */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/*                  Binary directory is now "bin" instead of "cls"            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -30,7 +31,7 @@ resources = myDir"../resources"
 -- Location of errors directory
 directory = myDir"../tests/errormessages"
 -- Location of rexx source files
-source    = myDir"../cls"
+source    = myDir"../bin"
 
 -- Location of revision file
 revision = .File~new(resources"/revision")~absolutePath

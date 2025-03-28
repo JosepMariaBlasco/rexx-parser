@@ -24,8 +24,10 @@ Version history
   <li> Add WARNING.md file and modify root readme.md (20250325).
   <li> Raise an error when a module tries to redefine an already-defined
        method (thanks Jean-Louis!) (20250327).
-  <li> Start refactoting for inclusion in the net-oo-rexx bundle. Rename
-       main directory to rexx-parser, for consistency with GitHub
+  <li> Start refactoring for inclusion in the net-oo-rexx bundle. Rename
+       main directory to rexx-parser, for consistency with GitHub.
+       Main binary directory is now "bin" instead of "cls".
+       Move the "modules" directory inside of "bin"
        (20250328).
 <tr><td>20250128<td>0.1g<td>
 <ul>

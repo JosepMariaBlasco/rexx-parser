@@ -90,5 +90,5 @@ assignments on a highlighter run-by-run basis.
 
 ### Program source
 
-```rexx {source=../../../cls/HTMLClasses.cls}
+```rexx {source=../../../bin/HTMLClasses.cls}
 ```

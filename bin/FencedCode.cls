@@ -134,7 +134,7 @@
   local ~ . = .File~new( mypath"../" )~absolutePath      -- Creates ".."
 
   Call Requires .."/Rexx.Parser.cls"
-  Call Requires .."/cls/Highlighter.cls"
+  Call Requires .."/bin/Highlighter.cls"
 
   Exit
 
