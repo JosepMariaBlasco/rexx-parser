@@ -11,11 +11,11 @@ The Rexx Parser
 
 The Rexx Parser is hosted on:
 
-- <https://rexx.epbcn.com/rexx.parser/> (daily builds *and* releases).
+- <https://rexx.epbcn.com/rexx-parser/> (daily builds *and* releases).
 - <https://github.com/JosepMariaBlasco/rexx-parser/> (releases only).
 
-The copy at <https://rexx.epbcn.com/rexx.parser/> uses the Rexx Highlighter to display Rexx programs,
-while the copy at <https://github.com/JosepMariaBlasco/rexx.parser/> uses the (limited) highlighting provided by GitHub.
+The copy at <https://rexx.epbcn.com/rexx-parser/> uses the Rexx Highlighter to display Rexx programs,
+while the copy at <https://github.com/JosepMariaBlasco/rexx-parser/> uses the (limited) highlighting provided by GitHub.
 
 ~~~rexx {.numberLines startfrom=93}
 /*******************************************************************************/
@@ -52,10 +52,10 @@ Current version and downloads
 -----------------------------
 
 The current release is beta 0.2, released on 20250215.
-Daily builds can be found at <https://rexx.epbcn.com/rexx.parser/>.
+Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Download the latest release here](download/).
-- [Download the latest daily build here](https://rexx.epbcn.com/rexx.parser/).
+- [Download the latest daily build here](https://rexx.epbcn.com/rexx-parser/).
 - [Version history](doc/history/).
 - [Next releases](doc/todo/).
 

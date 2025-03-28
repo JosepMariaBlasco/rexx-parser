@@ -3,7 +3,7 @@ Todo list
 
 ---------------------------
 
-\[See also [the version history](/rexx.parser/doc/history/)\].
+\[See also [the version history](/rexx-parser/doc/history/)\].
 
 Next release (0.2 refresh -- Not released yet)
 -----------------------------------------------

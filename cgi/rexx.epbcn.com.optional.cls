@@ -4,7 +4,7 @@
 /* ===============================================================            */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -16,6 +16,7 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20241217    0.1c First public release                                      */
 /* 20241229    0.1e Make non-essential parts of the page non-printable.       */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -95,12 +96,12 @@
 
 Crumb:
 
-  tutor     = "/tutor"
-  tutordocs = "/tutor/doc"
+  tutor     = "/TUTOR"
+  tutordocs = "/TUTOR/doc"
 
-  parser    = "/rexx.parser"
-  print     = "/rexx.parser/print"
-  doc       = "/rexx.parser/doc"
+  parser    = "/rexx-parser"
+  print     = "/rexx-parser/print"
+  doc       = "/rexx-parser/doc"
   guide     = doc"/guide"
   ref       = doc"/ref"
   dochl     = doc"/highlighter"
@@ -149,14 +150,14 @@ Crumb:
     When ""                        Then Return "Home"
     When "/epbcn"                  Then Return "EPBCN"
 
-    -- "/rexx.parser"
+    -- "/rexx-parser"
     When parser                    Then Return "Parser"
     When parser"/cgi"              Then Return "CGI"
     When parser"/download"         Then Return "Download"
     When parser"/highlighter"      Then Return "Highlighter"
     When parser"/tests"            Then Return "Tests"
 
-    -- "/rexx.parser/print"
+    -- "/rexx-parser/print"
 
     When print                     Then Return "Publications"
     When print"/36"                Then Return "36<sup>th</sup> symposium"
@@ -169,7 +170,7 @@ Crumb:
     When print"/36/2025-05-05-The-Rexx-Highlighter"
                                    Then Return "The Rexx Highlighter (Slides)"
 
-    -- "/rexx.parser/doc/guide"
+    -- "/rexx-parser/doc/guide"
 
     When guide                     Then Return "User Guide"
     When guide"/errors"            Then Return "Error handling"
@@ -178,18 +179,18 @@ Crumb:
     When guide"/elementapi"        Then Return "Element API"
     When guide"/treeapi"           Then Return "Tree API"
 
-    -- "/rexx.parser/doc/ref"
+    -- "/rexx-parser/doc/ref"
 
     When ref                       Then Return "Reference"
     When ref"/classes"             Then Return "Classes"
     When ref"/classes/driver"      Then Return "Driver"
     When ref"/classes/highlighter" Then Return "Highlighter"
-    When ref"/classes/rexx.parser" Then Return "Rexx.Parser"
+    When ref"/classes/rexx-parser" Then Return "Rexx.Parser"
     When ref"/classes/stylepatch"  Then Return "StylePatch"
     When ref"/classes/element"     Then Return "Element"
     When ref"/categories"          Then Return "Element categories"
 
-    -- "/rexx.parser/doc"
+    -- "/rexx-parser/doc"
     When doc                       Then Return "Docs"
     When doc"/history"             Then Return "Version history"
     When doc"/glossary"            Then Return "Glossary"
@@ -201,7 +202,7 @@ Crumb:
     When doc"/utils/elements"      Then Return "Elements"
     When doc"/unicode"             Then Return "Unicode"
 
-    -- "/rexx.parser/doc/highlighter"
+    -- "/rexx-parser/doc/highlighter"
 
     When dochl                     Then Return "Highlighter"
     When dochl"/ansi"              Then Return "ANSI"
@@ -209,7 +210,7 @@ Crumb:
     When dochl"/htmlclasses"       Then Return "HTMLClasses"
     When dochl"/fencedcode"        Then Return "Fenced Code Blocks"
 
-    -- "/rexx.parser/doc/highlighter/features"
+    -- "/rexx-parser/doc/highlighter/features"
 
     When dochlfeat                 Then Return "Features"
     When dochlfeat"/var-symbol"    Then Return "Variable symbols"
@@ -219,7 +220,7 @@ Crumb:
     When dochlfeat"/doc-comments"  Then Return "Doc-comments"
     When dochlfeat"/patches"       Then Return "Style patches"
 
-    -- "/rexx.parser/doc/highlighter/html"
+    -- "/rexx-parser/doc/highlighter/html"
 
     When dochlhtml                 Then Return "HTML"
     When dochlhtml"/instructions"  Then Return "Instruction tests"
@@ -238,7 +239,7 @@ Crumb:
 
   Parse Arg url
 
-  If url~startsWith("/rexx.parser") Then
+  If url~startsWith("/rexx-parser") Then
     Say .resources~SideBar.Rexx.Parser
   Else
     Say .resources~SideBar.Default
@@ -246,17 +247,17 @@ Crumb:
 ::Resource SideBar.Rexx.Parser
           <div class='panel panel-default sidebar'>
             <div class='panel-heading'>
-               <b><a href="/rexx.parser/">The Rexx Parser</a></b>
+               <b><a href="/rexx-parser/">The Rexx Parser</a></b>
             </div>
             <div class='panel-body text-left'>
-                  <a href="/rexx.parser/download/">Download</a>
-              <br><a href="/rexx.parser/doc/">Documentation</a>
-              <br><a href="/rexx.parser/doc/glossary/">Glossary</a>
-              <br><a href="/rexx.parser/doc/highlighter/">Highlighter</a>
-              <br><a href="/rexx.parser/doc/history/">History</a>
-              <br><a href="/rexx.parser/tests/">Tests</a>
-              <br><a href="/rexx.parser/doc/todo/">To-do</a>
-              <br><a href="/rexx.parser/doc/utils/">Utilities and Samples</a>
+                  <a href="/rexx-parser/download/">Download</a>
+              <br><a href="/rexx-parser/doc/">Documentation</a>
+              <br><a href="/rexx-parser/doc/glossary/">Glossary</a>
+              <br><a href="/rexx-parser/doc/highlighter/">Highlighter</a>
+              <br><a href="/rexx-parser/doc/history/">History</a>
+              <br><a href="/rexx-parser/tests/">Tests</a>
+              <br><a href="/rexx-parser/doc/todo/">To-do</a>
+              <br><a href="/rexx-parser/doc/utils/">Utilities and Samples</a>
             </div>
           </div>
 ::END

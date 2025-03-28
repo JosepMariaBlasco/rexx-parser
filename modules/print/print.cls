@@ -4,7 +4,7 @@
 /* ===============================                                            */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -15,24 +15,28 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20241206    0.1  First public release                                      */
+/* 20250318    0.2  Change syntax to class::method                            */
+/* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 
-loader = .File~new(.context~package~name)~parentFile~parent || .File~separator"Load.Parser.Module.rex"
+loader =                                                ,
+  .File~new(.context~package~name)~parentFile~parent || ,
+  .File~separator"Load.Parser.Module.rex"
 Call (loader) "BaseClassesAndRoutines"
 
 /******************************************************************************/
 /* MAKEARRAY Methods                                                          */
 /******************************************************************************/
 
-::Method "Do.Instruction:makeArray"
+::Method "Do.Instruction::makeArray"
   Expose doClause   instructions  endClause
   Use Strict Arg indent = 0
   Return self~makeArray:super(doClause, instructions, endClause, indent)
 
 --------------------------------------------------------------------------------
 
-::Method "If.Instruction:makeArray"
+::Method "If.Instruction::makeArray"
   Expose ifClause thenClause thenInstruction elseClause elseInstruction
   Use Strict Arg indent = 0
   array = Array(ifClause~string(indent) thenClause~string)
@@ -49,7 +53,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Iterative.Instruction:makeArray"
+::Method "Iterative.Instruction::makeArray"
   Use Strict Arg startClause, instructions, endClause, indent = 0
   array = Array(startClause~string(indent))
   Do i = 1 To instructions~items
@@ -63,14 +67,14 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Loop.Instruction:makeArray"
+::Method "Loop.Instruction::makeArray"
   Expose loopClause instructions endClause
   Use Strict Arg indent = 0
   Return self~makeArray:super(loopClause, instructions, endClause, indent)
 
 --------------------------------------------------------------------------------
 
-::Method "Select.Instruction:makeArray"
+::Method "Select.Instruction::makeArray"
   Expose                   -
     selectClause           -
       whenThenInstructions -
@@ -107,20 +111,20 @@ Call (loader) "BaseClassesAndRoutines"
 /* STRING Methods                                                             */
 /******************************************************************************/
 
-::Method "End.Of.Source:String"
+::Method "End.Of.Source::String"
   Return ""
 
 /******************************************************************************/
 /* STRING Methods - Clauses                                                   */
 /******************************************************************************/
 
-::Method "Else.Clause:string"
+::Method "Else.Clause::String"
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)"ELSE"
 
 --------------------------------------------------------------------------------
 
-::Method "End.Clause:string"
+::Method "End.Clause::String"
   Expose options.
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"END"
@@ -129,14 +133,14 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "If.Clause:String"
+::Method "If.Clause::String"
   Expose expressionList
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)"IF" expressionList
 
 --------------------------------------------------------------------------------
 
-::Method "Iterative.Clause:String"
+::Method "Iterative.Clause::String"
   Expose options.
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)self~InstructionName
@@ -167,24 +171,24 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Label.Clause:String"
+::Method "Label.Clause::String"
   Expose label
   Return label~value":"
 
 --------------------------------------------------------------------------------
 
-::Method "Null.Clause:String"
+::Method "Null.Clause::String"
   Return ";"
 
 --------------------------------------------------------------------------------
 
-::Method "Otherwise.Clause:String"
+::Method "Otherwise.Clause::String"
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)"OTHERWISE"
 
 --------------------------------------------------------------------------------
 
-::Method "Select.Clause:String"
+::Method "Select.Clause::String"
   Expose options.
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"SELECT"
@@ -194,13 +198,13 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Then.Clause:String"
+::Method "Then.Clause::String"
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)"THEN"
 
 --------------------------------------------------------------------------------
 
-::Method "When.Clause:String"
+::Method "When.Clause::String"
   Expose expressionList
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)"WHEN" expressionlist
@@ -209,7 +213,7 @@ Call (loader) "BaseClassesAndRoutines"
 /* STRING Methods - Directives                                                */
 /******************************************************************************/
 
-::Method "Annotate.Directive:String"
+::Method "Annotate.Directive::String"
   Expose options.
   ret = "::ANNOTATE" options.directive
   If options.directive \== "PACKAGE" Then ret = ret options.name
@@ -222,7 +226,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Attribute.Directive:String"
+::Method "Attribute.Directive::String"
   Expose name options.
   ret = "::ATTRIBUTE" name
   If  options.get, \options.set Then ret = ret "GET"
@@ -238,7 +242,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Class.Directive:String"
+::Method "Class.Directive::String"
   Expose name options.
   ret = "::CLASS" name
   Do word Over ("METACLASS", "MIXINCLASS", "SUBCLASS")
@@ -257,7 +261,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Constant.Directive:String"
+::Method "Constant.Directive::String"
   Expose name value expression sign number
   Select
     When \value~isNil Then
@@ -275,7 +279,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Method.Directive:String"
+::Method "Method.Directive::String"
   Expose name options.
   ret = "::METHOD" name
   If options.attribute    Then ret = ret "ATTRIBUTE"
@@ -292,7 +296,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Options.Directive:String"
+::Method "Options.Directive::String"
   Expose options.
   ret = "::OPTIONS"
   Do word Over ("DIGITS", "FORM", "FUZZ", "ALL", "ERROR", "FAILURE",  -
@@ -306,7 +310,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Requires.Directive:String"
+::Method "Requires.Directive::String"
   Expose programName options.
   ret = "::REQUIRES" programName
   If options.library   \== .Nil Then ret = ret "LIBRARY"
@@ -315,7 +319,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Resource.Directive:String"
+::Method "Resource.Directive::String"
   Expose name delimiter
   ret = "::RESOURCE" name
   If delimiter \== "::END" Then
@@ -324,7 +328,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Routine.Directive:String"
+::Method "Routine.Directive::String"
   Expose name private spec
   If private Then visibility = "PRIVATE"
   Else            visibility = "PUBLIC"
@@ -337,7 +341,7 @@ Call (loader) "BaseClassesAndRoutines"
 /* STRING Methods - Expressions                                               */
 /******************************************************************************/
 
-::Method "Concatenation.Expression:String"
+::Method "Concatenation.Expression::String"
   args = self~args
   str = ""
   Do i = 1 To args~items - 1 By 2
@@ -353,7 +357,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Expression.List:String"
+::Method "Expression.List::String"
   Expose args
   If args == .Nil Then Return ""
   str = ""
@@ -364,7 +368,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "NAry.Expression:String"
+::Method "NAry.Expression::String"
   Expose args
   str = ""
   Do i = 1 To args~items - 1 By 2
@@ -375,19 +379,19 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Prefix.Expression:String"
+::Method "Prefix.Expression::String"
   Expose prefixes term
   Return prefixes~toString(c)term
 
 --------------------------------------------------------------------------------
 
-::Method "SubExpression:String"
+::Method "SubExpression::String"
   Expose subExpression
   Return "("subExpression")"
 
 --------------------------------------------------------------------------------
 
-::Method "Compound.Variable.Term:String"
+::Method "Compound.Variable.Term::String"
   Expose parts
 
   ret = ""
@@ -400,18 +404,18 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Stem.Variable.Term:String"
+::Method "Stem.Variable.Term::String"
   Expose stem
   Return stem~value
 
 --------------------------------------------------------------------------------
 
-::Method "Tail.Separator.Element:String"
+::Method "Tail.Separator.Element::String"
   Return "."
 
 --------------------------------------------------------------------------------
 
-::Method "Message.Term:String"
+::Method "Message.Term::String"
   Expose term operator messageName scope arguments
   name = messageName~value
   op   = operator   ~value
@@ -423,43 +427,43 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Symbol.Term:String"
+::Method "Symbol.Term::String"
   Expose symbol
   Return symbol~value
 
 --------------------------------------------------------------------------------
 
-::Method "Indexed.Term:String"
+::Method "Indexed.Term::String"
   Expose term argumentList
   Return ""term"["argumentList"]"
 
 --------------------------------------------------------------------------------
 
-::Method "Literal.String.Term:String"
+::Method "Literal.String.Term::String"
   Expose string
   Return string~source
 
 --------------------------------------------------------------------------------
 
-::Method "Variable.Reference.Term:String"
+::Method "Variable.Reference.Term::String"
   Expose operator variable
   Return operator~value||variable~value
 
 --------------------------------------------------------------------------------
 
-::Method "NameSpace.Qualified.ClassName:String"
+::Method "NameSpace.Qualified.ClassName::String"
   Expose nameSpace className
   Return nameSpace~value":"className~value
 
 --------------------------------------------------------------------------------
 
-::Method "Function.Call.Term:String"
+::Method "Function.Call.Term::String"
   Expose name argumentList
   Return name~value"("argumentList")"
 
 --------------------------------------------------------------------------------
 
-::Method "NameSpace.Qualified.Function.Call:String"
+::Method "NameSpace.Qualified.Function.Call::String"
   Expose nameSpace name argumentList
   Return nameSpace~value":"name~value"("argumentList")"
 
@@ -467,7 +471,7 @@ Call (loader) "BaseClassesAndRoutines"
 /* STRING Methods - Instructions                                              */
 /******************************************************************************/
 
-::Method "Address.Instruction:String"
+::Method "Address.Instruction::String"
   Expose options.
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"ADDRESS"
@@ -497,7 +501,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Assignment.Instruction:String"
+::Method "Assignment.Instruction::String"
   Expose symbol operator expression
   Use Strict Arg indent = 0
   Return Copies(" ", indent)PrintLabels(self)symbol~value -
@@ -505,7 +509,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Call.Instruction:String"
+::Method "Call.Instruction::String"
   Expose name arguments
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"CALL"
@@ -515,7 +519,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Call.Value:String"
+::Method "Call.Value::String"
   Expose expression arguments
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"CALL ("expression")"
@@ -524,7 +528,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Call.Off.Instruction:String"
+::Method "Call.Off.Instruction::String"
   Expose condition userCondition
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"CALL OFF" condition
@@ -533,7 +537,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Call.On.Instruction:String"
+::Method "Call.On.Instruction::String"
   Expose condition userCondition trapName
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"CALL ON" condition
@@ -543,14 +547,14 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Command.Instruction:String"
+::Method "Command.Instruction::String"
   Expose expression
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)expression
 
 --------------------------------------------------------------------------------
 
-::Method "Drop.Instruction:String"
+::Method "Drop.Instruction::String"
   Expose nameList
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"DROP"
@@ -562,7 +566,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Expose.Instruction:String"
+::Method "Expose.Instruction::String"
   Expose exposed
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"EXPOSE"
@@ -574,7 +578,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Forward.Instruction:String"
+::Method "Forward.Instruction::String"
   Expose options.
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"FORWARD"
@@ -588,7 +592,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Guard.Instruction:String"
+::Method "Guard.Instruction::String"
   Expose on expression
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"GUARD"
@@ -599,20 +603,20 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Implicit.Exit.Instruction:String"
+::Method "Implicit.Exit.Instruction::String"
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self) -- "/* Implicit exit */"
 
 --------------------------------------------------------------------------------
 
-::Method "Interpret.Instruction:String"
+::Method "Interpret.Instruction::String"
   Expose expression
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)"INTERPRET" expression
 
 --------------------------------------------------------------------------------
 
-::Method "Iterate.Instruction:String"
+::Method "Iterate.Instruction::String"
   Expose label
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"ITERATE"
@@ -621,7 +625,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Leave.Instruction:String"
+::Method "Leave.Instruction::String"
   Expose label
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"LEAVE"
@@ -630,21 +634,21 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Message.Assignment.Instruction:String"
+::Method "Message.Assignment.Instruction::String"
   Expose lhs operator rhs
   Use Strict Arg indent = 0
   Return Copies(" ", indent)PrintLabels(self)lhs operator rhs
 
 --------------------------------------------------------------------------------
 
-::Method "Message.Instruction:String"
+::Method "Message.Instruction::String"
   Expose expression
   Use Strict Arg indent = 0
   Return Copies(" ", indent)PrintLabels(self)expression
 
 --------------------------------------------------------------------------------
 
-::Method "NameSpace.Qualified.Call:String"
+::Method "NameSpace.Qualified.Call::String"
   Expose nameSpace name arguments
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"CALL"
@@ -654,13 +658,13 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Nop.Instruction:String"
+::Method "Nop.Instruction::String"
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)"NOP"
 
 --------------------------------------------------------------------------------
 
-::Method "Numeric.Instruction:String"
+::Method "Numeric.Instruction::String"
   Expose option expression
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"NUMERIC"
@@ -674,7 +678,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Optional.Expression.Instruction:String"
+::Method "Optional.Expression.Instruction::String"
   Expose expression
   Use Strict Arg indent = 0
   If expression~isNil Then
@@ -684,14 +688,14 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Options.Instruction:String"
+::Method "Options.Instruction::String"
   Expose expression
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)"OPTIONS" expression
 
 --------------------------------------------------------------------------------
 
-::Method "Parse.Instruction:String"
+::Method "Parse.Instruction::String"
   Expose options. templateList
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"PARSE"
@@ -709,7 +713,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Procedure.Instruction:String"
+::Method "Procedure.Instruction::String"
   Expose exposed
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"PROCEDURE"
@@ -723,7 +727,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Raise.Instruction:String"
+::Method "Raise.Instruction::String"
   Expose condition options.
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"RAISE"
@@ -765,21 +769,21 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Signal.Instruction:String"
+::Method "Signal.Instruction::String"
   Expose label
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)"SIGNAL" label
 
 --------------------------------------------------------------------------------
 
-::Method "Signal.Value.Instruction:String"
+::Method "Signal.Value.Instruction::String"
   Expose expression
   Use Strict Arg indent = 0
   Return Copies(" ",indent)PrintLabels(self)"SIGNAL VALUE" expression
 
 --------------------------------------------------------------------------------
 
-::Method "Signal.Off.Instruction:String"
+::Method "Signal.Off.Instruction::String"
   Expose condition userCondition
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"SIGNAL OFF" condition
@@ -788,7 +792,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Signal.On.Instruction:String"
+::Method "Signal.On.Instruction::String"
   Expose condition userCondition label
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"SIGNAL ON" condition
@@ -798,7 +802,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Trace.Instruction:String"
+::Method "Trace.Instruction::String"
   Expose options.
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"TRACE"
@@ -810,7 +814,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Use.Arg.Instruction:String"
+::Method "Use.Arg.Instruction::String"
   Expose strict argList
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"USE"
@@ -832,7 +836,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Use.Local.Instruction:String"
+::Method "Use.Local.Instruction::String"
   Expose local
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"USE LOCAL"
@@ -845,7 +849,7 @@ Process:
 /* STRING Methods - Templates                                                 */
 /******************************************************************************/
 
-::Method "Template:String"
+::Method "Template::String"
   Expose list
   ret = ""
   Do i = 1 To list~items
@@ -855,7 +859,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Optional.Template.List:String"
+::Method "Optional.Template.List::String"
   Expose templateList
   Use Strict Arg indent = 0
   ret = Copies(" ", indent)PrintLabels(self)self~instructionName
@@ -864,13 +868,13 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Prefixed.Template:String"
+::Method "Prefixed.Template::String"
   Expose prefix elementOrSubExpression
   Return prefix || elementOrSubExpression
 
 --------------------------------------------------------------------------------
 
-::Method "Template.List:String"
+::Method "Template.List::String"
   Expose list
   ret = ""
   Do i = 1 To list~items
@@ -883,16 +887,14 @@ Process:
 /* STRING Methods - Elements                                                  */
 /******************************************************************************/
 
-::Method "Operator.Character.Sequence:String"
+::Method "Operator.Character.Sequence::String"
   Return self~value
 
-::Method "Special.Character.Sequence:String"
+::Method "Special.Character.Sequence::String"
   Return self~value
 
-::Method "StringOrSymbol.Element:String"
+::Method "StringOrSymbol.Element::String"
   Return self~value
 
-::Method "WhiteSpace.Element:String"
+::Method "WhiteSpace.Element::String"
   Return " "
-
-

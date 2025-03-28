@@ -5,7 +5,7 @@
 /* ========================================================                   */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -32,6 +32,10 @@
 /* 20241220    0.1c First public release                                      */
 /* 20241230    0.1e Switch to a local copy of Bootstrap 3 to allow for colors */
 /*                  in code sections to be printed correctly.                 */
+/* 20250222    0.2  Add drive to path for requires                            */
+/* 20250222         Change Address PATH to Address COMMAND for pandoc         */
+/* 20250317         Allow style=(dark|light) query string                     */
+/* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -42,7 +46,7 @@
 --------------------------------------------------------------------------------
   package   = .context~package
   local     =  package~local
-  mypath    =  FileSpec( "Path", package~name )
+  mypath    =  FileSpec( "Drive", package~name )FileSpec( "Path", package~name )
   local ~ . = .File~new( mypath"../" )~absolutePath      -- Creates ".."
 
   Call Requires .."/cls/FencedCode.cls"
@@ -121,10 +125,19 @@ SkipOverRequiresAndSyntaxHandler:
   If url  == ""         Then Exit .Response~404
 
 --------------------------------------------------------------------------------
--- We don't want queries                                                      --
+-- We only accept one optional query, of the form style=(light|dark)          --
 --------------------------------------------------------------------------------
 
-  If url~contains("?")  Then Exit .Response~404
+  style = "dark"
+  If url~contains("?")  Then Do
+    Parse Var url url"?"query
+    ok = 0
+    If query~startsWith("style=") Then Do
+      Parse Var query "style="style
+      If style == "dark" | style == "light" Then ok = 1
+    End
+    If \ok Then Exit .Response~404
+  End
 
 --------------------------------------------------------------------------------
 -- We don't want strangely formatted URIs                                     --
@@ -193,14 +206,14 @@ SkipOverRequiresAndSyntaxHandler:
 -- We process Rexx fenced code blocks first                                   --
 --------------------------------------------------------------------------------
 
-  source = FencedCode( file, source )
+  source = FencedCode( file, source, style )
 
 --------------------------------------------------------------------------------
 -- Now call pandoc. It will transform markdown into html by default           --
 --------------------------------------------------------------------------------
 
   contents = .Array~new
-  Address PATH 'pandoc --from markdown-smart+footnotes' -
+  Address COMMAND 'pandoc --from markdown-smart+footnotes' -
     '--reference-location=section' -
     With Input Using (source) Output Using (contents)
 
@@ -239,7 +252,7 @@ SkipOverRequiresAndSyntaxHandler:
       When line = "%ownstyle%"    Then
         If ownStyle \== "" Then
           Say "    <link rel='stylesheet'" -
-              "href='/rexx.parser/css/print/"ownstyle".css'>"
+              "href='/rexx-parser/css/print/"ownstyle".css'>"
       Otherwise Say line
     End
   End
@@ -378,9 +391,9 @@ Process:
       %title%
     </title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel='stylesheet' href='/rexx.parser/css/rexx-light.css'>
-    <link rel='stylesheet' href='/rexx.parser/css/rexx-dark.css'>
-    <link rel='stylesheet' href='/rexx.parser/css/markdown.css'>
+    <link rel='stylesheet' href='/rexx-parser/css/rexx-light.css'>
+    <link rel='stylesheet' href='/rexx-parser/css/rexx-dark.css'>
+    <link rel='stylesheet' href='/rexx-parser/css/markdown.css'>
     %ownstyle%
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

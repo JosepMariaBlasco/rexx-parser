@@ -4,7 +4,7 @@
 /* ==============                                                             */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -17,6 +17,7 @@
 /* 20241206    0.1  First public release                                      */
 /* 20241209    0.1b New call system                                           */
 /* 20241225    0.1d Add support for doc-comments                              */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -62,8 +63,10 @@
 
   -- Additional BIFs for Unicode. We load them here and not in the prolog
   -- because .Parser.Options is not constructed at package load time.
+
   If .Parser.Options~unicode == 1 Then Do
-    Do bif Over (bytes,codepoints,graphemes,stringtype,text)
+    Do bif Over ( bytes, codepoints, graphemes,text, stringtype, unicode, -
+      n2p, p2n, c2u, u2c, decode, encode, utf8)
       .BIF[] = bif
     End
   End

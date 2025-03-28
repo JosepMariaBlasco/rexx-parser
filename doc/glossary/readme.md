@@ -131,17 +131,17 @@ Another name for an [inserted element](#inserted-element).
 #### Inserted element
 
 An **inserted element** is a special marker generated
-by [the Rexx Parser](/rexx.parser/).
+by [the Rexx Parser](/rexx-parser/).
 
 Some of these markers are part of the Rexx language definition.
 For example, the Rexx language assumes a semicolon after an `ELSE`,
 an `OTHERWISE` or a `THEN` clause, or before a `THEN`
 clause, as an aid that greatly improves the writability
-of Rexx programs. [The Rexx Parser](/rexx.parser/) automatically
+of Rexx programs. [The Rexx Parser](/rexx-parser/) automatically
 *inserts* these semicolons, and returns the corresponding
 *inserted elements*.
 
-Some other markers are created by [the Rexx Parser](/rexx.parser/) as
+Some other markers are created by [the Rexx Parser](/rexx-parser/) as
 a way to ensure that certain invariants are met. For example,
 a dummy end-of-clause marker is inserted at the beginning
 of the parser program; this additional marker allows us

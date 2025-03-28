@@ -4,7 +4,7 @@
 /* ========================================================================   */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -21,6 +21,7 @@
 /* 20241225    0.1d Add doc-comment support                                   */
 /* 20250103    0.1e Add TUTOR-flavored Unicode classes                        */
 /* 20250116    0.1f Add support for EL.SUBKEYWORD                             */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 

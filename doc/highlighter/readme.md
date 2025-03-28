@@ -1,7 +1,7 @@
 The Rexx Highlighter
 ====================
 
-The **Rexx Highlighter** is a child project of [the Rexx Parser](/rexx.parser/).
+The **Rexx Highlighter** is a child project of [the Rexx Parser](/rexx-parser/).
 Developed around a common code base,
 it currently includes output [drivers](#drivers) for
 three modes: [HTML](html/),
@@ -49,10 +49,10 @@ extensible system of [drivers](#drivers).
 The highlighter is distributed with an
 extensible system of **CSS styles**.
 Two samples are provided:
-<code>[rexx-light.css](/rexx.parser/css/rexx-light.css)</code>,
+<code>[rexx-light.css](/rexx-parser/css/rexx-light.css)</code>,
 a light grey background one (currently incomplete),
 and the default style,
-<code>[rexx-dark.css](/rexx.parser/css/rexx-dark.css)</code>,
+<code>[rexx-dark.css](/rexx-parser/css/rexx-dark.css)</code>,
 a dark background one.
 
 <div class="row">

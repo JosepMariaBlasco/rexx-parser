@@ -187,13 +187,13 @@ Default is "dark".
 #### `tutor` {#tutor}
 
 Enables experimental
-[TUTOR-flavored Unicode support](/rexx.parser/doc/unicode/).
+[TUTOR-flavored Unicode support](/rexx-parser/doc/unicode/).
 
 See also [unicode](#unicode).
 
 #### `unicode` {#unicode}
 
-Enables experimental [TUTOR-flavored Unicode support](/rexx.parser/doc/unicode/)..
+Enables experimental [TUTOR-flavored Unicode support](/rexx-parser/doc/unicode/)..
 
 See also [tutor](#tutor).
 

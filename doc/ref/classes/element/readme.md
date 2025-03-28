@@ -9,9 +9,9 @@ Definitions
 ### The element chain
 
 A **Element** object is an element of a sequential
-[**element stream**](/rexx.parser/doc/glossary/#element-stream) or
-[**element chain**](/rexx.parser/doc/glossary/#element-chain)
-produced by [the Rexx Parser](/rexx.parser/) when
+[**element stream**](/rexx-parser/doc/glossary/#element-stream) or
+[**element chain**](/rexx-parser/doc/glossary/#element-chain)
+produced by [the Rexx Parser](/rexx-parser/) when
 parsing a Rexx program.
 
 ### Portions and markers
@@ -31,15 +31,15 @@ which further specifies the type and use of the taken constant.
 
 ### Inserted element {#marker}
 
-[**Markers**](/rexx.parser/doc/glossary/#marker-element)
+[**Markers**](/rexx-parser/doc/glossary/#marker-element)
 are used to convey additional meaning to the element
 chain. For example, a marker may indicate
 that a clause has ended, or that an implicit
 `EXIT` instruction has to be assumed at the end
 of a code section. Markers are also called
-[**inserted**](/rexx.parser/doc/glossary/#inserted-element),
-[**implied**](/rexx.parser/doc/glossary/#implied-element),
-or [**zero-length**](/rexx.parser/doc/glossary/#zero-length-element)
+[**inserted**](/rexx-parser/doc/glossary/#inserted-element),
+[**implied**](/rexx-parser/doc/glossary/#implied-element),
+or [**zero-length**](/rexx-parser/doc/glossary/#zero-length-element)
 elements.
 
 Some of the markers are dictated by the Rexx Language
@@ -69,7 +69,7 @@ the following invariant becomes true:
 
 Elements which are [non-inserted](#portion)
 but do not fall under the Rexx definition of token
-are [**ignorable elements**](/rexx.parser/doc/glossary/#ignorable-element).
+are [**ignorable elements**](/rexx-parser/doc/glossary/#ignorable-element).
 
 You can check whether a element is ignorable by using the
 [isIgnorable](#isignorable) method of the [Element](.) class,
@@ -108,12 +108,12 @@ Element categories and sets of element categories
 -------------------------------------------------
 
 A fundamental property of an element `E` is its
-[**element categories**](/rexx.parser/doc/glossary/#element-class),
+[**element categories**](/rexx-parser/doc/glossary/#element-class),
 `E~category`, a one-byte value that identifies the syntactic
 category of the element, regardless of whether it is ignorable or not,
 or implied or not. The Rexx Parser is able to recognize and assign
 a very wide variety of categories; you can browse the
-listing of possible classes [here](/rexx.parser/doc/ref/categories/).
+listing of possible classes [here](/rexx-parser/doc/ref/categories/).
 
 At initialization time, the Rexx Parser stores a set of symbolic
 element names in the global environment. All these names start
@@ -141,7 +141,7 @@ A collection of convenient names for several
 *category sets* is also created;
 these start with the `.ALL.` prefix.
 More information about the sets of element categories
-can be found [here](/rexx.parser/doc/ref/categories/).
+can be found [here](/rexx-parser/doc/ref/categories/).
 
 ~~~rexx
 --------------------------------------------------------------------------------
@@ -266,7 +266,7 @@ The negation of the `<<` operator, `\<<`, is also overloaded.
 
 Returns a one-byte value determining the category of the element.
 Element categories are described in detail
-[here](/rexx.parser/doc/ref/categories/).
+[here](/rexx-parser/doc/ref/categories/).
 
 ### from
 
@@ -374,7 +374,7 @@ multi-line, like the resource data of a resource.
 Returns a one-byte value determining the element subCategory.
 This method is only available when the element class is
 `.EL.TAKEN_CONSTANT`. Element subcategories are described in detail
-[here](/rexx.parser/doc/ref/categories/).
+[here](/rexx-parser/doc/ref/categories/).
 
 ### to
 

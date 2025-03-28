@@ -4,9 +4,9 @@ The Rexx HTML Highlighter
 --------------------------------
 
 The *Rexx HTML Highlighter* is an application of
-[the Rexx Parser](/rexx.parser/). It is distributed with
+[the Rexx Parser](/rexx-parser/). It is distributed with
 two sample highlighting styles:
-[`rexx-light.css`](/rexx.parser/css/rexx-light.css),
+[`rexx-light.css`](/rexx-parser/css/rexx-light.css),
 a light grey background one
 
 ```rexx {style=light}
@@ -19,7 +19,7 @@ Pos:
   Return 45
 ```
 
-and [`rexx-dark.css`](/rexx.parser/css/rexx-dark.css), a dark background one.
+and [`rexx-dark.css`](/rexx-parser/css/rexx-dark.css), a dark background one.
 
 ```rexx
   -- Show several forms of function call

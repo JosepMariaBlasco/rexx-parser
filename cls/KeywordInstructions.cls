@@ -4,7 +4,7 @@
 /* =======================                                                    */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -21,6 +21,7 @@
 /*                  as "assigned"                                             */
 /* 20251215    0.2  Fix setAssigned for DROP, EXPOSE, USE LOCAL and           */
 /*                  PROCEDURE EXPOSE                                          */
+/* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 

@@ -71,7 +71,7 @@ are arrays of strings consisting of:
   + The single word `no`, which has to be followed by
     one of `bold`, `italic` or `underline`.
 + Element categories, category sets, and subcategories
-  [are described in detail here](/rexx.parser/doc/ref/categories/).
+  [are described in detail here](/rexx-parser/doc/ref/categories/).
 
 ```rexx {patch="n method #000/#c0c; element Simple_Variable #000/#cc0 bold"}
 ::Method methodName

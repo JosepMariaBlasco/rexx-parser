@@ -428,12 +428,42 @@ else                    end
     <Severity>Warning</Severity>
     <SymbolicName>Error_Control_stack</SymbolicName>
     <Text>Control stack full.</Text>
-    <Explanation><para>Your program exceeds the nesting level limit for control structures (for example, DO...END and IF...THEN...ELSE). This could be because of a looping INTERPRET instruction, such as:</para>
+    <Explanation><para>The available stack space has been exhausted.
+      This could be because of a looping INTERPRET instruction, such as:</para>
 <programlisting>
 line = 'INTERPRET line'
 INTERPRET line
 </programlisting>
-    <para>These lines loop until they exceed the nesting level limit and the language processor issues this message. Similarly, a recursive subroutine or internal function that does not end correctly can loop until it causes this message.</para></Explanation>
+      <para>The INTERPRET instruction loops until all available stack space has been exhausted.
+      Similarly, a recursive subroutine that does not end correctly can loop until it causes this message.
+      </para>
+      <para>The amount of stack space available by default varies across platforms.
+      </para>
+      <para>On Linux, the default stack size is 8 MB.
+      The ulimit and prlimit commands can be used to view or change the maximum stack size limit, like in the following examples:
+<programlisting>
+# view current stack size
+ulimit -a
+prlimit --pid=$$ --stack
+
+# set stack size in KB up to the hard limit
+ulimit -S -s 16384
+
+# set stack size hard limit in bytes
+sudo prlimit --pid=$$ --stack=512000000
+</programlisting>
+      </para>
+      <para>On Windows, the Rexx executables are built with a stack size of 8 MB.
+      The MS Visual Studio executables dumpbin and editbin are required to view or change the maximum stack size limit of the Rexx executable, like in the following examples:
+<programlisting>
+# view stack size in bytes in hex
+dumpbin rexx.exe /all|find "stack"
+
+# set stack size in bytes in decimal
+editbin rexx.exe /stack:100000000
+</programlisting>
+      </para>
+    </Explanation>
     <Subcodes>
       <SubMessage>
         <Code>11</Code>

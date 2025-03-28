@@ -4,7 +4,7 @@
 /* ========================================                                   */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -26,6 +26,7 @@
 /* 20250102    0.1f Add "prolog" option                                       */
 /* 20250103         Add "unicode" and "tutor" options                         */
 /* 20250106         Rename to Highlighter, move to cls directory              */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 

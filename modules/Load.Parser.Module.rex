@@ -4,7 +4,7 @@
 /* ======================                                                     */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -15,6 +15,10 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20241206    0.1  First public release                                      */
+/* 20250318    0.2  Change syntax to class::method                            */
+/* 20250326         Detect when a module tries to define an already-defined   */
+/*                  method.                                                   */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -25,7 +29,7 @@
 -- A list of package names (without the .cls extension), separated by blanks
 Use Strict Arg dependencies = ""
 
--- We were called by (a prolog routine), located in a certain package.
+-- We were called by a prolog routine, located in a certain package.
 callerPackage = .context~stackFrames[2]~executable~package
 
 -- Ensure that we run this initializer only once per package
@@ -44,17 +48,36 @@ End
 
 -- Floating methods name format:
 --
---   className":"methodName
+--   className"::"methodName
 --
 -- Such a method name will be ~defined into the className class with the
 -- name methodName and the source found in the caller package.
 --
 methods = callerPackage~definedMethods
 Do name Over methods
-  Parse Var name class":"method
+  Parse Var name class"::"method
   If .environment[ class ] == .Nil Then Do
     Say "Internal error! Class" class "not found."
     Raise Halt
   End
-  .environment[ class ] ~ define( method, methods[ name ] )
+  theClass = .environment[ class ]
+  If HasMethod( theClass, method ) Then Do
+    Say "Internal error! Method" method "already defined in class" class"."
+    Raise Halt
+  End
+  theClass ~ define( method, methods[ name ] )
 End
+
+Exit
+
+--------------------------------------------------------------------------------
+-- The definition of ~method is very strange: it traps when the method does   --
+-- not exist...                                                               --
+--------------------------------------------------------------------------------
+
+HasMethod: Signal On Syntax Name DementedAPI
+
+  throwAway = Arg(1)~method( Arg(2) )
+  Return 1
+
+DementedAPI: Return 0

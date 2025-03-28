@@ -5,8 +5,8 @@ HTML instruction highlighting test
 
 See also:
 
-+ [All cases](/rexx.parser/doc/highlighter/html/all/).
-+ [All directives](/rexx.parser/doc/highlighter/html/directives/).
++ [All cases](/rexx-parser/doc/highlighter/html/all/).
++ [All directives](/rexx-parser/doc/highlighter/html/directives/).
 
 #### `ADDRESS`
 

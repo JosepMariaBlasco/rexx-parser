@@ -22,7 +22,7 @@ This article documents the values returned by the
 and [*subCategory*](../classes/element/#subcategory) instance methods of
 [the Element class](../classes/element/). These values are sufficient to build
 quite sophisticated tools, like
-[very fine-grained highlighters](/rexx.parser/doc/highlighter/),
+[very fine-grained highlighters](/rexx-parser/doc/highlighter/),
 and are described in the source file which defines them, reproduced below.
 
 Source program

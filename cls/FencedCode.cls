@@ -4,7 +4,7 @@
 /* ==================================================                         */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -20,6 +20,9 @@
 /* 20250104    0.1f Add "unicode" and "tutor" options                         */
 /* 20250106         Change "patch" to "patchfile", and add "patch='patches'"  */
 /* 20250120         Add size attribute (HTML only)                            */
+/* 20250222    0.2  Add drive to path for requires                            */
+/* 20250317         Support a defaultstyle parameter (default="dark")         */
+/* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -127,7 +130,7 @@
   -- ::REQUIRES does not work well with "../" paths
   package   = .context~package
   local     =  package~local
-  mypath    =  FileSpec( "Path", package~name )
+  mypath    =  FileSpec( "Drive", package~name )FileSpec( "Path", package~name )
   local ~ . = .File~new( mypath"../" )~absolutePath      -- Creates ".."
 
   Call Requires .."/Rexx.Parser.cls"
@@ -147,7 +150,7 @@ Requires:
 
 ::Routine FencedCode Public
 
-  Use Strict Arg filename, source
+  Use Strict Arg filename, source, defaultStyle = "dark"
 
   tab = "09"X
 
@@ -193,7 +196,7 @@ Requires:
     End
 
     -- Parse code block parameters
-    options. = ParseOptions( filename, attributes )
+    options. = ParseOptions( filename, attributes, defaultStyle )
 
     -- Look for the end marker
     start  = lineNo
@@ -239,6 +242,8 @@ MissingEndMarker:
 
 ::Routine ParseOptions Private
 
+  Use Strict arg filename, options, defaultStyle
+
   -- Default options
   Options.            = 0
   Options.compound    = 1               -- Full display of compound variables
@@ -246,14 +251,12 @@ MissingEndMarker:
   Options.special     = "group"         -- All specials are displayed the same
   Options.constant    = "full"          -- Flexibility with taken constants
   Options.assignment  = "group"         -- Assignments are displayed the same
-  Options.style       = "dark"          -- Dark style is the default
+  Options.style       = defaultStyle    -- Set default style
   Options.classprefix = "rx-"           -- Default HTML class prefix is "rx-"
   Options.["SOURCE"]  = ""              -- No external source by default
   Options.patch       = ""              -- No patch file by default
   Options.html        = 1               -- This is HTML highlighting
   Options.startFrom   = 1               -- Start at line 1
-
-  Use Strict arg filename, options
 
   -- Store the file path, for source=, patchfile=, etc.
   Options.path        = .File~new( filename )~parent

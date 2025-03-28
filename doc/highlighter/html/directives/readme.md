@@ -11,8 +11,8 @@ the highlighting choices.
 
 See also:
 
-+ [All cases](/rexx.parser/doc/highlighter/html/all/).
-+ [All instructions](/rexx.parser/doc/highlighter/html/instructions/).
++ [All cases](/rexx-parser/doc/highlighter/html/all/).
++ [All instructions](/rexx-parser/doc/highlighter/html/instructions/).
 
 Directives
 ----------

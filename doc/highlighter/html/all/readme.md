@@ -5,8 +5,8 @@ HTML Highlighter general tests
 
 See also:
 
-+ [All directives](/rexx.parser/doc/highlighter/html/directives/)
-+ [All instructions](/rexx.parser/doc/highlighter/html/instructions/)
++ [All directives](/rexx-parser/doc/highlighter/html/directives/)
++ [All instructions](/rexx-parser/doc/highlighter/html/instructions/)
 
 #### Comments
 

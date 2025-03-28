@@ -3,7 +3,7 @@ The Rexx.Parser class
 
 --------------------------------------
 
-`Rexx.Parser` is the main class of [the Rexx Parser](/rexx.parser/) framework.
+`Rexx.Parser` is the main class of [the Rexx Parser](/rexx-parser/) framework.
 A **Rexx.Parser** object is a parsed version of a Rexx program.
 The parsing process is configurable, according to a set of [options](#options)
 which can be specified when the Rexx.Parser object is created.
@@ -12,7 +12,7 @@ The supplied or identified program is parsed at object creation time.
 The parser version of the program can be accessed using the
 [`package`](#package) method of the Rexx.Parser object.
 You can also use the [`firstElement`](#firstElement) method to access the
-first element in the parsed program [element chain](/rexx.parser/doc/glossary/#element-chain).
+first element in the parsed program [element chain](/rexx-parser/doc/glossary/#element-chain).
 
 ### new (Class method) {#new}
 
@@ -40,7 +40,7 @@ is created; you can retrieve this object using the `package` method
 ![firstElement](./Rexx.Parser.firstElement.svg) \
 
 Returns the first element in the parsed program
-[element chain](/rexx.parser/doc/glossary/#element-chain).
+[element chain](/rexx-parser/doc/glossary/#element-chain).
 
 This is a convenience method. The term `parser~firstElement` is
 equivalent to `parser~package~firstElement`.

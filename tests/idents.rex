@@ -7,7 +7,7 @@
 /* components of the Rexx parser are identical to their own parsing.          */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -19,6 +19,7 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20241206    0.1  First public release                                      */
 /* 20241228    0.1d Test all .cls and .rex files in utils/ too                */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 

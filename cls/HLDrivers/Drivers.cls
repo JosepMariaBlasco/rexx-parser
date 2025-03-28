@@ -4,7 +4,7 @@
 /* ========================================================                   */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -15,6 +15,8 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20241231    0.1e First version                                             */
+/* 20250222    0.2  Add drive to path for requires                            */
+/* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -25,7 +27,7 @@ If .environment~Highlighter.Driver == .Nil Then Do
    .environment~Highlighter.Driver =  .Highlighter.Driver
   package    = .context~package
   local      =  package~local
-  mypath     =  FileSpec( "Path", package~name )
+  mypath     =  FileSpec( "Drive", package~name )FileSpec( "Path", package~name )
   myName     =  FileSpec( "Name", package~name )
   drivers    = .File~new(mypath)~list
   Do driver Over drivers

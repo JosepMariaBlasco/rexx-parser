@@ -5,7 +5,7 @@
 /* =========================================                                  */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -21,6 +21,7 @@
 /* 20250105         Add --patch="patch specs" and --patchfile=file            */
 /* 20250107         Change -t and --term for -a and --ansi                    */
 /* 20250108         Add --pad= option                                         */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 

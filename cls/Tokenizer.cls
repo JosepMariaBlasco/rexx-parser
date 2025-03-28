@@ -4,7 +4,7 @@
 /* =============                                                              */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx.parser/]                                  */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
 /* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
@@ -23,6 +23,7 @@
 /* 20241225         Migrate options arg to .Parser.Options                    */
 /* 20250103    0.1f Add TUTOR-flavored Unicode support                        */
 /* 20250115         Add "<<" and "\<<" methods                                */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                                                                            */
 /******************************************************************************/
 

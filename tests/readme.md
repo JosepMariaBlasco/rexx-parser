@@ -7,7 +7,7 @@ Error handling: [`errors.rex`](errors.rex)
 ------------------------------------------
 
 [This program](errors.rex) resides in the [`tests`](.) directory.
-It depends on two files located in the [`resources`](/rexx.parser/resources) directory:
+It depends on two files located in the [`resources`](/rexx-parser/resources) directory:
 `rexxmsg.xml`, which is part of the ooRexx source tree
 (you can find it at `main/trunk/interpreter/messages`), and `revision`,
 which contains the revision number of the `rexxmsg.xml` file.
@@ -60,7 +60,7 @@ when the comparison succeeds, and 1 otherwise.
 The [`idents.rex`](idents.rex) utility, located in the same subdirectory,
 builds over `ident.rex`, and it checks that the results of
 parsing `Rexx.Parser.cls` and all the files
-in the [`cls`](/rexx.parser/cls/) subdirectory are identical to their own scanning.
+in the [`cls`](/rexx-parser/cls/) subdirectory are identical to their own scanning.
 
 To run `idents.rex`, change to the Rexx Parser directory, and run
 

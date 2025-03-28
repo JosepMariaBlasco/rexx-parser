@@ -4,7 +4,7 @@ First steps
 -----------------------------------------------
 
 + Open a terminal shell in the installation directory, and
-  `cd` to the [`utils`](/rexx.parser/utils/) subdirectory.
+  `cd` to the [`utils`](/rexx-parser/utils/) subdirectory.
   Run the `highlight.rex` program passing `sample.html`
   as an argument:
 
@@ -19,7 +19,7 @@ First steps
   &lt;!doctype html&gt;&lt;html lang='en'&gt;
     &lt;head&gt;
       &lt;title&gt;Test&lt;/title&gt;
-      &lt;link rel='stylesheet' href='/rexx.parser/css/rexx-dark.css'&gt;
+      &lt;link rel='stylesheet' href='/rexx-parser/css/rexx-dark.css'&gt;
     &lt;head&gt;
   &lt;body&gt;
   Sample text
@@ -38,10 +38,10 @@ First steps
   &lt;/body&gt;
   &lt;/html&gt;</pre>
 
-+ Now look at [the source of `highlight.rex`](/rexx.parser/doc/utils/highlight/)
++ Now look at [the source of `highlight.rex`](/rexx-parser/doc/utils/highlight/)
   and inspect `sample.html` too. You have just seen
-  [the Rexx HTML highlighter](/rexx.parser/doc/highlighter/html/) in action!
-+ Now, in the same directory, [run `elements.rex`](/rexx.parser/doc/utils/elements/)
+  [the Rexx HTML highlighter](/rexx-parser/doc/highlighter/html/) in action!
++ Now, in the same directory, [run `elements.rex`](/rexx-parser/doc/utils/elements/)
   with `./hi.rex` as an argument.
 
   ~~~
@@ -73,20 +73,20 @@ First steps
   Total: 9 elements and 0 compound symbol elements examined.
   </pre>
 
-+ You can now browse [the Rexx Highligther](/rexx.parser/doc/highlighter/) page,
++ You can now browse [the Rexx Highligther](/rexx-parser/doc/highlighter/) page,
   if you please, where you will find several new programs to run.
 + If you want to implement your own Rexx highlighter (recommended! :)),
   you will find a nice utility to do so in the
-  [Highligther](/rexx.parser/doc/highlighter/) page.
+  [Highligther](/rexx-parser/doc/highlighter/) page.
   You will also need some CSS files. The ones I am using in this site
   (which are fairly incomplete, specially the light background one!)
   can be found in the `css` subdirectory.
-+ Take a look at [the HTML Highlighter](/rexx.parser/doc/highlighter/html/) page,
++ Take a look at [the HTML Highlighter](/rexx-parser/doc/highlighter/html/) page,
   and follow the links there, specially the
-  [features](/rexx.parser/doc/highlighter/features/) one.
+  [features](/rexx-parser/doc/highlighter/features/) one.
 + For a beautiful highlighting example of a medium-sized (~750 lines)
-  source program, see [this program](/rexx.parser/doc/ref/categories/),
+  source program, see [this program](/rexx-parser/doc/ref/categories/),
   which defines all the element categories, category sets and subcategories.
-+ Take a look at the documentation about [the Element API](/rexx.parser/doc/guide/elementapi/).
++ Take a look at the documentation about [the Element API](/rexx-parser/doc/guide/elementapi/).
 + And, finally... please give feedback! Your feedback is important.
   Seriously! :) You can reach me at <josep.maria.blasco@epbcn.com>.

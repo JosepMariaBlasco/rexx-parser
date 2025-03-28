@@ -17,11 +17,11 @@ Utilities
 Samples
 -------
 
-- [`hi.rex`](/rexx.parser/utils/hi.rex) - A minimal,
-  [sample Rexx program](/rexx.parser/utils/hi.rex) to test
+- [`hi.rex`](/rexx-parser/utils/hi.rex) - A minimal,
+  [sample Rexx program](/rexx-parser/utils/hi.rex) to test
   [**Elements**](elements/) and [**Highlight**](highlight/).
-- [`sample.html`](/rexx.parser/utils/sample.html) - A [sample HTML file](/rexx.parser/utils/sample.html)
+- [`sample.html`](/rexx-parser/utils/sample.html) - A [sample HTML file](/rexx-parser/utils/sample.html)
   to test [**Highlight**](highlight/).
-- [`highlighted.html`](/rexx.parser/utils/highlighted.html) - The result of running
-  [**Highlight**](highlight/) against [`sample.html`](/rexx.parser/utils/sample.html).
+- [`highlighted.html`](/rexx-parser/utils/highlighted.html) - The result of running
+  [**Highlight**](highlight/) against [`sample.html`](/rexx-parser/utils/sample.html).
 
