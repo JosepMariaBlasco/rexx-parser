@@ -1,0 +1,31 @@
+@page{
+
+  /* Running header */
+
+  @top-center {
+    content: "36th International Rexx Language Symposium - 4 May 2025 to 7 May 2025 - The Wirtschaftsuniversität Vienna, Austria and online";
+  }
+
+  /* Running footer */
+
+  @bottom-center {
+    content: "The Unicode Tools Of Rexx";
+  }
+
+  @bottom-left {
+    content: "Josep Maria Blasco";
+  }
+
+}
+
+@page :first{
+  @top-center {
+    content: none;
+  }
+  @bottom-center {
+    content: none;
+  }
+  @bottom-left {
+    content: none;
+  }
+}

@@ -24,11 +24,12 @@ Version history
   <li> Add WARNING.md file and modify root readme.md (20250325).
   <li> Raise an error when a module tries to redefine an already-defined
        method (thanks Jean-Louis!) (20250327).
-  <li> Start refactoring for inclusion in the net-oo-rexx bundle. Rename
-       main directory to rexx-parser, for consistency with GitHub.
-       Main binary directory is now "bin" instead of "cls".
-       Move the "modules" directory inside of "bin"
-       (20250328).
+  <li> Refactor for inclusion in the net-oo-rexx bundle: rename
+       main directory to rexx-parser, for consistency with GitHub;
+       rename the main binary directory to "bin" instead of "cls";
+       move the "modules" and "resources" directories inside "bin";
+       and rename "utils" to "samples".
+       (20250329).
 <tr><td>20250128<td>0.1g<td>
 <ul>
   <li> **Breaking change**: .TK.xxx variables have been renamed to .EL.xxx.
@@ -47,13 +48,13 @@ Version history
        [ANSI terminals](/rexx-parser/doc/highlighter/ansi/),
        and [(Lua)LaTeX](/rexx-parser/doc/highlighter/latex/).
   <li> Document the [Highlighter](/rexx-parser/doc/ref/classes/highlighter/) class.
-  <li> Create a new [Utilitites and samples](/rexx-parser/doc/utils) document.
-  <li> Add `--prolog` and `--noprolog` options to [highligth.rex](/rexx-parser/doc/utils/highlight/),
+  <li> Create a new [Utilitites and samples](/rexx-parser/doc/samples) document.
+  <li> Add `--prolog` and `--noprolog` options to [highligth.rex](/rexx-parser/doc/samples/highlight/),
        and a corresponding boolean `prolog` option to the
        [Highlighter](/rexx-parser/doc/ref/classes/highlighter/) class.
   <li> Add optional support for TUTOR-flavored Unicode Y-, P-, G-, T- and U-strings.
   <li> Make style patches work with all the highlighter modes.
-       Add `--patch` and `--patchfile` options to [highligth.rex](/rexx-parser/doc/utils/highlight/),
+       Add `--patch` and `--patchfile` options to [highligth.rex](/rexx-parser/doc/samples/highlight/),
        and `patch` and `patchfile` attributes to fenced code blocks.
        Change `-t` and `--term` to `-a` and `--ansi`; add `--pad`.
   <li> Add the set of 147 HTML standard colors (see <https://www.w3.org/TR/css-color-4/#named-colors>),
@@ -74,7 +75,7 @@ Version history
 <tr><td>20241229<td>0.1e<td>
 <ul>
   <li> Initial version of the ANSI highlighter.
-  <li> New multi-modal [highligther utility program](/rexx-parser/doc/utils/highlight/).
+  <li> New multi-modal [highligther utility program](/rexx-parser/doc/samples/highlight/).
   <li> Strengthen self-integrity tests again (check `highlighter/` subdir too).
   <li> Move highlighter software to the `highlighter/` directory (from `utils/`).
   <li> Implement a highlighting driver system (see the `highlighter/drivers` subdirectory).

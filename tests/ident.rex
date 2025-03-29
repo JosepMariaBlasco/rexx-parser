@@ -27,7 +27,7 @@ parent = .File~new(mypath"..")~absolutePath
 
 -- We can't do ::Requires "../Rexx.Parser.cls" because of a bug in the
 -- interpreter
-.context~package~addPackage(.Package~new(parent"/Rexx.Parser.cls"))
+-- .context~package~addPackage(.Package~new(parent"/Rexx.Parser.cls"))
 
 Parse Arg args
 args = Strip( args )
@@ -158,3 +158,5 @@ Check that the Rexx Parser returns a stream of elements identical to a FILE.
 If the only option is --help or -?, or if no arguments are present,
 then display this help and exit.
 ::END
+
+::Requires "Rexx.Parser.cls"

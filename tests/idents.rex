@@ -30,7 +30,7 @@ cls         = .File~new(mypath"../bin")  ~absolutePath
 HLDrivers   = .File~new(mypath"../bin/HLDrivers")  ~absolutePath
 utils       = .File~new(mypath"../utils")~absolutePath
 
-files = .Array~of( .File~new(parent"/Rexx.Parser.cls")~absolutePath )
+files = .Array~of( )
 
 Do file Over .File~new(cls)~list
   file = .File~new( cls"/"file )
@@ -39,8 +39,8 @@ Do file Over .File~new(cls)~list
   files~append( file )
 End
 
-Do file Over .File~new(utils)~list
-  file = .File~new( utils"/"file )
+Do file Over .File~new(samples)~list
+  file = .File~new( samples"/"file )
   If file~isDirectory Then Iterate
   file = file~absolutePath
   If file~endsWith(".rex") | file~endsWith(".cls") Then files~append( file )

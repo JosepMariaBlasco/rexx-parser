@@ -15,7 +15,8 @@ The Rexx Parser is hosted on:
 - <https://github.com/JosepMariaBlasco/rexx-parser/> (releases only).
 
 The copy at <https://rexx.epbcn.com/rexx-parser/> uses the Rexx Highlighter to display Rexx programs,
-while the copy at <https://github.com/JosepMariaBlasco/rexx-parser/> uses the (limited) highlighting provided by GitHub.
+and therefore has better highlihting. On the other hand, the copy at <https://github.com/JosepMariaBlasco/rexx-parser/>
+has version control, bug reporting, and all the features offered by GitHub.
 
 ~~~rexx {.numberLines startfrom=93}
 /*******************************************************************************/
@@ -48,14 +49,13 @@ parser for Rexx and ooRexx written by Josep Maria Blasco
 &lt;<josep.maria.blasco@epbcn.com>&gt; and distributed
 under [the Apache 2.0 license](LICENSE).
 
-Current version and downloads
+Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.2, released on 20250215.
+The current release is beta 0.2, refresh 20250229.
+You can download it <a href="Rexx-Parser-0.2-20250329.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
-- [Download the latest release here](download/).
-- [Download the latest daily build here](https://rexx.epbcn.com/rexx-parser/).
 - [Version history](doc/history/).
 - [Next releases](doc/todo/).
 
@@ -66,7 +66,7 @@ You may be interested in browsing our [documentation](doc/).
 In particular, you may want to use one the following quick links:
 
 - [Installation and first steps](doc/guide/install/).
-- [Utitities](doc/utils/) and [consistency tests](tests/).
+- [Utitities](doc/samples/) and [consistency tests](tests/).
 - [Error handling](doc/guide/errors/).
 
 Child projects

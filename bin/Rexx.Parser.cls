@@ -24,18 +24,18 @@
 .environment~Rexx.Parser  = .Rexx.Parser
 .environment~Rexx.Package = .Rexx.Package
 
-::Requires "bin/HTMLColors.cls"
-::Requires "bin/DebugSettings.cls"
-::Requires "bin/BaseClassesAndRoutines.cls"
-::Requires "bin/Globals.cls"
-::Requires "bin/Tokenizer.cls"
-::Requires "bin/Expressions.cls"
-::Requires "bin/PreClauser.cls"
-::Requires "bin/Clauses.cls"
-::Requires "bin/KeywordInstructions.cls"
-::Requires "bin/Directives.cls"
-::Requires "bin/UnicodeSupport.cls"
-::Requires "bin/SecondPass.cls"
+::Requires "HTMLColors.cls"
+::Requires "DebugSettings.cls"
+::Requires "BaseClassesAndRoutines.cls"
+::Requires "Globals.cls"
+::Requires "Tokenizer.cls"
+::Requires "Expressions.cls"
+::Requires "PreClauser.cls"
+::Requires "Clauses.cls"
+::Requires "KeywordInstructions.cls"
+::Requires "Directives.cls"
+::Requires "UnicodeSupport.cls"
+::Requires "SecondPass.cls"
 
 /******************************************************************************/
 /*                                                                            */

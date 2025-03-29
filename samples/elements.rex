@@ -51,7 +51,7 @@ Start:
   -- Create "..", for legibility
   package~local["."] = .File~new(myDrive||mypath"..")~absolutePath
 
-  Call Requires .."/Rexx.Parser.cls"
+  Call Requires .."/bin/Rexx.Parser.cls"
   Call Requires .."/bin/modules/print/print.cls"
 
 --------------------------------------------------------------------------------

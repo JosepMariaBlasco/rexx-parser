@@ -4,7 +4,7 @@ First steps
 -----------------------------------------------
 
 + Open a terminal shell in the installation directory, and
-  `cd` to the [`utils`](/rexx-parser/utils/) subdirectory.
+  `cd` to the [`samples`](/rexx-parser/samples/) subdirectory.
   Run the `highlight.rex` program passing `sample.html`
   as an argument:
 
@@ -38,10 +38,10 @@ First steps
   &lt;/body&gt;
   &lt;/html&gt;</pre>
 
-+ Now look at [the source of `highlight.rex`](/rexx-parser/doc/utils/highlight/)
++ Now look at [the source of `highlight.rex`](/rexx-parser/doc/samples/highlight/)
   and inspect `sample.html` too. You have just seen
   [the Rexx HTML highlighter](/rexx-parser/doc/highlighter/html/) in action!
-+ Now, in the same directory, [run `elements.rex`](/rexx-parser/doc/utils/elements/)
++ Now, in the `/samples` directory, [run `elements.rex`](/rexx-parser/doc/samples/elements/)
   with `./hi.rex` as an argument.
 
   ~~~

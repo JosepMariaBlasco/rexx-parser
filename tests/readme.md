@@ -7,7 +7,7 @@ Error handling: [`errors.rex`](errors.rex)
 ------------------------------------------
 
 [This program](errors.rex) resides in the [`tests`](.) directory.
-It depends on two files located in the [`resources`](/rexx-parser/resources) directory:
+It depends on two files located in the [`bin/resources`](/rexx-parser/bin/resources) directory:
 `rexxmsg.xml`, which is part of the ooRexx source tree
 (you can find it at `main/trunk/interpreter/messages`), and `revision`,
 which contains the revision number of the `rexxmsg.xml` file.

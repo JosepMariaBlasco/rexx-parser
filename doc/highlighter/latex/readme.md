@@ -57,7 +57,7 @@ Selecting LaTeX mode
 --------------------
 
 The `-l` and `--latex` options of the
-[*highlight*](/rexx-parser/doc/utils/highlight/) utility
+[*highlight*](/rexx-parser/doc/samples/highlight/) utility
 will select the LuaLaTeX highlighter. The highlighter output
 will be a complete `lstlisting` environment.
 

@@ -35,5 +35,5 @@ and we highlight it directly.
 
 #### Program source:
 
-~~~rexx {source=../../../utils/highlight.rex}
+~~~rexx {source=../../../samples/highlight.rex}
 ~~~

@@ -127,21 +127,8 @@
 -- Dependencies                                                               --
 --------------------------------------------------------------------------------
 
-  -- ::REQUIRES does not work well with "../" paths
-  package   = .context~package
-  local     =  package~local
-  mypath    =  FileSpec( "Drive", package~name )FileSpec( "Path", package~name )
-  local ~ . = .File~new( mypath"../" )~absolutePath      -- Creates ".."
-
-  Call Requires .."/Rexx.Parser.cls"
-  Call Requires .."/bin/Highlighter.cls"
-
-  Exit
-
-Requires:
-  package~addPackage( .Package~new( Arg(1) ) )
-  Return
-
+::Requires "Rexx.Parser.cls"
+::Requires "Highlighter.cls"
 ::Requires "StylePatch.cls"
 
 --------------------------------------------------------------------------------

@@ -20,14 +20,11 @@
 /*                                                                            */
 /******************************************************************************/
 
--- Since "../" does not work on ::Requires...
 my    = .context~package
 myDir = FileSpec("L",my~name)
-parser = .Package~new( myDir"../Rexx.Parser.cls" )
-my ~ addPackage( parser )
 
 -- Location of resources directory
-resources = myDir"../resources"
+resources = myDir"../bin/resources"
 -- Location of errors directory
 directory = myDir"../tests/errormessages"
 -- Location of rexx source files
@@ -271,3 +268,5 @@ Syntax2:
     Say "Rexx   code:" code2
   End
   Return -1
+
+  ::Requires "Rexx.Parser.cls"

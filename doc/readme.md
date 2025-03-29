@@ -26,10 +26,10 @@ User Guide
   - [The Element API](guide/elementapi/)
   - [The Tree API](guide/treeapi/)
 
-Utilities and Samples
+Samples
 ---------------------
 
-- [Utilities and Samples](utils/)
+- [Sample programs](samples/)
 
 
 The Rexx Highlighter

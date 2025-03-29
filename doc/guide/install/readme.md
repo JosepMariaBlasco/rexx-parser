@@ -14,7 +14,8 @@ Prerequisites
 Installation
 ------------
 
-+ Go to [the downloads page](/rexx-parser/download/),
++ Go to [the downloads section](/rexx-parser/#download) of the
+  [main Parser page](/rexx-parser/),
   download the most current version of [the Rexx Parser](/rexx-parser/), and
   unzip it in a directory of your choice.
 

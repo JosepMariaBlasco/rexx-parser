@@ -153,7 +153,6 @@ Crumb:
     -- "/rexx-parser"
     When parser                    Then Return "Parser"
     When parser"/cgi"              Then Return "CGI"
-    When parser"/download"         Then Return "Download"
     When parser"/highlighter"      Then Return "Highlighter"
     When parser"/tests"            Then Return "Tests"
 
@@ -197,9 +196,9 @@ Crumb:
     When doc"/todo"                Then Return "To-do list"
     When doc"/treeapi"             Then Return "Tree API"
     When doc"/elementapi"          Then Return "Element API"
-    When doc"/utils"               Then Return "Utilities"
-    When doc"/utils/highlight"     Then Return "Highlight"
-    When doc"/utils/elements"      Then Return "Elements"
+    When doc"/samples"             Then Return "Samples"
+    When doc"/samples/highlight"   Then Return "Highlight"
+    When doc"/samples/elements"    Then Return "Elements"
     When doc"/unicode"             Then Return "Unicode"
 
     -- "/rexx-parser/doc/highlighter"
@@ -250,14 +249,14 @@ Crumb:
                <b><a href="/rexx-parser/">The Rexx Parser</a></b>
             </div>
             <div class='panel-body text-left'>
-                  <a href="/rexx-parser/download/">Download</a>
+                  <a href="/rexx-parser/#download">Download</a>
               <br><a href="/rexx-parser/doc/">Documentation</a>
               <br><a href="/rexx-parser/doc/glossary/">Glossary</a>
               <br><a href="/rexx-parser/doc/highlighter/">Highlighter</a>
               <br><a href="/rexx-parser/doc/history/">History</a>
               <br><a href="/rexx-parser/tests/">Tests</a>
               <br><a href="/rexx-parser/doc/todo/">To-do</a>
-              <br><a href="/rexx-parser/doc/utils/">Utilities and Samples</a>
+              <br><a href="/rexx-parser/doc/samples/">Samples</a>
             </div>
           </div>
 ::END

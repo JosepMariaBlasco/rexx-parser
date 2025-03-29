@@ -24,5 +24,5 @@ Options
 Program source
 --------------
 
-~~~rexx {source=../../../utils/elements.rex}
+~~~rexx {source=../../../samples/elements.rex}
 ~~~
