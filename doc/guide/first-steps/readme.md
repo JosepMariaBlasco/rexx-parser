@@ -3,9 +3,9 @@ First steps
 
 -----------------------------------------------
 
-+ Open a terminal shell in the installation directory, and
-  `cd` to the [`samples`](/rexx-parser/samples/) subdirectory.
-  Run the `highlight.rex` program passing `sample.html`
++ Open a terminal shell in the installation directory, run `setenv`,
+  and `cd` to the [`samples`](/rexx-parser/samples/)
+  subdirectory. Run `highlight.rex` program passing `sample.html`
   as an argument:
 
   ```

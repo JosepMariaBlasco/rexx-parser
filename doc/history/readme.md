@@ -30,6 +30,9 @@ Version history
        move the "modules" and "resources" directories inside "bin";
        and rename "utils" to "samples".
        (20250329).
+  <li> Move "highlight.rex" and "elements.rex" to the "bin" directory so that
+       they can be used directly after setenv (or from ooRexxShell, etc)
+       (20250403).
 <tr><td>20250128<td>0.1g<td>
 <ul>
   <li> **Breaking change**: .TK.xxx variables have been renamed to .EL.xxx.
