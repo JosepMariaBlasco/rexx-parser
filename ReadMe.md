@@ -54,12 +54,18 @@ under [the Apache 2.0 license](LICENSE).
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.2, refresh 20250403.
-You can download it <a href="Rexx-Parser-0.2-20250403.zip">here</a>.
+The current release is beta 0.2, refresh 20250405.
+You can download it <a href="Rexx-Parser-0.2-20250405.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).
 - [Next releases](doc/todo/).
+
+The Rexx Parser is also distributed as part of **net-oo-rexx**,
+a software bundle curated by Rony Flatscher and consisting of
+several different Rexx- (and NetRexx-) related packages.
+The net-oo-rexx package can be downloaded at
+<https://wi.wu.ac.at/rgf/rexx/tmp/net-oo-rexx-packages/>.
 
 Documentation
 -------------

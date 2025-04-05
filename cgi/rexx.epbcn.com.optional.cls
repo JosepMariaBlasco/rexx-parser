@@ -100,7 +100,7 @@ Crumb:
   tutordocs = "/TUTOR/doc"
 
   parser    = "/rexx-parser"
-  print     = "/rexx-parser/print"
+  print     = "/rexx-parser/doc/print"
   doc       = "/rexx-parser/doc"
   guide     = doc"/guide"
   ref       = doc"/ref"
@@ -156,12 +156,12 @@ Crumb:
     When parser"/highlighter"      Then Return "Highlighter"
     When parser"/tests"            Then Return "Tests"
 
-    -- "/rexx-parser/print"
+    -- "/rexx-parser/doc/print"
 
     When print                     Then Return "Publications"
     When print"/36"                Then Return "36<sup>th</sup> symposium"
-    When print"/36/2025-05-04-The-Unicode-Tools-Of-Rexx"
-                                   Then Return "The Unicode Tools Of Rexx"
+    When print"/36/2025-05-04-Unicode-and-Rexx"
+                                   Then Return "Unicode and Rexx"
     When print"/36/2025-05-05-The-Rexx-Parser"
                                    Then Return "The Rexx Parser"
     When print"/36/2025-05-05-The-Rexx-Parser-Slides"

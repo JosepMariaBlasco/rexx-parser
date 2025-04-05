@@ -3,8 +3,18 @@ First steps
 
 -----------------------------------------------
 
-+ Open a terminal shell in the installation directory, run `setenv`,
-  and `cd` to the [`samples`](/rexx-parser/samples/)
++ If you have installed a standalone version of the Rexx Parser,
+  open a terminal shell and run `setenv` (this will be
+  `. ./setenv.sh` if you are running a Unix-like system).
++ If you are running the Rexx Parser as part of the
+  net-oo-rexx software bundle, please follow the installation
+  instructions of that bundle. You can then choose
+  to test the Parser from a terminal session (after running
+  `setenv`), or use ooRexxShell, a powerful, Swiss army knife shell
+  developed by Jean-Louis Faucher, which is part of the
+  net-oo-rexx distribution; ooRexxShell includes direct
+  support for the Parser.
++ Change to the [`samples`](/rexx-parser/samples/)
   subdirectory. Run `highlight.rex` program passing `sample.html`
   as an argument:
 

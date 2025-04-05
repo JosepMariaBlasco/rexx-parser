@@ -33,6 +33,8 @@ Version history
   <li> Move "highlight.rex" and "elements.rex" to the "bin" directory so that
        they can be used directly after setenv (or from ooRexxShell, etc)
        (20250403).
+  <li> Add references to the net-oo-rexx distribution and to ooRexxShell
+       in the appropriate places. Fix some broken breakcrumbs (20250405).
 <tr><td>20250128<td>0.1g<td>
 <ul>
   <li> **Breaking change**: .TK.xxx variables have been renamed to .EL.xxx.
