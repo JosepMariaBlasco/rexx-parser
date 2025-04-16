@@ -18,39 +18,13 @@
 /* 20241209    0.1b New call system                                           */
 /* 20241225    0.1d Add support for doc-comments                              */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250414         Move BIF info to BIFs.cls                                 */
+/* 20250414         Add argument info to called routine chain                 */
 /*                                                                            */
 /******************************************************************************/
 
-  .environment~BIF = .Set~new
-
-  Do bif Over (abbrev, abs, address, arg, b2x, bitand, bitor, bitxor, c2d,   -
-    c2x, center, centre, changestr, charin, charout, chars, compare,         -
-    condition, copies, countstr, d2c, d2x, datatype, date, delstr, delword,  -
-    digits, errortext, form, format, fuzz, insert, lastpos, left, length,    -
-    linein, lineout, lines, lower, max, min, overlay, pos, qualify, queued,  -
-    random, reverse, right, rxfuncadd, rxfuncdrop, rxfuncquery, rxqueue,     -
-    sign, sourceline, space, stream, strip, substr, subword, time, trace,    -
-    translate, trunc, upper, userid, value, var, verify, word, wordindex,    -
-    wordlength, wordpos, words, x2b, x2c, x2d, xrange)
-    .BIF[] = bif
-  End
-
-  --
-  -- The following are defined as BIFs in rexxref, but they are treated
-  -- by the ooRexx interpreter as if they were part of RexxUtil.
-  --
-  -- See https://sourceforge.net/p/oorexx/bugs/1885/ for details.
-  --
-  -- We add them as BIFs as per rexxref
-  --
-  Do bif Over (beep, directory, filespec)
-    .BIF[] = bif
-  End
-
-  -- See also the beginning of the SecondPass routine for Additional
-  -- Unicode BIFs.
-
 ::Requires "BaseClassesAndRoutines.cls"
+::Requires "BIFs.cls"
 
 /******************************************************************************/
 --
@@ -61,17 +35,9 @@
 
 ::Routine SecondPass Public
 
-  -- Additional BIFs for Unicode. We load them here and not in the prolog
-  -- because .Parser.Options is not constructed at package load time.
-
-  If .Parser.Options~unicode == 1 Then Do
-    Do bif Over ( bytes, codepoints, graphemes,text, stringtype, unicode, -
-      n2p, p2n, c2u, u2c, decode, encode, utf8)
-      .BIF[] = bif
-    End
-  End
-
   Use Strict Arg package
+
+  Call LoadBIFInfo -- Defined in BIFs.cls
 
   DocComments = Global.Option( DocComments )
 
@@ -267,7 +233,7 @@
 
   Use Strict Arg package, fragment, body
 
-  Call SetCallTypes package, body
+  Call CheckCallTypes package, body
 
   -- Check all SIGNAL and SIGNAL ON instructions.
 
@@ -457,15 +423,22 @@
 --------------------------------------------------------------------------------
 
 -- Determine the nature of all (non namespace qualified) function
--- and procedure calls.
-::Routine SetCallTypes
+-- and procedure calls, and perform additional checks for BIFs (only
+-- if the earlyCheck option is present and contains a BIFs item).
+
+::Routine CheckCallTypes
 
   Use Strict Arg package, body
+
+  If .Parser.Options~hasIndex( earlyCheck ) Then
+    checkBIFs = .Parser.Options~earlyCheck~hasItem( BIFs )
+  Else checkBIFs = .False
 
   bodyLabels = body~labels
   routines   = package~routines
 
-  Do name Over body~calledRoutineNames
+  Do routine Over body~calledRoutineNames
+    name = routine[1]
     label = name~value
     type  = name~invocationType
     Select
@@ -475,11 +448,12 @@
           When "CALL"     Then subCategory = .INTERNAL.SUBROUTINE.NAME
         End
       End
-      When .BIF[ label ] \== .Nil     Then Do
+      When .Parser.BIF[ label ] \== .Nil     Then Do
         Select Case type
           When "FUNCTION" Then subCategory = .BUILTIN.FUNCTION.NAME
           When "CALL"     Then subCategory = .BUILTIN.SUBROUTINE.NAME
         End
+        If checkBIFs Then Call CheckBIFArgs name, routine[2]
       End
       When routines[ label ] \== .Nil Then Do
         Select Case type
@@ -497,3 +471,65 @@
     Call SetConstantName name, subCategory
   End
 
+--------------------------------------------------------------------------------
+
+-- CheckBIFArgs
+
+::Routine CheckBIFArgs
+
+  Use Strict Arg label, arguments
+
+  BIFName = label~value
+
+  -- BEEP, DIRECTORY and FILESPEC are specially handled, even if they are
+  -- listed as BIFs.
+  asExternal = WordPos(BIFName,"BEEP DIRECTORY FILESPEC") > 0
+
+  BIFInfo = .Parser.BIFInfo[BIFName]
+
+  nArgs = arguments~arg()
+
+  -- Check if there are more args than the BIF allows
+  maxArgs = BIFInfo~maxArgs
+  If maxArgs \== "*", nArgs > maxArgs Then
+    If asExternal Then Signal 88.922
+    Else               Signal 40.004
+
+  -- Check if there are less args than the minimun required by the BIF
+  minArgs = BIFInfo~minArgs
+  missing = nArgs + 1
+  If nArgs < minArgs Then
+    If \asExternal Then Signal 40.003
+    Else                Signal 88.901
+
+  -- Now check that all required args are present
+
+  Select Case BIFName -- Special cases
+    When "ARG" Then if nArgs > 0 Then minArgs = 1
+    Otherwise Nop
+  End
+  checkUpTo = minArgs - 1 + (nArgs > minArgs)
+  If maxArgs == "*" Then checkUpTo = nArgs
+  Do argN = 1 To checkUpTo
+    missing = argN
+    If arguments~arg(argN,"O") Then
+      If \asExternal Then Signal 40.005
+      Else                Signal 88.901
+  End
+
+Return
+
+-- Not enough arguments in invocation of &1; minimum expected is &2.
+40.003: Syntax( 40.003, label, BIFName, minArgs )
+
+-- Too many arguments in invocation of &1; maximum expected is &2.
+40.004: Syntax( 40.004, label, BIFName, maxArgs )
+
+-- Missing argument in invocation of &1; argument &2 is required.
+40.005: Syntax( 40.005, label, BIFName, argN )
+
+-- Missing argument; argument &1 is required.
+88.901: Syntax( 88.901, label, missing )
+
+-- Too many arguments in invocation; &1 expected.
+88.922: Syntax( 88.922, label, maxArgs )

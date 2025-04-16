@@ -1,8 +1,8 @@
 The Rexx Highlighter {.title}
 ====================
 
-36th International Rexx Language Symposium {.event}
-------------------------------------------
+36<sup>th</sup> International Rexx Language Symposium {.event}
+-----------------------------------------------------
 
 ### The Wirtschaftsuniversität Vienna, Austria, May 4-7 2025 {.venue}
 
@@ -35,9 +35,9 @@ Notice {.slide .center}
 
 *The default style for Rexx fenced code blocks is dark.*
 *You can choose the light style by adding a* `style=light` *query*
-*string to your url.*
+*string to the url of this document.*
 
-[^thisDoc]: HTML version: <https://rexx.epbcn.com/rexx-parser/print/36/2025-05-05-The-Rexx-Highlighter/>;
+[^thisDoc]: HTML version: <https://rexx.epbcn.com/rexx-parser/print/36/2025-05-05-The-Rexx-Highlighter/>;\
 PDF version (slides): <https://www.epbcn.com/pdf/josep-maria-blasco/2025-05-05-The-Rexx-Highlighter.pdf>.
 
 The Rexx Highlighter {.part}
@@ -784,6 +784,27 @@ Further work {.slide}
 - Improve the LaTeX highlighter.
   + Possible integrations with packages other than *listings* (maybe *minted*?).
 - ...
+
+Acknowledgements {.part}
+================
+
+Acknowledgements {.slide}
+================
+
+Jean-Louis Faucher has integrated TUTOR into
+ooRexxShell, and Rony Flatscher has included TUTOR and
+the Rexx Parser in the net-oo-rexx distribution.
+
+Some preliminary versions of the Rexx Parser and its accompanying
+subproject, the Rexx Highlighter, have been tested by different
+members of the RexxLA community, including, but not limited to
+Gilbert Barmwater, Jean-Louis Faucher, Rony Flatscher, Ruurd-Jan Idenburg,
+René Jansen and Till Winkler; I want to thank them all for their observations and enhancement proposals.
+
+I also want to thank my colleagues at EPBCN, Laura Blanco, Silvina Fernández,
+Mar Martín, David Palau, Olga Palomino and Amalia Prat,
+who have read several drafts of this presentation
+and helped to improve it with their comments and suggestions.
 
 Questions? {.part}
 ==========

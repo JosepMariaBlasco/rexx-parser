@@ -17,6 +17,7 @@
 /* 20241206    0.1  First public release                                      */
 /* 20241209    0.1b New call system                                           */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250416    0.2a Add argument info to called routine chain                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -58,6 +59,7 @@
 /******************************************************************************/
 
 ::Class NAry.Expression SubClass Rexx.Expression
+::Constant items 1
 ::Attribute args Get
 ::Attribute end
 ::Method init
@@ -134,17 +136,53 @@
 
 ::Class Expression.List Public SubClass Rexx.Expression
 ::Attribute end
+::Attribute args
+
+::Method arg
+  Expose args nArgs
+  Arg n, option +1
+  If Arg() == 0 Then Return nArgs
+  Do i = 1 By 1 While n > 1, i <= args~size
+    If args[i]~isA( .Special.Character.Sequence ) Then n -= 1
+  End
+  If n == 1 Then Do
+    arg = args[i]
+    If arg == .Nil Then exist = .False
+    Else exist = \args[i]~isA( .Special.Character.Sequence )
+    If option == "E" Then Return exist
+    Return \exist
+  End
+  If option == "E" Then Return .False
+  Return .True
+
 ::Method isEmpty
   Expose args
   Return args == .Nil
 ::Method init
-  Expose args end
+  Expose args nArgs end
   Use Strict Arg args, end
+  nArgs = 0
   If args \== .Nil Then Do
+
+    -- Calculate end
     last = args~lastItem
     If last~isA( .Special.Character.Sequence ) Then -- A .EL.COMMA
       end = TheElementAfter( last )
     Else end = last~end
+
+    -- Calculate the number of arguments (for argument lists)
+    i = args~last
+    Do While i > 0, args[i]~isA( .Special.Character.Sequence )
+      i -= 1
+    End
+    If i == 0 Then nArgs = 0
+    Else Do
+      nArgs = 1
+      Do i = i To 1 By -1
+        If args[i]~isA( .Special.Character.Sequence ) Then nArgs += 1
+      End
+    End
+
   End
 
 /******************************************************************************/
@@ -448,6 +486,10 @@
 /******************************************************************************/
 
 ::Class Rexx.Term Public
+::Method arg
+  Arg n, option +1
+  If Arg() == 0 Then Return 1
+  Return option = "E"
 ::Constant isEmpty 0
 
 --------------------------------------------------------------------------------
@@ -539,9 +581,9 @@
   Exit .Literal.String.Term~new( name )
 
 FunctionCall:
-  lParen      = element
-  next        = TheElementAfter( lParen ) -- Where to start parsing
-  terminators ||= .EL.RIGHT_PARENTHESIS -- Add ")" to terminators
+  lParen        = element
+  next          = TheElementAfter( lParen )  -- Where to start parsing
+  terminators ||= .EL.RIGHT_PARENTHESIS      -- Add ")" to terminators
 
   arguments = Expression.List( package, next, terminators )
 
@@ -549,7 +591,7 @@ FunctionCall:
 
   name~invocationType = Function
 
-  package~currentBody~calledRoutineNames~append( name )
+  package~currentBody~calledRoutineNames~append( (name, arguments) )
 
   Exit .Function.Call.Term~new(name, arguments )
 
@@ -802,6 +844,7 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class Stem.Variable.Term Public SubClass Rexx.Term
+::Constant items 1
 ::Attribute end
 ::Attribute stem
 ::Method init
@@ -868,7 +911,8 @@ Return
 
   name~invocationType = Function
 
-  package~currentBody~calledRoutineNames~append( name )
+  package~currentBody~calledRoutineNames~append( (name, arguments) )
+
   Exit .Function.Call.Term~new( name, arguments )
 
 --------------------------------------------------------------------------------

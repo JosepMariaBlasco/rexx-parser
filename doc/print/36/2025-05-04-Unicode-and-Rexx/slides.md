@@ -3,8 +3,8 @@ Unicode and REXX {.title}
 An introduction to TUTOR {.subtitle}
 ------------------------
 
-36th International Rexx Language Symposium {.event}
-------------------------------------------
+36<sup>th</sup> International Rexx Language Symposium {.event}
+-----------------------------------------------------
 
 ### The Wirtschaftsuniversität Vienna, Austria, May 4-7 2025 {.venue}
 
@@ -31,11 +31,11 @@ Notice {.slide .center}
 *are: no headers or footers, and background images active.*
 *This is true for the Chrome browser at the time of this writing (Jan-May 2025).*
 
-*The default style for Rexx fenced code blocks is dark.*
+*The default style for Rexx fenced code blocks is* `dark`*.*
 *You can choose the light style by adding a* `style=light` *query*
-*string to your url.*
+*string to the url of this document.*
 
-[^HTML]: HTML version: <https://rexx.epbcn.com/rexx-parser/print/36/2025-05-04-Unicode-and-Rexx/>;
+[^HTML]: HTML version: <https://rexx.epbcn.com/rexx-parser/print/36/2025-05-04-Unicode-and-Rexx/>.\
 PDF version (slides): <http://www.epbcn.com/pdf/josep-maria-blasco/2025-05-04-Unicode-and-Rexx.pdf>.
 
 
@@ -44,20 +44,20 @@ What is TUTOR? {.slide}
 
 - TUTOR is an acronym for *T*he *U*nicode *T*ools *O*f *R*exx.
 - A collection of software utilities showing how a possible
-  Rexx version that implemented Unicode could be.
-- In this sense, simply a set of ideas,
+  implementation of Unicode for Rexx could be.
+- In this sense, TUTOR is simply a set of ideas,
   to encourage discussion about Rexx and Unicode,
   and an aid to visualize a possible way in which Rexx and Unicode could match.
 - It is a prototype, not tuned for efficiency.
   It is neither a standard, nor a finished product.
-- Written in 2023 by Josep Maria Blasco, it incorporates many useful
+- Written in 2024 by Josep Maria Blasco, it incorporates many useful
   suggestions discussed in the Rexx Architecture Review Board.
 - Originally *toys*, not *tools*. Changed by popular suggestion,
   although "toys" seems to best describe
   what the software collection has ended up being.
 - Originally "toys *for* Rexx", not "toys *of* Rexx".
   Chip Davis suggested the change which produced
-  the current, nice acronym.
+  the current, really nice, acronym.
 
 This presentation will be devoted to highlighing the
 main features of the TUTOR package.
@@ -77,20 +77,24 @@ can *use* Unicode strings today.
 ~~~
 
 These Unicode strings can be stored in files, retrieved, used
-as file names, etc.
+as file names,[^filenames] etc.
 
 BUT... Although we can **use** Unicode strings, we cannot properly **manipulate** them.
+Assuming a UTF-8 encoding,
 
 ~~~rexx
   Say Length("🦆🍐🦞🍐")    -- 16, instead of the expected 4
   Say Right("José",1)         -- "A9"X (unprintable), instead of the expected "é"
 ~~~
 
+[^filenames]: With some limitations, depending on many different factors. For example,
+Dropbox cannot synchronize files which contain emojis in their filenames.
+
 What is a character? {.slide}
 ====================
 
 To properly manipulate Unicode strings and still be compatible
-with existing programs, TUTOR needs to recognize "old", Classic Rexx, strings,
+with existing programs, TUTOR needs to be able to recognize "old", Classic Rexx, strings,
 composed of characters that are **bytes**, and "new", Unicode, strings,
 where the notion of "character" becomes much more complex.
 
@@ -110,7 +114,7 @@ For example, the emoji sequence "👨‍👩‍👧‍👦🎅" consists of **tw
 extended grapheme clusters, namely "👨‍👩‍👧‍👦" and "🎅";
 **eight** codepoints, that is, the emojis for "👨" (man),
 "👩" (woman), "👧" (girl) and "👦" (boy), "glued" together
-with a "Zero-width-joiner", a special Unicode codepoint used to build
+with three *Zero-width-joiners*, a special Unicode codepoint used to build
 compound characters and emojis, and "🎅", the emoji for "Father Christmas";
 and, finally, **twenty-nine** bytes, corresponding to the UTF-8 representation
 of the string.
@@ -160,8 +164,8 @@ checked at translation time.
 ~~~rexx {unicode}
   Say Length("नमस्ते"Y)               -- 18 (bytes)
   Say Length("नमस्ते"P)               -- 6  (codepoints)
-  Say Length("नमस्ते"G)               -- 4  (graphemes)
-  Say Length("नमस्ते"T)               -- 4  (same as "G")
+  Say Length("नमस्ते"G)               -- 3  (graphemes)
+  Say Length("नमस्ते"T)               -- 3  (same as "G")
 ~~~
 
 The type of a string can be obtained by using the `STRINGTYPE` BIF.
@@ -231,7 +235,7 @@ string, the U string. U strings allow the designation of individual code points
 by hexadecimal value, by name, by alias or by label:
 
 ~~~rexx {unicode}
-  Say "(Man)"U                    -- "👨", an amoji
+  Say "(Man)"U                    -- "👨", an emoji
   Say "(Man)(Woman)"U             -- "👨👩", two emojis
   Say "(Man)(ZWJ)(Woman)"U        -- "👨‍👩", an emoji grapheme cluster
   Say "61"U                       -- "a"
@@ -419,6 +423,53 @@ exit
 C:\test>
 ~~~
 
+The net-oo-rexx software bundle and ooRexxShell {.slide}
+===============================================
+
+Rony Flatscher is curating a nice software bundle, called *net-oo-rexx*,
+which puts together a number of packages, including TUTOR and
+the Rexx Parser. After installing net-oo-rexx,
+you will enjoy immediate access to all the packages,
+without having to individually install every one of them separately.
+
+<pre class="dark"><b>D:\Dropbox\net-oo-rexx-packages&gt;oorexxshell
+<span style="color:#14a10c">loadPackage OK for extension/stringChunk.cls
+(...)</span>
+<span style="color:#3a74f5">Unicode-REXX (TUTOR) loaded
+    Options DefaultString is Text
+    Options Coercions     is Promote</span>
+<span style="color:#14a10c">REXX-ooRexx_5.1.0(MT)_64-bit 6.05 20 Feb 2025
+Input queue name: S00000000000015ECQ000001809C06EC70</span><span style="color:#f9f1a5">
+D:\Dropbox\net-oo-rexx-packages</span>
+ooRexx[CMD]&gt;
+</b></pre>
+
+In particular, net-oo-rexx includes a copy of
+Jean-Louis Faucher's ooRexxShell, a RexxTry-like environment
+with many useful extensions and enhancements, distributed
+with his Executor ooRexx variant.
+The version of ooRexxShell distributed with net-oo-rexx
+automatically loads TUTOR at initialization time, and therefore you
+can choose to use ooRexxShell instead of rxutry if you want to play with TUTOR.
+
+Acknowledgements {.slide}
+================
+
+Jean-Louis Faucher has integrated TUTOR into
+ooRexxShell, and Rony Flatscher has included TUTOR and
+the Rexx Parser in the net-oo-rexx distribution.
+TUTOR could not have been developed without the extensive
+conversations held in the Rexx Architecture Review Board (ARB)
+in 2024, in particular in meetings with René Jansen and Jean-Louis Faucher.
+
+I also want to thank my colleagues at EPBCN, Laura Blanco, Silvina Fernández,
+Mar Martín, David Palau, Olga Palomino and Amalia Prat,
+who have read several drafts of this presentation
+and helped to improve it with their comments and suggestions.
+
+Questions? {.slide}
+==========
+
 References {.slide}
 ==========
 
@@ -431,3 +482,11 @@ The Rexx Parser can be downloaded at:
 
 - <https://rexx.epbcn.com/rexx-parser/> (preferred: better Rexx highlighting)
 - <https://github.com/JosepMariaBlasco/rexx-parser>
+
+Executor can be downloaded at:
+
+- <https://github.com/jlfaucher/executor>
+
+The net-oo-rexx bundle can be downloaded at:
+
+- <https://wi.wu.ac.at/rgf/rexx/tmp/net-oo-rexx-packages/>

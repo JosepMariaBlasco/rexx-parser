@@ -1,0 +1,1 @@
+Call BITAND a,b,c,d

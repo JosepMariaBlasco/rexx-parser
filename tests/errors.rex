@@ -17,6 +17,7 @@
 /* 20241206    0.1  First public release                                      */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                  Binary directory is now "bin" instead of "cls"            */
+/* 20250416    0.2a Add BIF early checks                                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -178,19 +179,24 @@ If source.~allIndexes~items > 0 Then Do
 End
 
 ::Routine ProcessFile
+
+
   Use Arg file
 
   file = Translate(file, .File~separator||.File~separator, "\/")
 
+  source = CharIn(file,1,Chars(file))~makeArray
+  Call Stream file,'c','close'
+
   Parse Arg , major"."minor"."
 
-  Options = .Array~of( (earlyCheck, (signal, guard) ) )
+  Options = .Array~of( (earlyCheck, (signal, guard, bifs) ) )
 
 Parser:
   Signal On Syntax Name Syntax1
 
   -- Should produce a syntax error
-  package = .Rexx.Parser~new(file,,options)~package
+  package = .Rexx.Parser~new(file,source,options)~package
   Say
   Say "Expected syntax error on file" file", but parser returned normally."
   Say "File content follows:"
@@ -230,6 +236,11 @@ Syntax1:
 Syntax2:
   co = Condition("O")
   line2 = co~position
+
+  -- line2 may be .Nil in certain circumstances, like when calling
+  -- BEEP, DIRECTORY or FILESPEC.
+  If line2 == .Nil Then line2 = co~stackFrames[1]~line
+
   code2 = co~code
 
   If line1 == line2, code1 == code2 Then Do

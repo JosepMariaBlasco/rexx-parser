@@ -22,6 +22,7 @@
 /* 20250103    0.1e Add TUTOR-flavored Unicode classes                        */
 /* 20250116    0.1f Add support for EL.SUBKEYWORD                             */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250406         Rename fractional numbers to decimal                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -163,7 +164,7 @@ SkipOverAssign:
 --------------------------------------------------------------------------------
 
   Call Assign   .EL.EXPONENTIAL_NUMBER,          "exp"
-  Call Assign   .EL.FRACTIONAL_NUMBER,           "frac"
+  Call Assign   .EL.DECIMAL_NUMBER,              "deci"
   Call Assign   .EL.INTEGER_NUMBER,              "int"
 
 /******************************************************************************/

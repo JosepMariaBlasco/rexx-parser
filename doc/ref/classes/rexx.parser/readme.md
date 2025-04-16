@@ -33,7 +33,33 @@ initialize a Rexx Directory object.
 
 Object creation automatically parses the supplied or identified
 program. If no error is found during parsing, a Rexx.Package object
-is created; you can retrieve this object using the `package` method
+is created; you can retrieve this object using the `package` method.
+
+#### Options
+
+The optional *options* argument is an array. Every array has to have
+exactly two elements: the first element is the option name,
+and the second element is the option value. Here are The
+allowed options, and the format of the corresponding values:
+
+doccomments
+: A string containing a series of words separated by commas and/or blanks,
+  which selects the requested level of doc-comment support.
+
+earlycheck
+: An array of values selecting which modalities of [early check](early-check/) will
+  be active when parsing the program.
+
+extraLetters
+: A string specifying the extra characters to be considered as letters
+  (see ANSI 5.3.2).
+
+html:
+: Format certain messages, like tracebacks, for display in a browser.
+
+unicode
+: When the value is "1", support for TUTOR-flavored Unicode is enabled.
+
 
 ### firstElement
 

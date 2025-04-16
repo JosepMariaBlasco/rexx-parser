@@ -45,6 +45,6 @@ Updated programs and utilities
   They both activate Unicode support.
 - The [Highlighter class](/rexx-parser/doc/ref/classes/highlighter/) class
   accepts `TUTOR` and `Unicode` options. They both activate Unicode support.
-- Both the [highlight.rex](/rexx-parser/doc/samples/highlight/)
-  and [elements.rex](/rexx-parser/doc/samples/elements/) utilities accept new
+- Both the [highlight.rex](/rexx-parser/doc/utilities/highlight/)
+  and [elements.rex](/rexx-parser/doc/utilities/elements/) utilities accept new
   `-u`, `--tutor` and `--unicode` options, which enable Unicode support.

@@ -22,6 +22,7 @@
 /* 20251215    0.2  Fix setAssigned for DROP, EXPOSE, USE LOCAL and           */
 /*                  PROCEDURE EXPOSE                                          */
 /* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250416    0.2a Add argument info to called routine chain                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -59,6 +60,8 @@
 .environment ~                   Template.List =                   .Template.List
 .environment ~          Optional.Template.List =          .Optional.Template.List
 .environment ~               Prefixed.Template =               .Prefixed.Template
+
+.environment ~                  Trap.Arguments =                  .Trap.Arguments
 
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Expressions.cls"
@@ -283,7 +286,7 @@ Arguments:
   If expression~isNil Then Do
     If nameSpace == .Nil Then Do
       name~invocationType = "CALL"
-      package~currentBody~calledRoutineNames~append( name )
+      package~currentBody~calledRoutineNames~append( (name, arguments) )
       -- We don't need to assign a subcategory here, because We
       -- will assign a finer subcategory in the second pass.
       Return .Call.Instruction~new( package, begin, element, name, arguments )
@@ -408,6 +411,15 @@ Arguments:
 /* CALL ON instruction                                                        */
 /******************************************************************************/
 
+-- Special class to identify the arguments to a trap specified in
+-- a CALL ON instruction
+::Class Trap.Arguments Public
+::Method Arg
+  Arg n, option +1
+  If Arg() == 0 Then Return 1
+  If option == "E" Then Return n == 1
+  Return n \== 1
+
 ::Routine Call.On.Instruction Public
   Use Strict Arg package, begin, end, elements
 
@@ -453,7 +465,9 @@ Arguments:
 
   trapName~invocationType = "CALL"
 
-  package~currentBody~calledRoutineNames~append( trapName )
+  package~currentBody~calledRoutineNames~append( -
+    (trapName, .Trap.Arguments~new)              -
+  )
 
   end = TheElementAfter( trapName, ignoreBlanks )
 

@@ -20,6 +20,7 @@
 /* 20250103    0.1e Add TUTOR-flavored Unicode classes                        */
 /* 20250116    0.1f Add support for sub-keywords                              */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250406         Rename fractional numbers to decimal                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -84,7 +85,7 @@
 }
 /* Numbers */
 .highlight-rexx-dark .rx-int,
-.highlight-rexx-dark .rx-frac,
+.highlight-rexx-dark .rx-deci,
 .highlight-rexx-dark .rx-exp {
   color:#3cc;
 }

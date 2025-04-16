@@ -72,7 +72,7 @@ Selecting ANSI mode
 -------------------
 
 If you are working from the command line, the
-[*highlight*](/rexx-parser/doc/samples/highlight/) utility will
+[*highlight*](/rexx-parser/doc/utilities/highlight/) utility will
 automatically select ANSI mode when attempting to highlight
 a `.rex` program. You can also manually select ANSI mode
 by using the `-a` or `--ansi` options.

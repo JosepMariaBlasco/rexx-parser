@@ -19,7 +19,7 @@ First steps
   as an argument:
 
   ```
-  rexx highlight.rex ./sample.html
+  [rexx] highlight.rex ./sample.html
   ```
 
   You should see output similar to the following
@@ -48,10 +48,10 @@ First steps
   &lt;/body&gt;
   &lt;/html&gt;</pre>
 
-+ Now look at [the source of `highlight.rex`](/rexx-parser/doc/samples/highlight/)
++ Now look at [the source of `highlight.rex`](/rexx-parser/doc/utilities/highlight/)
   and inspect `sample.html` too. You have just seen
   [the Rexx HTML highlighter](/rexx-parser/doc/highlighter/html/) in action!
-+ Now, in the `/samples` directory, [run `elements.rex`](/rexx-parser/doc/samples/elements/)
++ Now, in the `/samples` directory, [run `elements.rex`](/rexx-parser/doc/utilities/elements/)
   with `./hi.rex` as an argument.
 
   ~~~

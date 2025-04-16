@@ -1,0 +1,1 @@
+Call BITOR a,b,c,d

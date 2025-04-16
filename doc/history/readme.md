@@ -8,6 +8,19 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20250416<td>0.2a<td>
+<ul>
+  <li> Add optional BIF argument checking.
+  <li> Document the EARLYCHECK parser option.
+  <li> Add the `check` utility.
+  <li> Move BIF info to a new classfile, `BIFs.cls`, copy BIF arg checking information
+       from the ANSI standard, create a new update section for ooRexx, and add
+       optional TUTOR support.
+  <li> Add many test cases for most BIFs.
+  <li> Document the [early check](../ref/classes/rexx.parser/early-check/) options.
+  <li> Create the [utilities](../utilities/) page.
+  <li> Document the `RxCheck` utility, move `elements` and `highlight` to the
+       utilities page.
 <tr><td>20250215<td>0.2<td>
 <ul>
   <li> First version published simultaneously in rexx.epbcn.com and GitHub.
@@ -35,6 +48,7 @@ Version history
        (20250403).
   <li> Add references to the net-oo-rexx distribution and to ooRexxShell
        in the appropriate places. Fix some broken breakcrumbs (20250405).
+  <li> Rename fractional numbers to decimal (20250406).
 <tr><td>20250128<td>0.1g<td>
 <ul>
   <li> **Breaking change**: .TK.xxx variables have been renamed to .EL.xxx.
@@ -54,12 +68,12 @@ Version history
        and [(Lua)LaTeX](/rexx-parser/doc/highlighter/latex/).
   <li> Document the [Highlighter](/rexx-parser/doc/ref/classes/highlighter/) class.
   <li> Create a new [Utilitites and samples](/rexx-parser/doc/samples) document.
-  <li> Add `--prolog` and `--noprolog` options to [highligth.rex](/rexx-parser/doc/samples/highlight/),
+  <li> Add `--prolog` and `--noprolog` options to [highligth.rex](/rexx-parser/doc/utilities/highlight/),
        and a corresponding boolean `prolog` option to the
        [Highlighter](/rexx-parser/doc/ref/classes/highlighter/) class.
   <li> Add optional support for TUTOR-flavored Unicode Y-, P-, G-, T- and U-strings.
   <li> Make style patches work with all the highlighter modes.
-       Add `--patch` and `--patchfile` options to [highligth.rex](/rexx-parser/doc/samples/highlight/),
+       Add `--patch` and `--patchfile` options to [highligth.rex](/rexx-parser/doc/utilities/highlight/),
        and `patch` and `patchfile` attributes to fenced code blocks.
        Change `-t` and `--term` to `-a` and `--ansi`; add `--pad`.
   <li> Add the set of 147 HTML standard colors (see <https://www.w3.org/TR/css-color-4/#named-colors>),
@@ -80,7 +94,7 @@ Version history
 <tr><td>20241229<td>0.1e<td>
 <ul>
   <li> Initial version of the ANSI highlighter.
-  <li> New multi-modal [highligther utility program](/rexx-parser/doc/samples/highlight/).
+  <li> New multi-modal [highligther utility program](/rexx-parser/doc/utilities/highlight/).
   <li> Strengthen self-integrity tests again (check `highlighter/` subdir too).
   <li> Move highlighter software to the `highlighter/` directory (from `utils/`).
   <li> Implement a highlighting driver system (see the `highlighter/drivers` subdirectory).

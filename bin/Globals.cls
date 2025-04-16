@@ -22,6 +22,7 @@
 /* 20250103    0.1f Add TUTOR-flavored Unicode support                        */
 /* 20250116         Add EL.PARSE_PERIOD                                       */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250406         Rename fractional numbers to decimal                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -296,9 +297,9 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   -- exponent          := ('e' | 'E') ['+' | '-'] digit+              (6.2.2.37)
   --
   Call NewElements -
-    EL.FRACTIONAL_NUMBER,  EL.INTEGER_NUMBER,  EL.EXPONENTIAL_NUMBER
+    EL.DECIMAL_NUMBER,  EL.INTEGER_NUMBER,  EL.EXPONENTIAL_NUMBER
   Call NewSet ALL.NUMBERS,            -
-   .EL.FRACTIONAL_NUMBER, .EL.INTEGER_NUMBER, .EL.EXPONENTIAL_NUMBER
+   .EL.DECIMAL_NUMBER, .EL.INTEGER_NUMBER, .EL.EXPONENTIAL_NUMBER
 
   ------------------------------------------------------------------------------
   -- STRINGS                                                                  --

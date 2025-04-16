@@ -72,7 +72,7 @@ Say "Done!" -- Inform the user
 
 You can select a style by using the `style=` attribute on a
 [Rexx fenced code block](fencedcode/), or the
-`--style=` option of the [highlight](../samples/highlight/) utility.
+`--style=` option of the [highlight](../utilities/highlight/) utility.
 The [Highlighter class](../ref/classes/highlighter/) class
 also allows to specify a style in the options argument.
 
@@ -99,7 +99,7 @@ Say "Done!" -- Inform the user
 
 Style patches can be specified by using the `patch=` attribute
 of a [Rexx fenced code block](fencedcode/#patch), or the
-`--patch=` option of the [highlight](../samples/highlight/) utility.
+`--patch=` option of the [highlight](../utilities/highlight/) utility.
 [The *parse* method](../ref/classes/highlighter/#parse) of the
 [Highlighter class](../ref/classes/highlighter/)
 also accepts an optional [style patch](../ref/classes/stylepatch/) argument.
@@ -177,6 +177,6 @@ Included software
 Utilities
 ---------
 
-- [Highlight](../samples/highlight/) - A
-  [sample utility program](../samples/highlight/) that
+- [Highlight](../utilities/highlight/) - A
+  [sample utility program](../utilities/highlight/) that
   highlights Markdown, HTML, Rexx and LaTeX files.

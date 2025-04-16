@@ -24,6 +24,7 @@
 /* 20250103    0.1f Add TUTOR-flavored Unicode support                        */
 /* 20250115         Add "<<" and "\<<" methods                                */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250406         Rename fractional number to decimal                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -674,8 +675,8 @@ Return
 /* SYMBOL:                                                                    */
 /*                                                                            */
 /*   VAR_SYMBOL   : SIMPLE_VARIABLE, COMPOUND_VARIABLE, STEM_VARIABLE         */
-/*   CONST_SYMBOL : PERIOD, EL.SYMBOL_LITERAL, EL.ENVIRONMENT_SYMBOL         */
-/*   NUMBER       : EL.INTEGER_NUMBER, EL.FRACTIONAL_NUMBER,                  */
+/*   CONST_SYMBOL : PERIOD, EL.SYMBOL_LITERAL, EL.ENVIRONMENT_SYMBOL          */
+/*   NUMBER       : EL.INTEGER_NUMBER, EL.DECIMAL_NUMBER,                     */
 /*                  EL.EXPONENTIAL_NUMBER                                     */
 /******************************************************************************/
 
@@ -699,7 +700,7 @@ SymbolKind:
     -- Numbers (without signed exponents)
     When Number(symbol) Then Select
       When Exponential(symbol)            Then Return .EL.EXPONENTIAL_NUMBER
-      When HasADot(symbol)                Then Return .EL.FRACTIONAL_NUMBER
+      When HasADot(symbol)                Then Return .EL.DECIMAL_NUMBER
       Otherwise                                Return .EL.INTEGER_NUMBER
     End
     -- Variables (simple, compound, stems)

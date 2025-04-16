@@ -1,8 +1,8 @@
 The Rexx Parser {.title}
 ===============
 
-36th International Rexx Language Symposium {.event}
-------------------------------------------
+36<sup>th</sup> International Rexx Language Symposium {.event}
+-----------------------------------------------------
 
 ### The Wirtschaftsuniversität Vienna, Austria, May 4-7 2025 {.venue}
 
@@ -31,11 +31,11 @@ Notice {.slide .center}
 *no headers or footers, and background images active.*
 *This is true for the Chrome browser at the time of this writing (Jan-May 2025).*
 
-*The default style for Rexx fenced code blocks is dark.*
+*The default style for Rexx fenced code blocks is* `dark`*.*
 *You can choose the light style by adding a* `style=light` *query*
-*string to your url.*
+*string to the url of this document.*
 
-[^thisDoc]: HTML version: <https://rexx.epbcn.com/rexx-parser/print/36/2025-05-05-The-Rexx-Parser/>;
+[^thisDoc]: HTML version: <https://rexx.epbcn.com/rexx-parser/print/36/2025-05-05-The-Rexx-Parser/>;\
 PDF version (slides): <https://www.epbcn.com/pdf/josep-maria-blasco/2025-05-05-The-Rexx-Parser.pdf>.
 
 Introduction {.part #introductionPart}
@@ -490,7 +490,7 @@ the same errors in the same circumstances.
 When requested, **the Parser is also able to detect, at parse time,**
 **some errors that ooRexx only detects at execution time**. For example,
 if the `earlyCheck` option is specified and it contains the string
-`"SIGNAL"` as an element, non-computed `SIGNAL` instructions referring
+`"SIGNAL"` as an item, non-computed `SIGNAL` instructions referring
 to non-existing labels will be detected *at parse time* and produce
 a 16.1 error ("Label '*label_name*' not found").
 
@@ -519,6 +519,26 @@ Further work {.slide}
 + Play with language extensions.
 + ...
 
+Acknowledgements {.part}
+================
+
+Acknowledgements {.slide}
+================
+
+Jean-Louis Faucher has integrated TUTOR into
+ooRexxShell, and Rony Flatscher has included TUTOR and
+the Rexx Parser in the net-oo-rexx distribution.
+
+Some preliminary versions of the Rexx Parser and its accompanying
+subproject, the Rexx Highlighter, have been tested by different
+members of the RexxLA community, including, but not limited to
+Gilbert Barmwater, Jean-Louis Faucher, Rony Flatscher, Ruurd-Jan Idenburg,
+René Jansen and Till Winkler; I want to thank them all for their observations and enhancement proposals.
+
+I also want to thank my colleagues at EPBCN, Laura Blanco, Silvina Fernández,
+Mar Martín, David Palau, Olga Palomino and Amalia Prat,
+who have read several drafts of this presentation
+and helped to improve it with their comments and suggestions.
 
 Questions? {.part}
 ==========
@@ -533,3 +553,16 @@ The Rexx Parser can be downloaded at:
 
 - <https://rexx.epbcn.com/rexx-parser/> (preferred: better Rexx highlighting)
 - <https://github.com/JosepMariaBlasco/rexx-parser>
+
+TUTOR can be downloaded at:
+
+- <https://rexx.epbcn.com/TUTOR/> (preferred: better Rexx highlighting)
+- <https://github.com/JosepMariaBlasco/TUTOR>
+
+Executor can be downloaded at:
+
+- <https://github.com/jlfaucher/executor>
+
+The net-oo-rexx bundle can be downloaded at:
+
+- <https://wi.wu.ac.at/rgf/rexx/tmp/net-oo-rexx-packages/>

@@ -1,0 +1,1 @@
+Call Trunc a,b,c

@@ -26,9 +26,10 @@ User Guide
   - [The Element API](guide/elementapi/)
   - [The Tree API](guide/treeapi/)
 
-Samples
+Utilities and samples
 ---------------------
 
+- [Utilities](utilities/)
 - [Sample programs](samples/)
 
 
