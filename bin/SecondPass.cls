@@ -517,7 +517,39 @@
       Else                Signal 88.901
   End
 
+  -- If .environment~Parser.check = 1 Then Trace ?a
+
+  -- Now check statically specified arguments against their declared types
+  -- (Work in progress)
+  Do argN = 1 To nArgs
+    If arguments~arg(argN,"O") Then Iterate
+    arg = arguments~arg(argN)
+    If arg~class \== .Literal.String.Term Then Iterate
+    value = arg~string~value
+    type  = BIFInfo~argType[argN]
+    Select Case type
+      When "ANY" Then Iterate
+      When "ACEFILNOR" Then Do
+        letter = Left(value, 1)
+        If Pos(Upper(letter), type) == 0 Then Signal 24.001
+      End
+      When "AENO", "ACDEIORS", "BDEFILMNOSTUW", "BDEFINOSTU", "CEFHLMNORST", "CFHLMNOST", "CN", "CDEGOS", "DELNP", "SDC" Then Do
+        letter = Left(value, 1)
+        If Pos(Upper(letter), type) == 0 Then Signal 40.904
+        -- TODO RXQUEUE and STREAM special casess
+      End
+      When "ABILMNOSUVWX9", "BLT", "MN" Then Do -- See https://sourceforge.net/p/oorexx/bugs/2007/
+        letter = Left(value, 1)
+        If Pos(Upper(letter), type) == 0 Then Signal 93.915
+      End
+      Otherwise Nop
+    End
+  End
+
 Return
+
+-- TRACE request letter must be one of "ACEFILNOR"; found "&1".
+24.001: Syntax( 24.001, label, letter )
 
 -- Not enough arguments in invocation of &1; minimum expected is &2.
 40.003: Syntax( 40.003, label, BIFName, minArgs )
@@ -528,8 +560,14 @@ Return
 -- Missing argument in invocation of &1; argument &2 is required.
 40.005: Syntax( 40.005, label, BIFName, argN )
 
+-- &1 argument &2 must be one of &3; found "&4".
+40.904: Syntax( 40.904, label, BIFName, argN, type, letter )
+
 -- Missing argument; argument &1 is required.
 88.901: Syntax( 88.901, label, missing )
 
 -- Too many arguments in invocation; &1 expected.
 88.922: Syntax( 88.922, label, maxArgs )
+
+-- Method option must be one of "&1"; found "&2".
+93.915: Syntax( 93.915, label, type, letter )

@@ -40,36 +40,52 @@ built-in functions, and `CALL ON` instructions whose
 trapname is a built-in function are checked against
 the built-in function definition. Namely,
 
-* If the number of arguments passed to the function is
-  _greater_ than the maximum arguments allowed, a `SYNTAX`
-  error is raised. In most cases, the error raised
-  is 40.4, `"Too many arguments in invocation of &1; maximum expected is &2"`,
-  but in some few cases 88.922 is raised instead
-  (`"Too many arguments in invocation; &1 expected"`).[^1885]
+If the number of arguments passed to the function is
+_greater_ than the maximum arguments allowed, a `SYNTAX`
+error is raised. In most cases, the error raised
+is 40.4, `"Too many arguments in invocation of &1; maximum expected is &2"`,
+but in some few cases 88.922 is raised instead
+(`"Too many arguments in invocation; &1 expected"`).[^1885]
 
 ```rexx
-  Say ChangeStr(a,b,c,d,e)    -- Too many arguments
+  Say ChangeStr(a,b,c,d,e)    -- Too many arguments in invocation of CHANGESTR; maximum expected is 3
 ```
 
-* If the number of arguments passed to the function
-  is _smaller_ than the minimum number of required arguments,
-  a `SYNTAX` error is raised. In most cases, the error raised
-  is 40.3, `"Not enough arguments in invocation of &1; minimum expected is &2"`,
-  although in some special cases, described in the footnote, 88.901 is raised instead
-  (`"Missing argument; argument &1 is required"`).
+If the number of arguments passed to the function
+is _smaller_ than the minimum number of required arguments,
+a `SYNTAX` error is raised. In most cases, the error raised
+is 40.3, `"Not enough arguments in invocation of &1; minimum expected is &2"`,
+although in some special cases, described in the footnote, 88.901 is raised instead
+(`"Missing argument; argument &1 is required"`).
 
 ```rexx
-  Say Left("String")          -- Not enough arguments
+  Say Left("String")          -- Not enough arguments in invocation of LEFT; minumum expected is 2
 ```
 
-* If there are enough arguments but some of the required arguments
-  are missing, a `SYNTAX` error is raised. In most cases, the error
-  raised is 40.5, `"Missing argument in invocation of &1; argument &2 is required"`,
-  although in some special cases, described in the footnote, 88.901 is raised instead.
+If there are enough arguments but some of the required arguments
+are missing, a `SYNTAX` error is raised. In most cases, the error
+raised is 40.5, `"Missing argument in invocation of &1; argument &2 is required"`,
+although in some special cases, described in the footnote, 88.901 is raised instead.
 
 ```rexx
-  x = ChangsStr(,'b','c')     -- Argument 1 is required
+  x = ChangsStr(,'b','c')     -- Missing argument in invocation of CHANGESTR; argument 1 is required
 ```
+
+When the BIF has a one-letter argument (that is, an argument of which only the first letter
+is examined) and the corresponding parmeter is a string literal, this string literal
+is checked. BIFs checked are `ARG`,  `CONDITION`, `DATATYPE`, `DATE`, `FILESPEC`, `LINES`, `RXQUEUE`, `STREAM`,
+`STRIP`, `TIME`, `TRACE` and `VERIFY`. The message for the `TRACE` BIF is special. Some of the
+other BIFs raise a 40.904 `SYNTAX` error, `&1 argument &2 must be one of &3; found "&4"`,
+while some others raise a 93.915, `Method option must be one of "&1"; found "&2"`,
+which constitutes an interpreter bug.[^93.915]
+
+[^93.915]: <small>See <https://sourceforge.net/p/oorexx/bugs/2007/>.</small>
+
+~~~rexx
+  Var = "*"
+  Call Trace Var              -- "Var" is a variable; not checked
+  Call Trace "*"              -- TRACE request letter must be one of "ACEFILNOR"; found "*"
+~~~
 
 ## GUARD
 
@@ -91,7 +107,7 @@ different from the other BIFs. See <https://sourceforge.net/p/oorexx/bugs/1885/>
   Say "Exiting..."
   Exit
 
-  Guard On                    -- Illegal GUARD instruction
+  Guard On                    -- GUARD can only be issued in an object method invocation
 ```
 
 ## Signal

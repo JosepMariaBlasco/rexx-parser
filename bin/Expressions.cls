@@ -139,29 +139,25 @@
 ::Attribute args
 
 ::Method arg
-  Expose args nArgs
+  Expose argList
   Arg n, option +1
-  If Arg() == 0 Then Return nArgs
-  Do i = 1 By 1 While n > 1, i <= args~size
-    If args[i]~isA( .Special.Character.Sequence ) Then n -= 1
+  Select Case Arg()
+    When 0 Then Return argList~size
+    When 1 Then Return argList[n]
+    Otherwise
+      Select Case option
+        When "E" Then Return  argList~hasIndex(n)
+        When "O" Then Return \argList~hasIndex(n)
+      End
   End
-  If n == 1 Then Do
-    arg = args[i]
-    If arg == .Nil Then exist = .False
-    Else exist = \args[i]~isA( .Special.Character.Sequence )
-    If option == "E" Then Return exist
-    Return \exist
-  End
-  If option == "E" Then Return .False
-  Return .True
 
 ::Method isEmpty
   Expose args
   Return args == .Nil
 ::Method init
-  Expose args nArgs end
+  Expose args argList end
   Use Strict Arg args, end
-  nArgs = 0
+  argList = Array()
   If args \== .Nil Then Do
 
     -- Calculate end
@@ -171,16 +167,10 @@
     Else end = last~end
 
     -- Calculate the number of arguments (for argument lists)
-    i = args~last
-    Do While i > 0, args[i]~isA( .Special.Character.Sequence )
-      i -= 1
-    End
-    If i == 0 Then nArgs = 0
-    Else Do
-      nArgs = 1
-      Do i = i To 1 By -1
-        If args[i]~isA( .Special.Character.Sequence ) Then nArgs += 1
-      End
+    argN = 1
+    Do i = 1 To args~items
+      If args[i]~isA( .Special.Character.Sequence ) Then argN += 1
+      Else argList[argN] = args[i]
     End
 
   End
@@ -489,6 +479,9 @@
 ::Method arg
   Arg n, option +1
   If Arg() == 0 Then Return 1
+  If Arg() == 1 Then
+    If n == 1 Then Return self
+    Else Return .nil
   Return option = "E"
 ::Constant isEmpty 0
 
@@ -599,6 +592,7 @@ FunctionCall:
 
 ::Class Literal.String.Term Public SubClass Rexx.Term
 ::Attribute end
+::Attribute string
 ::Method init
   Expose string end
   Use Strict Arg string

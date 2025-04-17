@@ -88,7 +88,7 @@
   -- Third argument is only correct with 'C'
   --   If Arg(2,"E"), Translate(Left(Arg(2)),1) == "C" Then "rSTREAM rCDS rANY"
   --                                                   Else "rSTREAM oCDS"
-  BIFARGS.STRIP        = "rANY oLTB oPAD"
+  BIFARGS.STRIP        = "rANY oBLT oPAD"
   BIFARGS.SUBSTR       = "rANY rWHOLE>0 oWHOLE>=0 oPAD"
   BIFARGS.SUBWORD      = "rANY rWHOLE>0 oWHOLE>=0"
   BIFARGS.SYMBOL       = "rANY" -- Special. See ANSI 9.8.4
@@ -132,22 +132,23 @@
   BIFARGS.CONDITION    = "oACDEIORS"
   BIFARGS.DATATYPE     = "rANY oABILMNOSUVWX9"
   -- Added "oSEP" category.
-  BIFARGS.DATE         = "oBDEFILMNOSTUW oANY oBDEFILMNOSTUW oSEP oSEP"
+  BIFARGS.DATE         = "oBDEFILMNOSTUW oANY oBDEFINOSTU oSEP oSEP"
   BIFARGS.DELSTR       = "rANY oWHOLE>0 oWHOLE>=0"
   BIFARGS.DIRECTORY    = "oANY"
   BIFARGS.ENDLOCAL     = ""             -- Linux only
   BIFARGS.ERRORTEXT    = "r0_99"
-  BIFARGS.FILESPEC     = "rDPLNE rANY"
+  BIFARGS.FILESPEC     = "rDELNP rANY"
   BIFARGS.LASTPOS      = "rANY rANY oWHOLE>0 oWHOLE>0"
   BIFARGS.LOWER        = "rANY oWHOLE>=0 oWHOLE>0"
   BIFARGS.POS          = "rANY rANY oWHOLE>0 oWHOLE>=0"
   BIFARGS.RXFUNCADD    = "rANY rANY oANY"
   BIFARGS.RXFUNCDROP   = "rANY"
   BIFARGS.RXFUNCQUERY  = "rANY"
-  BIFARGS.RXQUEUE      = "rCDEGOS oANY" -- TODO Special
-  BIFARGS.SETLOCAL     = ""             -- Linux only
+  BIFARGS.RXQUEUE      = "rCDEGOS oANY"      -- TODO Special
+  BIFARGS.SETLOCAL     = ""                  -- Linux only
+  BIFARGS.STREAM       = "rSTREAM oSDC oANY" -- Order is different in ooRexx
   BIFARGS.QUALIFY      = "rSTREAM"
-  BIFARGS.TIME         = "oCEFHLMNORST oANY oCEFHLMNORST"
+  BIFARGS.TIME         = "oCEFHLMNORST oANY oCFHLMNOST"
   -- TODO Check Arg(5) and Arg(6), they are underspecified in rexxref
   BIFARGS.TRANSLATE    = "rANY oANY oANY oPAD oWHOLE>0 oWHOLE>=0"
   BIFARGS.UPPER        = "rANY oWHOLE>=0 oWHOLE>0"
@@ -210,7 +211,10 @@
         Otherwise Call InternalError "'r' or 'o' expected, found '"required?"' in '"word"'"
       End
       BIFInfo[bifName]~argType~append(type)
-      -- If WordPos(type,"ANY BIN HEX NUM PAD SEP STREAM WHOLE>0 WHOLE>=0 0_99") > 0 Then Iterate
+      If .environment~Parser.check = 1, -
+        WordPos(type,"ANY BIN D2C1 D2X1 HEX MAX MIN NUM PAD SEP RANGE STREAM SYM WHOLE>0 WHOLE>=0 0_99") == 0 Then Do
+        -- Say "--->" bifname "'"type"'"
+      End
     End
     BIFInfo[bifName]~minArgs = required
   End

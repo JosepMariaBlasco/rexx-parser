@@ -21,6 +21,8 @@ Version history
   <li> Create the [utilities](../utilities/) page.
   <li> Document the `RxCheck` utility, move `elements` and `highlight` to the
        utilities page.
+  <li> Document the [early check](../ref/classes/rexx.parser/early-check/) for BIFs to
+       also check one-letter options (20250417).
 <tr><td>20250215<td>0.2<td>
 <ul>
   <li> First version published simultaneously in rexx.epbcn.com and GitHub.
