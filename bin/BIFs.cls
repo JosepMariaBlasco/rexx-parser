@@ -21,6 +21,10 @@
   -- The purpose of this package is to load a set of global constants into
   -- the environment
 
+  If .environment~Parser.BIFInfo.Loaded = 1 Then Return
+
+ .environment~Parser.BIFInfo.Loaded = 1
+
 /******************************************************************************/
 /* LoadBIFInfo -- Load BIF information structures                             */
 /******************************************************************************/
@@ -50,11 +54,11 @@
   BIFARGS.COPIES       = "rANY rWHOLE>=0"
   BIFARGS.COUNTSTR     = "rANY rANY"
   BIFARGS.D2C          = "rD2C1 oWHOLE>=0"
-  -- If Arg(2,"E") Then rD2C1 = "rWHOLENUM>=0"
-  -- Else               rD2C1 = "rWHOLENUM"
+  -- If Arg(2,"E") Then rD2C1 = "rWHOLE>=0"
+  -- Else               rD2C1 = "rWHOLE"
   BIFARGS.D2X          = "rD2X1 oWHOLE>=0"
-  -- If Arg(2,"E") Then rD2X1 = "rWHOLENUM>=0"
-  -- Else               rD2X1 = "rWHOLENUM"
+  -- If Arg(2,"E") Then rD2X1 = "rWHOLE>=0"
+  -- Else               rD2X1 = "rWHOLE"
   BIFARGS.DATATYPE     = "rANY oABLMNSUWX"
   BIFARGS.DATE         = "oBDEMNOSUW oANY oBDENOSU"
   BIFARGS.DELSTR       = "rANY rWHOLE>0 oWHOLE>=0"
@@ -71,7 +75,6 @@
   BIFARGS.LINEIN       = "oSTREAM oWHOLE>0 oWHOLE>=0"
   BIFARGS.LINEOUT      = "oSTREAM oANY oWHOLE>0"
   BIFARGS.LINES        = "oSTREAM oCN"
-  -- Check rexxref HERE
   BIFARGS.MAX          = "rMAX" -- Strip(Copies("rNUM ",Arg())), Arg() > 0
   BIFARGS.MIN          = "rMIN" -- Strip(Copies("rNUM ",Arg())), Arg() > 0
   BIFARGS.OVERLAY      = "rANY rANY oWHOLE>0 oWHOLE>=0 oPAD"
@@ -96,7 +99,7 @@
   BIFARGS.TRACE        = "oACEFILNOR"
   BIFARGS.TRANSLATE    = "rANY oANY oANY oPAD"
   BIFARGS.TRUNC        = "rNUM oWHOLE>=0"
-  BIFARGS.VALUE        = "rANY oANY oANY" -- Special
+  BIFARGS.VALUE        = "rANY oANY oANY" -- ANSI: IF the third arg exists, then the first is rSYM, not rANY
   BIFARGS.VERIFY       = "rANY rANY oMN oWHOLE>0"
   BIFARGS.WORD         = "rANY rWHOLE>0"
   BIFARGS.WORDINDEX    = "rANY rWHOLE>0"
@@ -121,40 +124,65 @@
   -- See also https://sourceforge.net/p/oorexx/bugs/2006/ and
   -- https://sourceforge.net/p/oorexx/documentation/341/
   --
-  -- BIFs marked SPECIAL are handles in SecondPass.cls
+  -- BIFs marked SPECIAL are handled in SecondPass.cls
   --
+  -- Created new categories LENGTH and POS
 
+  BIFARGS.ABBREV       = "rANY rANY oLENGTH"
   BIFARGS.ADDRESS      = ""
   BIFARGS.ARG          = "oWHOLE>0 oAENO"      -- SPECIAL
-  BIFARGS.BEEP         = "rWHOLE>0 rWHOLE>=0"  -- TODO: Non-numeric cases are handled first
-  BIFARGS.CHANGESTR    = "rANY rANY rANY oWHOLE>0"
+  BIFARGS.BEEP         = "rWHOLE>0 rWHOLE>=0"
+  BIFARGS.C2D          = "rANY oLENGTH"
+  BIFARGS.CENTER       = "rANY rLENGTH oPAD"
+  BIFARGS.CENTRE       = "rANY rLENGTH oPAD"
+  BIFARGS.CHANGESTR    = "rANY rANY rANY oWHOLE>=0"
   BIFARGS.CHARS        = "oSTREAM"
+  BIFARGS.CHARIN       = "oSTREAM oWHOLE>0 oLENGTH"
   BIFARGS.CONDITION    = "oACDEIORS"
+  BIFARGS.D2C          = "rD2C1 oLENGTH" -- Special TODO Arg1
+  -- If Arg(2,"E") Then rD2C1 = "rWHOLE>=0"
+  -- Else               rD2C1 = "rWHOLE"
+  BIFARGS.D2X          = "rD2X1 oLENGTH" -- Special TODO Arg1
+  -- If Arg(2,"E") Then rD2X1 = "rWHOLE>=0"
+  -- Else               rD2X1 = "rWHOLE"
   BIFARGS.DATATYPE     = "rANY oABILMNOSUVWX9"
   -- Added "oSEP" category.
   BIFARGS.DATE         = "oBDEFILMNOSTUW oANY oBDEFINOSTU oSEP oSEP"
-  BIFARGS.DELSTR       = "rANY oWHOLE>0 oWHOLE>=0"
+  BIFARGS.DELSTR       = "rANY oPOS oLENGTH"
+  BIFARGS.DELWORD      = "rANY rPOS oLENGTH"
   BIFARGS.DIRECTORY    = "oANY"
-  BIFARGS.ENDLOCAL     = ""             -- Linux only
+  BIFARGS.ENDLOCAL     = ""                     -- Linux only
   BIFARGS.ERRORTEXT    = "r0_99"
   BIFARGS.FILESPEC     = "rDELNP rANY"
-  BIFARGS.LASTPOS      = "rANY rANY oWHOLE>0 oWHOLE>0"
-  BIFARGS.LOWER        = "rANY oWHOLE>=0 oWHOLE>0"
-  BIFARGS.POS          = "rANY rANY oWHOLE>0 oWHOLE>=0"
+  BIFARGS.INSERT       = "rANY rANY oLENGTH oLENGTH oPAD" -- Bug: Arg(3) should be POS. See https://sourceforge.net/p/oorexx/bugs/2012/
+  BIFARGS.LASTPOS      = "rANY rANY oPOS oLENGTH"
+  BIFARGS.LEFT         = "rANY rLENGTH oPAD"
+  BIFARGS.LOWER        = "rANY oPOS oLENGTH"
+  BIFARGS.OVERLAY      = "rANY rANY oPOS oLENGTH oPAD"
+  BIFARGS.POS          = "rANY rANY oPOS oLENGTH"
+  BIFARGS.RANDOM       = "oWHOLE oWHOLE oWHOLE>=0"
+  BIFARGS.RIGHT        = "rANY rLENGTH oPAD"
   BIFARGS.RXFUNCADD    = "rANY rANY oANY"
   BIFARGS.RXFUNCDROP   = "rANY"
   BIFARGS.RXFUNCQUERY  = "rANY"
   BIFARGS.RXQUEUE      = "rCDEGOS oANY"      -- TODO Special
   BIFARGS.SETLOCAL     = ""                  -- Linux only
+  BIFARGS.SPACE        = "rANY oLENGTH oPAD"
   BIFARGS.STREAM       = "rSTREAM oSDC oANY" -- Order is different in ooRexx
+  BIFARGS.SUBSTR       = "rANY rPOS oLENGTH oPAD"
+  BIFARGS.SUBWORD      = "rANY rPOS oLENGTH"
   BIFARGS.QUALIFY      = "rSTREAM"
   BIFARGS.TIME         = "oCEFHLMNORST oANY oCFHLMNOST"
-  -- TODO Check Arg(5) and Arg(6), they are underspecified in rexxref
-  BIFARGS.TRANSLATE    = "rANY oANY oANY oPAD oWHOLE>0 oWHOLE>=0"
-  BIFARGS.UPPER        = "rANY oWHOLE>=0 oWHOLE>0"
+  BIFARGS.TRANSLATE    = "rANY oANY oANY oPAD oPOS oLENGTH"
+  BIFARGS.UPPER        = "rANY oPOS oLENGTH"
   BIFARGS.USERID       = ""
   BIFARGS.VAR          = "rSYM"
-  BIFARGS.VERIFY       = "rANY rANY oMN oWHOLE>0 oWHOLE>=0"
+  BIFARGS.VERIFY       = "rANY rANY oMN oPOS oLENGTH"
+  BIFARGS.WORD         = "rANY rPOS"
+  BIFARGS.WORDINDEX    = "rANY rPOS"
+  BIFARGS.WORDLENGTH   = "rANY rPOS"
+  BIFARGS.WORDPOS      = "rANY rANY oPOS"
+  BIFARGS.X2D          = "rHEX oLENGTH"
   BIFARGS.XRANGE       = "oRANGE" -- Special
 
   -- TUTOR additions. Types "UNI" and "UTF8" added
@@ -211,10 +239,12 @@
         Otherwise Call InternalError "'r' or 'o' expected, found '"required?"' in '"word"'"
       End
       BIFInfo[bifName]~argType~append(type)
+/*
       If .environment~Parser.check = 1, -
         WordPos(type,"ANY BIN D2C1 D2X1 HEX MAX MIN NUM PAD SEP RANGE STREAM SYM WHOLE>0 WHOLE>=0 0_99") == 0 Then Do
         -- Say "--->" bifname "'"type"'"
       End
+*/
     End
     BIFInfo[bifName]~minArgs = required
   End

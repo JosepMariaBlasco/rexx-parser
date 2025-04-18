@@ -239,7 +239,15 @@ Syntax2:
 
   -- line2 may be .Nil in certain circumstances, like when calling
   -- BEEP, DIRECTORY or FILESPEC.
-  If line2 == .Nil Then line2 = co~stackFrames[1]~line
+  -- In some other cases, we may encounter intermediate frames. Skip them too.
+  If line2 == .Nil Then Do
+    line2      = co~stackFrames[1]~line
+    traceLine2 = co~stackFrames[1]~traceLine
+    Do i = 2 To co~stackFrames~items While traceLine2~contains("(no source available)")
+      line2      = co~stackFrames[i]~line
+      traceLine2 = co~stackFrames[i]~traceLine
+    End
+  End
 
   code2 = co~code
 

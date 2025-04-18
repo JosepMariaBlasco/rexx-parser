@@ -1,0 +1,1 @@
+Call DelStr string,-1

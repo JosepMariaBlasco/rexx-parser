@@ -1,0 +1,1 @@
+Call SubWord string,1,"*"

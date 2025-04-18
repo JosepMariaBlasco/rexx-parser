@@ -1,0 +1,1 @@
+Call SubStr a,1,-1

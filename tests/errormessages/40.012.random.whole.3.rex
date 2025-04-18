@@ -1,0 +1,1 @@
+Call Random 1,99,"*"

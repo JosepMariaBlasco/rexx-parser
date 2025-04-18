@@ -1,0 +1,1 @@
+Call WordIndex string,0

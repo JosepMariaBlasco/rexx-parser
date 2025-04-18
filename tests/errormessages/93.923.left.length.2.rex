@@ -1,0 +1,1 @@
+Call Left string,-1

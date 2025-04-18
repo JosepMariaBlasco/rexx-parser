@@ -1,0 +1,1 @@
+Call Trunc 1.0,-1

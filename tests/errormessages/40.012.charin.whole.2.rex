@@ -1,0 +1,1 @@
+Call CharIn , 1, "*"

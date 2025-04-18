@@ -1,0 +1,1 @@
+Call LastPos a,b,"*"

@@ -23,6 +23,10 @@ Version history
        utilities page.
   <li> Document the [early check](../ref/classes/rexx.parser/early-check/) for BIFs to
        also check one-letter options (20250417).
+  <li> Early check now checks all literal whole numbers, including literal
+       strings containing a number, and prefix expressions, to allow for
+       negative literals. Numbers that are not required to be whole
+       are also checked. Literal arguments to XRANGE are also checked (20250418).
 <tr><td>20250215<td>0.2<td>
 <ul>
   <li> First version published simultaneously in rexx.epbcn.com and GitHub.

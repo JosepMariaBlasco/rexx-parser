@@ -446,7 +446,7 @@
   Do While element < .PREFIX_OPERATORS
     -- Assign prefix operators when appropriate
     Select Case element~category
-      When .EL.OP.PLUS    Then Call SetCategory element, .EL.OP.PREFIX.PLUS
+      When .EL.OP.PLUS  Then Call SetCategory element, .EL.OP.PREFIX.PLUS
       When .EL.OP.MINUS Then Call SetCategory element, .EL.OP.PREFIX.MINUS
       Otherwise Nop -- "\" is always a prefix operator
     End
@@ -464,6 +464,15 @@
 
 ::Class Prefix.Expression Public SubClass Rexx.Expression
 ::Attribute end
+::Attribute prefixes
+::Attribute term
+::Method arg
+  Arg n, option +1
+  If Arg() == 0 Then Return 1
+  If Arg() == 1 Then
+    If n == 1 Then Return self
+    Else Return .nil
+  Return option = "E"
 ::Method init
   Expose prefixes term end
   Use Strict Arg prefixes, term

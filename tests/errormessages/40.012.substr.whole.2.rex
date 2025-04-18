@@ -1,0 +1,1 @@
+Call SubStr string,"*"
