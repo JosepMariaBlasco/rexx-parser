@@ -18,6 +18,7 @@
 /* 20241209    0.1b New call system                                           */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250416    0.2a Add argument info to called routine chain                 */
+/* 20250419         Fix NAry.Expression crashing on SecondPass.               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -61,6 +62,13 @@
 ::Class NAry.Expression SubClass Rexx.Expression
 ::Constant items 1
 ::Attribute args Get
+::Method arg
+  Arg n, option +1
+  If Arg() == 0 Then Return 1
+  If Arg() == 1 Then
+    If n == 1 Then Return self
+    Else Return .nil
+  Return option = "E"
 ::Attribute end
 ::Method init
   Expose args end
@@ -441,7 +449,7 @@
   Use Strict Arg package, begin, terminators
 
   prefixes = Array()
-  element    = begin
+  element  = begin
 
   Do While element < .PREFIX_OPERATORS
     -- Assign prefix operators when appropriate
@@ -510,8 +518,8 @@
 ::Routine Term
   Use Strict Arg package, begin, terminators
 
-  termArray = Array()
-  element     = begin
+  termArray      = Array()
+  element        = begin
   newTerminators = terminators || .ALL.OPS.MESSAGE_SEND
 
   term = Simple.Term( package, element, newTerminators )
@@ -531,6 +539,7 @@
 --------------------------------------------------------------------------------
 
 ::Routine Simple.Term Public
+
   Use Strict Arg package, begin, terminators
 
   Select
@@ -601,7 +610,9 @@ FunctionCall:
 
 ::Class Literal.String.Term Public SubClass Rexx.Term
 ::Attribute end
-::Attribute string
+::Method theString
+  Expose string
+  Return string
 ::Method init
   Expose string end
   Use Strict Arg string
@@ -617,10 +628,10 @@ FunctionCall:
 
   lParen = begin
 
-  subExpression = Expression.List( -
-    package,                          -
-    TheElementAfter( begin ),           - -- Where to begin parsing
-    terminators || .EL.RIGHT_PARENTHESIS - -- Add ")" to terminators
+  subExpression = Expression.List(   -
+    package,                         -
+    TheElementAfter( begin ),        - -- Where to begin parsing
+    .EL.RIGHT_PARENTHESIS            - -- Clear terminators: only ")"
   )
 
   rParen = subExpression~end

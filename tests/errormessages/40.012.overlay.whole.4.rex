@@ -1,1 +1,0 @@
-Call Overlay a,b,,"*"

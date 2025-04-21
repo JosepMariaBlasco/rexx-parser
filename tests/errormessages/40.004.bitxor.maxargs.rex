@@ -1,1 +1,0 @@
-Call BITXOR a,b,c,d

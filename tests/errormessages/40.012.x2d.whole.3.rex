@@ -1,1 +1,0 @@
-Call X2D string, "*"

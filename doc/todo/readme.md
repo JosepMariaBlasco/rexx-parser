@@ -20,4 +20,4 @@ Next release (0.2 refresh -- Not released yet)
 Following releases (in no special order)
 ----------------------------------------
 
-+ Include optional support for Jean-Louis Faucher's Executor.
++ Include optional support for Jean Louis Faucher's Executor.

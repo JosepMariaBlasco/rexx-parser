@@ -8,6 +8,11 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20250421<td>0.2b<td>
+<ul>
+  <li> (Almost) complete early-checking of BIFs.
+  <li> Start to write a unit test program (will document later).
+  <li> Major refactoring of BIF early checking.
 <tr><td>20250416<td>0.2a<td>
 <ul>
   <li> Add optional BIF argument checking.
@@ -27,6 +32,9 @@ Version history
        strings containing a number, and prefix expressions, to allow for
        negative literals. Numbers that are not required to be whole
        are also checked. Literal arguments to XRANGE are also checked (20250418).
+  <li> Add "debug" toggle to rxcheck utility. Early check for
+       D2C and D2X (20250419).
+  <li> Add '-e' option to rxcheck (20250420).
 <tr><td>20250215<td>0.2<td>
 <ul>
   <li> First version published simultaneously in rexx.epbcn.com and GitHub.
@@ -42,7 +50,7 @@ Version history
       "class::newmethod", a la C++ (20250318).
   <li> Add WARNING.md file and modify root readme.md (20250325).
   <li> Raise an error when a module tries to redefine an already-defined
-       method (thanks Jean-Louis!) (20250327).
+       method (thanks Jean Louis!) (20250327).
   <li> Refactor for inclusion in the net-oo-rexx bundle: rename
        main directory to rexx-parser, for consistency with GitHub;
        rename the main binary directory to "bin" instead of "cls";

@@ -18,6 +18,7 @@
 /* 20241208    0.1a Pass options arg to clauser                               */
 /* 20250103    0.1f Add unicode option                                        */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250419    0.2a Fix bug no. 4                                             */
 /*                                                                            */
 /******************************************************************************/
 
@@ -99,10 +100,19 @@
 
 ::Routine Code.Body Public
 
-  -- TODO [LATER] Implement logic for attributes w and w/o bodies
   Use Strict Arg package, directive
 
-  inAMethod                      = directive~class == .Method.Directive
+  inAMethodBody                  = directive~class == .Method.Directive
+
+  If directive~isA(.Attribute.Directive) Then Do
+    -- Logic for attributes w and w/o bodies:
+    -- No GET, no SET -> No body
+    -- GET or SET -> Body is optional
+    -- ABSTRACT -> No body
+    options. = directive~options.
+    If options.get | options.set Then inAMethodBody = 1
+    If options.abstract \== ""   Then inAMethodBody = 1
+  End
 
   body                           = .Code.Body~new( package, directive )
   package~currentBody            = body
@@ -134,7 +144,7 @@
 
 CheckThatGuardIsValid:
   If \checkGuard Then Return
-  If InAMethod Then Return
+  If inAMethodBody Then Return
   Signal 99.911
 
 -- GUARD can only be issued in an object method invocation.
@@ -142,7 +152,7 @@ CheckThatGuardIsValid:
 
 CheckThatExposeIsValid:
   If n == 1 Then Do
-    If InAMethod Then Return
+    If inAMethodBody Then Return
     Signal 98.992
   End
   Signal 99.907
@@ -155,7 +165,7 @@ CheckThatExposeIsValid:
 
 CheckThatUseLocalIsValid:
   If n == 1 Then Do
-    If InAMethod Then Return
+    If inAMethodBody Then Return
     Signal 98.993
   End
   Signal 99.910

@@ -1,1 +1,0 @@
-Call Strip a,b,c,d

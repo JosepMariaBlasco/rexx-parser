@@ -1,1 +1,0 @@
-Call SubWord a,1,-1

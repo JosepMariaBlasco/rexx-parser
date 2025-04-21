@@ -1,1 +1,0 @@
-Call RxFuncQuery a,b

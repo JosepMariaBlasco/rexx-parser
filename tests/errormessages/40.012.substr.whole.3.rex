@@ -1,1 +1,0 @@
-Call SubStr string,1,"*"

@@ -1,0 +1,818 @@
+/******************************************************************************/
+/*                                                                            */
+/* earlyChecks.test - Test the early check feature                            */
+/* ===============================================                            */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20250421    0.2b First release                                             */
+/*                                                                            */
+/******************************************************************************/
+
+  If .environment~Parser.Test.SimpleErrors == .Nil Then
+    .environment~Parser.Test.SimpleErrors   = 0
+  If .environment~Parser.Test.OK           == .Nil Then
+    .environment~Parser.Test.OK             = 0
+
+  Signal On Halt
+
+/******************************************************************************/
+/* GUARD                                                                      */
+/******************************************************************************/
+
+  Call Test.Error 99.911, "Guard On"
+  Call Test.Error 99.911, "Guard Off"
+  Call Test.Ok            "::Method M; Guard ON"
+
+/******************************************************************************/
+/* SIGNAL                                                                     */
+/******************************************************************************/
+
+  Call Test.Error 16.001, "Signal Label"
+  Call Test.Error 16.001, "Signal On Syntax; 1/0"
+  Call Test.Error 16.001, "Signal On Syntax Name UH; 1/0"
+  Call Test.Error 16.001, (           -
+    "Signal On User Cond",            -
+    "Call p",                         -
+    "p: Procedure",                   -
+    "  Raise User Cond Return"        -
+   )
+  Call Test.Error 16.001, (           -
+    "Signal On User Cond Name Label", -
+    "Call p",                         -
+    "p: Procedure",                   -
+    "  Raise User Cond Return"        -
+   )
+
+/******************************************************************************/
+/* BIFS                                                                       */
+/******************************************************************************/
+
+  ------------------------------------------------------------------------------
+  -- Functions with no arguments                                              --
+  --                                                                          --
+  -- ADDRESS, DIGITS, FORM, FUZZ, ENDLOCAL, QUEUED, SETLOCAL, USERID          --
+  ------------------------------------------------------------------------------
+
+  noArgs = (                                       -
+    "ADDRESS",  "DIGITS", "FORM",     "FUZZ",   -
+    "ENDLOCAL", "QUEUED", "SETLOCAL", "USERID"  -
+  )
+
+  Do BIF Over noArgs
+    Call Test.Error 40.004, "Call" BIF "a               "  -- No arguments
+  End
+
+  -- ABBREV
+
+  Call Test.Error 40.003, "Call Abbrev a                "  -- Two arguments are required
+  Call Test.Error 40.004, "Call Abbrev a,b,c,d          "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call Abbrev ,b               "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call Abbrev a,,c             "  -- Argument 2 is required
+  Call Test.Error 40.012, "Call Abbrev a,b,'*'          "  -- Third argument must be a whole number
+  Call Test.Error 93.923, "Call Abbrev a,b, -1          "  -- Third argument must be zero or positive
+
+  -- ABS
+
+  Call Test.Error 40.003, "Call Abs                     "  -- One argument is required
+  Call Test.Error 40.004, "Call Abs a,b                 "  -- Maximum of one argument
+  Call Test.Error 93.943, "Call Abs '*'                 "  -- Argument must be a number
+
+
+  -- ARG
+
+  Call Test.Error 40.004, "Call Arg a,b,c               "  -- Maximum of two arguments
+  Call Test.Error 40.005, "Call Arg ,'e'                "  -- Argument 1 is required when Arg(2,'e') = 1
+  Call Test.Error 40.012, "Call Arg '*'                 "  -- First argument must be a whole number
+  -- See https://sourceforge.net/p/oorexx/bugs/2008/
+  Call Test.Error 40.014, "Call Arg 0                   "  -- First argument must be pisitive
+  Call Test.Error 40.904, "Call Arg 1,'*'               "  -- Second argument must be one of AENO
+
+  -- B2X
+
+  Call Test.Error 40.003, "Call B2X                     "  -- One argument is required
+  Call Test.Error 40.004, "Call B2X a, b                "  -- Maximum of two arguments
+  Call Test.Error 93.934, "Call B2X '*'                 "  -- Arg(1) must be a binary string
+  Call Test.Error 93.932, "Call B2X ' 1 1010'           "  -- Whitespace not allowed at the beginning
+  Call Test.Error 93.932, "Call B2X '1 1010 '           "  -- Whitespace not allowed at the end
+  Call Test.Error 93.977, "Call B2X '1 101'             "  -- All groups except the first must be *4 chars
+  Call Test.Error 93.977, "Call B2X '1 10101'           "  -- All groups except the first must be *4 chars
+
+  -- BEEP
+
+  Call Test.Error 88.901, "Call Beep 12                 "  -- Minimum of two arguments, both required
+  Call Test.Error 88.901, "Call Beep , 120              "  -- Minimum of two arguments, both required
+  Call Test.Error 88.907, "Call Beep 37 ,-1             "  -- Duration in 0..60000
+  Call Test.Error 88.907, "Call Beep 12, 1              "  -- frequency in 37..32767
+  Call Test.Error 88.922, "Call Beep 100,200,300        "  -- Maximum two arguments
+
+  -- BITAND, BITOR, BITXOR
+
+  Do name Over ("BITAND", "BITOR", "BITXOR")
+    Call = "Call" name
+    Call Test.Error 40.003, Call "                      "  -- One argument is required
+    Call Test.Error 40.004, Call "a, b, c, d            "  -- Maximum of three arguments
+    Call Test.Error 40.005, Call " , b, c               "  -- Argument 1 is required
+    Call Test.Error 40.023, Call "a, b, ''              "  -- Pad must be a single character
+    Call Test.OK            Call "a, b, 'a'             "  -- Pad must be a single character
+    Call Test.Error 40.023, Call "a, b, '**'            "  -- Pad must be a single character
+  End
+
+  -- C2D
+
+  Call Test.Error 40.003, "Call C2D                     "  -- One argument is required
+  Call Test.Error 40.004, "Call C2D a, b, c             "  -- Maximum of two arguments
+  Call Test.Error 40.005, "Call C2D , b                 "  -- Argument 1 is required
+  Call Test.Error 40.012, "Call C2D a, '*'              "  -- Argument 2 must be a whole number
+  Call Test.Error 93.923, "Call C2D a, -1               "  -- Argument 2 must be zero or positive
+  Call Test.OK            "Call C2D a,  0               "  -- Argument 2 must be zero or positive
+
+  -- C2X
+
+  Call Test.Error 40.003, "Call C2X                     "  -- One argument is required
+  Call Test.Error 40.004, "Call C2X a, b                "  -- Maximum of one argument
+
+  -- CENTER, CENTRE
+
+  Do name Over ("CENTER", "CENTRE")
+    Call = "Call" name
+    Call Test.Error 40.003, Call "                      "  -- Minimum of one argument
+    Call Test.Error 40.004, Call "a, b, c, d            "  -- Maximum of three arguments
+    Call Test.Error 40.005, Call " , b, c               "  -- Argument 1 is required
+    Call Test.Error 40.005, Call "a,  , c               "  -- Argument 2 is required
+    Call Test.Error 40.012, Call "a, '*'                "  -- Argument 2 must be a whole number
+    Call Test.Error 93.923, Call "a, -1                 "  -- Argument 2 must be zero or positive
+    Call Test.OK            Call "a,  0                 "  -- Argument 2 must be zero or positive
+    Call Test.Error 40.023, Call "a, 1, ''              "  -- Pad must be a single character
+    Call Test.OK            Call "a, 1, '*'             "  -- Pad must be a single character
+    Call Test.Error 40.023, Call "a, 1, '**'            "  -- Pad must be a single character
+  End
+
+  -- CHANGESTR
+
+  Call Test.Error 40.003, "Call ChangeStr a, b          "  -- Minimum of three arguments
+  Call Test.Error 40.004, "Call ChangeStr a, b, c, d, e "  -- Maximum of four arguments
+  Call Test.Error 40.005, "Call ChangeStr  , b, c       "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call ChangeStr a,  , c       "  -- Argument 2 is required
+  Call Test.Error 40.005, "Call ChangeStr a, b,  , d    "  -- Argument 3 is required
+  Call Test.Error 40.012, "Call ChangeStr a, b, c, '*'  "  -- Argument 4 is required
+  Call Test.Error 93.906, "Call ChangeStr a, b, c,  -1  "  -- Argument 4 must be zero or positive
+  Call Test.OK            "Call ChangeStr a, b, c,   0  "  -- Argument 4 must be zero or positive
+
+  -- CHARIN
+
+  Call Test.Error 40.004, "Call CharIn a, b, c, d       "  -- Maximum of three arguments
+  Call Test.Error 40.012, "Call CharIn a, '*'           "  -- Argument 2 must be a whole number
+  -- Cannot check for -1, see https://sourceforge.net/p/oorexx/bugs/2011/
+  Call Test.Error 40.012, "Call CharIn a,    , '*'      "  -- Argument 3 must be a whole number
+  -- Cannot check for -1, see https://sourceforge.net/p/oorexx/bugs/2011/
+
+  -- CHAROUT
+  Call Test.Error 40.004, "Call CharOut a, b, c, d       "  -- Maximum of three arguments
+  Call Test.Error 40.012, "Call CharOut a,  , '*'        "  -- Argument 3 must be a whole number
+  -- Cannot check that Arg(3) is positive for transient streams
+
+  -- CHARS
+
+  Call Test.Error 40.004, "Call Chars a, b               "  -- Maximum of one argument
+
+  -- COMPARE
+
+  Call Test.Error 40.003, "Call Compare a                "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call Compare a, b, c, d       "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call Compare  , b, c          "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call Compare a,  , c          "  -- Argument 2 is required
+  Call Test.Error 40.023, "Call Compare a, b, ''         "  -- Pad must be a single character
+  Call Test.OK            "Call Compare a, b, '*'        "  -- Pad must be a single character
+  Call Test.Error 40.023, "Call Compare a, b, '**'       "  -- Pad must be a single character
+
+  -- CONDITION
+
+  Call Test.Error 40.004, "Call Condition a, b          "  -- Maximum of one argument
+  Call Test.Error 40.904, "Call Condition '*'           "  -- Wrong option
+  Call Test.OK            "Call Condition 'A'           "
+  Call Test.OK            "Call Condition 'C'           "
+  Call Test.OK            "Call Condition 'D'           "
+  Call Test.OK            "Call Condition 'E'           "
+  Call Test.OK            "Call Condition 'I'           "
+  Call Test.OK            "Call Condition 'O'           "
+  Call Test.OK            "Call Condition 'R'           "
+  Call Test.OK            "Call Condition 'S'           "
+
+  -- COPIES
+
+  Call Test.Error 40.003, "Call Copies a                "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call Copies a, b, c          "  -- Maximum of two arguments
+  Call Test.Error 40.005, "Call Copies  , b             "  -- Argument 1 is required
+  Call Test.Error 40.012, "Call Copies a, '*'           "  -- Argument 2 must be a whole number
+  Call Test.Error 93.906, "Call Copies a, -1            "  -- Argument 2 must zero or positive
+  Call Test.OK            "Call Copies a, 0             "  -- Argument 2 must zero or positive
+
+  -- COUNTSTR
+
+  Call Test.Error 40.003, "Call CountStr a              "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call CountStr a, b, c        "  -- Maximum of two arguments
+  Call Test.Error 40.005, "Call CountStr  , b           "  -- Argument 1 is required
+
+  -- D2C, D2X
+
+  Do name Over ("D2C", "D2X")
+    Call = "Call" name
+    Call Test.Error 40.003, Call "                      "  -- Minimum of one argument
+    Call Test.Error 40.004, Call " a,  b,  c            "  -- Maximum of two arguments
+    Call Test.Error 40.005, Call "  ,  b                "  -- Argument 1 is required
+    Call Test.Error 93.923, Call " 1, -1                "  -- Argument 2 must be zero or positive
+    Call Test.Error 93.927, Call "-1                    "  -- When Arg(2,'e'), Arg(1) has to be positive
+    Call Test.OK            Call "-1,  2                "  -- When Arg(2,'e'), negative values are accepted
+  End
+  Call Test.Error 93.929, "Call D2C 'a'                 "  -- Argument 1 must be a valid whole number
+  Call Test.Error 93.928, "Call D2X 'a'                 "  -- Argument 1 must be a valid whole number
+
+  -- DATATYPE
+
+  Call Test.Error 40.003, "Call DataType                "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call DataType a, b, c        "  -- Maximum of two arguments
+  Call Test.Error 40.005, "Call DataType  , b           "  -- Argument 1 is required
+  Call Test.Error 93.915, "Call DataType a, '*'         "  -- Wrong option
+  Call Test.OK            "Call DataType a, 'A'         "
+  Call Test.OK            "Call DataType a, 'B'         "
+  Call Test.OK            "Call DataType a, 'I'         "
+  Call Test.OK            "Call DataType a, 'L'         "
+  Call Test.OK            "Call DataType a, 'M'         "
+  Call Test.OK            "Call DataType a, 'N'         "
+  Call Test.OK            "Call DataType a, 'O'         "
+  Call Test.OK            "Call DataType a, 'S'         "
+  Call Test.OK            "Call DataType a, 'U'         "
+  Call Test.OK            "Call DataType a, 'V'         "
+  Call Test.OK            "Call DataType a, 'W'         "
+  Call Test.OK            "Call DataType a, 'X'         "
+  Call Test.OK            "Call DataType a, '9'         "
+
+  -- DATE
+
+  Call Test.Error 40.004, "Call Date a, b, c, d, e, f   "  -- Minimum of five arguments
+  Call Test.Error 40.904, "Call Date '*'                "  -- Wrong option
+  Call Test.OK            "Call Date 'B'                "
+  Call Test.OK            "Call Date 'D'                "
+  Call Test.OK            "Call Date 'E'                "
+  Call Test.OK            "Call Date 'F'                "
+  Call Test.OK            "Call Date 'I'                "
+  Call Test.OK            "Call Date 'L'                "
+  Call Test.OK            "Call Date 'M'                "
+  Call Test.OK            "Call Date 'N'                "
+  Call Test.OK            "Call Date 'O'                "
+  Call Test.OK            "Call Date 'S'                "
+  Call Test.OK            "Call Date 'T'                "
+  Call Test.OK            "Call Date 'U'                "
+  Call Test.OK            "Call Date 'W'                "
+  Call Test.Error 40.904, "Call Date ,'20 Apr 2025','*' "  -- Wrong option
+  Call Test.OK            "Call Date ,739360,             'B' "
+  Call Test.OK            "Call Date , 110,               'D' "
+  Call Test.OK            "Call Date ,'20/04/25',         'E' "
+  Call Test.OK            "Call Date , 63880770048381000, 'F' "
+  Call Test.OK            "Call Date ,'2025-04-20',       'I' "
+  Call Test.OK            "Call Date ,'20 Apr 2025',      'N' "
+  Call Test.OK            "Call Date ,'25/04/20',         'O' "
+  Call Test.OK            "Call Date , 20250420,          'S' "
+  Call Test.OK            "Call Date , 1745173340,        'T' "
+  Call Test.OK            "Call Date ,'04/20/25',         'U' "
+  Call Test.error 40.043, "Call Date ,'20/04/25', 'E', '**'   "
+  Call Test.error 40.043, "Call Date ,'20/04/25','O','+','//' "
+
+  -- DELSTR
+
+  Call Test.Error 40.003, "Call DelStr                  "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call DelStr a, b, c, d       "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call DelStr  , b             "  -- Argument 1 is required
+  Call Test.Error 40.012, "Call DelStr a, '*'           "  -- Argument 2 must be a whole number
+  Call Test.Error 93.924, "Call DelStr a, 0             "  -- Argument 2 must be positive
+  Call Test.OK            "Call DelStr a, 1             "  -- Argument 2 must be positive
+  Call Test.Error 40.012, "Call DelStr a,  , '*'        "  -- Argument 3 must be a whole number
+  Call Test.Error 93.923, "Call DelStr a,  , -1         "  -- Argument 2 must be zero or positive
+  Call Test.OK            "Call DelStr a,  ,  0         "  -- Argument 2 must be zero or positive
+
+  -- DELWORD
+
+  Call Test.Error 40.003, "Call DelWord                 "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call DelWord a, b, c, d      "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call DelWord  , b            "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call DelWord a,  , c         "  -- Argument 1 is required
+  Call Test.Error 40.012, "Call DelWord a, '*'          "  -- Argument 2 must be a whole number
+  Call Test.Error 93.924, "Call DelWord a, 0            "  -- Argument 2 must be positive
+  Call Test.Error 40.012, "Call DelWord a, 1,'*'        "  -- Argument 3 must be a whole number
+  Call Test.OK            "Call DelWord a, 1            "  -- Argument 2 must be positive
+  Call Test.Error 93.923, "Call DelWord a, 1, -1        "  -- Argument 2 must be zero or positive
+  Call Test.OK            "Call DelWord a, 1,  0        "  -- Argument 2 must be zero or positive
+
+  -- DIRECTORY
+
+  Call Test.Error 88.922, "Call Directory a, b          "  -- Maximum of one argument
+
+  -- ERRORTEXT
+
+  Call Test.Error 40.003, "Call ErrorText               "  -- One argument is required
+  Call Test.Error 40.004, "Call ErrorText a, b          "  -- Maximum of one argument
+  Call Test.Error 40.012, "Call ErrorText  '*'          "  -- Argument must be a whole number...
+  Call Test.Error 40.903, "Call ErrorText   -1          "  -- ...between...
+  Call Test.OK            "Call ErrorText    0          "  -- ...0...
+  Call Test.OK            "Call ErrorText   99          "  -- ...and 99...
+  Call Test.Error 40.903, "Call ErrorText  100          "  -- ...and so 100 is an error.
+
+
+  -- FILESPEC
+
+  Call Test.Error 88.901, "Call FileSpec a              "  -- Minimum of two arguments
+  Call Test.Error 88.922, "Call FileSpec a, b, c        "  -- Maximum of two arguments
+  Call Test.Error 88.901, "Call FileSpec  , b           "  -- Argument 1 is required
+  Call Test.Error 40.904, "Call FileSpec '*', b         "  -- Wrong option
+  Call Test.OK            "Call FileSpec 'D', b         "
+  Call Test.OK            "Call FileSpec 'E', b         "
+  Call Test.OK            "Call FileSpec 'L', b         "
+  Call Test.OK            "Call FileSpec 'N', b         "
+  Call Test.OK            "Call FileSpec 'P', b         "
+
+  -- FORMAT
+
+  -- We don't check 93.942 statically
+
+  Call Test.Error 40.003, "Call Format                  "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Format a, b, c, d, e, f "  -- Maximum of five arguments
+  Call Test.Error 40.005, "Call Format  , b             "  -- Argument 1 is required
+  Call Test.Error 93.943, "Call Format '*'              "  -- Argument 1 must be a number
+  Call Test.Error 40.012, "Call Format a, '*'           "  -- Argument number 2 must be a whole number
+  Call Test.Error 93.906, "Call Format 12, -1           "  -- Argument number 2 must be non-negative
+  Call Test.OK            "Call Format 12,  3           "  -- Argument number 2 must be non-negative
+  Call Test.Error 40.012, "Call Format a,, '*'          "  -- Argument number 3 must be a whole number
+  Call Test.Error 93.906, "Call Format 12,, -1          "  -- Argument number 3 must be non-negative
+  Call Test.OK            "Call Format 12,,  0          "  -- Argument number 3 must be non-negative
+  Call Test.Error 40.012, "Call Format a,,, '*'         "  -- Argument number 4 must be a whole number
+  Call Test.Error 93.906, "Call Format 12,,, -1         "  -- Argument number 4 must be non-negative
+  Call Test.OK            "Call Format 12,,,  0         "  -- Argument number 4 must be non-negative
+  Call Test.Error 40.012, "Call Format a,,,, '*'        "  -- Argument number 5 must be a whole number
+  Call Test.Error 93.906, "Call Format 12,,,, -1        "  -- Argument number 5 must be non-negative
+  Call Test.OK            "Call Format 12,,,,  0        "  -- Argument number 5 must be non-negative
+
+  -- INSERT
+
+  Call Test.Error 40.003, "Call Insert a                "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call Insert a, b, c, d, e, f "  -- Maximum of five arguments
+  Call Test.Error 40.005, "Call Insert  , b             "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call Insert a,  , c          "  -- Argument 2 is required
+  Call Test.Error 40.012, "Call Insert a, b, '*'        "  -- Argument number 3 must be a whole number
+  Call Test.Error 93.923, "Call Insert a, b, -1         "  -- Argument number 3 must be non-negative
+  Call Test.OK            "Call Insert a, b,  0         "  -- Argument number 3 must be non-negative
+  Call Test.Error 40.012, "Call Insert a, b,, '*'       "  -- Argument number 4 must be a whole number
+  Call Test.Error 93.923, "Call Insert a, b,, -1        "  -- Argument number 4 must be non-negative
+  Call Test.OK            "Call Insert a, b,,  0        "  -- Argument number 4 must be non-negative
+  Call Test.Error 40.023, "Call Insert a, b,,, ''       "  -- Pad must be one char in length
+  Call Test.OK            "Call Insert a, b,,, 'a'      "  -- Pad must be one char in length
+  Call Test.Error 40.023, "Call Insert a, b,,, 'aa'     "  -- Pad must be one char in length
+
+  -- LASTPOS
+
+  Call Test.Error 40.003, "Call LastPos a               "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call LastPos a, b, c, d, e   "  -- Maximum of four arguments
+  Call Test.Error 40.005, "Call LastPos  , b            "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call LastPos a,  , c         "  -- Argument 2 is required
+  Call Test.Error 40.012, "Call LastPos a, b, '*'       "  -- Argument number 3 must be a whole number
+  Call Test.Error 93.924, "Call LastPos a, b,  0        "  -- Argument number 3 must be positive
+  Call Test.OK            "Call LastPos a, b,  1        "  -- Argument number 3 must be positive
+  Call Test.Error 40.012, "Call LastPos a, b,, '*'      "  -- Argument number 4 must be a whole number
+  Call Test.Error 93.923, "Call LastPos a, b,, -1       "  -- Argument number 4 must be non-negative
+  Call Test.OK            "Call LastPos a, b,,  0       "  -- Argument number 4 must be non-negative
+
+  -- LEFT
+
+  Call Test.Error 40.003, "Call Left a                  "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call Left a, b, c, d         "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call Left  , b               "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call Left a,  , c            "  -- Argument 2 is required
+  Call Test.Error 40.012, "Call Left a, '*'             "  -- Argument number 2 must be a whole number
+  Call Test.Error 93.923, "Call Left a,  -1             "  -- Argument number 2 must be non-negative
+  Call Test.OK            "Call Left a,   0             "  -- Argument number 2 must be non-negative
+  Call Test.Error 40.023, "Call Left a, 1, ''           "  -- Pad must be one char in length
+  Call Test.OK            "Call Left a, 1, 'a'          "  -- Pad must be one char in length
+  Call Test.Error 40.023, "Call Left a, 1, 'aa'         "  -- Pad must be one char in length
+
+  -- LENGTH
+
+  Call Test.Error 40.003, "Call Length                  "  -- Minimum of one argument2
+  Call Test.Error 40.004, "Call Length a, b             "  -- Maximum of one argument
+
+  -- LINEIN
+
+  Call Test.Error 40.004, "Call LineIn a, b, c, d       "  -- Maximum of three arguments
+  Call Test.Error 40.012, "Call LineIn a, '*'           "  -- Argument number 2 must be a whole number
+  -- Cannot check numerics in Arg(2) because the file name must exist
+  Call Test.Error 40.012, "Call LineIn a,, '*'          "  -- Argument number 3 must be a whole number
+  -- Cannot check numerics in Arg(3) because the file name must exist
+
+  -- LINEOUT
+
+  Call Test.Error 40.004, "Call LineOut a, b, c, d      "  -- Maximum of three arguments
+  Call Test.Error 40.012, "Call LineOut a,, '*'         "  -- Argument number 3 must be a whole number
+  -- Cannot check numerics in Arg(3) because the file name must exist
+
+  -- LINES
+
+  Call Test.Error 40.004, "Call Lines a, b, c           "  -- Maximum of two arguments
+  Call Test.Error 40.904, "Call Lines , '*'             "  -- Wrong option
+  Call Test.OK            "Call Lines , 'C'             "
+  Call Test.OK            "Call Lines , 'N'             "
+
+  -- LOWER
+
+  Call Test.Error 40.003, "Call Lower                   "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Lower a, b, c, d        "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call Lower  , b              "  -- Argument 1 is required
+  Call Test.Error 40.012, "Call Lower a, '*'            "  -- Argument number 2 must be a whole number
+  Call Test.Error 93.924, "Call Lower a, 0              "  -- Argument number 2 must be positive
+  Call Test.OK            "Call Lower a, 1              "  -- Argument number 2 must be positive
+  Call Test.Error 40.012, "Call Lower a,, '*'           "  -- Argument number 3 must be a whole number
+  Call Test.Error 93.923, "Call Lower a,, -1            "  -- Argument number 3 must be zero or positive
+  Call Test.OK            "Call Lower a,,  0            "  -- Argument number 3 must be zero or positive
+
+  -- MAX
+
+  Call Test.Error 40.003, "Call Max                     "  -- Minimum of one argument
+  Call Test.Error 40.005, "Call Max , 12                "  -- Argument 1 is missing
+  Call Test.Error 93.903, "Call Max 11, , 13            "  -- Argument 2 is missing
+  Call Test.Error 93.943, "Call Max 'a'                 "  -- Argument 1 must be a number
+  Call Test.Error 93.904, "Call Max 1, 'a'              "  -- Argument 2 must be a number
+
+  -- MIN
+
+  Call Test.Error 40.003, "Call Min                     "  -- Minimum of one argument
+  Call Test.Error 40.005, "Call Min , 12                "  -- Argument 1 is missing
+  Call Test.Error 93.903, "Call Min 11, , 13            "  -- Argument 2 is missing
+  Call Test.Error 93.943, "Call Min 'a'                 "  -- Argument 1 must be a number
+  Call Test.Error 93.904, "Call Min 1, 'a'              "  -- Argument 2 must be a number
+
+  -- OVERLAY
+
+  Call Test.Error 40.003, "Call Overlay a               "  -- Minimum of two arguments
+  Call Test.Error 40.005, "Call Overlay  , b            "  -- Argument 1 is missing
+  Call Test.Error 40.005, "Call Overlay a,  , c         "  -- Argument 2 is missing
+  Call Test.Error 40.004, "Call Overlay a, b, c, d,e,f  "  -- Maximum of five arguments
+  Call Test.Error 40.012, "Call Overlay a, b, '*'       "  -- Argument number 3 must be a whole number
+  Call Test.Error 93.924, "Call Overlay a, b, 0         "  -- Argument number 3 must be positive
+  Call Test.OK            "Call Overlay a, b, 1         "  -- Argument number 3 must be positive
+  Call Test.Error 40.012, "Call Overlay a, b,, '*'      "  -- Argument number 4 must be a whole number
+  Call Test.Error 93.923, "Call Overlay a, b,, -1       "  -- Argument number 4 must be zero or positive
+  Call Test.OK            "Call Overlay a, b,,  0       "  -- Argument number 4 must be zero or positive
+  Call Test.Error 40.023, "Call Overlay a, b,,, ''      "  -- Pad must be one char in length
+  Call Test.OK            "Call Overlay a, b,,, 'a'     "  -- Pad must be one char in length
+  Call Test.Error 40.023, "Call Overlay a, b,,, 'aa'    "  -- Pad must be one char in length
+
+  -- POS
+
+  Call Test.Error 40.003, "Call Pos a                   "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call Pos a, b, c, d, e       "  -- Maximum of four arguments
+  Call Test.Error 40.005, "Call Pos  , b                "  -- Argument 1 is missing
+  Call Test.Error 40.005, "Call Pos a,  , c             "  -- Argument 2 is missing
+  Call Test.Error 40.012, "Call Pos a, b, '*'           "  -- Argument number 3 must be a whole number
+  Call Test.Error 93.924, "Call Pos a, b, 0             "  -- Argument number 3 must be positive
+  Call Test.OK            "Call Pos a, b, 1             "  -- Argument number 3 must be positive
+  Call Test.Error 40.012, "Call Pos a, b,, '*'          "  -- Argument number 4 must be a whole number
+  Call Test.Error 93.923, "Call Pos a, b,, -1           "  -- Argument number 4 must be zero or positive
+  Call Test.OK            "Call Pos a, b,,  0           "  -- Argument number 4 must be zero or positive
+
+  -- QUALIFY
+
+  Call Test.Error 40.003, "Call Qualify                 "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Qualify a, b            "  -- Maximum of one argument
+
+  -- RANDOM
+
+  Call Test.Error 40.004, "Call Random a, b, c, d, e    "  -- Maximum of four arguments
+  Call Test.Error 40.012, "Call Random '*', b           "  -- Argument number 1 must be a whole number
+  Call Test.Error 40.012, "Call Random -100, '*'        "  -- Argument number 2 must be a whole number
+  Call Test.Error 40.012, "Call Random -100, 100, '*'   "  -- Argument number 3 must be a whole number
+  Call Test.Error 40.013, "Call Random -100, 100, -1    "  -- Argument number 3 must be between 0 and 999999999
+  Call Test.OK            "Call Random -100, 100,  0    "  -- Argument number 3 must be between 0 and 999999999
+  Call Test.OK            "Call Random -1, 1 ,999999999 "  -- Argument number 3 must be between 0 and 999999999
+  -- Cannot check upper bound because ooRexx doesn't really notice
+  -- Call Test.Error 40.013, "Call Random -1, 1,10000000000 "  -- Argument number 3 must be between 0 and 999999999
+
+  -- REVERSE
+
+  Call Test.Error 40.003, "Call Reverse                 "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Reverse a, b            "  -- Maximum of one argument
+
+  -- RIGHT
+
+  Call Test.Error 40.003, "Call Right a                 "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call Right a, b, c, d        "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call Right  , b              "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call Right a,  , c           "  -- Argument 2 is required
+  Call Test.Error 40.012, "Call Right a, '*'            "  -- Argument number 2 must be a whole number...
+  Call Test.Error 93.923, "Call Right a,  -1            "  -- Argument number 2 must be non-negative
+  Call Test.OK            "Call Right a,   0            "  -- Argument number 2 must be non-negative
+  Call Test.Error 40.023, "Call Right a, 1, ''          "  -- Pad must be one char in length
+  Call Test.OK            "Call Right a, 1, 'a'         "  -- Pad must be one char in length
+  Call Test.Error 40.023, "Call Right a, 1, 'aa'        "  -- Pad must be one char in length
+
+  -- RXFUNCADD
+
+  Call Test.Error 40.003, "Call RxFuncAdd a             "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call RxFuncAdd a, b, c, d    "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call RxFuncAdd  , b          "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call RxFuncAdd a,  , c       "  -- Argument 2 is required
+
+  -- RXFUNCDROP
+
+  Call Test.Error 40.003, "Call RxFuncDrop              "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call RxFuncDrop a, b         "  -- Maximum of one argument
+
+  -- RXFUNCQUERY
+
+  Call Test.Error 40.003, "Call RxFuncQuery             "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call RxFuncQuery a, b        "  -- Maximum of one argument
+
+  -- RXQUEUE
+
+  Call Test.Error 40.003, "Call RxQueue                 "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call RxQueue a, b, c         "  -- Maximum of two arguments
+  Call Test.Error 40.005, "Call RxQueue  , b            "  -- Argument 1 is required
+  Call Test.Error 40.904, "Call RxQueue '*'             "  -- Wrong option
+  Call Test.OK            "Call RxQueue 'C'             "
+  Call Test.OK            "Call RxQueue 'D', b          "
+  Call Test.OK            "Call RxQueue 'E', b          "
+  Call Test.OK            "Call RxQueue 'G'             "
+  Call Test.OK            "Call RxQueue 'O', b          "
+  Call Test.OK            "Call RxQueue 'S', b          "
+
+  -- SIGN
+
+  Call Test.Error 40.003, "Call Sign                    "  -- One argument is required
+  Call Test.Error 40.004, "Call Sign a,b                "  -- Maximum of one argument
+  Call Test.Error 93.943, "Call Sign '*'                "  -- Argument must be a number
+  Call Test.OK            "Call Sign 12.3               "  -- Argument must be a number
+
+  -- SOURCELINE
+
+  Call Test.Error 40.004, "Call SourceLine a,b          "  -- Maximum of one argument
+  Call Test.Error 40.012, "Call SourceLine '*'          "  -- Argument number 1 must be a whole number
+  Call Test.Error 40.014, "Call SourceLine   0          "  -- Argument number 1 must be positive
+  Call Test.OK            "Call SourceLine   1          "  -- Argument number 1 must be positive
+
+  -- SPACE
+
+  Call Test.Error 40.003, "Call Space                   "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Space a, b, c, d        "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call Space  , b              "  -- Argument 1 is required
+  Call Test.Error 40.012, "Call Space a, '*'            "  -- Argument number 2 must be a whole number
+  Call Test.Error 93.923, "Call Space a,-1              "  -- Argument number 2 must be positive
+  Call Test.OK            "Call Space a, 0              "  -- Argument number 2 must be positive
+  Call Test.Error 40.023, "Call Space a, 1,   ''        "  -- Pad must be one char in length
+  Call Test.OK            "Call Space a, 1,  'a'        "  -- Pad must be one char in length
+  Call Test.Error 40.023, "Call Space a, 1, 'aa'        "  -- Pad must be one char in length
+
+  -- STREAM
+
+  Call Test.Error 40.003, "Call Stream                  "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Stream a, b, c, d       "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call Stream  , b             "  -- Argument 1 is required
+  Call Test.Error 40.904, "Call Stream a, '*'           "  -- Wrong option
+  Call Test.OK            "Call Stream a, 'S'           "
+  Call Test.OK            "Call Stream a, 'D'           "
+  Call Test.OK            "Call Stream a, 'C', 'q e'    "
+
+  -- STRIP
+
+  Call Test.Error 40.003, "Call Strip                   "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Strip a, b, c, d        "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call Strip  , b              "  -- Argument 1 is required
+  Call Test.Error 93.915, "Call Strip a, '*'            "  -- Wrong option
+  Call Test.OK            "Call Strip a, 'B'            "
+  Call Test.OK            "Call Strip a, 'L'            "
+  Call Test.OK            "Call Strip a, 'T',           "
+
+  -- SUBSTR
+
+  Call Test.Error 40.003, "Call SubStr a                "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call SubStr a, b, c, d, e    "  -- Maximum of four arguments
+  Call Test.Error 40.005, "Call SubStr  , b             "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call SubStr a,  , c          "  -- Argument 2 is required
+  Call Test.Error 40.012, "Call SubStr a, '*'           "  -- Argument number 2 must be a whole number
+  Call Test.Error 93.924, "Call SubStr a, 0             "  -- Argument number 2 must be positive
+  Call Test.OK            "Call SubStr a, 1             "  -- Argument number 2 must be positive
+  Call Test.Error 40.012, "Call SubStr a, 1, '*'        "  -- Argument number 3 must be a whole number
+  Call Test.Error 93.923, "Call SubStr a, 1, -1         "  -- Argument number 3 must be zero or positive
+  Call Test.OK            "Call SubStr a, 1,  0         "  -- Argument number 3 must be zero or positive
+  Call Test.Error 40.023, "Call SubStr a, 1, 1, ''      "  -- Pad must be one char in length
+  Call Test.OK            "Call SubStr a, 1, 1, 'a'     "  -- Pad must be one char in length
+  Call Test.Error 40.023, "Call SubStr a, 1, 1, 'aa'    "  -- Pad must be one char in length
+
+  -- SUBWORD
+
+  Call Test.Error 40.003, "Call SubWord a               "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call SubWord a, b, c, d      "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call SubWord  , b            "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call SubWord a,  , c         "  -- Argument 2 is required
+  Call Test.Error 40.012, "Call SubWord a, '*'          "  -- Argument number 2 must be a whole number
+  Call Test.Error 93.924, "Call SubWord a, 0            "  -- Argument number 2 must be positive
+  Call Test.OK            "Call SubWord a, 1            "  -- Argument number 2 must be positive
+  Call Test.Error 40.012, "Call SubWord a, 1, '*'       "  -- Argument number 3 must be a whole number
+  Call Test.Error 93.923, "Call SubWord a, 1, -1        "  -- Argument number 3 must be zero or positive
+  Call Test.OK            "Call SubWord a, 1,  0        "  -- Argument number 3 must be zero or positive
+
+  -- SYMBOL
+
+  Call Test.Error 40.003, "Call Symbol                  "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Symbol a, b             "  -- Maximum of one argument
+
+  -- TIME
+
+  Call Test.Error 40.004, "Call Time a, b, c, d         "  -- Maximum of three arguments
+  Call Test.Error 40.904, "Call Time '*'                "  -- Wrong option
+  Call Test.OK            "Call Time 'C'                "
+  Call Test.OK            "Call Time 'E'                "
+  Call Test.OK            "Call Time 'F'                "
+  Call Test.OK            "Call Time 'H'                "
+  Call Test.OK            "Call Time 'L'                "
+  Call Test.OK            "Call Time 'M'                "
+  Call Test.OK            "Call Time 'N'                "
+  Call Test.OK            "Call Time 'O'                "
+  Call Test.OK            "Call Time 'R'                "
+  Call Test.OK            "Call Time 'S'                "
+  Call Test.OK            "Call Time 'T'                "
+  Call Test.Error 40.904, "Call Time ,'11:27:21','*'    "  -- Wrong option
+  Call Test.OK            "Call Time ,'9:24am','C'      "
+  Call Test.OK            "Call Time , 63880824296384000, 'F' "
+  Call Test.OK            "Call Time , 9, 'H'           "
+  Call Test.OK            "Call Time , '09:26:17.935000', 'L' "
+  Call Test.OK            "Call Time , 567, 'M'         "
+  Call Test.OK            "Call Time , '09:27:43', 'N'  "
+  Call Test.OK            "Call Time , 7200000000, 'O'  "
+  Call Test.OK            "Call Time , 34168, 'S'       "
+  Call Test.OK            "Call Time , 1745227804, 'T'  "
+  -- TODO Check that the time is in the required format. Same for DATE
+
+  -- TRACE
+
+  Call Test.Error 40.004, "Call Trace a, b              "  -- Maximum of two arguments
+  Call Test.Error 24.001, "Call Trace '*'               "  -- Wrong option
+  -- Call Test.OK         "Call Trace 'A'; Trace Normal "
+  Call Test.OK            "Call Trace 'C'; Trace Normal "
+  Call Test.OK            "Call Trace 'F'; Trace Normal "
+  -- Call Test.OK         "Call Trace 'I'; Trace Normal "
+  -- Call Test.OK         "Call Trace 'L'; Trace Normal "
+  Call Test.OK            "Call Trace 'N'               "
+  Call Test.OK            "Call Trace 'O'; Trace Normal "
+  -- Call Test.OK         "Call Trace 'R'; Trace Normal "
+
+  -- TRANSLATE
+
+  Call Test.Error 40.003, "Call Translate               "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Translate a,b,c,d,e,f,g "  -- Maximum of six arguments
+  Call Test.Error 40.005, "Call Translate  , b          "  -- Argument 1 is required
+  Call Test.Error 40.023, "Call Translate a, b, c, ''   "  -- Pad must be one char in length
+  Call Test.OK            "Call Translate a, b, c, 'a'  "  -- Pad must be one char in length
+  Call Test.Error 40.023, "Call Translate a, b, c, 'aa' "  -- Pad must be one char in length
+  Call Test.Error 40.012, "Call Translate a,,,,'*'      "  -- Argument number 5 must be a whole number
+  Call Test.Error 93.924, "Call Translate a,,,,0        "  -- Argument number 5 must be positive
+  Call Test.OK            "Call Translate a,,,,1        "  -- Argument number 5 must be positive
+  Call Test.Error 40.012, "Call Translate a,,,,,'*'     "  -- Argument number 6 must be a whole number
+  Call Test.Error 93.923, "Call Translate a,,,,, -1     "  -- Argument number 6 must be zero or positive
+  Call Test.OK            "Call Translate a,,,,,  0     "  -- Argument number 6 must be zero or positive
+
+  -- TRUNC
+
+  Call Test.Error 40.003, "Call Trunc                   "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Trunc a, b, c           "  -- Maximum of two arguments
+  Call Test.Error 40.005, "Call Trunc  , b              "  -- Argument 1 is required
+  Call Test.Error 93.943, "Call Trunc '*'               "  -- Argument number 1 must be a number
+  Call Test.Error 40.012, "Call Trunc a, '*'            "  -- Argument number 2 must be a whole number
+  Call Test.Error 93.906, "Call Trunc 1,  -1            "  -- Argument number 2 must be zero or positive
+  Call Test.OK            "Call Trunc 1,   0            "  -- Argument number 2 must be zero or positive
+
+  -- UPPER
+
+  Call Test.Error 40.003, "Call Upper                   "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Upper a, b, c, d        "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call Upper  , b              "  -- Argument 1 is required
+  Call Test.Error 40.012, "Call Upper a, '*'            "  -- Argument number 2 must be a whole number
+  Call Test.Error 93.924, "Call Upper a, 0              "  -- Argument number 2 must be positive
+  Call Test.OK            "Call Upper a, 1              "  -- Argument number 2 must be positive
+  Call Test.Error 40.012, "Call Upper a,, '*'           "  -- Argument number 3 must be a whole number
+  Call Test.Error 93.923, "Call Upper a,, -1            "  -- Argument number 3 must be zero or positive
+  Call Test.OK            "Call Upper a,,  0            "  -- Argument number 3 must be zero or positive
+
+  -- VALUE
+
+  Call Test.Error 40.003, "Call Value                   "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Value a, b, c, d        "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call Value  , b              "  -- Argument 1 is required
+
+  -- VAR
+
+  Call Test.Error 40.003, "Call Var                     "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call Var a, b                "  -- Maximum of one argument
+
+  -- VERIFY
+
+  Call Test.Error 40.003, "Call Verify a                "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call Verify a, b, c, d, e, f "  -- Maximum of five arguments
+  Call Test.Error 40.005, "Call Verify  , b             "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call Verify a, , c           "  -- Argument 2 is required
+  Call Test.Error 93.915, "Call Verify a, b, '*'        "  -- Wrong option
+  Call Test.OK            "Call Verify a, b, 'M'        "
+  Call Test.OK            "Call Verify a, b, 'N'        "
+  Call Test.Error 40.012, "Call Verify a, b, , '*'      "  -- Argument number 4 must be a whole number
+  Call Test.Error 93.924, "Call Verify a, b, ,  0       "  -- Argument number 4 must be positive
+  Call Test.OK            "Call Verify a, b, ,  1       "  -- Argument number 4 must be positive
+  Call Test.Error 40.012, "Call Verify a, b, , , '*'    "  -- Argument number 5 must be a whole number
+  Call Test.Error 93.923, "Call Verify a, b, , , -1     "  -- Argument number 5 must be zero or positive
+  Call Test.OK            "Call Verify a, b, , ,  0     "  -- Argument number 5 must be zero or positive
+
+  -- WORD, WORDINDEX, WORDLENGTH
+
+  Do name Over ("WORD", "WORDINDEX", "WORDLENGTH")
+    call = "Call" name
+    Call Test.Error 40.003, Call "a                     "  -- Minimum of two arguments
+    Call Test.Error 40.004, Call "a, b, c               "  -- Maximum of two arguments
+    Call Test.Error 40.005, Call " , b                  "  -- Argument 1 is required
+    Call Test.Error 40.012, Call "a, '*'                "  -- Argument number 2 must be a whole number
+    Call Test.Error 93.924, Call "a,  0                 "  -- Argument number 2 must be positive
+    Call Test.OK            Call "a,  1                 "  -- Argument number 2 must be positive
+  End
+
+  -- WORDPOS
+
+  Call Test.Error 40.003, "Call WordPos a               "  -- Minimum of two arguments
+  Call Test.Error 40.004, "Call WordPos a, b, c, d      "  -- Maximum of three arguments
+  Call Test.Error 40.005, "Call WordPos  , b            "  -- Argument 1 is required
+  Call Test.Error 40.005, "Call WordPos a, , c          "  -- Argument 2 is required
+  Call Test.Error 40.012, "Call WordPos a, b, '*'       "  -- Argument number 3 must be a whole number
+  Call Test.Error 93.924, "Call WordPos a, b,  0        "  -- Argument number 3 must be positive
+  Call Test.OK            "Call WordPos a, b,  1        "  -- Argument number 3 must be positive
+
+  -- WORDS
+
+  Call Test.Error 40.003, "Call Words                   "  -- One argument is required
+  Call Test.Error 40.004, "Call Words a, b              "  -- Maximum of one argument
+
+  -- X2B, X2C
+
+  Do name Over ("X2B", "X2C")
+    Call = "Call" name
+    Call Test.Error 40.003, Call "                      "  -- One argument is required
+    Call Test.Error 40.004, Call "a, b                  "  -- Maximum of one argument
+    Call Test.Error 93.931, Call "' FF'                 "  -- No starting with blanks
+    Call Test.Error 93.931, Call "'FF '                 "  -- No ending with blanks
+    Call Test.Error 93.933, Call "'*'                   "  -- Only 0-9, A-F and whitespace
+    Call Test.Error 93.976, Call "'E FFF'               "  -- Groups of *2
+  End
+
+  -- X2D
+
+  Call Test.Error 40.003, "Call X2D                     "  -- Minimum of one argument
+  Call Test.Error 40.004, "Call X2D a, b, c             "  -- Maximum of two arguments
+  Call Test.Error 40.005, "Call X2D  , b                "  -- Argument 1 is required
+  Call Test.Error 40.012, "Call X2D '', '*'             "  -- Argument number 2 must be a whole number
+  Call Test.Error 93.923, "Call X2D '', -1              "  -- Argument number 2 must be zero or positive
+  Call Test.OK            "Call X2D '',  0              "  -- Argument number 2 must be zero or positive
+
+
+  -- XRANGE
+
+  Call Test.Error 40.028, "Call XRange 'no'             "  -- Minimum of two arguments
+  Call Test.OK            "Call XRange 'a'              "
+  Call Test.OK            "Call XRange 'a','z'          "
+  Call Test.OK            "Call XRange    ,'z'          "
+  Call Test.OK            "Call XRange 'AlNum'          "
+  Call Test.OK            "Call XRange 'Alpha'          "
+  Call Test.OK            "Call XRange 'Blank'          "
+  Call Test.OK            "Call XRange 'Cntrl'          "
+  Call Test.OK            "Call XRange 'Digit'          "
+  Call Test.OK            "Call XRange 'Graph'          "
+  Call Test.OK            "Call XRange 'Lower'          "
+  Call Test.OK            "Call XRange 'Print'          "
+  Call Test.OK            "Call XRange 'Punct'          "
+  Call Test.OK            "Call XRange 'Space'          "
+  Call Test.OK            "Call XRange 'Upper'          "
+  Call Test.OK            "Call XRange 'XDigit'         "
+
+  ------------------------------------------------------------------------------
+
+  Say "Total" .Parser.Test.SimpleErrors "simple errors."
+  Say "Total" .Parser.Test.OK "OK tests."
+
+  Exit
+
+Halt:
+  Say ""
+  Say "Program halted."
+Exit
+
+::Requires "Test.Parser.cls"

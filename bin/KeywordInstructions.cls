@@ -23,6 +23,7 @@
 /*                  PROCEDURE EXPOSE                                          */
 /* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250416    0.2a Add argument info to called routine chain                 */
+/* 20250419         Fix bug nos. 3, 6 & 7                                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -803,12 +804,16 @@ Done:
 
   blockInstructionsStack = package~blockInstructionsStack
   Do i = blockInstructionsStack~items To 1 By -1
-    blockLabel = blockInstructionsStack[i]~label
-    If blockLabel  == "" Then blockLabel = blockInstructionsStack[i]~control
-    If blockLabel \== "", blockLabel == label~value Then Do
-      If blockInstructionsStack[i]~class = .Select.Clause Then Signal 28.005
+    instruction = blockInstructionsStack[i]
+    blockLabel = instruction~label
+    If blockLabel == "",  \instruction~isA(.Select.Clause) Then
+      blockLabel = instruction~control
+    If blockLabel~isA(.String) Then theLabel = blockLabel
+    Else theLabel = blockLabel~value
+    If blockLabel \== "", theLabel == label~value Then Do
+      If instruction~class = .Select.Clause Then Signal 28.005
       blockLabel       = label
-      blockInstruction = blockInstructionsStack[i]
+      blockInstruction = instruction
       Signal Done
     End
   End
@@ -856,22 +861,33 @@ Done:
   iteration    = .Nil
   ignoreBlanks = .True
 
+  -- No label? We are done.
   If element < .EL.END_OF_CLAUSE Then Signal Done
 
+  -- Label should be a symbol.
   If element \< .ALL.SYMBOLS Then Signal 20.907
+
+  -- Set the element subcategory
   label = element
   Call SetConstantName label, .BLOCK.INSTRUCTION.NAME
 
+  -- Instruction should end here
   element = TheElementAfter( label, ignoreBlanks )
   If element \< .EL.END_OF_CLAUSE Then Signal 21.907
 
+  -- Now the label can refer to any label or control variable in
+  -- the block instruction stack.
   blockInstructionsStack = package~blockInstructionsStack
   Do i = blockInstructionsStack~items To 1 By -1
-    blockLabel = blockInstructionsStack[i]~label
-    If blockLabel == "" Then blockLabel = blockInstructionsStack[i]~control
-    If blockLabel \ == "", blockLabel == label~value Then Do
+    instruction = blockInstructionsStack[i]
+    blockLabel = instruction~label
+    If blockLabel == "",  \instruction~isA(.Select.Clause) Then
+      blockLabel = instruction~control
+    If blockLabel~isA(.String) Then theLabel = blockLabel
+    Else theLabel = blockLabel~value
+    If blockLabel \ == "", theLabel == label~value Then Do
       blockLabel     = label
-      iteration = blockInstructionsStack[i]
+      iteration = instruction
       Signal Done
     End
   End
@@ -1865,13 +1881,15 @@ Done:
         If element~value == "..." Then Signal Ellipsis
         c = element~value[1]
         If c >= "0", c <= "9" Then Signal 31.002
-        If c == "."           Then Signal 31.003
+        -- Check for "." moved below: .o is invalid, but .o~m is not
         -- Mark the element as assigned
         element~setAssigned
         -- Build a symbol term
         term = Symbol.Term( package, element, continue )
         -- Now collect "[...]" and "~[~](...)" sequences
         term = Simple.Message.Term( package, term )
+        If term~isA(.Symbol.Term), Left(term~symbol~value,1) == "." Then
+          Signal 31.003
         element = term~end
         -- Consume blanks after ")" and "]"
         If element < .EL.WHITESPACE Then Do

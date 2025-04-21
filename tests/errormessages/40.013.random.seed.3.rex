@@ -1,1 +1,0 @@
-Call Random 1,100,-1

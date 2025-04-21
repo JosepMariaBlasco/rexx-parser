@@ -20,6 +20,8 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250414         Move BIF info to BIFs.cls                                 */
 /* 20250414         Add argument info to called routine chain                 */
+/* 20250418    0.2a Support for BIF early checking                            */
+/* 20250418         Fix SIGNAL early checking                                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -408,6 +410,8 @@
 
 ::Routine CheckSignal
 
+If .rxcheck.debug = 1 Then Trace ?a
+
   Use Strict Arg clause, bodyLabels
 
   label = clause~label
@@ -416,6 +420,8 @@
     If label~value == "USER" Then label = clause~userCondition
   End
   If \bodyLabels~hasItem( label~value ) Then Signal 16.001
+
+  Return
 
 -- Label "&1" not found.
 16.001: Syntax( 16.001, TheElementAfter( clause~begin ), label )
@@ -470,222 +476,3 @@
     End
     Call SetConstantName name, subCategory
   End
-
---------------------------------------------------------------------------------
-
--- CheckBIFArgs
-
--- When writing this routine, we have uncovered a large number of ooRexx bugs.
--- Some are documented in the code below, and in the BIFs.cls package.
--- Others are collected here:
---
--- https://sourceforge.net/p/oorexx/bugs/2014/
---
-
-::Routine CheckBIFArgs
-
-  Use Strict Arg label, arguments
-
-  BIFName = label~value
-
-  -- BEEP, DIRECTORY and FILESPEC are specially handled, even if they are
-  -- listed as BIFs.
-  asExternal = WordPos(BIFName,"BEEP DIRECTORY FILESPEC") > 0
-
-  BIFInfo = .Parser.BIFInfo[BIFName]
-
-  nArgs = arguments~arg()
-
-  -- Check if there are more args than the BIF allows
-  maxArgs = BIFInfo~maxArgs
-  If maxArgs \== "*", nArgs > maxArgs Then
-    If asExternal Then Signal 88.922
-    Else               Signal 40.004
-
-  -- Check if there are less args than the minimun required by the BIF
-  minArgs = BIFInfo~minArgs
-  missing = nArgs + 1
-  If nArgs < minArgs Then
-    If \asExternal Then Signal 40.003
-    Else                Signal 88.901
-
-  -- Now check that all required args are present
-
-  Select Case BIFName -- Special cases
-    When "ARG" Then if nArgs > 0 Then minArgs = 1
-    Otherwise Nop
-  End
-
-  checkUpTo = minArgs - 1 + (nArgs > minArgs)
-  If maxArgs == "*" Then checkUpTo = nArgs
-  Do argN = 1 To checkUpTo
-    missing = argN
-    If arguments~arg(argN,"O") Then
-      If \asExternal Then Signal 40.005
-      Else                Signal 88.901
-  End
-
-If .environment~Parser.check = 1 Then Trace ?a
-
-  -- Now check statically specified arguments against their declared types
-  Do argN = 1 To nArgs
-    If arguments~arg(argN,"O") Then Iterate
-    arg = arguments~arg(argN)
-    Select Case arg~class
-      When .Literal.String.Term Then value = arg~string~value
-      When .Symbol.Term         Then Do
-        symbol   = arg~symbol
-        If symbol \< .ALL.NUMBERS Then Iterate
-        value = symbol~value
-      End
-      When .Prefix.Expression Then Do -- Allow negative numbers
-        term = arg~term
-        If \term~isA( .Symbol.Term ) Then Iterate
-        symbol   = term~symbol
-        If symbol \< .ALL.NUMBERS Then Iterate
-        prefixes = arg~prefixes -- An array of "+" and "-"
-        minus = 0
-        Do sign Over prefixes
-          If sign == "-" Then minus = \minus
-        End
-        value = symbol~value
-        digits = Digits()
-        -- We may need many digits when the type is NUM
-        Numeric Digits Length(value) + 2
-        If minus Then value = -value
-        Numeric Digits digits
-      End
-      Otherwise Iterate
-    End
-    If WordPos(BIFName, "MIN MAX") > 0 Then type = "NUM"
-    Else If BIFName == "XRANGE" Then type = "XRANGE"
-    Else type  = BIFInfo~argType[argN]
-    Select Case type
-      When "ANY" Then Iterate
-      When "ACEFILNOR" Then Do
-        letter = Left(value, 1)
-        If Pos(Upper(letter), type) == 0 Then Signal 24.001
-      End
-      When "AENO", "ACDEIORS", "BDEFILMNOSTUW", "BDEFINOSTU", "CEFHLMNORST", "CFHLMNOST", "CN", "CDEGOS", "DELNP", "SDC" Then Do
-        letter = Left(value, 1)
-        If Pos(Upper(letter), type) == 0 Then Signal 40.904
-        -- TODO RXQUEUE and STREAM special casess
-      End
-      When "ABILMNOSUVWX9", "BLT", "MN" Then Do -- See https://sourceforge.net/p/oorexx/bugs/2007/
-        letter = Left(value, 1)
-        If Pos(Upper(letter), type) == 0 Then Signal 93.915
-      End
-      When "LENGTH", "POS", "WHOLE", "WHOLE>0", "WHOLE>=0" Then Do
-        -- See https://sourceforge.net/p/oorexx/bugs/2008/
-        If \DataType(value,"Internal") Then Signal 40.012
-        Select Case Type
-          When "LENGTH"   Then If value <  0 Then
-            If WordPos(BIFName, "CHARIN") > 0 Then Nop -- See https://sourceforge.net/p/oorexx/bugs/2011/
-            Else                                   Signal 93.923
-          When "POS"      Then If value <= 0 Then  Signal 93.924
-          When "WHOLE>0"  Then Do
-            If BIFName == "BEEP" Then Do
-              name = "frequency"
-              min = 37
-              max = 32767
-              If value < min | value > max Then Signal 88.907
-            End
-            Else If value <= 0 Then
-              If WordPos(BIFName, "CHAROUT LINEOUT") > 0    Then Nop -- TODO That would be Signal 93.907, but arg numbers are shifted by two :/
-              Else If WordPos(BIFName, "CHARIN LINEIN") > 0 Then Signal 93.907
-              Else                                               Signal 40.014
-          End
-          When "WHOLE>=0" Then Do
-            If BIFName == "BEEP" Then Do
-              name = "duration"
-              min = 0
-              max = 60000
-              If value < min | value > max Then Signal 88.907
-            End
-            Else If value <  0 Then Do
-              If WordPos(BIFName, "RANDOM")                            Then Signal 40.013
-              If WordPos(BIFName, "CHANGESTR COPIES FORMAT TRUNC") > 0 Then Signal 93.906 -- See https://sourceforge.net/p/oorexx/bugs/2010/
-            End
-          End
-          When "WHOLE" Then Nop -- TODO: RANDOM
-        End
-      End
-      When "NUM" Then Do
-        If \DataType(value,"Number")   Then
-          If argN > 1, WordPos(BIFName, "MAX MIN") > 0 Then Signal 93.904
-          Else                                              Signal 93.943
-      End
-      When "XRANGE" Then Do
-        If Length(value) > 1, -
-          WordPos(value,"ALNUM ALPHA BLANK CNTRL DIGIT GRAPH LOWER PRINT PUNCT SPACE UPPER XDIGIT") == 0 Then
-          Signal 40.028
-      End
-      When "0_99" Then Do
-        If \DataType(value,"Internal") Then Signal 40.012
-        If value < 0 | value > 99      Then Signal 40.903
-      End
-      Otherwise Nop
-    End
-  End
-
-Return
-
--- TRACE request letter must be one of "ACEFILNOR"; found "&1".
-24.001: Syntax( 24.001, label, letter )
-
--- Not enough arguments in invocation of &1; minimum expected is &2.
-40.003: Syntax( 40.003, label, BIFName, minArgs )
-
--- Too many arguments in invocation of &1; maximum expected is &2.
-40.004: Syntax( 40.004, label, BIFName, maxArgs )
-
--- Missing argument in invocation of &1; argument &2 is required.
-40.005: Syntax( 40.005, label, BIFName, argN )
-
--- &1 argument &2 must be a whole number; found "&3".
-40.012: Syntax( 40.012, label, BIFName, argN, value )
-
--- &1 argument &2 must be zero or positive; found "&3".
-40.013: Syntax( 40.013, label, BIFName, argN, value )
-
--- &1 argument &2 must be positive; found "&3".
-40.014: Syntax( 40.014, label, BIFName, argN, value )
-
--- &1 argument &2 must be a character class name or a single character; found "&3".
-40.028: Syntax( 40.028, label, BIFName, argN, value )
-
--- &1 argument &2 must be in the range 0-99; found "&3".
-40.903: Syntax( 40.903, label, BIFName, argN, value )
-
--- &1 argument &2 must be one of &3; found "&4".
-40.904: Syntax( 40.904, label, BIFName, argN, type, letter )
-
--- Missing argument; argument &1 is required.
-88.901: Syntax( 88.901, label, missing )
-
--- Argument &1 must be in the range &2 to &3; found "&4".
-88.907: Syntax( 88.907, label, name, min, max, value )
-
--- Too many arguments in invocation; &1 expected.
-88.922: Syntax( 88.922, label, maxArgs )
-
--- Method argument &1 must be a number; found "&2".
-93.904: Syntax( 93.904, label, argN-1, value )
-
--- Method argument &1 must be zero or a positive whole number; found "&2".
-93.906: Syntax( 93.906, label, argN-1, value )
-
--- Method argument &1 must be a positive whole number; found "&2".
-93.907: Syntax( 93.907, label, argN-1, value )
-
--- Method option must be one of "&1"; found "&2".
-93.915: Syntax( 93.915, label, type, letter )
-
--- Invalid length argument specified; found "&1".
-93.923: Syntax( 93.923, label, value )
-
--- Invalid position argument specified; found "&1".
-93.924: Syntax( 93.924, label, value )
-
--- &1 method target must be a number; found "&2".
-93.943: Syntax( 93.943, label, BIFName, value )

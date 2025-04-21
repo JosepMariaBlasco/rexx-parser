@@ -1,1 +1,0 @@
-Call DelWord a,b,c,d

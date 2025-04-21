@@ -1,1 +1,0 @@
-Call Trunc ,b

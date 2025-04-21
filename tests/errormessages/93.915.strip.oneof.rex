@@ -1,1 +1,0 @@
-Call Strip string,"w"

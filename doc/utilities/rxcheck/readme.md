@@ -18,14 +18,19 @@ reach dead branches, uncalled procedures and routines, etc.
 \
 
 ----------------------------------- ----------------------
-`-?`, `-help`, `--help`&nbsp;&nbsp; Display this help file
-`+all`                              Activate all toggles. This is the default
+`-?`, `-help`, `--help`&nbsp;&nbsp; Display this help file.
+`+all`                              Activate all toggles. This is the default.
 `-all`                              Deactivate all toggles.
-`[+|-]signal`                       Toggle detecting SIGNAL to inexistent labels
-`[+|-]guard`                        Toggle checking that GUARD is in a method body
-`[+|-]bifs`                         Check BIF arguments
+`[+|-]signal`                       Toggle detecting SIGNAL to inexistent labels.
+`[+|-]guard`                        Toggle checking that GUARD is in a method body.
+`[+|-]bifs`                         Check BIF arguments.
+&nbsp;
+`[+|-]debug`                        (De)activate debug mode (not affected by "all").
+&nbsp;
+`-e "code"`                         Immediately parse a string of Rexx code.
+`-e 'code'`                         This has to be the last argument.
 ----------------------------------- ----------------------
 
 \
 
-All toggles are active by default
+All toggles except "debug" are active by default.

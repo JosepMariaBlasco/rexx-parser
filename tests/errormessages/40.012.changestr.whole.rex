@@ -1,1 +1,0 @@
-Call ChangeStr "a",s,"b","*"

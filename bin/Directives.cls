@@ -240,7 +240,7 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Attribute.Directive Public SubClass Rexx.Directive
-::Attribute name      Get
+::Attribute name     Get
 ::Attribute options. Get
 ::Attribute attribute
 ::Method init

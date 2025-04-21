@@ -21,6 +21,8 @@
 /*                                                                            */
 /******************************************************************************/
 
+Call "earlyChecks.test"
+
 my    = .context~package
 myDir = FileSpec("L",my~name)
 

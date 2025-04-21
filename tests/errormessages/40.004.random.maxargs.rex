@@ -1,1 +1,0 @@
-Call Random a,b,c,d

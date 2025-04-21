@@ -1,1 +1,0 @@
-Call WordLength string,0

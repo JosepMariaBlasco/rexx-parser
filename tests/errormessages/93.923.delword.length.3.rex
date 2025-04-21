@@ -1,1 +1,0 @@
-Call DelWord string,1,-1

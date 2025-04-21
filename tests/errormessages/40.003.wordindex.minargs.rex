@@ -1,1 +1,0 @@
-Call WordIndex a

@@ -80,11 +80,12 @@ although for some few BIFs, 88.901 is raised instead.
 
 When the BIF has a one-letter argument (that is, an argument of which only the first letter
 is examined) and the corresponding parmeter is a string literal, this string literal
-is checked. BIFs checked this way are `ARG`,  `CONDITION`, `DATATYPE`, `DATE`, `FILESPEC`, `LINES`, `RXQUEUE`, `STREAM`,
+is checked. BIFs checked this way are `ARG`, `CONDITION`, `DATATYPE`, `DATE`, `FILESPEC`, `LINES`, `RXQUEUE`, `STREAM`,
 `STRIP`, `TIME`, `TRACE` and `VERIFY`. The message for the `TRACE` BIF is special. Some of the
 other BIFs raise a 40.904 `SYNTAX` error, `&1 argument &2 must be one of &3; found "&4"`,
 while still others raise a 93.915, `Method option must be one of "&1"; found "&2"`,
-which is [a bug](#bugs).
+which is [a bug](#bugs). `DATE` and `TIME` do not check that literal dates
+and times are in the required format.
 
 ~~~rexx
   Var = "*"
@@ -117,6 +118,29 @@ a single character in length, or one of the allowed POSIX classes.
   Call XRange "42"            -- XRANGE argument 1 must be a character class name or a single character; found "42"
 ~~~
 
+In the case of `D2C` and `D2X`, the first argument, which is a whole number,
+may not have more digits than "the current setting of NUMERIC DIGITS", which is
+an execution-time value. In this case, the parser only checks that the supplied
+constant value is a number (`DATATYPE(x,"Number")`) containing no blanks, no dots,
+and no "E" exponential mark, and, if the second argument is omitted, that
+the supplied constant is not negative.
+
+~~~rexx
+  Call D2C -1                 -- Length must be specified to convert a negative value
+~~~
+
+Pad characters are checked that they have exactly one character in length,
+and separators to see that they are the null string or a single character.
+Some combinations of separators are not valid in the `TIME` BIF,
+depending on the options chosen; this is not checked.
+
+```rexx
+  Call Left 'a',12,'ww'       -- LEFT argument 3 must be a single character; found "ww".
+  Call Date ,'20/04/25', 'E', '**' --  DATE argument 4 must be a single non-alphanumeric
+                              -- character or the null string; found "**"
+```
+
+`STREAM` and `RXQUEUE` are not early-checked at this time.
 
 ## GUARD
 

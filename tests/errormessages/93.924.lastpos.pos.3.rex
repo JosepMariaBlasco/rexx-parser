@@ -1,1 +1,0 @@
-Call LastPos a,b,-1

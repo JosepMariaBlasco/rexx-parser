@@ -1,1 +1,0 @@
-Call Word string,"*"

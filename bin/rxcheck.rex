@@ -15,6 +15,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20250416    0.2a First release                                             */
+/*             0.2a Add "[+|-]debug" option                                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -25,6 +26,7 @@
   signal = 1
   guard  = 1
   bifs   = 1
+  debug  = 0
   Do While "+-"~contains(Left(file,1))
     Parse Var file option file
     Select Case Lower(option)
@@ -45,6 +47,24 @@
       When "+guard"  Then guard  = 0
       When "-bifs"   Then bifs   = 0
       When "+bifs"   Then bifs   = 1
+      When "-debug"  Then debug  = 0
+      When "+debug"  Then debug  = 1
+      When "-e"      Then Do
+        c = file[1]
+        If Pos(c,"'""") == 0 Then Do
+          Say "The -e option must be immediately followed by a quoted code string."
+          Exit 1
+        End
+        Parse Var file (c)code(c)rest
+        If code == "" Then Do
+          Say "No code found after '-e' option."
+        End
+        If rest \== "" Then Do
+          Say "A code string must be the last argument after '-e', found '"rest"'."
+        End
+        source = .Array~of( code )
+        Signal code
+      End
       Otherwise
         Say "Invalid option '"option"'."
         Exit 1
@@ -63,6 +83,8 @@
   source = CharIn(fullPath, 1, Chars(fullPath))~makeArray
   Call Stream fillPath, 'c', 'close'
 
+Code:
+
   check = .Array~new
   If signal Then check~append("SIGNAL")
   If guard  Then check~append("GUARD")
@@ -71,7 +93,7 @@
 
   Signal On Syntax
 
- .environment~Parser.check = 1
+  If debug Then .environment~rxcheck.debug = 1
 
   package = .Rexx.Parser~new(file,source,options)~package
 
@@ -106,6 +128,7 @@ Help:
   Exit 1
 
 ::Requires "Rexx.Parser.cls"
+::Requires "modules/print/print.cls"
 ::Resource help
 
 Usage: rxcheck [OPTIONS] FILE
@@ -115,12 +138,17 @@ run it first. Checks are performed syntactically, and therefore they
 reach dead branches, uncalled procedures and routines, etc.
 
 Options:
-  -?, -help, -- help Display this help file
-  +all         Activate all toggles. This is the default
+  -?, -help, -- help Display this help file.
+  +all         Activate all toggles. This is the default.
   -all         Deactivate all toggles.
-  [+|-]signal  Toggle detecting SIGNAL to inexistent labels
-  [+|-]guard   Toggle checking that GUARD is in a method body
-  [+|-]bifs    Check BIF arguments
+  [+|-]signal  Toggle detecting SIGNAL to inexistent labels.
+  [+|-]guard   Toggle checking that GUARD is in a method body.
+  [+|-]bifs    Check BIF arguments.
 
-All toggles are active by default
+  [+|-]debug   (De)activate debug mode (not affected by "all").
+
+  -e "code"    Immediately parse a string of Rexx code.
+  -e 'code'    This has to be the last argument.
+
+All toggles except "debug" are active by default
 ::END
