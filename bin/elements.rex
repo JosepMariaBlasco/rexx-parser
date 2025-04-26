@@ -21,6 +21,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                  Binary directory is now "bin" instead of "cls"            */
 /*                  Move "modules" directory inside "bin"                     */
+/* 20250426    0.2b Fix compound count, simplify REQUIRES                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -33,26 +34,8 @@
 
   package =  .context~package
 
-  -- Jump over the "Requires" routine
-  Signal Start
-
-Requires:
-  package~addPackage( .Package~new( Arg(1) ) )
-  Return
-
-Start:
-
-  -- ::REQUIRES does not work well with "../" paths
   myName  =   package~name
-  mypath  =   FileSpec( "Path", myName )
-  myDrive =   FileSpec( "Drive", myName )
   Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
-
-  -- Create "..", for legibility
-  package~local["."] = .File~new(myDrive||mypath"..")~absolutePath
-
-  Call Requires .."/bin/Rexx.Parser.cls"
-  Call Requires .."/bin/modules/print/print.cls"
 
 --------------------------------------------------------------------------------
 -- Main program                                                               --
@@ -126,11 +109,12 @@ ProcessOptions:
 
   -- Iterate over all elements and print them
   elements = 0
+  compound = 0
   Do Counter elements Until element == .Nil
     Call Print element
     element = element~next
   End
-  Say "Total:" elements "elements and" elements "compound symbol elements examined."
+  Say "Total:" elements "elements and" compound "compound symbol elements examined."
 
   -- We are done
   Exit 0
@@ -182,8 +166,8 @@ Return Right(fromLine,5) Right(fromCol,3)":"Right(toLine,5) Right(toCol,3)
 --------------------------------------------------------------------------------
 
 Compound:
+  compound += 1
   Do part Over element~parts
-    elements += 1
     Say " "Extent(part)"     -> '"part~value"' ("||,
       AorAN(.Parser.CategoryName[part~category])")"
   End
@@ -228,6 +212,8 @@ Syntax:
 -- Help text                                                                  --
 --------------------------------------------------------------------------------
 
+::Requires "Rexx.Parser.cls"
+::Requires "modules/print/print.cls"
 ::Resource Help end "::End"
 Usage: myName [options] FILE
 Transform FILE into a list of elements and list them.
