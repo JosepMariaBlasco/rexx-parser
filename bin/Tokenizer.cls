@@ -95,7 +95,7 @@ Continuation.Found:
   -- Handle the end of source condition
   If line > lines Then Do
     If eosReached, eolAfterEosReturned Then
-      Internal.Error( tail, "Tokenizer~nextElement called past EOS." )
+      Internal.Error( "Tokenizer~nextElement called past EOS." )
     If eosReached Then Do
       eolAfterEosReturned = 1
       Return self~endOfLine

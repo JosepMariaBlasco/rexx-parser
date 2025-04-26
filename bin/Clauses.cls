@@ -18,6 +18,7 @@
 /* 20241208    0.1a Clauser: accept options arg, pass it to preclauser        */
 /* 20250116    0.1f Add "assigned" attribute to variable assignment targets   */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250421    0.2b Allow optional empty assignments                          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -616,7 +617,12 @@ NoLabels:
 
   expression = Expression.List( package, element, .EL.END_OF_CLAUSE )
 
-  If expression~isEmpty Then Signal 35.918
+  -- Allow empty assignments when the "emptyassignments" option
+  -- has been specified with a value of "1".
+  If expression~isEmpty Then Do
+    If Global.Option("emptyassignments") == 1 Then Nop
+    Else Signal 35.918
+  End
 
   Return .Assignment.Instruction~new(                 -
     package, begin, end, symbol, operator, expression -

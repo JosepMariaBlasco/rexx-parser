@@ -1,7 +1,9 @@
 
 
-  If .environment~Parser.Test.SimpleErrors == .Nil Then .environment~Parser.Test.SimpleErrors = 0
-  If .environment~Parser.Test.Fast.OK           == .Nil Then .environment~Parser.Test.Fast.OK           = 0
+  If .environment~Parser.Test.SimpleErrors == .Nil Then
+     .environment~Parser.Test.SimpleErrors = 0
+  If .environment~Parser.Test.Fast.OK      == .Nil Then
+     .environment~Parser.Test.Fast.OK      = 0
 
   myDir =  FileSpec("Location",.context~name)
   sep   = .File~separator

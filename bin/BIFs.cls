@@ -377,9 +377,12 @@ If .rxcheck.debug = 1 Then Trace ?a
         If Pos(Upper(letter), type) == 0 Then Signal 93.915
       End
       When "WHOLE", "D2WHOLE", "D2WHOLE>=0" Then Do
+        If BIFName == "RANDOM" Then Do
+          If \DataType(value, "Whole") Then Signal 40.012
+          Iterate
+        End
         If \DataType(value,"Number") | Pos("E", value) > 0 | Pos(" ", value) > 0 | Pos(".", value) > 0 Then
           Select Case BIFName
-            When "RANDOM" Then           Signal 40.012
             When "D2X"    Then           Signal 93.928
             When "D2C"    Then           Signal 93.929
           End

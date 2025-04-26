@@ -19,6 +19,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250416    0.2a Add argument info to called routine chain                 */
 /* 20250419         Fix NAry.Expression crashing on SecondPass.               */
+/* 20250421    0.2b Argument lists in function calls not working properly.    */
 /*                                                                            */
 /******************************************************************************/
 
@@ -594,7 +595,7 @@
 FunctionCall:
   lParen        = element
   next          = TheElementAfter( lParen )  -- Where to start parsing
-  terminators ||= .EL.RIGHT_PARENTHESIS      -- Add ")" to terminators
+  terminators   = .EL.RIGHT_PARENTHESIS      -- Terminator is ")"
 
   arguments = Expression.List( package, next, terminators )
 
@@ -893,7 +894,7 @@ Return
   arguments = Expression.List(        -
     package,                          -
     next,                             - -- Where to begin parsing
-    terminators || .EL.RIGHT_PARENTHESIS - -- Add ")" to terminators
+   .EL.RIGHT_PARENTHESIS              - -- Terminator is ")"
   )
 
   Call ExpectParenPair lParen, arguments~end
@@ -918,7 +919,7 @@ Return
   arguments = Expression.List(           -
     package,                             -
     next,                                - -- Where to begin parsing
-    terminators || .EL.RIGHT_PARENTHESIS - -- Add ")" to terminators
+    .EL.RIGHT_PARENTHESIS                - -- Terminators is ")"
   )
 
   Call ExpectParenPair lParen, arguments~end
@@ -1035,8 +1036,8 @@ Return
 
     arguments = Expression.List(        -
       package,                          -
-      TheElementAfter( lParen ),          - -- Where to start parsing
-      terminators || .EL.RIGHT_PARENTHESIS - -- Add ")" to terminators
+      TheElementAfter( lParen ),        - -- Where to start parsing
+     .EL.RIGHT_PARENTHESIS              - -- Terminator is ")"
     )
 
     Call ExpectParenPair lParen, arguments~end

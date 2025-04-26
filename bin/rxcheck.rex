@@ -16,6 +16,10 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20250416    0.2a First release                                             */
 /*             0.2a Add "[+|-]debug" option                                   */
+/* 20250421    0.2b Add "[+|-]e" option                                       */
+/*                  Add "[+|-]extraletters" option                            */
+/*                  Add "[+|-]emptyassignments" option                        */
+/* 20250426         Add ANSI.ErrorText support, -itrace option                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -23,10 +27,13 @@
 
   If file = "" Then Signal Help
 
-  signal = 1
-  guard  = 1
-  bifs   = 1
-  debug  = 0
+  signal           = 1
+  guard            = 1
+  bifs             = 1
+  debug            = 0
+  itrace           = 0
+  extraletters     = ""
+  emptyassignments = 0
   Do While "+-"~contains(Left(file,1))
     Parse Var file option file
     Select Case Lower(option)
@@ -41,15 +48,18 @@
         guard  = 1
         bifs   = 1
       End
-      When "-signal" Then signal = 0
-      When "+signal" Then signal = 1
-      When "-guard"  Then guard  = 0
-      When "+guard"  Then guard  = 0
-      When "-bifs"   Then bifs   = 0
-      When "+bifs"   Then bifs   = 1
-      When "-debug"  Then debug  = 0
-      When "+debug"  Then debug  = 1
-      When "-e"      Then Do
+      When "-signal"  Then signal = 0
+      When "+signal"  Then signal = 1
+      When "-guard"   Then guard  = 0
+      When "+guard"   Then guard  = 0
+      When "-bifs"    Then bifs   = 0
+      When "+bifs"    Then bifs   = 1
+      When "-debug"   Then debug  = 0
+      When "+debug"   Then debug  = 1
+      When "-itrace"  Then itrace = 0
+      When "+itrace"  Then itrace = 1
+      When "-emptyassignments", "+emptyassignments" Then emptyassignments = 1
+      When "-e", "+e" Then Do
         c = file[1]
         If Pos(c,"'""") == 0 Then Do
           Say "The -e option must be immediately followed by a quoted code string."
@@ -63,7 +73,19 @@
           Say "A code string must be the last argument after '-e', found '"rest"'."
         End
         source = .Array~of( code )
+        fullPath = "INSTORE"
         Signal code
+      End
+      When "-extraletters", "+extraletters" Then Do
+        c = file[1]
+        If Pos(c,"'""") == 0 Then Do
+          Say "The -extraletters option must be immediately followed by a quoted set of letters."
+          Exit 1
+        End
+        Parse Var file (c)extraletters(c)file
+        If extraletters == "" Then Do
+          Say "No extra letters found found after '-extraletters' option."
+        End
       End
       Otherwise
         Say "Invalid option '"option"'."
@@ -91,11 +113,14 @@ Code:
   If bifs   Then check~append("BIFS")
   Options = .Array~of( (earlyCheck, check ) )
 
+  If extraletters \== "" Then Options~append(("EXTRALETTERS", extraletters))
+  If emptyassignments    Then Options~append(("EMPTYASSIGNMENTS", emptyassignments))
+
   Signal On Syntax
 
   If debug Then .environment~rxcheck.debug = 1
 
-  package = .Rexx.Parser~new(file,source,options)~package
+  package = .Rexx.Parser~new(fullPath,source,options)~package
 
   Say "No errors found."
 
@@ -111,34 +136,55 @@ Syntax:
 
   additional = Condition("A")
   Say additional[1]":"
-  line = Additional~lastItem~position
-  Say Right(line,6) "*-*" source[line]
-  Say Copies("-",80)
-  Say "Internal traceback follows"
-  Say Copies("-",80)
-  Say co~stackFrames~makeArray~makeString("L",.endOfLine)
+  --line = Additional~lastItem~position
+  --Say Right(line,6) "*-*" source[line]
   additional = additional~lastItem
+  line = additional~position
+  code = additional~code
+  additional~additional
+  Parse Var code major"."minor
+  minor = 0 + minor
+  Say Right(line,6) "*-*" source[line]
+  Say "Error" major "running" fullPath "line" line": " ErrorText(major)
+  minor = 0 + minor
+  Say "Error" major"."minor": " ANSI.ErrorText(code, additional~additional)
 
-  Raise Syntax (additional~code) Additional (additional~additional)
+  If itrace Then Do
+    Say
+    Say Copies("-",80)
+    Say "Internal traceback follows"
+    Say Copies("-",80)
+    Say co~stackFrames~makeArray~makeString("L",.endOfLine)
+  End
 
-  Exit
+  Exit -major
 
 Help:
   Say .Resources~Help
   Exit 1
 
 ::Requires "Rexx.Parser.cls"
+::Requires "ANSI.ErrorText.cls"
 ::Requires "modules/print/print.cls"
+
 ::Resource help
+rxcheck -- Parse a program or a short code fragment
 
-Usage: rxcheck [OPTIONS] FILE
+Usage:
+  rxcheck [OPTIONS] FILE
+  rxcheck [OPTIONS] -e "REXX CODE"
 
-Perform a series of early checks on a Rexx program, without needing to
-run it first. Checks are performed syntactically, and therefore they
-reach dead branches, uncalled procedures and routines, etc.
+Runs the Rexx Parser against FILE or the supplied REXX CODE.
+By default, the parser perform a series of early checks,
+without needing to execute the program. Checks are performed
+syntactically, and therefore they reach dead branches,
+uncalled procedures and routines, etc.
 
 Options:
   -?, -help, -- help Display this help file.
+
+Toggles:
+
   +all         Activate all toggles. This is the default.
   -all         Deactivate all toggles.
   [+|-]signal  Toggle detecting SIGNAL to inexistent labels.
@@ -146,6 +192,15 @@ Options:
   [+|-]bifs    Check BIF arguments.
 
   [+|-]debug   (De)activate debug mode (not affected by "all").
+  [+|-]itrace  Toggle printing internal traceback on error
+
+Other options (all can be prefixed with "+" or "-"):
+
+  -emptyassignments  Allow assignments like "var =".
+  -extraletters "extra"  Allow all the characters in "extra"
+               to function as letters.
+
+Executing short code fragments:
 
   -e "code"    Immediately parse a string of Rexx code.
   -e 'code'    This has to be the last argument.

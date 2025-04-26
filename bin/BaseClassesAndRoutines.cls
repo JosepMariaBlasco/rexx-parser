@@ -17,6 +17,7 @@
 /* 20241206    0.1  First public release                                      */
 /* 20241226    0.1d Add GlobalOption routine                                  */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250421    0.2b Modify InternalError to raise a HALT condition            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -140,16 +141,17 @@
 /******************************************************************************/
 /* Internal.Error                                                             */
 /*                                                                            */
-/* We generate a 49.900 syntax error. The first argument is an anchor         */
-/* element, needed to assign a line number to the error. The second argument  */
-/* descriptive text of the internal error. It will be prepended with          */
-/* "Internal parser error: ".                                                 */
+/* We print a panic error and we raise the HALT condition.                    */
 /*                                                                            */
 /******************************************************************************/
 
 ::Routine Internal.Error
-  Use Strict Arg anchor, text
-  Call Syntax 49.900, anchor, "Internal parser error:" text
+  Use Strict Arg text
+  Say Copies("-",80)
+  Say "Internal error:"
+  Say "  "text
+  Say Copies("-",80)
+  Raise HALT
 
 /******************************************************************************/
 /*   In higher levels of parsing, we will be only interested in non-ignorable */
@@ -165,7 +167,7 @@
   Loop Until \element~hasIndex(ignored)
     next = element~next
     If next~isNil Then
-      Internal.Error( element, "TheElementAfter was about to return .Nil" )
+      Internal.Error( "TheElementAfter was about to return .Nil" )
     element = next
     If ignoreBlanks, element < .EL.WHITESPACE Then element~makeIgnorable
   End
@@ -178,7 +180,7 @@
   Loop Until \prev~hasIndex(ignored)
     prev = element~prev
     If prev~isNil Then
-      Internal.Error( element, "TheElementBefore was about to return .Nil" )
+      Internal.Error( "TheElementBefore was about to return .Nil" )
     element = prev
   End
   Return element

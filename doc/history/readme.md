@@ -13,6 +13,14 @@ Version history
   <li> (Almost) complete early-checking of BIFs.
   <li> Start to write a unit test program (will document later).
   <li> Major refactoring of BIF early checking.
+  <li> Add -extraletters and -emptyassignments options to rxcheck utility.
+  <li> Update internal InternalError routine so that it raises HALT instead
+       of SYNTAX to avoid some loops and stack exhaustion.
+  <li> Add GenErrorText.rex utility (in bin/resources). It generates
+       ANSI.ErrorText.cls, which provides an enhances ANSI ErrorText
+       routine with support for secondary messges and substitutions.
+       Update rxchech to use this routine, and add a toggle
+       to display an internal trace (off by default) (20250426).
 <tr><td>20250416<td>0.2a<td>
 <ul>
   <li> Add optional BIF argument checking.

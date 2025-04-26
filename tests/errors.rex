@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*                                                                            */
-/* testerrors.rex - Compare parser errors and Rexx errors                     */
-/* ======================================================                     */
+/* errors.rex - Compare parser errors and Rexx errors                         */
+/* ==================================================                         */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */

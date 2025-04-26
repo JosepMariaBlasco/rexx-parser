@@ -72,6 +72,10 @@
     Call Test.Error 40.004, "Call" BIF "a               "  -- No arguments
   End
 
+  ------------------------------------------------------------------------------
+  -- Other functions                                                          --
+  ------------------------------------------------------------------------------
+
   -- ABBREV
 
   Call Test.Error 40.003, "Call Abbrev a                "  -- Two arguments are required
