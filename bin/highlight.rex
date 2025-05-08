@@ -21,20 +21,11 @@
 /* 20250105         Add --patch="patch specs" and --patchfile=file            */
 /* 20250107         Change -t and --term for -a and --ansi                    */
 /* 20250108         Add --pad= option                                         */
-/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx.parser        */
 /*                                                                            */
 /******************************************************************************/
 
 Parse Arg fn
-
--- ::REQUIRES does not work well with "../" paths
-package   = .context~package
-local     =  package~local
-mypath    =  FileSpec( "Path", package~name )
-local ~ . = .File~new( mypath"../" )~absolutePath      -- Creates ".."
-
-Call Requires .."/bin/Highlighter.cls"
-Call Requires .."/bin/FencedCode.cls"
 
 -- Remember how we were called
 Parse Source . how .
@@ -172,14 +163,14 @@ Natural:
   Say "Invalid value" Arg(1)"."
   Exit 1
 
-Requires:
-  package~addPackage( .Package~new( Arg(1) ) )
-  Return
-
 --------------------------------------------------------------------------------
+
+::Requires "Highlighter.cls"
+::Requires "FencedCode.cls"
 
 ::Resource Help
 Usage: highlight [OPTIONS] FILE
+
 If FILE has a .md or .html extension, process all Rexx fenced code blocks
 in FILE and highlight them. Otherwise, we assume that this is a Rexx file,
 and we highlight it directly.

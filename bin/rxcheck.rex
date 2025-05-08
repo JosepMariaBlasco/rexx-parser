@@ -20,6 +20,7 @@
 /*                  Add "[+|-]extraletters" option                            */
 /*                  Add "[+|-]emptyassignments" option                        */
 /* 20250426         Add ANSI.ErrorText support, -itrace option                */
+/* 20250508         Fix typo (GitHub issue no. 10 - Thanks Geoff!)            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -103,7 +104,7 @@
   End
 
   source = CharIn(fullPath, 1, Chars(fullPath))~makeArray
-  Call Stream fillPath, 'c', 'close'
+  Call Stream fullPath, 'c', 'close'
 
 Code:
 

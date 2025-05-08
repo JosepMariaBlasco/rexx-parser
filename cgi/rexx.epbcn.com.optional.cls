@@ -166,7 +166,7 @@ Crumb:
                                    Then Return "The Rexx Parser"
     When print"/36/2025-05-05-The-Rexx-Parser-Slides"
                                    Then Return "The Rexx Parser (Slides)"
-    When print"/36/2025-05-05-The-Rexx-Highlighter"
+    When print"/36/2025-05-06-The-Rexx-Highlighter"
                                    Then Return "The Rexx Highlighter (Slides)"
 
     -- "/rexx-parser/doc/guide"

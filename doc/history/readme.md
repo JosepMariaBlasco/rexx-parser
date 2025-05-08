@@ -21,6 +21,9 @@ Version history
        routine with support for secondary messges and substitutions.
        Update rxchech to use this routine, and add a toggle
        to display an internal trace (off by default) (20250426).
+  <li> Update --prolog option in highlight utility so that it does not
+       emit the HTML classes (20250502).
+  <li> Fix typo in rxcheck.rex (GitHub issue no. 10 - Thanks Geoff!) (20250508).
 <tr><td>20250416<td>0.2a<td>
 <ul>
   <li> Add optional BIF argument checking.

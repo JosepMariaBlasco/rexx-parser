@@ -54,8 +54,8 @@ under [the Apache 2.0 license](LICENSE).
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.2b, refresh 20250426.
-You can download it <a href="Rexx-Parser-0.2b-20250426.zip">here</a>.
+The current release is beta 0.2b, refresh 20250508.
+You can download it <a href="Rexx-Parser-0.2b-20250508.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).
