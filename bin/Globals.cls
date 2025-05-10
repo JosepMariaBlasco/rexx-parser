@@ -91,8 +91,8 @@
 /*                                                                            */
 /* means categorySet~contains(element~category).                              */
 /*                                                                            */
-/* NOTE: All references to rexxref below refer to the version distibuted      */
-/* with the 5.1.0 beta version of ooRexx, and the references to               */
+/* NOTE: All references to rexxref below refer to the version distributed     */
+/* with the 5.2.0 beta version of ooRexx, and the references to               */
 /* the ANSI standard will always be in the form a.b.c.d                       */
 /*                                                                            */
 /******************************************************************************/
@@ -119,7 +119,7 @@ NewElements:  -- Allow "Call NewElements" syntax
     name = Arg(i)
     index = categoryes~append( name )
     If index > 255 Then
-      Call Halt "The categoryes array has more than 255 elements"
+      Call Halt "The Parser.CategoryName array has more than 255 elements"
     value = X2C(D2X( index ))
    .environment[ name ] = value
    .Parser.CategoryName[ value  ] = name
@@ -141,7 +141,7 @@ NewConstant: Procedure Expose takenConstant
     name = Arg(i)
     index = takenConstant~append( name )
     If index > 255 Then
-      Call Halt "The TakenConstant array has more than 255 elements"
+      Call Halt "The Parser.ConstantName array has more than 255 elements"
     value = X2C(D2X( index ))
    .environment[ name  ] = value
    .Parser.ConstantName[ value ] = name
@@ -153,7 +153,7 @@ Return
 Synonym:
   newName = Arg(1)
   value   = Arg(2)
- .environment[newName] = value
+ .environment[ newName ] = value
 Return
 
 Halt:

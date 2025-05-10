@@ -42,7 +42,7 @@
 @page {
 
   margin: 10mm;
-  size: 263.11mm 148mm; /* Height of a landsape DIN A5, 16x9 */
+  size: 263.11mm 148mm; /* Height of a landscape DIN A5, 16x9 */
 
   @top-center {
     content: "Running header - Override";

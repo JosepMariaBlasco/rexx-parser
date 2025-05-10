@@ -17,6 +17,7 @@
 /* 20250101    0.1e First version                                             */
 /* 20250105    0.1f Support style patches                                     */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250502    0.2b Update --prolog not to emit HTML classes                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -64,16 +65,11 @@ If \.environment~hasIndex( LaTeX.Highlighter ) Then
 
   -- We print the prolog only when requested
   If Options.prolog Then Do
-    -- Print all colors First
-    Do tail Over TagColors.~allIndexes
-      Parse Value TagColors.tail With fg"/"bg
-      If fg \== "" Then self~say("\definecolor{"style"-"tail"}{RGB}{"Color2RGB(fg)"}")
-      If bg \== "" Then self~say("\definecolor{bg-"style"-"tail"}{RGB}{"Color2RGB(bg)"}")
-    End
     -- We need that to substitute "!" because we are using it
     -- as an escape character.
     self~say("\newcommand{\textexclamup}{!}")
   End
+
 
   envOptions   =  ""
 

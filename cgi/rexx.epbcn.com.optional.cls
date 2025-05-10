@@ -96,17 +96,19 @@
 
 Crumb:
 
-  tutor     = "/TUTOR"
-  tutordocs = "/TUTOR/doc"
+  tutor        = "/TUTOR"
+  tutordocs    = "/TUTOR/doc"
 
-  parser    = "/rexx-parser"
-  print     = "/rexx-parser/doc/print"
-  doc       = "/rexx-parser/doc"
-  guide     = doc"/guide"
-  ref       = doc"/ref"
-  dochl     = doc"/highlighter"
-  dochlhtml = dochl"/html"
-  dochlfeat = dochl"/features"
+  publications = "/publications"
+
+  parser       = "/rexx-parser"
+  print        = "/rexx-parser/doc/print"
+  doc          = "/rexx-parser/doc"
+  guide        = doc"/guide"
+  ref          = doc"/ref"
+  dochl        = doc"/highlighter"
+  dochlhtml    = dochl"/html"
+  dochlfeat    = dochl"/features"
 
   Select Case Arg(1)
 
@@ -156,18 +158,15 @@ Crumb:
     When parser"/highlighter"      Then Return "Highlighter"
     When parser"/tests"            Then Return "Tests"
 
-    -- "/rexx-parser/doc/print"
+    -- "/publications"
 
-    When print                     Then Return "Publications"
-    When print"/36"                Then Return "36<sup>th</sup> symposium"
-    When print"/36/2025-05-04-Unicode-and-Rexx"
-                                   Then Return "Unicode and Rexx"
-    When print"/36/2025-05-05-The-Rexx-Parser"
-                                   Then Return "The Rexx Parser"
-    When print"/36/2025-05-05-The-Rexx-Parser-Slides"
-                                   Then Return "The Rexx Parser (Slides)"
-    When print"/36/2025-05-05-The-Rexx-Highlighter"
-                                   Then Return "The Rexx Highlighter (Slides)"
+    When publications              Then Return "Publications"
+    When publications"/2025-05-04-Unicode-and-Rexx"
+                                   Then Return "Unicode and Rexx (36<sup>th</sup> Symposium)"
+    When publications"/2025-05-05-The-Rexx-Parser"
+                                   Then Return "The Rexx Parser (36<sup>th</sup> Symposium)"
+    When publications"/2025-05-06-The-Rexx-Highlighter"
+                                   Then Return "The Rexx Highlighter (36<sup>th</sup> Symposium)"
 
     -- "/rexx-parser/doc/guide"
 

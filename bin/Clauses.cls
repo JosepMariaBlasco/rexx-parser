@@ -22,18 +22,18 @@
 /*                                                                            */
 /******************************************************************************/
 
-.environment ~          End.Of.Source =          .End.Of.Source
+.environment ~                  End.Of.Source =                  .End.Of.Source
 
-.environment ~             End.Clause =             .End.Clause
-.environment ~            Else.Clause =            .Else.Clause
-.environment ~              If.Clause =              .If.Clause
-.environment ~           Label.Clause =           .Label.Clause
-.environment ~            Null.Clause =            .Null.Clause
-.environment ~       Iterative.Clause =       .Iterative.Clause
-.environment ~       Otherwise.Clause =       .Otherwise.Clause
-.environment ~          Select.Clause =          .Select.Clause
-.environment ~            Then.Clause =            .Then.Clause
-.environment ~            When.Clause =            .When.Clause
+.environment ~                     End.Clause =                     .End.Clause
+.environment ~                    Else.Clause =                    .Else.Clause
+.environment ~                      If.Clause =                      .If.Clause
+.environment ~                   Label.Clause =                   .Label.Clause
+.environment ~                    Null.Clause =                    .Null.Clause
+.environment ~               Iterative.Clause =               .Iterative.Clause
+.environment ~               Otherwise.Clause =               .Otherwise.Clause
+.environment ~                  Select.Clause =                  .Select.Clause
+.environment ~                    Then.Clause =                    .Then.Clause
+.environment ~                    When.Clause =                    .When.Clause
 
 .environment ~         Assignment.Instruction =         .Assignment.Instruction
 .environment ~            Command.Instruction =            .Command.Instruction
@@ -634,6 +634,9 @@ NoLabels:
 --------------------------------------------------------------------------------
 
 ::Class Assignment.Instruction Public SubClass Rexx.Instruction
+::Attribute symbol     Get
+::Attribute operator   Get
+::Attribute expression Get
 ::Method init
   Expose symbol operator expression
   Use Strict Arg package, begin, end, symbol, operator, expression
@@ -1393,6 +1396,11 @@ Done:
 ::Method nullClauses
   Expose ifClause
   Return ifClause~nullClauses
+::Attribute ifClause        Get
+::Attribute thenClause      Get
+::Attribute thenInstruction Get
+::Attribute elseClause      Get
+::Attribute elseInstruction Get
 ::Method init
   Expose ifClause thenClause thenInstruction elseClause elseInstruction
   Use Strict Arg package,                      -

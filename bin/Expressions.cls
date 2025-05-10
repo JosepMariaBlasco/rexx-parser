@@ -23,11 +23,17 @@
 /*                                                                            */
 /******************************************************************************/
 
-.environment ~ Concatenation.Expression = .Concatenation.Expression
-.environment ~ Expression.List          = .Expression.List
-.environment ~ NAry.Expression          = .NAry.Expression
-.environment ~ Prefix.Expression        = .Prefix.Expression
-.environment ~ SubExpression            = .SubExpression
+.environment ~ Concatenation.Expression   = .Concatenation.Expression
+.environment ~ Expression.List            = .Expression.List
+.environment ~ And.Expression             = .And.Expression
+.environment ~ NAry.Expression            = .NAry.Expression
+.environment ~ Addition.Expression        = .Addition.Expression
+.environment ~ Comparison.Expression      = .Comparison.Expression
+.environment ~ Multiplication.Expression  = .Multiplication.Expression
+.environment ~ Or.Expression              = .Or.Expression
+.environment ~ Prefix.Expression          = .Prefix.Expression
+.environment ~ Power.Expression           = .Power.Expression
+.environment ~ SubExpression              = .SubExpression
 
 .environment ~ NameSpace.Qualified.ClassName = -
   .NameSpace.Qualified.ClassName
@@ -70,6 +76,7 @@
     If n == 1 Then Return self
     Else Return .nil
   Return option = "E"
+::Attribute begin
 ::Attribute end
 ::Method init
   Expose args end
@@ -144,6 +151,7 @@
 --------------------------------------------------------------------------------
 
 ::Class Expression.List Public SubClass Rexx.Expression
+::Attribute begin
 ::Attribute end
 ::Attribute args
 
@@ -610,6 +618,7 @@ FunctionCall:
 --------------------------------------------------------------------------------
 
 ::Class Literal.String.Term Public SubClass Rexx.Term
+::Attribute begin
 ::Attribute end
 ::Method theString
   Expose string
@@ -635,6 +644,7 @@ FunctionCall:
     .EL.RIGHT_PARENTHESIS            - -- Clear terminators: only ")"
   )
 
+  subExpression~begin = lParen
   rParen = subExpression~end
 
   Call ExpectParenPair lParen, rParen
@@ -644,7 +654,9 @@ FunctionCall:
 --------------------------------------------------------------------------------
 
 ::Class SubExpression Public SubClass Rexx.Term
+::Attribute begin
 ::Attribute end
+::Attribute subExpression Get
 ::Method init
   Expose subExpression end
   Use Strict Arg subExpression
@@ -715,6 +727,7 @@ Return
 
 ::Class Symbol.Term Public SubClass Rexx.Term
 ::Attribute symbol
+::Attribute begin
 ::Attribute end
 ::Method value
   Return self~symbol
@@ -822,6 +835,7 @@ Return
 ::Class Compound.Variable.Term Public SubClass Rexx.Term
 ::Attribute stem
 ::Attribute parts
+::Attribute begin
 ::Attribute end
 ::Method init
   Expose stem parts end
@@ -994,6 +1008,7 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class Indexed.Term Public SubClass Rexx.Term
+::Attribute begin
 ::Attribute end
 ::Method init
   Expose term argumentList end
@@ -1057,6 +1072,7 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class Message.Term Public SubClass Rexx.Term
+::Attribute begin
 ::Attribute end
 ::Method init
   Expose term operator messageName scope arguments end

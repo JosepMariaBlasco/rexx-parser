@@ -22,8 +22,10 @@
 /*                                                                            */
 /******************************************************************************/
 
+.environment~Code.Body    = .Code.Body
 .environment~Rexx.Parser  = .Rexx.Parser
 .environment~Rexx.Package = .Rexx.Package
+.environment~Rexx.Routine = .Rexx.Routine
 
 ::Requires "HTMLColors.cls"
 ::Requires "DebugSettings.cls"

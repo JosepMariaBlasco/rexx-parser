@@ -1038,7 +1038,6 @@ EndDelimiterFound:
 /*                                                                            */
 /* An Element is a ooRexx Directory with some additional entries.             */
 
-
 ::Class Element Public SubClass Directory
 
 ::Method isAssigned
