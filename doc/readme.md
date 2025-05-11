@@ -43,6 +43,8 @@ The Rexx Highlighter
   - [The HTML Highlighter](highlighter/html/).
   - [The ANSI Highlighter](highlighter/ansi/).
   - [The (Lua)LaTeX Highlighter](highlighter/latex/).
+  - [CGI Installation](highlighter/cgi/).
+  - [Exploiting CSS Paged Media](highlighter/paged-media/).
 
 Publications
 ------------

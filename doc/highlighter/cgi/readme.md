@@ -23,7 +23,7 @@ and it is a language-neutral specification that allows the development of
 dynamic web pages using any computer language --- including Rexx! You can read more
 about CGI in [this Apache tutorial](https://httpd.apache.org/docs/trunk/en/howto/cgi.html).\]
 
-<pre>
+<pre id="workflow">
                                        <u>How does CGI.markdown.rex work?</u>
 
                                    ┌────────────────────────────────────────┐
@@ -229,6 +229,16 @@ You can find a copy of an updated `httpd.conf` file [here](httpd.conf)
 for your reference. Please note that this was generated on 20250510 against the
 `Apache 2.4.63-250207 Win64` version of Apache Lounge, and may not work
 in your installation, depending on your choices and on the versions used.
+
+CSS Paged Media
+---------------
+
+The [workflow defined above](#workflow) can be extended with a further last step:
+by using [the W3C CSS Paged Media Level 3 specification](https://www.w3.org/TR/css-page-3/),
+we can prepare special Markdown pages such that, when displayed on the browser
+and then printed, we obtain, automatically, a set of slides (or an article).
+The procedure and the rules to follow are
+[explained in detail in a separate page](../paged-media/).
 
 CGI.markdown.rex {#cgisource}
 ----------------

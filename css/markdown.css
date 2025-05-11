@@ -119,4 +119,8 @@ h1.part {font-size:45px;}
 pre {margin-top:20px;margin-bottom:20px;}
 pre.dark {background-color: #000;color: #aaa;}
 
-blockquote {margin: 20px 0 20px; font-style: italic; font-size: 20px;}
+blockquote {
+  margin: 20px 0 20px;
+  font-style: italic;
+  font-size: 18px;
+}

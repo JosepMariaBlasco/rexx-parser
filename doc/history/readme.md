@@ -25,7 +25,9 @@ Version history
        emit the HTML classes (20250502).
   <li> Fix typo in rxcheck.rex ([GitHub issue no. 10](https://github.com/JosepMariaBlasco/rexx-parser/issues/10) - Thanks Geoff!) (20250508).
   <li> Add a "publications" section to the main documentation page (20250510).
-  <li> Document [CGI installation](../highlighter/cgi/) thoroughly (20250511).
+  <li> Document [CGI installation](../highlighter/cgi/)
+       and [CSS Paged Media](../highlighter/paged-media/) usage
+       thoroughly (20250511).
 <tr><td>20250416<td>0.2a<td>
 <ul>
   <li> Add optional BIF argument checking.

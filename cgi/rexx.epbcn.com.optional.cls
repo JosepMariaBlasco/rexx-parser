@@ -206,6 +206,7 @@ Crumb:
 
     When dochl                     Then Return "Highlighter"
     When dochl"/cgi"               Then Return "CGI"
+    When dochl"/paged-media"       Then Return "CSS Paged Media"
     When dochl"/ansi"              Then Return "ANSI"
     When dochl"/latex"             Then Return "(Lua)LaTeX"
     When dochl"/htmlclasses"       Then Return "HTMLClasses"
