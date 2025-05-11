@@ -154,7 +154,6 @@ Crumb:
 
     -- "/rexx-parser"
     When parser                    Then Return "Parser"
-    When parser"/cgi"              Then Return "CGI"
     When parser"/highlighter"      Then Return "Highlighter"
     When parser"/tests"            Then Return "Tests"
 
@@ -206,6 +205,7 @@ Crumb:
     -- "/rexx-parser/doc/highlighter"
 
     When dochl                     Then Return "Highlighter"
+    When dochl"/cgi"               Then Return "CGI"
     When dochl"/ansi"              Then Return "ANSI"
     When dochl"/latex"             Then Return "(Lua)LaTeX"
     When dochl"/htmlclasses"       Then Return "HTMLClasses"

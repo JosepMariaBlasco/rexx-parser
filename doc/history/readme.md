@@ -23,7 +23,9 @@ Version history
        to display an internal trace (off by default) (20250426).
   <li> Update --prolog option in highlight utility so that it does not
        emit the HTML classes (20250502).
-  <li> Fix typo in rxcheck.rex (GitHub issue no. 10 - Thanks Geoff!) (20250508).
+  <li> Fix typo in rxcheck.rex ([GitHub issue no. 10](https://github.com/JosepMariaBlasco/rexx-parser/issues/10) - Thanks Geoff!) (20250508).
+  <li> Add a "publications" section to the main documentation page (20250510).
+  <li> Document [CGI installation](../highlighter/cgi/) thoroughly (20250511).
 <tr><td>20250416<td>0.2a<td>
 <ul>
   <li> Add optional BIF argument checking.
@@ -46,7 +48,6 @@ Version history
   <li> Add "debug" toggle to rxcheck utility. Early check for
        D2C and D2X (20250419).
   <li> Add '-e' option to rxcheck (20250420).
-  <li> Add a "publications" section to the main documentation page (20250510).
 <tr><td>20250215<td>0.2<td>
 <ul>
   <li> First version published simultaneously in rexx.epbcn.com and GitHub.
