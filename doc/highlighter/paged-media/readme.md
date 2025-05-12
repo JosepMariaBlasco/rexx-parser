@@ -113,11 +113,11 @@ We have used CSS Paged Media to produce web pages that automatically
 print to slide presentations. Here are some examples:
 
 + Unicode and Rexx. A brief introduction to TUTOR (2025):
-  [Web page](/publications/2025-05-04-Unicode-and-Rexx/),
+  [Web page](/TUTOR/doc/publications/36/2025-05-04-Unicode-and-Rexx/),
   [Slides](https://www.epbcn.com/pdf/josep-maria-blasco/2025-05-04-Unicode-and-Rexx.pdf).
-+ The Rexx Parser (2025): [Web page](/publications/2025-05-05-The-Rexx-Parser/),
++ The Rexx Parser (2025): [Web page](/rexx-parser/doc/publications/36/2025-05-05-The-Rexx-Parser/),
   [Slides](https://www.epbcn.com/pdf/josep-maria-blasco/2025-05-05-The-Rexx-Parser.pdf).
-+ The Rexx Highlighter (2025): [Web page](/publications/2025-05-06-The-Rexx-Highlighter/),
++ The Rexx Highlighter (2025): [Web page](/rexx-parser/doc/publications/36/2025-05-06-The-Rexx-Highlighter/),
   [Slides](https://www.epbcn.com/pdf/josep-maria-blasco/2025-05-06-The-Rexx-Highlighter.pdf).
 
 In all the cases, the slides have been produced by displaying

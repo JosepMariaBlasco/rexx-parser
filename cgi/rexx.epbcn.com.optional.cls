@@ -109,6 +109,7 @@ Crumb:
   dochl        = doc"/highlighter"
   dochlhtml    = dochl"/html"
   dochlfeat    = dochl"/features"
+  docpub       = doc"/publications"
 
   Select Case Arg(1)
 
@@ -128,6 +129,11 @@ Crumb:
     When tutordocs"/new-functions" Then Return "New functions"
     When tutordocs"/new-classes"   Then Return "New classes"
     When tutordocs"/options"       Then Return "The OPTIONS instruction"
+    When tutordocs"/publications"  Then Return "Publications"
+    When tutordocs"/publications/36" Then Return "36<sup>th</sup> Symposium"
+    When tutordocs"/publications/36/2025-05-04-Unicode-and-Rexx"
+                                   Then Return "Unicode and Rexx"
+
     When tutordocs"/properties"    Then Return "Unicode properties"
     When tutordocs"/properties/normalization"
                                    Then Return "The Unicode.Normalization class"
@@ -156,16 +162,6 @@ Crumb:
     When parser                    Then Return "Parser"
     When parser"/highlighter"      Then Return "Highlighter"
     When parser"/tests"            Then Return "Tests"
-
-    -- "/publications"
-
-    When publications              Then Return "Publications"
-    When publications"/2025-05-04-Unicode-and-Rexx"
-                                   Then Return "Unicode and Rexx (36<sup>th</sup> Symposium)"
-    When publications"/2025-05-05-The-Rexx-Parser"
-                                   Then Return "The Rexx Parser (36<sup>th</sup> Symposium)"
-    When publications"/2025-05-06-The-Rexx-Highlighter"
-                                   Then Return "The Rexx Highlighter (36<sup>th</sup> Symposium)"
 
     -- "/rexx-parser/doc/guide"
 
@@ -229,6 +225,15 @@ Crumb:
     When dochlhtml"/directives"    Then Return "Directive tests"
     When dochlhtml"/classes"       Then Return "Element-class-to-HTML mappings"
     When dochlhtml"/all"           Then Return "General tests"
+
+    -- "/rexx-parser/doc/publications"
+
+    When docpub                    Then Return "Publications"
+    When docpub"/36"               Then Return "36<sup>th</sup> Symposium"
+    When docpub"/36/2025-05-05-The-Rexx-Parser"
+                                   Then Return "The Rexx Parser"
+    When docpub"/36/2025-05-06-The-Rexx-Highlighter"
+                                   Then Return "The Rexx Highlighter"
 
     Otherwise                           Return "XXX"
   End
