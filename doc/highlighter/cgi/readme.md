@@ -131,7 +131,7 @@ We will need:
    b. Execute `C:\Apache24\bin\httpd.exe`. You will get a prompt
       from the Windows firewall. Allow net access.
    c. Open a web browser, and point to `localhost`. You should see a page that
-      contains the words "It works!". You cna now close the Apache window you opened in the previous step.\
+      contains the words "It works!". You can now close the Apache window you opened in the previous step.
 
 3. Install Pandoc.
 
