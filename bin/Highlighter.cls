@@ -27,22 +27,28 @@
 /* 20250103         Add "unicode" and "tutor" options                         */
 /* 20250106         Rename to Highlighter, move to cls directory              */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250519    0.2b Fix error computing mypath, add dependencies              */
 /*                                                                            */
 /******************************************************************************/
 
--- Make our class known to everybody, and create ".."
-If .environment~Highlighter == .Nil Then Do
-   .environment~Highlighter =  .Highlighter
-  package   = .context~package
-  local     =  package~local
-  mypath    =  FileSpec( "Path", package~name )
-  local ~ . = .File~new( mypath"../" )~absolutePath
-End
+-- Make our class known to everybody,
+
+.environment~Highlighter =  .Highlighter
+
+-- Create ".."
+
+package      = .context~package
+pkgLocal     =  package~local
+myName       =  package~name
+mypath       =  FileSpec( "Drive", myName )FileSpec( "Path", myName )
+pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
 
 /******************************************************************************/
 /* Dependencies                                                               */
 /******************************************************************************/
 
+::Requires "Rexx.Parser.cls"
+::Requires "StylePatch.cls"
 ::Requires "HLDrivers/Drivers.cls"
 ::Requires "HTMLClasses.cls"
 

@@ -29,6 +29,7 @@ Version history
        and [CSS Paged Media](../highlighter/paged-media/) usage
        thoroughly (20250511).
   <li> Move publications to a subdirectory under docs (20250512).
+  <li> Fix error in Highlighter.cls (20250519).
 <tr><td>20250416<td>0.2a<td>
 <ul>
   <li> Add optional BIF argument checking.
