@@ -29,7 +29,10 @@ Version history
        and [CSS Paged Media](../highlighter/paged-media/) usage
        thoroughly (20250511).
   <li> Move publications to a subdirectory under docs (20250512).
-  <li> Fix error in Highlighter.cls (20250519).
+  <li> Fix error in Highlighter.cls (20250519, reported by Rony).
+  <li> Ensure that the options arg to the Highlighter class has a 0 default value (20250520).
+  <li> Allow specifying style patches as strings or arrays of strings when
+       invoking the parse method of the Highlighter class (20250520).
 <tr><td>20250416<td>0.2a<td>
 <ul>
   <li> Add optional BIF argument checking.
