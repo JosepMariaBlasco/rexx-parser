@@ -94,6 +94,10 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
   If \ Options.~hasIndex(compound)    Then Options.compound    = 1
   If \ Options.~hasIndex(startFrom)   Then Options.startFrom   = 1
 
+  If Verify(Options.style, XRange(AlNum)".-_") > 0 Then
+    Raise Halt -
+      Array("Style names are limited to letters, numbers, '.', '-' and '_'.")
+
   Do tail Over Options.~allIndexes
     Options.tail = Lower( options.tail )
   End

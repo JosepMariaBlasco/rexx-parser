@@ -128,7 +128,8 @@ The default value for this option is `1`.
 A string determining the CSS style used for highlighing.
 This implementation searches for a file called
 <code>rexx-<em>style</em>.css</code> in the `css`
-subdirectory.
+subdirectory. Style names can only use uppercase or lowercase
+ANSI letters or numbers (i.e., XRange("ALNUM"), plus ".", "-" or "_".
 
 The current distribution includes two CSS style files:
 `rexx-light.css` and `rexx-dark.css`.

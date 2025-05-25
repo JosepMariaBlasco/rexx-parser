@@ -97,7 +97,7 @@
 /*                                                                            */
 /******************************************************************************/
 
-  categoryes                      = .Array~new
+  categories                      = .Array~new
   takenConstant                   = .Array~new
  .environment~Parser.CategoryName = .Stem~new
  .environment~Parser.ConstantName = .Stem~new
@@ -114,10 +114,10 @@
 
 NewElement :  -- Allow "Call NewElement" syntax
 NewElements:  -- Allow "Call NewElements" syntax
-  Procedure Expose categoryes
+  Procedure Expose categories
   Do i = 1 To Arg()
     name = Arg(i)
-    index = categoryes~append( name )
+    index = categories~append( name )
     If index > 255 Then
       Call Halt "The Parser.CategoryName array has more than 255 elements"
     value = X2C(D2X( index ))

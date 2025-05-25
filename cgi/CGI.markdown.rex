@@ -36,6 +36,9 @@
 /* 20250222         Change Address PATH to Address COMMAND for pandoc         */
 /* 20250317         Allow style=(dark|light) query string                     */
 /* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250523    0.2b Move HTTP.Request, HTTP.Response and Array.OutputStream   */
+/*                  to separate files.                                        */
+/* 20250524         Move generic CGI behaviour to Rexx.CGI.cls.               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -52,7 +55,9 @@
   Call Requires .."/bin/FencedCode.cls"
   Call Requires mypath"rexx.epbcn.com.optional.cls"
 
-  Signal SkipOverRequiresAndSyntaxHandler
+ .MyCGI~new~execute
+
+Exit
 
 Requires:
   package~addPackage( .Package~new( Arg(1) ) )
@@ -83,158 +88,112 @@ Syntax:
   End
 Exit
 
---------------------------------------------------------------------------------
+/******************************************************************************/
 
-SkipOverRequiresAndSyntaxHandler:
+::Requires "Rexx.CGI.cls"
 
---------------------------------------------------------------------------------
--- We will collect all our output in an array. To this effect, we use         --
--- a small class that subclasses .Array and at the same time inherits from    --
--- .OutputStream. Indeed, we only need to implement the SAY method.           --
---                                                                            --
--- We change the destination of the output monitor to point to this           --
--- hybrid array.                                                              --
---------------------------------------------------------------------------------
+/******************************************************************************/
+/******************************************************************************/
+/* MYCGI                                                                      */
+/******************************************************************************/
+/******************************************************************************/
 
-  arrayOutput = .ArrayOutputStream~new
- .output~destination( arrayOutput )
+-- We subclass Rexx.CGI and implement the abstract PROCESS method,
+-- which encapsulates the specificities of our CGIs.
 
---------------------------------------------------------------------------------
--- We now create .request and .response objects to encapsulate the            --
--- complexities of the CGI protocol.                                          --
---------------------------------------------------------------------------------
+::Class MyCGI SubClass Rexx.CGI
 
- .environment~request  = .Http.Request~new
- .environment~response = .Http.Response~new
+/******************************************************************************/
+/* PROCESS                                                                    */
+/******************************************************************************/
 
---------------------------------------------------------------------------------
--- PATH_TRANSLATED should point to the markdown file we have to process,      --
--- and REQUEST_URI should contain the request URI.                            --
---------------------------------------------------------------------------------
+::Method Process
 
-  file = .request~PATH_TRANSLATED
-  url  = .request~REQUEST_URI
+  file = self~file
+  URI  = self~URI
 
---------------------------------------------------------------------------------
--- We need to ensure that the CGI processor has not been called directly;     --
--- if this happens, the environment strings will be empty. In that case,      --
--- we produce a soft 404.                                                     --
---------------------------------------------------------------------------------
-
-  If file == ""         Then Exit .Response~404
-  If url  == ""         Then Exit .Response~404
-
---------------------------------------------------------------------------------
--- We only accept one optional query, of the form style=(light|dark)          --
---------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- We only accept one optional query, of the form style=(light|dark)        --
+  ------------------------------------------------------------------------------
 
   style = "dark"
-  If url~contains("?")  Then Do
-    Parse Var url url"?"query
+  If uri~contains("?")  Then Do
+    Parse Var uri uri"?"query
     ok = 0
     If query~startsWith("style=") Then Do
       Parse Var query "style="style
       If style == "dark" | style == "light" Then ok = 1
     End
-    If \ok Then Exit .Response~404
+    If \ok              Then Do
+     .Response~404
+     Return self~FAIL
+    End
   End
 
---------------------------------------------------------------------------------
--- We don't want strangely formatted URIs                                     --
---------------------------------------------------------------------------------
-
-  If url~contains("//") Then Exit .Response~404
-  If url~contains("/.") Then Exit .Response~404
-  If url~contains("..") Then Exit .Response~404
-
---------------------------------------------------------------------------------
--- We are using "readme.md" as one of the index pages, using the Apache       --
--- DirectoryIndex directive.                                                  --
---------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- We are using "readme.md", "slides.md" and "article.md" as  index pages,  --
+  -- using the Apache DirectoryIndex directive.                               --
+  ------------------------------------------------------------------------------
 
   -- In case we need to form canonical URLs
-  If url~endsWith("readme.md") Then url = Left(url, Length(url) - 9)
+  If      URI~endsWith( "readme.md") Then URI = Left(URI, Length(URI) -  9)
+  Else If URI~endsWith( "slides.md") Then URI = Left(URI, Length(URI) -  9)
+  Else If URI~endsWith("article.md") Then URI = Left(URI, Length(URI) - 10)
 
---------------------------------------------------------------------------------
--- The file should exist in the filesystem; if not, that's a 404 too.         --
---------------------------------------------------------------------------------
-
-  resolved = Stream(file,"C","Query exists")
-  If resolved == ""     Then Exit .Response~404
-
---------------------------------------------------------------------------------
--- There is a bug in the Linux version of ooRexx by which trailing slashes    --
--- are wrongly accepted at the end of a filename. We don't want that.         --
--- See https://sourceforge.net/p/oorexx/bugs/1940/                            --
---------------------------------------------------------------------------------
-
-  If file~endsWith("/") Then Do
-    file2 = Strip(file,"T","/")
-    resolved2 = Stream(file2,"C","Query exists")
-    If resolved2 == resolved Then Exit .Response~404
-  End
-
---------------------------------------------------------------------------------
--- See if an accompanying extra style .css file exists                        --
---   This is is a file with the same name as the cgi, with ".css" added at    --
---   the end. It is useful for specifying variables that are file-dependent,  --
---   like the running header and footer (this should be done with the         --
---   string-set property, but it is not properly implemented in the major     --
---   browsers).
---------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- See if an accompanying extra style .css file exists                      --
+  --   This is is a file with the same name as the cgi, with ".css" added at  --
+  --   the end. It is useful for specifying variables that are file-dependent,--
+  --   like the running header and footer (this should be done with the       --
+  --   string-set property, but it is not properly implemented in the major   --
+  --   browsers).                                                             --
+  ------------------------------------------------------------------------------
 
   Select Case FileSpec("Name",file)
     When "slides.md"  Then ownStyle = "slides"
     When "article.md" Then ownStyle = "article"
     Otherwise              ownStyle = ""
   End
-  extraStyle = Stream(resolved".css","c","Q exists")
+  extraStyle = Stream(file".css","c","Q exists")
   If extraStyle \== "" Then Do
     p = LastPos(.File~separator,extraStyle)
     extraStyle = SubStr(extraStyle,p+1)
   End
 
---------------------------------------------------------------------------------
--- Ok, now we have a file to process. Read it into an array                   --
---------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- Ok, now we have a file to process. Read it into an array                 --
+  ------------------------------------------------------------------------------
 
-  file = resolved
   source = CharIn( file, 1, Chars(file) )~makeArray
   Call Stream file, "c", "close"
 
---------------------------------------------------------------------------------
--- We process Rexx fenced code blocks first                                   --
---------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- We process Rexx fenced code blocks first                                 --
+  ------------------------------------------------------------------------------
 
   source = FencedCode( file, source, style )
 
---------------------------------------------------------------------------------
--- Now call pandoc. It will transform markdown into html by default           --
---------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- We now call pandoc. It will transform markdown into html by default      --
+  ------------------------------------------------------------------------------
 
   contents = .Array~new
   Address COMMAND 'pandoc --from markdown-smart+footnotes' -
     '--reference-location=section' -
     With Input Using (source) Output Using (contents)
 
---------------------------------------------------------------------------------
--- As the document title, pick the contents of the first h1 header            --
---------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- As the document title, pick the contents of the first h1 header          --
+  ------------------------------------------------------------------------------
 
   title = "Missing title"
   chunk = contents~makeString("L"," ")
   If chunk~contains("<h1") Then
     Parse Var chunk "<h1" ">"title"</h1>"
 
---------------------------------------------------------------------------------
--- Our output will be html                                                    --
---------------------------------------------------------------------------------
-
- .response~"Content-Type" = "text/html"
-
---------------------------------------------------------------------------------
--- Copy the HTML resource, with some substitutions                            --
---------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- Copy the HTML resource, with some substitutions                          --
+  ------------------------------------------------------------------------------
 
   template = .Resources~HTML
 
@@ -242,10 +201,10 @@ SkipOverRequiresAndSyntaxHandler:
     Select
       When line = "%title%"         Then Say  title
       When line = "%header%"        Then Call OptionalCall PageHeader, title
-      When line = "%contents%"      Then Say  contents
+      When line = "%contents%"      Then Do line Over contents; Say line; End
       When line = "%footer%"        Then Call OptionalCall PageFooter
-      When line = "%sidebar%"       Then Call OptionalCall Sidebar, url
-      When line = "%contentheader%" Then Call OptionalCall ContentHeader, url
+      When line = "%sidebar%"       Then Call OptionalCall Sidebar, uri
+      When line = "%contentheader%" Then Call OptionalCall ContentHeader, uri
       When line = "%extrastyle%"    Then
         If extraStyle \== "" Then
           Say "    <link rel='stylesheet' media='print' href='"extraStyle"'>"
@@ -257,36 +216,44 @@ SkipOverRequiresAndSyntaxHandler:
     End
   End
 
---------------------------------------------------------------------------------
--- We are done. We only have to revert to normal .stdout, ...                 --
---------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- Hack: Review entire .Array.Output array, detect CSS styles used          --
+  -- in fenced code blocks, and dynamically update the array to refer         --
+  -- to these CSS files.                                                      --
+  ------------------------------------------------------------------------------
 
- .output~destination
+  out   = .Array.Output
+  lines = out~items
 
---------------------------------------------------------------------------------
--- ... emit the stored HTTP headers ...                                       --
---------------------------------------------------------------------------------
+  -- We choose "</head>" because it has no attributes.
 
- .response~printHeaders
+  subs = 0
+  Do i = 1 To lines Until out[i] = "</head>"
+    If out[i] == "[*STYLES*]" Then subs = i
+  End
 
---------------------------------------------------------------------------------
--- ... and an empty line to separate http headers and html body ...           --
---------------------------------------------------------------------------------
+  If i > items Then Raise Halt Array("No '</head>' line found.")
+  If subs == 0 Then Raise Halt Array("No '[*STYLES*]' line found.")
 
-  Say ""
+  allowed = XRange(AlNum)".-_"
+  styles = .Array~new
+  Do i = i + 1 To out~items
+    Parse Value out[i] With ' class="highlight-rexx-'style'">'
+    If style == "" Then Iterate
+    If Verify(style, allowed) > 0 Then Iterate
+    If \styles~hasItem(style) Then styles~append(style)
+  End
 
---------------------------------------------------------------------------------
--- ...and we can finally emit the body, by dumping the whole array at once    --
---------------------------------------------------------------------------------
+  new = "    "
+  Do style Over styles
+    new ||= "<link rel='stylesheet' href='/rexx-parser/css/rexx-"style".css'>"
+  End
 
-  Say arrayOutput
+  out[subs] = new
 
-Exit 0
+  Return self~OK
 
---------------------------------------------------------------------------------
--- This allows us to optionally implement headers, footers, breadcrumbs and   --
--- sidebars.                                                                  --
---------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
 
 OptionalCall: Procedure
   Signal On Syntax Name OptionalRoutineMissing
@@ -298,84 +265,25 @@ OptionalRoutineMissing:
   If code == 43.1, Condition("A")[1] = routineName Then Return
 Raise Propagate
 
---------------------------------------------------------------------------------
-
-::Class Http.Request
-::Method unknown
-  Return Value(Arg(1),,"ENVIRONMENT")
-
---------------------------------------------------------------------------------
-
-::Class Http.Response
-::Method 404
- .output~destination( .stdOut )
-  Say 'Content-Type: text/html; charset=iso-8859-1'
-  Say 'Status: 404 Not Found'
-  Say ""
-  Say '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">'
-  Say '<html><head>'
-  Say '<title>404 Not Found</title>'
-  Say '</head><body>'
-  Say '<h1>Not Found</h1>'
-  Say '<p>The requested URL was not found on this server.</p>'
-  Say '<hr>'
-  Say Value('SERVER_SIGNATURE',,"ENVIRONMENT")'</body></html>'
-  Return 0 -- Necessary to allow EXIT syntax
-::Method init
-  Expose headers order
-  order   = .Array~new
-  headers = .Directory~new
-::Method printHeaders
-  Expose headers order
-  Do header Over order
-    Say header":" headers[header]
-  End
-::Method unknown
-  Expose headers order
-  messageName = Arg(1)
-  If messageName~endsWith("=") Then Do
-    messageName = messageName[1, Length(messageName) - 1]
-    messageName = Process(messageName)
-    order~append( messageName )
-    headers[ messageName ] = Arg(2)
-    Return
-  End
-  messageName = Process(messageName)
-  If \headers~hasIndex(messageName) Then Return ""
-  Return headers[messageName]
-
-Process:
-  array = messageName~translate("  ","-_")~space~makeArray(" ")
-  Do i = 1 To array~items
-    array[i] = Upper( array[i][1] )Lower( SubStr(array[i],2) )
-  End
-  Return array~makeString("Line","-")
-
---------------------------------------------------------------------------------
-
-::Class ArrayOutputStream SubClass Array Inherit OutputStream
-::Method say
-  Use Strict Arg string -- We make string not optional
-  self~append(string)
-  Return 0
-
---------------------------------------------------------------------------------
---  Structure of a page:
+/******************************************************************************/
+/******************************************************************************/
+--                         Structure of a page:
 --
---  +------------------------------------------+
---  |         page header, inc. title          |
---  +------------------------------------------+
---  |       content header      |   side bar   |
---  +---------------------------+              |
---  |                           |              |
---  |          contents         |              |
---  |                           |              |
---  |        [9 columns]        |  [3 columns] |
---  +------------------------------------------+
---  |              page footer                 |
---  +------------------------------------------+
+--      +-------------------------------------------------------------+
+--      |              page header, including the title               |
+--      +-------------------------------------------------------------+
+--      |                content header               |   side bar    |
+--      +---------------------------------------------+               |
+--      |                                             |               |
+--      |                  contents                   |               |
+--      |                                             |               |
+--      |                 [9 columns]                 |  [3 columns]  |
+--      +-------------------------------------------------------------+
+--      |                          page footer                        |
+--      +-------------------------------------------------------------+
 --
---------------------------------------------------------------------------------
+/******************************************************************************/
+/******************************************************************************/
 
 -- We are loading a local copy of Bootstrap 3, customized to eliminate
 -- print media styles, and then we add our own media styles css.
@@ -391,8 +299,7 @@ Process:
       %title%
     </title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel='stylesheet' href='/rexx-parser/css/rexx-light.css'>
-    <link rel='stylesheet' href='/rexx-parser/css/rexx-dark.css'>
+[*STYLES*]
     <link rel='stylesheet' href='/rexx-parser/css/markdown.css'>
     %ownstyle%
     <link rel="preconnect" href="https://fonts.googleapis.com">

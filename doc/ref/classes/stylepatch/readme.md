@@ -67,6 +67,9 @@ are arrays of strings consisting of:
     where `fg` and `bg` are either `#rgb`, `#rrggbb`, or
     one of the 147 CSS named colors
     [defined here](https://www.w3.org/TR/css-color-4/#named-colors).
+  + *Background colors*, in the format `/#rgb`, `/#rrggbb`, or
+    a dash immediately followed by one of the 147 standard CSS named colors
+    [defined here](https://www.w3.org/TR/css-color-4/#named-colors).
   + One of the single words `bold`, `italic` or `underline`.
   + The single word `no`, which has to be followed by
     one of `bold`, `italic` or `underline`.

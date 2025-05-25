@@ -182,7 +182,8 @@ See also [.numberLines](#numberlines).
 #### <code>style=<em>style</em></code>
 
 Enclose the code with a <code>&lt;div class="highlight-rexx-<em>style</em>"&gt;</code> tag.
-Default is "dark".
+Default is "dark". Style names can only use uppercase or lowercase ANSI letters or numbers
+(i.e., XRange("ALNUM"), plus ".", "-" or "_".
 
 #### `tutor` {#tutor}
 
