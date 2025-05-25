@@ -16,9 +16,10 @@ has a *source*, which is an array of strings, and a *name*,
 a string that identifies the program. The third argument,
 *options*, is optional.
 
-When the *options* argument is specified, it must be a stem.
-When it is not specified, a set of default values is provided
-by the *new* method.
+When the *options* argument is specified, it must be a stem
+with a default value of 0, and you have to provide values
+for the relevant indexes. When the *options* argument is not specified,
+a set of default values is provided by the class *init* method.
 
 #### Recognized options indexes and default values
 
@@ -140,6 +141,7 @@ The default value for this option is `"dark"`.
 
 Returns the program, highlighted as per the options specified
 at object creation time. The optional *patch* argument
-specifies a StylePatch that may override certain
+specifies a [StylePatch](../stylepatch/) that may override certain
 highlighting classes for the duration of the current
-highlighing only.
+highlighing only. The style patch can also be specified
+as a string, or as an array of strings.

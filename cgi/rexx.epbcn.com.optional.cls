@@ -96,17 +96,20 @@
 
 Crumb:
 
-  tutor     = "/TUTOR"
-  tutordocs = "/TUTOR/doc"
+  tutor        = "/TUTOR"
+  tutordocs    = "/TUTOR/doc"
 
-  parser    = "/rexx-parser"
-  print     = "/rexx-parser/doc/print"
-  doc       = "/rexx-parser/doc"
-  guide     = doc"/guide"
-  ref       = doc"/ref"
-  dochl     = doc"/highlighter"
-  dochlhtml = dochl"/html"
-  dochlfeat = dochl"/features"
+  publications = "/publications"
+
+  parser       = "/rexx-parser"
+  print        = "/rexx-parser/doc/print"
+  doc          = "/rexx-parser/doc"
+  guide        = doc"/guide"
+  ref          = doc"/ref"
+  dochl        = doc"/highlighter"
+  dochlhtml    = dochl"/html"
+  dochlfeat    = dochl"/features"
+  docpub       = doc"/publications"
 
   Select Case Arg(1)
 
@@ -126,6 +129,11 @@ Crumb:
     When tutordocs"/new-functions" Then Return "New functions"
     When tutordocs"/new-classes"   Then Return "New classes"
     When tutordocs"/options"       Then Return "The OPTIONS instruction"
+    When tutordocs"/publications"  Then Return "Publications"
+    When tutordocs"/publications/36" Then Return "36<sup>th</sup> Symposium"
+    When tutordocs"/publications/36/2025-05-04-Unicode-and-Rexx"
+                                   Then Return "Unicode and Rexx"
+
     When tutordocs"/properties"    Then Return "Unicode properties"
     When tutordocs"/properties/normalization"
                                    Then Return "The Unicode.Normalization class"
@@ -152,22 +160,8 @@ Crumb:
 
     -- "/rexx-parser"
     When parser                    Then Return "Parser"
-    When parser"/cgi"              Then Return "CGI"
     When parser"/highlighter"      Then Return "Highlighter"
     When parser"/tests"            Then Return "Tests"
-
-    -- "/rexx-parser/doc/print"
-
-    When print                     Then Return "Publications"
-    When print"/36"                Then Return "36<sup>th</sup> symposium"
-    When print"/36/2025-05-04-Unicode-and-Rexx"
-                                   Then Return "Unicode and Rexx"
-    When print"/36/2025-05-05-The-Rexx-Parser"
-                                   Then Return "The Rexx Parser"
-    When print"/36/2025-05-05-The-Rexx-Parser-Slides"
-                                   Then Return "The Rexx Parser (Slides)"
-    When print"/36/2025-05-06-The-Rexx-Highlighter"
-                                   Then Return "The Rexx Highlighter (Slides)"
 
     -- "/rexx-parser/doc/guide"
 
@@ -207,6 +201,8 @@ Crumb:
     -- "/rexx-parser/doc/highlighter"
 
     When dochl                     Then Return "Highlighter"
+    When dochl"/cgi"               Then Return "CGI"
+    When dochl"/paged-media"       Then Return "CSS Paged Media"
     When dochl"/ansi"              Then Return "ANSI"
     When dochl"/latex"             Then Return "(Lua)LaTeX"
     When dochl"/htmlclasses"       Then Return "HTMLClasses"
@@ -229,6 +225,15 @@ Crumb:
     When dochlhtml"/directives"    Then Return "Directive tests"
     When dochlhtml"/classes"       Then Return "Element-class-to-HTML mappings"
     When dochlhtml"/all"           Then Return "General tests"
+
+    -- "/rexx-parser/doc/publications"
+
+    When docpub                    Then Return "Publications"
+    When docpub"/36"               Then Return "36<sup>th</sup> Symposium"
+    When docpub"/36/2025-05-05-The-Rexx-Parser"
+                                   Then Return "The Rexx Parser"
+    When docpub"/36/2025-05-06-The-Rexx-Highlighter"
+                                   Then Return "The Rexx Highlighter"
 
     Otherwise                           Return "XXX"
   End

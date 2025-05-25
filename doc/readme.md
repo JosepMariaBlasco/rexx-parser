@@ -43,6 +43,16 @@ The Rexx Highlighter
   - [The HTML Highlighter](highlighter/html/).
   - [The ANSI Highlighter](highlighter/ansi/).
   - [The (Lua)LaTeX Highlighter](highlighter/latex/).
+  - [CGI Installation](highlighter/cgi/).
+  - [Exploiting CSS Paged Media](highlighter/paged-media/).
+
+Publications
+------------
+
+- [The Rexx Parser](https://www.epbcn.com/pdf/josep-maria-blasco/2025-05-05-The-Rexx-Parser.pdf) (20250505,
+  [36th International Rexx Language Symposium -- Vienna, Austria and online](https://www.rexxla.org/events/schedule.rsp?year=2025)).
+- [The Rexx Highlighter](https://www.epbcn.com/pdf/josep-maria-blasco/2025-05-06-The-Rexx-Highlighter.pdf) (20250506,
+  [36th International Rexx Language Symposium -- Vienna, Austria and online](https://www.rexxla.org/events/schedule.rsp?year=2025)).
 
 Versions
 --------

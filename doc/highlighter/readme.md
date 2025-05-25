@@ -148,8 +148,8 @@ Documentation
   - [The HTML Highlighter](html/).
   - [The ANSI Highlighter](ansi/).
   - [The (Lua)LaTeX Highlighter](latex/).
-
-
+  - [CGI installation](cgi/).
+  - [Exploiting CSS Paged Media](paged-media/).
 
 Included software
 -----------------

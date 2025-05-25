@@ -27,22 +27,29 @@
 /* 20250103         Add "unicode" and "tutor" options                         */
 /* 20250106         Rename to Highlighter, move to cls directory              */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250519    0.2b Fix error computing mypath, add dependencies              */
+/* 20250520         Ensure that options. == 0                                 */
 /*                                                                            */
 /******************************************************************************/
 
--- Make our class known to everybody, and create ".."
-If .environment~Highlighter == .Nil Then Do
-   .environment~Highlighter =  .Highlighter
-  package   = .context~package
-  local     =  package~local
-  mypath    =  FileSpec( "Path", package~name )
-  local ~ . = .File~new( mypath"../" )~absolutePath
-End
+-- Make our class known to everybody,
+
+.environment~Highlighter =  .Highlighter
+
+-- Create ".."
+
+package      = .context~package
+pkgLocal     =  package~local
+myName       =  package~name
+mypath       =  FileSpec( "Drive", myName )FileSpec( "Path", myName )
+pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
 
 /******************************************************************************/
 /* Dependencies                                                               */
 /******************************************************************************/
 
+::Requires "Rexx.Parser.cls"
+::Requires "StylePatch.cls"
 ::Requires "HLDrivers/Drivers.cls"
 ::Requires "HTMLClasses.cls"
 
@@ -71,6 +78,11 @@ End
 
   -- Set some sane default for Options.
   If options. == .Nil Then Options. = 0
+
+  If options.[] \== 0 Then Do
+    Say ">>> Default value for options argument to Highlighter~new is not 0. <<<"
+    Raise Halt
+  End
 
   If \ Options.~hasIndex(mode)        Then Options.mode        = "HTML"
   If \ Options.~hasIndex(operator)    Then Options.operator    = "group"
@@ -131,9 +143,12 @@ End
     If Options.~hasIndex(additional) Then
       patch = Options.additional
   End
-  If patch \== .Nil Then
+  If patch~isA(.String) Then patch = .StylePatch~of( patch )
+  Else If patch~isA(.Array) Then patch = .StylePatch~of(patch)
+  Else If patch \== .Nil Then
     .Validate~classType("patch", patch, .StylePatch)
   Options.!Patch = patch
+
   If patch \== .Nil Then Do
     -- If we are going to use an additional patch, we will need
     -- to generate a unique ID for our DIV.

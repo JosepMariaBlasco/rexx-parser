@@ -17,13 +17,28 @@ Version history
   <li> Update internal InternalError routine so that it raises HALT instead
        of SYNTAX to avoid some loops and stack exhaustion.
   <li> Add GenErrorText.rex utility (in bin/resources). It generates
-       ANSI.ErrorText.cls, which provides an enhances ANSI ErrorText
+       ANSI.ErrorText.cls, which provides an enhanced ANSI ErrorText
        routine with support for secondary messges and substitutions.
        Update rxchech to use this routine, and add a toggle
        to display an internal trace (off by default) (20250426).
   <li> Update --prolog option in highlight utility so that it does not
        emit the HTML classes (20250502).
-  <li> Fix typo in rxcheck.rex (GitHub issue no. 10 - Thanks Geoff!) (20250508).
+  <li> Fix typo in rxcheck.rex ([GitHub issue no. 10](https://github.com/JosepMariaBlasco/rexx-parser/issues/10) - Thanks Geoff!) (20250508).
+  <li> Add a "publications" section to the main documentation page (20250510).
+  <li> Document [CGI installation](../highlighter/cgi/)
+       and [CSS Paged Media](../highlighter/paged-media/) usage
+       thoroughly (20250511).
+  <li> Move publications to a subdirectory under docs (20250512).
+  <li> Fix error in Highlighter.cls (20250519, reported by Rony).
+  <li> Ensure that the options arg to the Highlighter class has a 0 default value (20250520).
+  <li> Allow specifying style patches as strings or arrays of strings when
+       invoking the parse method of the Highlighter class (20250520).
+  <li> Clarify the docs on how to use a style patch to modify only the background
+       of a color combination (20250523, thanks to an observation by Rony).
+  <li> Add experimental rgflight style (thanks, Rony!). Restrict style
+       specifications to allow only ASCII letters, numbers, and a choice
+       of ".", "-" and "_". Automatically detect styles used by the
+       page and dynamically update the list of included CSS files (20250525).
 <tr><td>20250416<td>0.2a<td>
 <ul>
   <li> Add optional BIF argument checking.
