@@ -48,6 +48,7 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
 /* Dependencies                                                               */
 /******************************************************************************/
 
+::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Rexx.Parser.cls"
 ::Requires "StylePatch.cls"
 ::Requires "HLDrivers/Drivers.cls"

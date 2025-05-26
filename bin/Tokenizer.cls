@@ -28,15 +28,15 @@
 /*                                                                            */
 /******************************************************************************/
 
-.environment ~                     Element =                     .Element
-.environment ~            Inserted.Element =            .Inserted.Element
-.environment ~          Inserted.Semicolon =          .Inserted.Semicolon
-.environment ~ Operator.Character.Sequence = .Operator.Character.Sequence
-.environment ~  Special.Character.Sequence =  .Special.Character.Sequence
-.environment ~              Symbol.Element =              .Symbol.Element
-.environment ~      StringOrSymbol.Element =      .StringOrSymbol.Element
-.environment ~      Tail.Separator.Element =      .Tail.Separator.Element
-.environment ~          WhiteSpace.Element =          .WhiteSpace.Element
+ .environment ~                     Element =                     .Element
+ .environment ~            Inserted.Element =            .Inserted.Element
+ .environment ~          Inserted.Semicolon =          .Inserted.Semicolon
+ .environment ~ Operator.Character.Sequence = .Operator.Character.Sequence
+ .environment ~  Special.Character.Sequence =  .Special.Character.Sequence
+ .environment ~              Symbol.Element =              .Symbol.Element
+ .environment ~      StringOrSymbol.Element =      .StringOrSymbol.Element
+ .environment ~      Tail.Separator.Element =      .Tail.Separator.Element
+ .environment ~          WhiteSpace.Element =          .WhiteSpace.Element
 
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "UnicodeSupport.cls"

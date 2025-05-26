@@ -23,34 +23,35 @@
 /*                                                                            */
 /******************************************************************************/
 
-.environment ~ Concatenation.Expression   = .Concatenation.Expression
-.environment ~ Expression.List            = .Expression.List
-.environment ~ And.Expression             = .And.Expression
-.environment ~ NAry.Expression            = .NAry.Expression
-.environment ~ Addition.Expression        = .Addition.Expression
-.environment ~ Comparison.Expression      = .Comparison.Expression
-.environment ~ Multiplication.Expression  = .Multiplication.Expression
-.environment ~ Or.Expression              = .Or.Expression
-.environment ~ Prefix.Expression          = .Prefix.Expression
-.environment ~ Power.Expression           = .Power.Expression
-.environment ~ SubExpression              = .SubExpression
+ .environment ~ Concatenation.Expression   = .Concatenation.Expression
+ .environment ~ Expression.List            = .Expression.List
+ .environment ~ And.Expression             = .And.Expression
+ .environment ~ NAry.Expression            = .NAry.Expression
+ .environment ~ Addition.Expression        = .Addition.Expression
+ .environment ~ Comparison.Expression      = .Comparison.Expression
+ .environment ~ Multiplication.Expression  = .Multiplication.Expression
+ .environment ~ Or.Expression              = .Or.Expression
+ .environment ~ Prefix.Expression          = .Prefix.Expression
+ .environment ~ Power.Expression           = .Power.Expression
+ .environment ~ SubExpression              = .SubExpression
 
-.environment ~ NameSpace.Qualified.ClassName = -
-  .NameSpace.Qualified.ClassName
-.environment ~ NameSpace.Qualified.Function.Call = -
-  .NameSpace.Qualified.Function.Call
+ .environment ~ NameSpace.Qualified.ClassName = -
+   .NameSpace.Qualified.ClassName
+ .environment ~ NameSpace.Qualified.Function.Call = -
+   .NameSpace.Qualified.Function.Call
 
-.environment ~               Rexx.Term  =               .Rexx.Term
+ .environment ~               Rexx.Term  =               .Rexx.Term
 
-.environment ~  Compound.Variable.Term  =  .Compound.Variable.Term
-.environment ~            Indexed.Term  =            .Indexed.Term
-.environment ~      Function.Call.Term  =      .Function.Call.Term
-.environment ~     Literal.String.Term  =     .Literal.String.Term
-.environment ~            Message.Term  =            .Message.Term
-.environment ~      Stem.Variable.Term  =      .Stem.Variable.Term
-.environment ~             Symbol.Term  =             .Symbol.Term
-.environment ~ Variable.Reference.Term  = .Variable.Reference.Term
+ .environment ~  Compound.Variable.Term  =  .Compound.Variable.Term
+ .environment ~            Indexed.Term  =            .Indexed.Term
+ .environment ~      Function.Call.Term  =      .Function.Call.Term
+ .environment ~     Literal.String.Term  =     .Literal.String.Term
+ .environment ~            Message.Term  =            .Message.Term
+ .environment ~      Stem.Variable.Term  =      .Stem.Variable.Term
+ .environment ~             Symbol.Term  =             .Symbol.Term
+ .environment ~ Variable.Reference.Term  = .Variable.Reference.Term
 
+::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Tokenizer.cls"
 
 /******************************************************************************/

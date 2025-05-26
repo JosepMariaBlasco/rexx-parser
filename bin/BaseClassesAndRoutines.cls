@@ -34,6 +34,7 @@
 ::Attribute end              -- Last element in clause (a semicolon)
 ::Attribute package          -- The package we are currently parsing
 ::Method Init
+
   Expose package begin end labels nullClauses docComment
 
   Use Strict Arg package, begin, end

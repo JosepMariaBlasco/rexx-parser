@@ -20,6 +20,8 @@
 /*                                                                            */
 /******************************************************************************/
 
+::Requires "BaseClassesAndRoutines.cls"
+
 ::Class PreClauser Public
 
 ::Attribute tokenizer

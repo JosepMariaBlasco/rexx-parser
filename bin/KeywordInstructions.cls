@@ -27,42 +27,42 @@
 /*                                                                            */
 /******************************************************************************/
 
-.environment ~             Address.Instruction =             .Address.Instruction
-.environment ~                 Arg.Instruction =                 .Arg.Instruction
-.environment ~                Call.Instruction =                .Call.Instruction
-.environment ~            Call.Off.Instruction =            .Call.Off.Instruction
-.environment ~             Call.On.Instruction =             .Call.On.Instruction
-.environment ~                Drop.Instruction =                .Drop.Instruction
-.environment ~              Expose.Instruction =              .Expose.Instruction
-.environment ~             Forward.Instruction =             .Forward.Instruction
-.environment ~               Guard.Instruction =               .Guard.Instruction
-.environment ~           Interpret.Instruction =           .Interpret.Instruction
-.environment ~             Iterate.Instruction =             .Iterate.Instruction
-.environment ~               Leave.Instruction =               .Leave.Instruction
-.environment ~                 Nop.Instruction =                 .Nop.Instruction
-.environment ~             Numeric.Instruction =             .Numeric.Instruction
-.environment ~               Parse.Instruction =               .Parse.Instruction
-.environment ~ Optional.Expression.Instruction = .Optional.Expression.Instruction
-.environment ~             Options.Instruction =             .Options.Instruction
-.environment ~           Procedure.Instruction =           .Procedure.Instruction
-.environment ~               Raise.Instruction =               .Raise.Instruction
-.environment ~              Signal.Instruction =              .Signal.Instruction
-.environment ~        Signal.Value.Instruction =        .Signal.Value.Instruction
-.environment ~          Signal.Off.Instruction =          .Signal.Off.Instruction
-.environment ~           Signal.On.Instruction =           .Signal.On.Instruction
-.environment ~               Trace.Instruction =               .Trace.Instruction
-.environment ~             Use.Arg.Instruction =             .Use.Arg.Instruction
-.environment ~           Use.Local.Instruction =           .Use.Local.Instruction
+ .environment~             Address.Instruction =             .Address.Instruction
+ .environment~                 Arg.Instruction =                 .Arg.Instruction
+ .environment~                Call.Instruction =                .Call.Instruction
+ .environment~            Call.Off.Instruction =            .Call.Off.Instruction
+ .environment~             Call.On.Instruction =             .Call.On.Instruction
+ .environment~                Drop.Instruction =                .Drop.Instruction
+ .environment~              Expose.Instruction =              .Expose.Instruction
+ .environment~             Forward.Instruction =             .Forward.Instruction
+ .environment~               Guard.Instruction =               .Guard.Instruction
+ .environment~           Interpret.Instruction =           .Interpret.Instruction
+ .environment~             Iterate.Instruction =             .Iterate.Instruction
+ .environment~               Leave.Instruction =               .Leave.Instruction
+ .environment~                 Nop.Instruction =                 .Nop.Instruction
+ .environment~             Numeric.Instruction =             .Numeric.Instruction
+ .environment~               Parse.Instruction =               .Parse.Instruction
+ .environment~ Optional.Expression.Instruction = .Optional.Expression.Instruction
+ .environment~             Options.Instruction =             .Options.Instruction
+ .environment~           Procedure.Instruction =           .Procedure.Instruction
+ .environment~               Raise.Instruction =               .Raise.Instruction
+ .environment~              Signal.Instruction =              .Signal.Instruction
+ .environment~        Signal.Value.Instruction =        .Signal.Value.Instruction
+ .environment~          Signal.Off.Instruction =          .Signal.Off.Instruction
+ .environment~           Signal.On.Instruction =           .Signal.On.Instruction
+ .environment~               Trace.Instruction =               .Trace.Instruction
+ .environment~             Use.Arg.Instruction =             .Use.Arg.Instruction
+ .environment~           Use.Local.Instruction =           .Use.Local.Instruction
 
-.environment ~               Call.Value =               .Call.Value
-.environment ~ NameSpace.Qualified.Call = .NameSpace.Qualified.Call
+ .environment~               Call.Value =               .Call.Value
+ .environment~ NameSpace.Qualified.Call = .NameSpace.Qualified.Call
 
-.environment ~                        Template =                        .Template
-.environment ~                   Template.List =                   .Template.List
-.environment ~          Optional.Template.List =          .Optional.Template.List
-.environment ~               Prefixed.Template =               .Prefixed.Template
+ .environment~                        Template =                        .Template
+ .environment~                   Template.List =                   .Template.List
+ .environment~          Optional.Template.List =          .Optional.Template.List
+ .environment~               Prefixed.Template =               .Prefixed.Template
 
-.environment ~                  Trap.Arguments =                  .Trap.Arguments
+ .environment~                  Trap.Arguments =                  .Trap.Arguments
 
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Expressions.cls"

@@ -127,6 +127,7 @@
 -- Dependencies                                                               --
 --------------------------------------------------------------------------------
 
+::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Rexx.Parser.cls"
 ::Requires "Highlighter.cls"
 ::Requires "StylePatch.cls"

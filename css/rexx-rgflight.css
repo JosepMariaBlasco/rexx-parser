@@ -100,7 +100,7 @@
 
 /* directive keywords                                                         */
 .highlight-rexx-rgflight .rx-dkw {
-  color: #000; /* #333; */
+  color: #00f; /* #000; */ /* #333; */
   font-weight: bold;
   text-decoration:underline;
 }
@@ -259,7 +259,7 @@
 
 /* Resource keyword                                                           */
 .highlight-rexx-rgflight .rx-resource {
-  color: #33f; /* #fc0; */
+  color: #000; /* #33f; */ /* #fc0; */
 }
 
 /* Resource ignored stuff                                                     */
@@ -277,6 +277,7 @@
 /* Resource delimiter                                                         */
 .highlight-rexx-rgflight .rx-res-delimiter {
   color: #33f; /* #fc0; */
+  background-color: #ff6;
   text-decoration:underline;
 }
 
@@ -305,7 +306,7 @@
 
 /* Whitespace. This includes continuations                                    */
 .highlight-rexx-rgflight .rx-ws {
-  color: #ff0; /* #cc0; */
+  color: #800; /* #cc0; */
 }
 
 /******************************************************************************/

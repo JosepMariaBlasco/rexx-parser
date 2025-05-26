@@ -22,32 +22,33 @@
 /*                                                                            */
 /******************************************************************************/
 
-.environment ~                  End.Of.Source =                  .End.Of.Source
+ .environment~                  End.Of.Source =                  .End.Of.Source
 
-.environment ~                     End.Clause =                     .End.Clause
-.environment ~                    Else.Clause =                    .Else.Clause
-.environment ~                      If.Clause =                      .If.Clause
-.environment ~                   Label.Clause =                   .Label.Clause
-.environment ~                    Null.Clause =                    .Null.Clause
-.environment ~               Iterative.Clause =               .Iterative.Clause
-.environment ~               Otherwise.Clause =               .Otherwise.Clause
-.environment ~                  Select.Clause =                  .Select.Clause
-.environment ~                    Then.Clause =                    .Then.Clause
-.environment ~                    When.Clause =                    .When.Clause
+ .environment~                     End.Clause =                     .End.Clause
+ .environment~                    Else.Clause =                    .Else.Clause
+ .environment~                      If.Clause =                      .If.Clause
+ .environment~                   Label.Clause =                   .Label.Clause
+ .environment~                    Null.Clause =                    .Null.Clause
+ .environment~               Iterative.Clause =               .Iterative.Clause
+ .environment~               Otherwise.Clause =               .Otherwise.Clause
+ .environment~                  Select.Clause =                  .Select.Clause
+ .environment~                    Then.Clause =                    .Then.Clause
+ .environment~                    When.Clause =                    .When.Clause
 
-.environment ~         Assignment.Instruction =         .Assignment.Instruction
-.environment ~            Command.Instruction =            .Command.Instruction
-.environment ~                 Do.Instruction =                 .Do.Instruction
-.environment ~                 If.Instruction =                 .If.Instruction
-.environment ~      Implicit.Exit.Instruction =      .Implicit.Exit.Instruction
-.environment ~          Iterative.Instruction =          .Iterative.Instruction
-.environment ~               Loop.Instruction =               .Loop.Instruction
-.environment ~ Message.Assignment.Instruction = .Message.Assignment.Instruction
-.environment ~            Message.Instruction =            .Message.Instruction
-.environment ~             Select.Instruction =             .Select.Instruction
+ .environment~         Assignment.Instruction =         .Assignment.Instruction
+ .environment~            Command.Instruction =            .Command.Instruction
+ .environment~                 Do.Instruction =                 .Do.Instruction
+ .environment~                 If.Instruction =                 .If.Instruction
+ .environment~      Implicit.Exit.Instruction =      .Implicit.Exit.Instruction
+ .environment~          Iterative.Instruction =          .Iterative.Instruction
+ .environment~               Loop.Instruction =               .Loop.Instruction
+ .environment~ Message.Assignment.Instruction = .Message.Assignment.Instruction
+ .environment~            Message.Instruction =            .Message.Instruction
+ .environment~             Select.Instruction =             .Select.Instruction
 
-.environment ~              Block.Instruction =              .Block.Instruction
+ .environment~              Block.Instruction =              .Block.Instruction
 
+::Requires "BaseClassesAndRoutines.cls"
 ::Requires "KeywordInstructions.cls"
 ::Requires "Directives.cls"
 ::Requires "Tokenizer.cls"
