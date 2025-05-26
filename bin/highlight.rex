@@ -22,6 +22,7 @@
 /* 20250107         Change -t and --term for -a and --ansi                    */
 /* 20250108         Add --pad= option                                         */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx.parser        */
+/* 20250526    0.2b Add --css option, following a suggestion by Rony          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -95,6 +96,7 @@ If op[1] \== "-" Then Leave
     When "-l", "--latex"       Then options.mode        =  LaTeX
     When "-n", "--numberlines" Then options.numberlines = .True
     When "-a", "--ansi"        Then options.mode        =  ANSI
+    When "--css"               Then options.css         = 1
     When "--tutor"             Then options.unicode     = 1
     When "-u", "--unicode"     Then options.unicode     = 1
     When "--noprolog"          Then options.prolog      = 0
@@ -136,8 +138,33 @@ End
 source = CharIn(file,1,Chars(file))~makeArray
 Call Stream file,"c","close"
 
--- Markdown or html? Process the fenced code blocks and display the result
-If file~caselessEndsWith(".md") | file~caselessEndsWith(".html") Then Do
+-- HTML? Process the fenced code blocks and display the result
+If file~caselessEndsWith(".html") | Options.mode == "HTML" Then Do
+  If Options.css Then Do
+    css = ""
+    Parse Source . . myself
+    myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
+    sep = .File~separator
+    If Options.style == 0 Then mystyle = "dark"
+    Else                       mystyle = Options.style
+    cssPath = ChangeStr("\",mypath".."sep"css"sep"rexx-"mystyle".css","/")
+    local = Stream(Directory()||sep"rexx-"mystyle".css","c","query exists")
+    Do line Over .Resources[HTML]
+      Select Case line
+        When "[*CSS*]" Then Do
+          Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-dark.css'>"
+          Say  "    <link rel='stylesheet' href='file:///"cssPath"'>"
+          If local \== "" Then Say  "    <link rel='stylesheet' href='rexx-"mystyle".css'>"
+        End
+        When "[*CONTENTS*]" Then Say FencedCode( fn, source )
+        Otherwise Say line
+      End
+    End
+  End
+  Else Say FencedCode( fn, source )
+End
+-- Markdown? Process the fenced code blocks and display the result
+Else If file~caselessEndsWith(".md") Then Do
   Say FencedCode( fn, source )
 End
 -- Assume it's Rexx
@@ -177,6 +204,7 @@ and we highlight it directly.
 
 Options:
   -a, --ansi             Select ANSI mode
+      --css              Include links to css files (HTML only)
   -h, --html             Select HTML mode
   -l, --latex            Select LaTeX mode
       --noprolog         Do not print a prolog (LaTeX only)
@@ -195,4 +223,16 @@ The 'highlight' program is part of the Rexx Parser package, and is distributed
 under the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
 
 Copyright (c) 2024, 2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+::END
+
+::Resource HTML
+<!doctype html>
+<html lang='en'>
+  <head>
+[*CSS*]
+  </head>
+  <body>
+[*CONTENTS*]
+  </body>
+</html>
 ::END

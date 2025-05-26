@@ -39,6 +39,7 @@ Version history
        specifications to allow only ASCII letters, numbers, and a choice
        of ".", "-" and "_". Automatically detect styles used by the
        page and dynamically update the list of included CSS files (20250525).
+  <li> Add --css option to the highlight utility, following a suggestion by Rony (20250526).
 <tr><td>20250416<td>0.2a<td>
 <ul>
   <li> Add optional BIF argument checking.
