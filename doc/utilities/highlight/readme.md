@@ -9,11 +9,20 @@ Highlight
 [rexx] highlight [<em>options</em>] <em>file</em>
 </pre>
 
-If <em>file</em> has a `.md` or a `.html` extension,
-process all Rexx fenced code blocks
-in FILE and highlight them.
-Otherwise, we assume that this is a Rexx file,
-and we highlight it directly.
+The utility can run in one of three <em>modes</em>, namely,
+ANSI mode, HTML mode, and LaTeX mode; every mode determines
+how the file will be highlighted.
+
+When calling `highlight` as a command, the default mode is ANSI;
+otherwise, the default mode is HTML.
+
+When <em>file</em> is a single dash ("-") which is the last
+option in the command line argument, input is taken from stdin.
+In all other cases, <em>file</em> has to refer to a filesystem
+file; when the extension of that file is `.md`, `.htm` or `.html`,
+the utility processes all Rexx fenced code blocks in <em>file</em>
+and highlights them. Otherwise, the utility assumes that <em>file</em>
+is a Rexx file, it is highlighted accordingly.
 
 ### Options:
 
@@ -34,18 +43,96 @@ and we highlight it directly.
 `-w`, <code>--width=<em>n</em></code>                   Ensure that lines have width <em>n</em> (ANSI only)
 ------------------------------------------------------- ------------------------------
 
-#### css
+#### -a, --ansi {#ansi}
 
-When generating a HTML highlighting, the `css` option adds a skeleton
+Selects [ANSI highlighting](../../highlighter/ansi/)
+using ANSI SGR (Select Graphic Rendition) codes.
+
+#### --css {#css}
+
+When generating HTML highlighting, the `css` option adds a skeleton
 HTML5 envelope to the generated code. This envelope includes, in its
-head, up to three links to the style file referenced in the `-s` or `--style`
-options: one to a possible version stored in the <https://rexx.epbcn.com> site,
-another one in a path relative to the `highlight` utility, and an
-optional third one pointing to the style file, if such a file exists.
+`head` tag, up to three links to the style file referenced in the `-s` or `--style`
+options: one to a possible version stored in the <https://rexx.epbcn.com/> site,
+another one to a path relative to the `highlight` utility, and an
+optional third one pointing to the style file, if such a file exists
+in the current directory.
 
 **Note**: The `css` option is a quick and dirty hack intended to facilitate
 development in RAD scenarios, not a way to generate distribution-ready
 or production files.
+
+#### -h, --html
+
+Selects [HTML highlighting](../../highlighter/html/).
+
+See also [--css](#css).
+
+#### -l, --latex {#latex}
+
+Selects [LaTeX highlighting](../../highlighter/latex/).
+
+#### --noprolog {#noprolog}
+
+Don't print a prolog (LaTeX only).
+
+See also [--prolog](#prolog).
+
+#### -n, --numberlines {#numberlines}
+
+Print line numbers.
+
+See also [--startFrom](#startFrom).
+
+#### --patch="_patches_"
+
+Apply the semicolon-separated list of patches.
+
+See also [--patchFile](#patchFile).
+
+#### --patchFile=_file_
+
+Apply the patches contained in _file_.
+
+See also [--patch](#patch).
+
+#### --prolog
+
+Print a prolog (LaTeX driver only).
+
+See also [--latex](#latex) and [--noprolog](#noprolog).
+
+#### --startFrom=_n_
+
+Start numbering lines at line _n_.
+
+See also [--numberlines](#numberlines)
+
+#### -s, --style=_style_
+
+Use the <code>rexx-<em>style</em>.css</code> style sheet.
+The default is `rexx-dark.css`.
+
+#### --tutor {#tutor}
+
+Enable TUTOR-flavored Unicode.
+
+See also [--unicode](#unicode).
+
+#### --u, --unicode {#unicode}
+
+Enable TUTOR-flavored Unicode.
+
+See also [--tutor](#tutor).
+
+#### -w, --width=_n_
+
+Ensure that lines have a minimum width of _n_ characters
+(ANSI highlighting only).
+
+See also [--ansi](#ansi).
+
+--------------
 
 ##### Example:
 

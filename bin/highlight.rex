@@ -22,7 +22,7 @@
 /* 20250107         Change -t and --term for -a and --ansi                    */
 /* 20250108         Add --pad= option                                         */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx.parser        */
-/* 20250526    0.2b Add --css option, following a suggestion by Rony          */
+/* 20250526    0.2b Add --css opt. & "-" to select stdin (thanks, Rony!)      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -45,9 +45,9 @@ patch = .Nil
 
 Loop
   Parse var fn op value rest
-If op[1] \== "-" Then Leave
+If op[1] \== "-" | fn == "-" Then Leave
   If op~contains("=") Then Do
-    fn = value rest
+    fn = Strip(value rest)
     Parse Var op op"="value
     Select Case Lower(op)
       When "--startfrom"       Then options.startFrom   = Natural(value)
@@ -106,7 +106,7 @@ If op[1] \== "-" Then Leave
       Exit 1
     End
   End
-  fn = value rest
+  fn = Strip(value rest)
 End
 
 -- We need an argument
@@ -115,67 +115,78 @@ If fn = "" Then Do
   Exit 1
 End
 
--- Process filenames containing blanks
-fn = Strip(fn)
-c  = fn[1]
-If """'"~contains( c ) Then Do
-  Parse Var fn (c)fn2(c)extra
-  If extra \== "" Then Do
-    Say "Invalid filename '"fn"'."
+If fn == "-" Then source = .StdIn~ArrayIn
+Else Do
+
+  -- Process filenames containing blanks
+  fn = Strip(fn)
+  c  = fn[1]
+  If """'"~contains( c ) Then Do
+    Parse Var fn (c)fn2(c)extra
+    If extra \== "" Then Do
+      Say "Invalid filename '"fn"'."
+      Exit 1
+    End
+    fn = fn2
+  End
+
+  -- Check that the file exists
+  file = Stream(fn, 'c', 'q exists')
+  If file == "" Then Do
+    Say "File '"fn"' not found."
     Exit 1
   End
-  fn = fn2
+
+  -- Load the whole file in the "source" array
+  source = CharIn(file,1,Chars(file))~makeArray
+  Call Stream file,"c","close"
 End
 
--- Check that the file exists
-file = Stream(fn, 'c', 'q exists')
-If file == "" Then Do
-  Say "File '"fn"' not found."
-  Exit 1
+If Options.css == 0 Then Do
+  Say ProcessSource()
+  Exit
 End
 
--- Load the whole file in the "source" array
-source = CharIn(file,1,Chars(file))~makeArray
-Call Stream file,"c","close"
+-- Get our own path
+Parse Source . . myself
+myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
+sep = .File~separator
 
--- HTML? Process the fenced code blocks and display the result
-If file~caselessEndsWith(".html") | Options.mode == "HTML" Then Do
-  If Options.css Then Do
-    css = ""
-    Parse Source . . myself
-    myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
-    sep = .File~separator
-    If Options.style == 0 Then mystyle = "dark"
-    Else                       mystyle = Options.style
-    cssPath = ChangeStr("\",mypath".."sep"css"sep"rexx-"mystyle".css","/")
-    local = Stream(Directory()||sep"rexx-"mystyle".css","c","query exists")
-    Do line Over .Resources[HTML]
-      Select Case line
-        When "[*CSS*]" Then Do
-          Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-"mystyle".css'>"
-          Say  "    <link rel='stylesheet' href='file:///"cssPath"'>"
-          If local \== "" Then Say  "    <link rel='stylesheet' href='rexx-"mystyle".css'>"
-        End
-        When "[*CONTENTS*]" Then Say FencedCode( fn, source )
-        Otherwise Say line
-      End
+-- Pick selected style
+If Options.style == 0 Then mystyle = "dark"
+Else                       mystyle = Options.style
+
+-- A possible copy could reside in our rexx-parser installation
+cssPath = ChangeStr("\",mypath".."sep"css"sep"rexx-"mystyle".css","/")
+-- A possible copy could reside in the current directory
+local   = Stream(Directory()||sep"rexx-"mystyle".css","c","query exists")
+
+Do line Over .Resources[HTML]
+  Select Case line
+    When "[*CSS*]" Then Do
+      Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-"mystyle".css'>"
+      Say  "    <link rel='stylesheet' href='file:///"cssPath"'>"
+      If local \== "" Then Say  "    <link rel='stylesheet' href='rexx-"mystyle".css'>"
     End
-  End
-  Else Say FencedCode( fn, source )
-End
--- Markdown? Process the fenced code blocks and display the result
-Else If file~caselessEndsWith(".md") Then Do
-  Say FencedCode( fn, source )
-End
--- Assume it's Rexx
-Else Do
-  hl =  .Highlighter~new(fn, source, options.)
-  Do line Over hl~parse( patch )
-    Say line
+    When "[*CONTENTS*]" Then Say ProcessSource()
+    Otherwise Say line
   End
 End
 
 Exit
+
+ProcessSource:
+  -- Markdown? Process the fenced code blocks and display the result
+  If file~caselessEndsWith(".md") Then Return FencedCode( fn, source )
+
+  -- HTML? Process the fenced code blocks and display the result
+  If file~caselessEndsWith(".html") | file~caselessEndsWith(".htm") Then
+    Return FencedCode( fn, source )
+
+  -- Assume it's Rexx
+  hl =  .Highlighter~new(fn, source, options.)
+Return hl~parse( patch )
+
 
 AllowQuotes:
   q = value[1]
