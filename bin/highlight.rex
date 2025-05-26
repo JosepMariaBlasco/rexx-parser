@@ -152,7 +152,7 @@ If file~caselessEndsWith(".html") | Options.mode == "HTML" Then Do
     Do line Over .Resources[HTML]
       Select Case line
         When "[*CSS*]" Then Do
-          Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-dark.css'>"
+          Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-"mystyle".css'>"
           Say  "    <link rel='stylesheet' href='file:///"cssPath"'>"
           If local \== "" Then Say  "    <link rel='stylesheet' href='rexx-"mystyle".css'>"
         End
