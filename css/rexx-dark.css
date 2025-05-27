@@ -58,10 +58,18 @@
   color: #48c;
 }
 
-/* Whitespace. This includes continuations */
-.highlight-rexx-dark .rx-ws {
+/******************************************************************************/
+/* Whitespace and continuations                                               */
+/******************************************************************************/
+
+.highlight-rexx-dark .rx-ws,
+.highlight-rexx-dark .rx-cont {
   color: #cc0;
 }
+
+/******************************************************************************/
+/* END Whitespace and continuations                                           */
+/******************************************************************************/
 
 /* shebangs */
 .highlight-rexx-dark .rx-shb {
