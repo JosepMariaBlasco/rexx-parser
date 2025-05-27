@@ -62,18 +62,18 @@
 
   If query == ""               Then args[0] = 0
   Else If \query~contains("=") Then Signal NoEqSign
-  Else Do Label Out
+  Else Do
     params = query
     names = .Set~new
     Do i = 1 By 1 Until params == ""
       Parse Var params param"&"params
-      If \param~contains("=") Then Signal NoEqSign
+      If \param~contains("=")  Then Signal NoEqSign
       Parse Var param name"="value
       name = Lower(name)
-      If names~hasIndex(name) Then Signal Duplicate
+      If names~hasIndex(name)  Then Signal Duplicate
       names[] = name
       args[i,"NAME"]  = Lower(name)
-      args[i,"VALUE"] = DeWeb(value)
+      args[i,"VALUE"] = Decode(value)
       args[name]      = i
       args["0"]       = i
     End
@@ -104,9 +104,6 @@ NoGetAndPost:
 --------------------------------------------------------------------------------
 -- ERROR                                                                      --
 --------------------------------------------------------------------------------
---                                                                            --
---
---
 
 ::Attribute Error Get
 
@@ -200,7 +197,7 @@ NoGetAndPost:
 --
 -- - The message name is normalized (see the code below)
 -- - Headers that begin with "REQUEST_" can omit "REQUEST_", i.e.,
---   .request~uri == .request~request_uri
+--   .request~uri == .request~URI == .request~REQUEST_URI
 --
 
 ::Method UNKNOWN
@@ -227,8 +224,11 @@ NoGetAndPost:
 
   Return Value(message,,"ENVIRONMENT")
 
+/******************************************************************************/
+/* URL-DECODE                                                                 */
+/******************************************************************************/
 
-::Routine deweb Private
+::Routine Decode Private
 
   Use Arg from
 

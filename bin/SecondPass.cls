@@ -104,8 +104,8 @@
   If col \== Length(package~source[line]) + 1 Then Exit
 
   -- We may allow for some whitespace before and after...
-  If first < .EL.WHITESPACE Then first = first~next
-  If last  < .EL.WHITESPACE Then last  = last ~prev
+  If first < .EL.WHITESPACE Then first = first~next  -- No continuations here
+  If last  < .EL.WHITESPACE Then last  = last ~prev  -- No continuations here
   -- ...but now first and last should be the same
   If first \== last Then Exit
 
@@ -125,7 +125,7 @@
     End
 
     -- Absorb whitespace after, if any
-    If docComment~next < .EL.WHITESPACE Then Do
+    If docComment~next < .EL.WHITESPACE Then Do  -- No continuations here
       docComment~to   = docComment~next~to
       next            = docComment~next~next
       next~prev       = docComment
@@ -168,7 +168,7 @@
       eoc        = docComment~prev
       comment    = eoc~prev
       whitespace = comment~prev
-      If whitespace < .EL.WHITESPACE Then Do
+      If whitespace < .EL.WHITESPACE Then Do  -- No continuations here
          comment~from         = whitespace~from
          whitespace~prev~next = comment
          comment~prev         = whitespace~prev
@@ -293,7 +293,8 @@
   docComment = end
 
   -- We may allow for some whitespace after a standard doc-comment
-  If docComment < .EL.WHITESPACE Then docComment = docComment~prev
+  If docComment < .EL.WHITESPACE Then  -- Whitespace, but not continuations
+    docComment = docComment~prev
 
   -- Standard doc-comment case
   If StandardDocCommentAllowed, docComment < .EL.STANDARD_COMMENT Then Do
@@ -301,7 +302,7 @@
     If docComment~from~word(2) > 1 Then Do
       prev = docComment~prev
       -- It has to be whitespace ...
-      If prev \< .EL.WHITESPACE  Then Return .Nil
+      If prev \< .EL.WHITESPACE  Then Return .Nil  -- No continuations
       -- ...starting at column 1
       If prev~from~word(2) \== 1 Then Return .Nil
       -- Absorb previous whitespace
@@ -330,7 +331,7 @@
   -- Absorb preceding whitespace, if any
   If col > 1 Then Do
     prev = docComment~prev
-    If prev \< .EL.WHITESPACE  Then Return .Nil
+    If prev \< .EL.WHITESPACE  Then Return .Nil  -- No continuation
     If prev~from~word(2) \== 1 Then Return .Nil
     Call AbsorbLeft docComment
   End
@@ -345,7 +346,7 @@
   If sourceLine[col+3]  == "-"   Then Leave
     If col \== 1 Then Do
       whitespace = prev~prev
-      If whitespace \< .EL.WHITESPACE  Then Leave
+      If whitespace \< .EL.WHITESPACE  Then Leave  -- No continuation
       If whitespace~from~word(2) \== 1 Then Leave
       whitespace~prev~next = docComment
       docComment~prev      = whitespace~prev
@@ -375,7 +376,7 @@
   element = label~begin~next
 
   -- Skip whitespace (only once: continuations are not acceptable here)
-  If element < .EL.WHITESPACE Then element = element~next
+  If element < .EL.WHITESPACE Then element = element~next  -- No continuations
 
   -- We may now have a (small standard) comment, or a label
   If element \< .EL.TAKEN_CONSTANT    Then Exit

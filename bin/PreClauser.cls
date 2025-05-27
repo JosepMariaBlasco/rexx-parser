@@ -420,8 +420,8 @@ IF: WHEN:
   -- Apply Rexx whitespace rules
   left           = TheElementBefore( semicolon )
   right          = TheElementAfter(  semicolon )
-  If left  < .EL.WHITESPACE Then left ~makeIgnorable
-  If right < .EL.WHITESPACE Then right~makeIgnorable
+  If left  < .ALL.WHITESPACE_LIKE Then left ~makeIgnorable
+  If right < .ALL.WHITESPACE_LIKE Then right~makeIgnorable
 
   Return semicolon
 

@@ -53,7 +53,7 @@
   Return .Parser.ConstantName[Arg(1)]
 
 /******************************************************************************/
-/* LoadElementConstants -- Load global constants into the environment           */
+/* LoadElementConstants -- Load global constants into the environment         */
 /******************************************************************************/
 
 ::Routine LoadElementConstants Private
@@ -257,8 +257,11 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   -- bo                := [blank+]                                     (6.2.2.9)
   --
   -- Will be promoted to EL.OP.BLANK in certain contexts.
+  Call NewElement EL.WHITESPACE         -- "20"X and "09"X
   --
-  Call NewElement EL.WHITESPACE
+  Call NewElement EL.CONTINUATION       -- "," and "-" at end of line
+  --
+  Call NewSet ALL.WHITESPACE_LIKE, .EL.WHITESPACE, .EL.CONTINUATION
 
   ------------------------------------------------------------------------------
   -- Comments and documentation comments (doc-comments)                       --
@@ -800,14 +803,16 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   ------------------------------------------------------------------------------
   --
   -- Set of continuation characters. A continuation character will be mutated
-  -- to the EL.WHITESPACE element category.
+  -- to the EL.CONTINUATION element category.
+  --
   Call NewSet ALL.CONTINUATION_CHARACTERS, .EL.COMMA, .EL.OP.MINUS
 
   ------------------------------------------------------------------------------
   -- Templates                                                                --
   ------------------------------------------------------------------------------
   --
-  -- Set of position prefixes
+  -- Set of position prefixes (for PARSE templates)
+  --
   Call NewSet ALL.POSITION_PREFIXES, .EL.OP.EQUAL, .EL.OP.PLUS, .EL.OP.MINUS
 
   ------------------------------------------------------------------------------
@@ -830,7 +835,7 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewSet IGNORE_WHITESPACE_AFTER,  -
     .ALL.OPERATORS,                     - -- An operator (compound or not)
     .ALL.ASSIGNMENTS,                   - -- An (extended) assignment
-    .EL.WHITESPACE,                     - -- Previous whitespace
+    .ALL.WHITESPACE_LIKE,               - -- Previous whitespace & continuations
     .EL.END_OF_CLAUSE,                  - -- At the beginning of a clause
     .EL.DIRECTIVE_START,                - -- "::"
     .EL.LEFT_PARENTHESIS,               - -- "("

@@ -203,14 +203,11 @@ SkipOverAssign:
   Call Assign   .EL.RESOURCE_IGNORED_DATA,       "res-ignore"
 
 /******************************************************************************/
-/* WHITESPACE                                                                 */
+/* WHITESPACE AND CONTINUATIONS                                               */
 /******************************************************************************/
---
--- Note that elements with the .EL.WHITESPACE class include
--- continuation characters "-" and ","
---
 
   Call Assign   .EL.WHITESPACE,                  "ws"
+  Call Assign   .EL.CONTINUATION,                "cont"
 
 /******************************************************************************/
 /* OPERATORS                                                                  */

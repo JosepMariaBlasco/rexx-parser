@@ -8,6 +8,12 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20250427<td>0.2c<td>
+<ul>
+  <li> **Breaking change**: Continuation chars "-" and "," are
+       now assigned a category of .EL.CONTINUATION. A new
+       set .ALL.WHITESPACE_LIKE has been created that includes
+       .EL.WHITESPACE and this new category.
 <tr><td>20250421<td>0.2b<td>
 <ul>
   <li> (Almost) complete early-checking of BIFs.

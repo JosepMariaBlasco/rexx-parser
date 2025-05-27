@@ -11,14 +11,20 @@ The Rexx Parser
 
 The Rexx Parser is hosted on:
 
-- <https://rexx.epbcn.com/rexx-parser/> (daily builds *and* releases).
-- <https://github.com/JosepMariaBlasco/rexx-parser/> (releases only).
+- <https://rexx.epbcn.com/rexx-parser/> (daily builds *and* releases,
+  full documentation).
+- <https://github.com/JosepMariaBlasco/rexx-parser/> (releases only,
+  documentation is partial due to the limitations of GitHub highlighting).
 
-The copy at <https://rexx.epbcn.com/rexx-parser/> uses the Rexx Highlighter
-to display Rexx programs, and therefore has better highlihting.
-On the other hand, the copy at
+The documentation copy at <https://rexx.epbcn.com/rexx-parser/> uses
+the Rexx Highlighter to display Rexx programs, and therefore has better
+highlihting. On the other hand, the copy at
 <https://github.com/JosepMariaBlasco/rexx-parser/>
 has version control, bug reporting, and all the features offered by GitHub.
+
+**Beware**: some of the program listings that appear in this documentation
+will not display at all in the GitHub version, as GitHub does not implement
+the `source` attribute for Rexx fenced code blocks.
 
 ~~~rexx {.numberLines startfrom=93}
 /*******************************************************************************/
@@ -49,13 +55,15 @@ Pos: Procedure                          -- A label
 The **Rexx Parser** is a full Abstract Syntax Tree (AST)
 parser for Rexx and ooRexx written by Josep Maria Blasco
 &lt;<josep.maria.blasco@epbcn.com>&gt; and distributed
-under [the Apache 2.0 license](LICENSE).
+under [the Apache 2.0 license](LICENSE). Some files may
+contain contributions from other authors, as attributed
+in the corresponding copyright notices.
 
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.2b, refresh 20250526.
-You can download it <a href="Rexx-Parser-0.2b-20250526.zip">here</a>.
+The current release is beta 0.2c, refresh 20250527.
+You can download it <a href="Rexx-Parser-0.2c-20250527.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).

@@ -154,7 +154,7 @@ Invalid.Character   : Signal 13.001
   Do While previous~isIgnorable
     previous = TheElementBefore( previous )
   End
-  If previous < .EL.WHITESPACE Then Do
+  If previous < .ALL.WHITESPACE_LIKE Then Do
     previous~makeIgnorable
     previous = TheElementBefore( previous )
   End
@@ -165,7 +165,10 @@ Invalid.Character   : Signal 13.001
   -- continuation just before EOS.
 
   If line < lines, previous < .ALL.CONTINUATION_CHARACTERS Then Do
-    Return self~continuation( previous )
+    previous~category = .EL.CONTINUATION
+    If TheElementBefore( previous ) < .IGNORE_WHITESPACE_AFTER Then
+      previous~makeIgnorable
+    Return .Nil -- Do not generate an end-of-clause on return
   End
 
   -- No continuation? Return an implied semicolon EL.END_OF_CLAUSE element
@@ -179,43 +182,10 @@ Invalid.Character   : Signal 13.001
 
   -- A semicolon eats blanks at the left
   beforeSemicolon = TheElementBefore( semicolon )
-  If beforeSemicolon < .EL.WHITESPACE Then
+  If beforeSemicolon < .ALL.WHITESPACE_LIKE Then
     beforeSemicolon~makeIgnorable
 
 Return semicolon
-
-/******************************************************************************/
-
-::Method continuation -- ANSI 6.2.1.1 and 6.2.2.17
-  Expose source tail
-
-  -- This is a continuation character. It will be functionally replaced
-  -- by a blank.
-
-  Use Strict Arg toReplace
-
-  Parse Value toReplace~from With line start
-  replacement = .WhiteSpace.Element~new(line, start, start+1, source[line])
-  replacement~source = toReplace~value
-
-  -- There is a prev element for sure
-  toReplace~prev~next = replacement
-  replacement~prev    = toReplace~prev
-
-  -- Are we replacing the tail?
-  If toReplace == tail Then tail = replacement
-  -- Otherwise, fix the chain forwards
-  Else Do
-    toReplace~next~prev = replacement
-    replacement~next    = toReplace~next
-  End
-
-  -- Now apply Rexx rules about ignoring the newly replaced whitespace
-
-  If TheElementBefore( replacement ) < .IGNORE_WHITESPACE_AFTER Then
-    replacement~makeIgnorable
-
-Return .Nil -- Do not generate an EL.END_OF_CLAUSE on return
 
 /******************************************************************************/
 
@@ -558,7 +528,7 @@ GotAComment:
 
   -- Now apply Rexx rules about ignoring whitespace before operator chars
   predecessor = TheElementBefore( element )
-  If predecessor < .EL.WHITESPACE Then Do
+  If predecessor < .ALL.WHITESPACE_LIKE Then Do
     predecessor~makeIgnorable
     -- Recalculate predecessor
     predecessor = TheElementBefore(predecessor)
@@ -627,7 +597,7 @@ Return
 
   -- Whitespace not before an opening bracket gets ignored
   If element < .ALL.LEFT_BRACES Then Nop
-  Else If predecessor < .EL.WHITESPACE Then Do
+  Else If predecessor < .ALL.WHITESPACE_LIKE Then Do
     predecessor~makeIgnorable
     -- Recalculate predecessor
     predecessor = TheElementBefore( predecessor )

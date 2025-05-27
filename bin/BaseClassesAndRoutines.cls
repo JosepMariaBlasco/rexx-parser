@@ -170,7 +170,7 @@
     If next~isNil Then
       Internal.Error( "TheElementAfter was about to return .Nil" )
     element = next
-    If ignoreBlanks, element < .EL.WHITESPACE Then element~makeIgnorable
+    If ignoreBlanks, element < .ALL.WHITESPACE_LIKE Then element~makeIgnorable
   End
   Return element
 
@@ -211,10 +211,10 @@
   Else              Call SetCategory keyword, .EL.KEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .EL.WHITESPACE Then before~makeIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~makeIgnorable
 
   after  = TheElementAfter(  keyword )
-  If after  < .EL.WHITESPACE Then after~makeIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after~makeIgnorable
 
 --------------------------------------------------------------------------------
 
@@ -224,10 +224,10 @@
   Call SetCategory keyword, .EL.SUBKEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .EL.WHITESPACE Then before~makeIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~makeIgnorable
 
   after  = TheElementAfter(  keyword )
-  If after  < .EL.WHITESPACE Then after~makeIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after~makeIgnorable
 
 --------------------------------------------------------------------------------
 
@@ -237,10 +237,10 @@
   Call SetCategory keyword, .EL.DIRECTIVE_KEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .EL.WHITESPACE Then before~makeIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~makeIgnorable
 
   after  = TheElementAfter(  keyword )
-  If after  < .EL.WHITESPACE Then after~makeIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after~makeIgnorable
 
 /******************************************************************************/
 /* SetCategory -- A routine to set the category of an element                 */
@@ -363,8 +363,13 @@
       When .EL.SIMPLE_VARIABLE    Then Do
         If nesting~isEmpty, IsAKeyword( element ) Then Do
           -- If we generated a spurious blank operator, we fix it now
-          If \predecessor~isNil, predecessor < .EL.OP.BLANK Then
-            Call SetCategory predecessor, .EL.WHITESPACE
+          If \predecessor~isNil, predecessor < .EL.OP.BLANK Then Do
+            c = predecessor~source
+            If c == "," | c == "-" Then
+              Call SetCategory predecessor, .EL.CONTINUATION
+            Else
+              Call SetCategory predecessor, .EL.WHITESPACE
+          End
           Call SetSubkeyword element
           If element~value == "THEN" Then Do
             Call InsertSemicolonBefore element
@@ -389,7 +394,7 @@
         Call CheckAbuttal
       End
       When .EL.LEFT_BRACKET Then Do
-        If \predecessor~isNil, predecessor~category = .EL.WHITESPACE Then
+        If \predecessor~isNil, predecessor < .ALL.WHITESPACE_LIKE Then
           Signal 35.001
         nesting~append( element )
       End
@@ -404,7 +409,7 @@
         If nesting~lastItem~value \== "[" Then Signal 37.901
         nesting~delete( nesting~last )
       End
-      When .EL.WHITESPACE Then Do
+      When .EL.WHITESPACE, .EL.CONTINUATION Then Do
         Call SetCategory element, .EL.OP.BLANK
         element~value = " "
       End
@@ -511,8 +516,8 @@ IsAKeyword:
   -- Apply Rexx whitespace rules
   left           = TheElementBefore( semicolon )
   right          = TheElementAfter(  semicolon )
-  If left  < .EL.WHITESPACE Then left ~makeIgnorable
-  If right < .EL.WHITESPACE Then right~makeIgnorable
+  If left  < .ALL.WHITESPACE_LIKE Then left ~makeIgnorable
+  If right < .ALL.WHITESPACE_LIKE Then right~makeIgnorable
 
   Return semicolon
 
@@ -537,7 +542,7 @@ IsAKeyword:
 
   -- And ignore whitespace to its right when necessary
   next = TheElementAfter( element )
-  If next~category < .EL.WHITESPACE Then next~makeIgnorable
+  If next~category < .ALL.WHITESPACE_LIKE Then next~makeIgnorable
 
   Return 1
 

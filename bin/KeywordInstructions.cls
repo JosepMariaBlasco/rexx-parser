@@ -274,8 +274,12 @@ GetExpression:
   -- prepareExpression above may have promoted whitespace after the
   -- closing ")" to a blank operator.
   If element < .EL.OP.BLANK Then Do
-    Call SetCategory element, .EL.WHITESPACE          -- Demote, ..
-    element~makeIgnorable                          -- .. make ignorable..
+    c = element~source
+    If c == "-" | c == "," Then
+      Call SetCategory element, .EL.CONTINUATION       -- Demote, ..
+    Else
+      Call SetCategory element, .EL.WHITESPACE         -- Demote, ..
+    element~makeIgnorable                              -- .. make ignorable..
     element = TheElementAfter( element, ignoreBlanks ) -- .. and skip.
   End
   Signal Arguments
@@ -1213,7 +1217,7 @@ FirstOptions:
 
   If EXPOSE < .ALL.VAR_SYMBOLS, EXPOSE~value = "EXPOSE" Then Do
     Call SetSubkeyword EXPOSE
-    If elements[3] < .EL.WHITESPACE Then elements~delete( 3 )
+    If elements[3] < .ALL.WHITESPACE_LIKE Then elements~delete( 3 )
     Return Name.List.Instruction(                -
       package, .Procedure.Instruction, begin, end, elements -
     )
@@ -1892,7 +1896,7 @@ Done:
           Signal 31.003
         element = term~end
         -- Consume blanks after ")" and "]"
-        If element < .EL.WHITESPACE Then Do
+        If element < .ALL.WHITESPACE_LIKE Then Do
           element~makeIgnorable
           element = TheElementAfter( element )
         End
@@ -2069,7 +2073,12 @@ NextElement:
     If element < .EL.LEFT_PARENTHESIS Then Do
       element = TheElementAfter( element, ignoreBlanks )
       Call GetASymbol 1
-      pName = Symbol.Term(package, element, .EL.WHITESPACE || .EL.RIGHT_PARENTHESIS || .EL.LEFT_PARENTHESIS, inExpose )
+      pName = Symbol.Term( -
+        package,           -
+        element,           -
+       .ALL.WHITESPACE_LIKE || .EL.RIGHT_PARENTHESIS || .EL.LEFT_PARENTHESIS, -
+        inExpose           -
+      )
       element = TheElementAfter( element, ignoreBlanks )
       If element \< .EL.RIGHT_PARENTHESIS Then Signal 46.901
       nameList~append( Array( pName ) )
@@ -2077,7 +2086,12 @@ NextElement:
     End
     Else Do
       Call GetASymbol 0
-      nameList~append( Symbol.Term(package, element, .EL.WHITESPACE || .EL.LEFT_PARENTHESIS, inExpose) )
+      nameList~append( Symbol.Term(                  -
+        package,                                     -
+        element,                                     -
+       .ALL.WHITESPACE_LIKE || .EL.LEFT_PARENTHESIS, -
+        inExpose                                     -
+      ) )
       If class == .Expose.Instruction Then
         package~currentBody~exposed[] = element~value
     End
@@ -2249,7 +2263,7 @@ GetASymbol:
         element = term~end
 
         -- Consume blanks after ")" and "]"
-        If element < .EL.WHITESPACE Then Do
+        If element < .ALL.WHITESPACE_LIKE Then Do
           element~makeIgnorable
           element = TheElementAfter( element )
         End
@@ -2272,7 +2286,7 @@ GetASymbol:
         template = Positional.Template( package, element )
         list~append( template )
         element = template~end
-        If element < .EL.WHITESPACE Then
+        If element < .ALL.WHITESPACE_LIKE Then
           element = TheElementAfter( element, ignoreBlanks )
         Iterate
       End
@@ -2280,7 +2294,7 @@ GetASymbol:
         template = Subexpression.Template( package, element )
         list~append( template )
         element = template~end
-        If element < .EL.WHITESPACE Then
+        If element < .ALL.WHITESPACE_LIKE Then
           element = TheElementAfter( element, ignoreBlanks )
         Iterate
       End
@@ -2371,7 +2385,7 @@ GetASymbol:
   -- to the right, but in this case we do need to ignore such blanks,
   -- if present.
 
-  If element < .EL.WHITESPACE Then Do
+  If element < .ALL.WHITESPACE_LIKE Then Do
     next = TheElementAfter( element )
     element~makeIgnorable
     subExpression~end = next
