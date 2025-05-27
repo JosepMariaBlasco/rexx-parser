@@ -14,6 +14,7 @@ Version history
        now assigned a category of .EL.CONTINUATION. A new
        set .ALL.WHITESPACE_LIKE has been created that includes
        .EL.WHITESPACE and this new category.
+  <li> Fix https://github.com/JosepMariaBlasco/rexx-parser/issues/11.
 <tr><td>20250421<td>0.2b<td>
 <ul>
   <li> (Almost) complete early-checking of BIFs.

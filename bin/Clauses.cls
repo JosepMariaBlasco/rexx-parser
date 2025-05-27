@@ -1385,6 +1385,12 @@ Done:
   Expose doClause  instructions  endClause
   Use Strict Arg package, doClause, instructions, endClause
   self~init:super(package, doClause~begin, endClause~end)
+::Method labels
+  Expose doClause
+  Return doClause~labels
+::Method nullClauses
+  Expose doClause
+  Return doClause~nullClauses
 
 /******************************************************************************/
 /* IF Instruction                                                             */
@@ -1422,6 +1428,12 @@ Done:
   Expose loopClause instructions endClause
   Use Strict Arg package, loopClause, instructions, endClause
   self~init:super( package, loopClause~begin, endClause~end )
+::Method labels
+  Expose loopClause
+  Return loopClause~labels
+::Method nullClauses
+  Expose loopClause
+  Return loopClause~nullClauses
 
 /******************************************************************************/
 /* SELECT Instruction                                                         */
@@ -1444,3 +1456,9 @@ Done:
     endClause
 
   self~init:super(package, selectClause~begin, endClause~end )
+::Method labels
+  Expose selectClause
+  Return selectClause~labels
+::Method nullClauses
+  Expose selectClause
+  Return selectClause~nullClauses
