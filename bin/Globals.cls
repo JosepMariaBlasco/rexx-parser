@@ -23,6 +23,7 @@
 /* 20250116         Add EL.PARSE_PERIOD                                       */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional numbers to decimal                      */
+/* 20250529    0.2c Add support for parts of a string                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -332,6 +333,24 @@ SkipOverTheInternalRoutines:            -- Main code continues here
    .EL.GRAPHEMES_STRING,                -
    .EL.TEXT_STRING,                     -
    .EL.UNICODE_STRING
+
+  --
+  -- Strings can be viewed as a single element,
+  -- but also as a sequence of parts:
+  --
+  --   string  :=  delimiter contents delimiter [suffix]
+  --
+  -- the "contents" part will inherit one of the string categories above.
+  --
+  -- NOTICE: The Rexx Parser will never assign any of the three following
+  -- categories to an element. They are provided here for the benefit of
+  -- tools like the Rexx Highlighter.
+  --
+
+  Call NewElements                      -
+    EL.STRING_OPENING_DELIMITER,        - -- "'" or '"'
+    EL.STRING_CLOSING_DELIMITER,        - -- "'" or '"'
+    EL.STRING_SUFFIX                      -- One of "BXYPGT"
 
   ------------------------------------------------------------------------------
   -- VAR_SYMBOLS                                                              --

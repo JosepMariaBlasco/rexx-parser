@@ -23,6 +23,7 @@
 /* 20250116    0.1f Add support for EL.SUBKEYWORD                             */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional numbers to decimal                      */
+/* 20250528    0.2c Add support for string parts                              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -179,6 +180,10 @@ SkipOverAssign:
   Call Assign   .EL.GRAPHEMES_STRING,            "gstr"
   Call Assign   .EL.TEXT_STRING,                 "tstr"
   Call Assign   .EL.UNICODE_STRING,              "ustr"
+
+  Call Assign   .EL.STRING_OPENING_DELIMITER,    "oquo"
+  Call Assign   .EL.STRING_CLOSING_DELIMITER,    "cquo"
+  Call Assign   .EL.STRING_SUFFIX,               "ssuf"
 
 /******************************************************************************/
 /* COMMENTS                                                                   */

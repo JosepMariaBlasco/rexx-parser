@@ -164,9 +164,9 @@ local   = Stream(Directory()||sep"rexx-"mystyle".css","c","query exists")
 Do line Over .Resources[HTML]
   Select Case line
     When "[*CSS*]" Then Do
-      Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-"mystyle".css'>"
-      Say  "    <link rel='stylesheet' href='file:///"cssPath"'>"
-      If local \== "" Then Say  "    <link rel='stylesheet' href='rexx-"mystyle".css'>"
+      Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-"mystyle".css'></link>"
+      Say  "    <link rel='stylesheet' href='file:///"cssPath"'></link>"
+      If local \== "" Then Say  "    <link rel='stylesheet' href='file:///"ChangeStr("\",local,"/")"'></link>"
     End
     When "[*CONTENTS*]" Then Say ProcessSource()
     Otherwise Say line

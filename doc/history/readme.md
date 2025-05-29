@@ -15,6 +15,8 @@ Version history
        set .ALL.WHITESPACE_LIKE has been created that includes
        .EL.WHITESPACE and this new category.
   <li> Fix https://github.com/JosepMariaBlasco/rexx-parser/issues/11.
+  <li> Update css/rgflight.css, add rgfdark.css (Rony) (20250528).
+  <li> Add support for detailed string highlighing (20250529).
 <tr><td>20250421<td>0.2b<td>
 <ul>
   <li> (Almost) complete early-checking of BIFs.

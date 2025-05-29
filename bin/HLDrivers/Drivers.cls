@@ -21,7 +21,7 @@
 /******************************************************************************/
 
 -- We call all the drivers (the .cls files) in our own directory,
--- unless ourselves.
+-- except ourselves.
 
 If .environment~Highlighter.Driver == .Nil Then Do
    .environment~Highlighter.Driver =  .Highlighter.Driver

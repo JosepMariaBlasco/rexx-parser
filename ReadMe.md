@@ -26,7 +26,7 @@ has version control, bug reporting, and all the features offered by GitHub.
 will not display at all in the GitHub version, as GitHub does not implement
 the `source` attribute for Rexx fenced code blocks.
 
-~~~rexx {.numberLines startfrom=93}
+~~~rexx {.numberLines startfrom=93 unicode}
 /*******************************************************************************/
 /* This is a sample Rexx code fragment, numbered, starting at line 93.         */
 /* It shows many of the features of the Rexx Parser.                           */
@@ -42,8 +42,9 @@ the `source` attribute for Rexx fenced code blocks.
   len = Length( Stem.12.2a.x.y )        -- A built-in function call
   pos = Pos( "S", "String" )            -- An internal function call
   Call External pos, len, .True, 12     -- An external function call
-  .environment~test.2.x = test.2.x      -- Method call, compound variable...
-  Exit .test.2.x                        -- ...and environment variable
+  .environment~test.2.x = test.2.x      -- Method call, compound variable
+
+  Exit "नमस्ते"G,  "P ≝ 𝔐",  "🦞🍐"    -- Unicode strings
 
 ---
 --- When a doc-comment starts with "---", it's a _Markdown_ doc-comment.
@@ -62,8 +63,8 @@ in the corresponding copyright notices.
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.2c, refresh 20250527.
-You can download it <a href="Rexx-Parser-0.2c-20250527.zip">here</a>.
+The current release is beta 0.2c, refresh 20250529.
+You can download it <a href="Rexx-Parser-0.2c-20250529.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).

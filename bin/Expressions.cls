@@ -898,8 +898,6 @@ Return
   If element \< .EL.LEFT_PARENTHESIS Then
     Exit .NameSpace.Qualified.ClassName~new( nameSpace, symbol )
 
--- xxx
-
   routineName  = symbol
   Call SetConstantName routineName, .EXTERNAL.PACKAGE.FUNCTION.NAME
   lParen       = element

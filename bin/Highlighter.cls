@@ -29,6 +29,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250519    0.2b Fix error computing mypath, add dependencies              */
 /* 20250520         Ensure that options. == 0                                 */
+/* 20250529    0.2c Add support for detailed string highlighing               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -94,6 +95,7 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
   If \ Options.~hasIndex(style)       Then Options.style       = "dark"
   If \ Options.~hasIndex(compound)    Then Options.compound    = 1
   If \ Options.~hasIndex(startFrom)   Then Options.startFrom   = 1
+  If \ Options.~hasIndex(strings)     Then Options.strings     = "full"
 
   If Verify(Options.style, XRange(AlNum)".-_") > 0 Then
     Raise Halt -
@@ -148,9 +150,9 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
     If Options.~hasIndex(additional) Then
       patch = Options.additional
   End
-  If patch~isA(.String) Then patch = .StylePatch~of( patch )
-  Else If patch~isA(.Array) Then patch = .StylePatch~of(patch)
-  Else If patch \== .Nil Then
+  If      patch~isA(.String) Then patch = .StylePatch~of( patch )
+  Else If patch~isA(.Array)  Then patch = .StylePatch~of(patch)
+  Else If patch \== .Nil     Then
     .Validate~classType("patch", patch, .StylePatch)
   Options.!Patch = patch
 
@@ -164,7 +166,7 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
     Options.!UniqueID = id
   End
 
-  HTMLClass = HTMLClasses(options.)
+  HTMLClass = HTMLClasses( options. )
   Options.!HTMLClass = HTMLClass
 
   Options.!inc = 1
@@ -240,7 +242,7 @@ Syntax:
   End
 
   -- If this is an inserted element, there is nothing to print
-  If element~from == element~to Then Return
+  If element~from == element~to         Then Return
 
   -- Strings or symbols taken as a constant require special handling
   constant = .EL.TAKEN_CONSTANT
@@ -249,6 +251,11 @@ Syntax:
   -- Compound variables are optionally displayed highlighting all the
   -- elements in the tail.
   If element < .ALL.COMPOUND_VARIABLES  Then Signal CompoundVariable
+
+  -- Strings may get different highlighting for the initial and
+  -- final quotes and for the string suffix.
+
+  If element < .ALL.STRINGS             Then Signal String
 
   -- Classic comments may be multi-line, in which case they also
   -- require special handling
@@ -276,6 +283,7 @@ NewLine:
 Return
 
 TakenConstant:
+  If element~isAString Then Signal String
   tag = HTMLClass[ constant, element~subCategory ]
   Call Highlight constant, element~subCategory, tag, element~source
 Exit
@@ -321,6 +329,38 @@ BlockComments:
     Call NewLine displayLine
   End
 Exit
+
+String:
+  eSource               = element~source
+
+  open = HTMLClass[ .EL.STRING_OPENING_DELIMITER ]
+  close = HTMLClass[ .EL.STRING_CLOSING_DELIMITER ]
+  hasSuffix = Pos(element~source~right(1),"'""") == 0
+  If hasSuffix Then Do
+    string_suffix_tag   = HTMLClass[ .EL.STRING_SUFFIX ]
+    suffix              = Right( eSource, 1 )
+  End
+  If element < constant Then Do
+    tag                 = HTMLClass[ constant, element~subCategory ]
+    subcat              = element~subCategory
+  End
+  Else Do
+    tag                 = HTMLClass[ element~category ]
+    subcat              = ""
+  End
+
+  ch                    = eSource[1]
+  cat                   = element~category
+  If hasSuffix Then source = SubStr( eSource, 2, Length(eSource) - 3 )
+  Else              source = SubStr( eSource, 2, Length(eSource) - 2 )
+
+  Call Highlight .EL.STRING_OPENING_DELIMITER, "",     open,  ch
+  Call Highlight cat,                          subcat, tag,  source
+  Call Highlight .EL.STRING_CLOSING_DELIMITER, "",     close, ch
+  If hasSuffix Then
+    Call Highlight .EL.STRING_SUFFIX,          "", string_suffix_tag, suffix
+
+  Exit
 
 CompoundVariable:
   If \options.compound Then Signal StandardCase

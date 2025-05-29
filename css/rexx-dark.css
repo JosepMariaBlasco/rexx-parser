@@ -164,8 +164,20 @@
 .highlight-rexx-dark .rx-pstr,
 .highlight-rexx-dark .rx-gstr,
 .highlight-rexx-dark .rx-tstr,
-.highlight-rexx-dark .rx-ustr {
-  color:#f63;
+.highlight-rexx-dark .rx-ustr
+{
+  color: #f63;
+}
+
+.highlight-rexx-dark .rx-ssuf
+{
+  color: #0ff;
+}
+
+.highlight-rexx-dark .rx-oquo,
+.highlight-rexx-dark .rx-cquo
+{
+  color: #ff0;
 }
 
 /* Local variables */

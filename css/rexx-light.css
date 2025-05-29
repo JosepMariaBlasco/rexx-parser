@@ -128,6 +128,18 @@
   color:#88F;
 }
 
+.highlight-rexx-dark .rx-ssuf           /* String suffix                      */
+{
+  color: #0ff;
+}
+
+.highlight-rexx-dark .rx-oquo,          /* Opening quote                      */
+.highlight-rexx-dark .rx-cquo           /* Closing quote                      */
+{
+  color: #ff0;
+}
+
+
 /******************************************************************************/
 /* END Strings                                                                */
 /******************************************************************************/
