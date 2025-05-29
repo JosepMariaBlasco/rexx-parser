@@ -23,6 +23,7 @@
 /* 20250108         Add --pad= option                                         */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx.parser        */
 /* 20250526    0.2b Add --css opt. & "-" to select stdin (thanks, Rony!)      */
+/* 20250529    0.2c Add support for detailed string highlighting              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -52,6 +53,7 @@ If op[1] \== "-" | fn == "-" Then Leave
     Select Case Lower(op)
       When "--startfrom"       Then options.startFrom   = Natural(value)
       When "--style"           Then options.style       = value
+      When "--string"          Then options.string      = value
       When "--width"           Then options.width       = Natural(value)
       When "--pad"             Then options.pad         = Natural(value)
       When "--patch"           Then Do
@@ -225,6 +227,7 @@ Options:
       --pad=N            Pad doc-comments and ::resources to N characters
       --prolog           Print a prolog (LaTeX only)
       --startFrom=N      Start line numbers at N
+      --string=MODE      MODE can be "whole" or "detail" (the default)
   -s, --style=STYLE      Use "rexx-STYLE.css" (default is "dark")
       --tutor            Enable TUTOR-flavored Unicode
   -u, --unicode          Enable TUTOR-flavored Unicode

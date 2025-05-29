@@ -37,6 +37,7 @@ is a Rexx file, it is highlighted accordingly.
 `--patchfile=`<code><em>file</em></code>                Apply the patches contained in *file*.
 `--prolog`                                              Print a prolog (LaTeX driver only)
 `--startFrom=`<code><em>n</em></code>                   Start line numbers at *n*.
+`--string=`<code><em>mode</em></code>                   <code>detail</code> (the default) or <code>whole</code>
 `-s`, `--style=`<code><em>style</em></code>&nbsp;&nbsp; Use the <code>rexx-<em>style</em>.css</code> style sheet
 `--tutor`                                               Enable TUTOR-flavored Unicode
 `-u` , `--unicode`                                      Enable TUTOR-flavored Unicode
@@ -107,6 +108,13 @@ See also [--latex](#latex) and [--noprolog](#noprolog).
 Start numbering lines at line _n_.
 
 See also [--numberlines](#numberlines)
+
+#### --string=_mode_
+
+This options affects string highlighting.
+When mode is <code>detail</code> (the default), the opening and closing quotes and
+the optional suffix get a distinct highlighting; when mode is "whole",
+the whole string is highlighted using a single style.
 
 #### -s, --style=_style_
 

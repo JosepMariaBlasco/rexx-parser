@@ -123,6 +123,14 @@ line displayed. This option is ignored When
 
 The default value for this option is `1`.
 
+#### `string`
+
+This options affects string highlighting.
+When its value is <code>detail</code> (the default),
+the opening and closing quotes and
+the optional suffix get a distinct highlighting; when it is "whole",
+the whole string is highlighted using a single style.
+
 #### `style`
 
 A string determining the CSS style used for highlighing.

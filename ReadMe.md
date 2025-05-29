@@ -44,7 +44,7 @@ the `source` attribute for Rexx fenced code blocks.
   Call External pos, len, .True, 12     -- An external function call
   .environment~test.2.x = test.2.x      -- Method call, compound variable
 
-  Exit "नमस्ते"G,  "P ≝ 𝔐",  "🦞🍐"    -- Unicode strings
+  Exit "नमस्ते"G,  "P ≝ 𝔐",  "🦞🍐"     -- Unicode strings
 
 ---
 --- When a doc-comment starts with "---", it's a _Markdown_ doc-comment.

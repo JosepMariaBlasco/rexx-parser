@@ -95,7 +95,7 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
   If \ Options.~hasIndex(style)       Then Options.style       = "dark"
   If \ Options.~hasIndex(compound)    Then Options.compound    = 1
   If \ Options.~hasIndex(startFrom)   Then Options.startFrom   = 1
-  If \ Options.~hasIndex(strings)     Then Options.strings     = "full"
+  If \ Options.~hasIndex(string)      Then Options.string      = "detail"
 
   If Verify(Options.style, XRange(AlNum)".-_") > 0 Then
     Raise Halt -
@@ -255,7 +255,8 @@ Syntax:
   -- Strings may get different highlighting for the initial and
   -- final quotes and for the string suffix.
 
-  If element < .ALL.STRINGS             Then Signal String
+  If Options.string \== "whole", element < .ALL.STRINGS
+                                        Then Signal String
 
   -- Classic comments may be multi-line, in which case they also
   -- require special handling
@@ -283,7 +284,7 @@ NewLine:
 Return
 
 TakenConstant:
-  If element~isAString Then Signal String
+  If Options.string \== "whole", element~isAString Then Signal String
   tag = HTMLClass[ constant, element~subCategory ]
   Call Highlight constant, element~subCategory, tag, element~source
 Exit
