@@ -179,6 +179,16 @@ Exit
 
 See also [.numberLines](#numberlines).
 
+#### <code>string=<em>mode</em></code>
+
+This option determines how strings will be highligted.
+When <code><em>mode</em></code> is <code>detail</code>
+(the default), separate styles are used for the opening
+and closing quotes,for the optional string suffix,
+and for the string contents. When <code><em>mode</em></code>
+is <code>whole</code>, the whole string is highlighted
+with a single style.
+
 #### <code>style=<em>style</em></code>
 
 Enclose the code with a <code>&lt;div class="highlight-rexx-<em>style</em>"&gt;</code> tag.

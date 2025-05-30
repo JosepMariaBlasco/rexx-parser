@@ -32,6 +32,7 @@ is a Rexx file, it is highlighted accordingly.
 `-h`, `--html`                                          Select HTML highlighting
 `-l`, `--latex`                                         Select LaTeX highlighting
 `--noprolog`                                            Don't print a prolog
+`--number=`<code><em>mode</em></code>                   <code>detail</code> (the default) or <code>whole</code>
 `-n`, `--numberlines`&nbsp;&nbsp;                       Print line numbers
 `--patch=`<code><em>patches</em></code>                 Apply the semicolon-separated list of *patches*.
 `--patchfile=`<code><em>file</em></code>                Apply the patches contained in *file*.
@@ -84,6 +85,23 @@ See also [--prolog](#prolog).
 Print line numbers.
 
 See also [--startFrom](#startFrom).
+
+#### --number=_mode_
+
+This options affects number highlighting.
+
+When mode is <code>detail</code> (the default),
+the decimal point, the exponent mark ("E" or "e"),
+and the exponent sign are highlighted with
+individual styles. Additionally, strings
+which are numbers and are not hexadecimal or binary
+strings are also internally highlighted.
+In such cases, the number sign is also highlighted.
+
+When mode is <code>whole</code>, the number
+is highlighted with a single style, and strings
+that are numbers are highlighted accordingly to their
+corresponding string category.
 
 #### --patch="_patches_"
 

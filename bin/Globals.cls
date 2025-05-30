@@ -306,6 +306,17 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewSet ALL.NUMBERS,            -
    .EL.DECIMAL_NUMBER, .EL.INTEGER_NUMBER, .EL.EXPONENTIAL_NUMBER
 
+  -- Decimal and exponential numbers can be viewed as a single element,
+  -- or as a sequence of smaller elements. The following four categories
+  -- are never assigned directly by the Parser, but they can be used by
+  -- other tools, like the Highlighter.
+
+  Call NewElements                      -
+    EL.DECIMAL_POINT,                   - -- Not a TAIL_SEPARATOR not a PERIOD.
+    EL.NUMBER_SIGN,                     - -- "+" or "-", inside strings only
+    EL.EXPONENT_SIGN,                   - -- "+" or "-"
+    EL.EXPONENT_MARK                     -- "E" or "e"
+
   ------------------------------------------------------------------------------
   -- STRINGS                                                                  --
   ------------------------------------------------------------------------------

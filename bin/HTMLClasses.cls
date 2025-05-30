@@ -23,7 +23,7 @@
 /* 20250116    0.1f Add support for EL.SUBKEYWORD                             */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional numbers to decimal                      */
-/* 20250528    0.2c Add support for string parts                              */
+/* 20250528    0.2c Add support for detailed string highlighting              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -167,23 +167,6 @@ SkipOverAssign:
   Call Assign   .EL.EXPONENTIAL_NUMBER,          "exp"
   Call Assign   .EL.DECIMAL_NUMBER,              "deci"
   Call Assign   .EL.INTEGER_NUMBER,              "int"
-
-/******************************************************************************/
-/* STRINGS                                                                    */
-/******************************************************************************/
-
-  Call Assign   .EL.BINARY_STRING,               "bstr"
-  Call Assign   .EL.STRING,                      "str"
-  Call Assign   .EL.HEX_STRING,                  "xstr"
-  Call Assign   .EL.BYTES_STRING,                "ystr"
-  Call Assign   .EL.CODEPOINTS_STRING,           "pstr"
-  Call Assign   .EL.GRAPHEMES_STRING,            "gstr"
-  Call Assign   .EL.TEXT_STRING,                 "tstr"
-  Call Assign   .EL.UNICODE_STRING,              "ustr"
-
-  Call Assign   .EL.STRING_OPENING_DELIMITER,    "oquo"
-  Call Assign   .EL.STRING_CLOSING_DELIMITER,    "cquo"
-  Call Assign   .EL.STRING_SUFFIX,               "ssuf"
 
 /******************************************************************************/
 /* COMMENTS                                                                   */
@@ -380,6 +363,33 @@ SkipOverSpecial:
   Call Special .EL.ELLIPSIS,                     "ellipsis"
 
 /******************************************************************************/
+/* STRINGS                                                                    */
+/******************************************************************************/
+
+  Call String   .EL.BINARY_STRING,               "bstr"
+  Call String   .EL.STRING,                      "str"
+  Call String   .EL.HEX_STRING,                  "xstr"
+  Call String   .EL.BYTES_STRING,                "ystr"
+  Call String   .EL.CODEPOINTS_STRING,           "pstr"
+  Call String   .EL.GRAPHEMES_STRING,            "gstr"
+  Call String   .EL.TEXT_STRING,                 "tstr"
+  Call String   .EL.UNICODE_STRING,              "ustr"
+
+  Signal SkipOverStrings
+
+String:
+  Call Assign Arg(1), Arg(2)
+  pa2 = prefix||Arg(2)
+  If Options.String == "detail" Then Do
+    HTMLClass[ Arg(1), .EL.STRING_OPENING_DELIMITER ] = pa2 prefix"oquo"
+    HTMLClass[ Arg(1), .EL.STRING_CLOSING_DELIMITER ] = pa2 prefix"cquo"
+    HTMLClass[ Arg(1), .EL.STRING_SUFFIX            ] = pa2 prefix"ssuf"
+  End
+  Return
+
+SkipOverStrings:
+
+/******************************************************************************/
 /* STRINGS OR SYMBOLS TAKEN AS A CONSTANT                                     */
 /******************************************************************************/
 
@@ -392,6 +402,14 @@ Constant:
     When "detail" Then value = prefix||Arg(2)
   End
   HTMLClass[ constant, Arg(1) ] = value
+  open   = .EL.STRING_OPENING_DELIMITER
+  close  = .EL.STRING_CLOSING_DELIMITER
+  suffix = .EL.STRING_SUFFIX
+  If Options.String == "detail" Then Do
+    HTMLClass[ constant, Arg(1), open   ] = value prefix"oquo"
+    HTMLClass[ constant, Arg(1), close  ] = value prefix"cquo"
+    HTMLClass[ constant, Arg(1), suffix ] = value prefix"ssuf"
+  End
 Return
 
 SkipOverConstant:

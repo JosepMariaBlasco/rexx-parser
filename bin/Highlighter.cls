@@ -334,11 +334,23 @@ Exit
 String:
   eSource               = element~source
 
-  open = HTMLClass[ .EL.STRING_OPENING_DELIMITER ]
-  close = HTMLClass[ .EL.STRING_CLOSING_DELIMITER ]
+  cat                   = element~category
+  If element < constant Then subcat = element~subCategory
+
+  If element < constant Then
+    open  = HTMLClass[ constant, subcat, .EL.STRING_OPENING_DELIMITER ]
+  Else
+    open  = HTMLClass[ cat, .EL.STRING_OPENING_DELIMITER ]
+  If element < constant Then
+    close = HTMLClass[ constant, subcat, .EL.STRING_CLOSING_DELIMITER ]
+  Else
+    close = HTMLClass[ cat, .EL.STRING_CLOSING_DELIMITER ]
   hasSuffix = Pos(element~source~right(1),"'""") == 0
   If hasSuffix Then Do
-    string_suffix_tag   = HTMLClass[ .EL.STRING_SUFFIX ]
+    If element < constant Then
+      string_suffix_tag = HTMLClass[ constant, subcat, .EL.STRING_SUFFIX ]
+    Else
+      string_suffix_tag = HTMLClass[ cat, .EL.STRING_SUFFIX ]
     suffix              = Right( eSource, 1 )
   End
   If element < constant Then Do
@@ -351,7 +363,6 @@ String:
   End
 
   ch                    = eSource[1]
-  cat                   = element~category
   If hasSuffix Then source = SubStr( eSource, 2, Length(eSource) - 3 )
   Else              source = SubStr( eSource, 2, Length(eSource) - 2 )
 

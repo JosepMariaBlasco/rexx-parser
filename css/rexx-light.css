@@ -20,6 +20,7 @@
 /* 20250116    0.1f Add support for sub-keywords                              */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional numbers to decimal                      */
+/* 20250530    0.2c Add support for detailed string highlighting              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -124,21 +125,48 @@
 .highlight-rexx-light .rx-pstr,         /* codePoints strings (TUTOR only)    */
 .highlight-rexx-light .rx-gstr,         /* Graphemes strings  (TUTOR only)    */
 .highlight-rexx-light .rx-tstr,         /* Text strings       (TUTOR only)    */
-.highlight-rexx-light .rx-ustr {        /* U(nicode) strings  (TUTOR only)    */
+.highlight-rexx-light .rx-ustr          /* U(nicode) strings  (TUTOR only)    */
+{
   color:#88F;
 }
 
-.highlight-rexx-dark .rx-ssuf           /* String suffix                      */
+/* String suffixes                                                            */
+.highlight-rexx-light .rx-bstr.rx-ssuf,
+.highlight-rexx-light .rx-xstr.rx-ssuf,
+.highlight-rexx-light .rx-ystr.rx-ssuf,
+.highlight-rexx-light .rx-pstr.rx-ssuf,
+.highlight-rexx-light .rx-gstr.rx-ssuf,
+.highlight-rexx-light .rx-tstr.rx-ssuf,
+.highlight-rexx-light .rx-ustr.rx-ssuf
 {
   color: #0ff;
 }
 
-.highlight-rexx-dark .rx-oquo,          /* Opening quote                      */
-.highlight-rexx-dark .rx-cquo           /* Closing quote                      */
+/* Opening quotes                                                             */
+.highlight-rexx-light  .rx-str.rx-oquo,
+.highlight-rexx-light .rx-bstr.rx-oquo,
+.highlight-rexx-light .rx-xstr.rx-oquo,
+.highlight-rexx-light .rx-ystr.rx-oquo,
+.highlight-rexx-light .rx-pstr.rx-oquo,
+.highlight-rexx-light .rx-gstr.rx-oquo,
+.highlight-rexx-light .rx-tstr.rx-oquo,
+.highlight-rexx-light .rx-ustr.rx-oquo
 {
   color: #ff0;
 }
 
+/* Closing quotes                                                             */
+.highlight-rexx-light  .rx-str.rx-cquo,
+.highlight-rexx-light .rx-bstr.rx-cquo,
+.highlight-rexx-light .rx-xstr.rx-cquo,
+.highlight-rexx-light .rx-ystr.rx-cquo,
+.highlight-rexx-light .rx-pstr.rx-cquo,
+.highlight-rexx-light .rx-gstr.rx-cquo,
+.highlight-rexx-light .rx-tstr.rx-cquo,
+.highlight-rexx-light .rx-ustr.rx-cquo
+{
+  color: #ff0;
+}
 
 /******************************************************************************/
 /* END Strings                                                                */
@@ -304,6 +332,19 @@
 .highlight-rexx-light .rx-const {
   color: #48c;
 }
+
+/* Taken constants that are strings, suffix                                   */
+.highlight-rexx-light .rx-const .rx-ssuf {
+  color: #0ff;
+}
+
+/* Taken constants that are strings, quotes                                   */
+.highlight-rexx-light .rx-const .rx-oquo,
+.highlight-rexx-light .rx-const .rx-cquo
+{
+  color: #fff;
+}
+
 
 /******************************************************************************/
 /* END Other taken constants                                                  */

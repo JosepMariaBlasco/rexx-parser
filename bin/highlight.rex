@@ -23,14 +23,17 @@
 /* 20250108         Add --pad= option                                         */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx.parser        */
 /* 20250526    0.2b Add --css opt. & "-" to select stdin (thanks, Rony!)      */
-/* 20250529    0.2c Add support for detailed string highlighting              */
+/* 20250529    0.2c Add support for detailed string and number highlighting   */
 /*                                                                            */
 /******************************************************************************/
 
 Parse Arg fn
 
 -- Remember how we were called
-Parse Source . how .
+Parse Source . how myself
+myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
+myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
+sep = .File~separator
 
 -- We will store our processed options in a stem
 options. = 0
@@ -54,6 +57,7 @@ If op[1] \== "-" | fn == "-" Then Leave
       When "--startfrom"       Then options.startFrom   = Natural(value)
       When "--style"           Then options.style       = value
       When "--string"          Then options.string      = value
+      When "--number"          Then options.number      = value
       When "--width"           Then options.width       = Natural(value)
       When "--pad"             Then options.pad         = Natural(value)
       When "--patch"           Then Do
@@ -149,11 +153,6 @@ If Options.css == 0 Then Do
   Exit
 End
 
--- Get our own path
-Parse Source . . myself
-myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
-sep = .File~separator
-
 -- Pick selected style
 If Options.style == 0 Then mystyle = "dark"
 Else                       mystyle = Options.style
@@ -168,7 +167,7 @@ Do line Over .Resources[HTML]
     When "[*CSS*]" Then Do
       Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-"mystyle".css'></link>"
       Say  "    <link rel='stylesheet' href='file:///"cssPath"'></link>"
-      If local \== "" Then Say  "    <link rel='stylesheet' href='file:///"ChangeStr("\",local,"/")"'></link>"
+      If local \== "" Then Say  "    <link rel='stylesheet' href='rexx-"mystyle".css'></link>"
     End
     When "[*CONTENTS*]" Then Say ProcessSource()
     Otherwise Say line
@@ -221,6 +220,7 @@ Options:
   -h, --html             Select HTML mode
   -l, --latex            Select LaTeX mode
       --noprolog         Do not print a prolog (LaTeX only)
+      --number=MODE      MODE can be "whole" or "detail" (the default)
   -n, --numberlines      Print line numbers
       --patch="PATCHES"  Apply semicolon-separated PATCHES
       --patchfile=FILE   Load patches from FILE

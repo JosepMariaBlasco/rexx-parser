@@ -21,6 +21,7 @@
 /* 20250116    0.1f Add support for sub-keywords                              */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional numbers to decimal                      */
+/* 20250530    0.2c Add support for detailed string highlighting              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -53,10 +54,30 @@
   color: #aaa;
 }
 
-/* Taken constants that do not have a specific style */
+/******************************************************************************/
+/* Other taken constants                                                      */
+/******************************************************************************/
+
+/* Taken constants that do not have a specific style                          */
 .highlight-rexx-dark .rx-const {
   color: #48c;
 }
+
+/* Taken constants that are strings, suffix                                   */
+.highlight-rexx-dark .rx-const.rx-ssuf {
+  color: #0ff;
+}
+
+/* Taken constants that are strings, quotes                                   */
+.highlight-rexx-dark .rx-const.rx-oquo,
+.highlight-rexx-dark .rx-const.rx-cquo
+{
+  color: #fff;
+}
+
+/******************************************************************************/
+/* END Other taken constants                                                  */
+/******************************************************************************/
 
 /******************************************************************************/
 /* Whitespace and continuations                                               */
@@ -156,8 +177,12 @@
   font-style: italic;
 }
 
+/******************************************************************************/
+/* Strings                                                                    */
+/******************************************************************************/
+
 /* Strings */
-.highlight-rexx-dark .rx-str,
+.highlight-rexx-dark .rx-str ,
 .highlight-rexx-dark .rx-bstr,
 .highlight-rexx-dark .rx-xstr,
 .highlight-rexx-dark .rx-ystr,
@@ -169,16 +194,49 @@
   color: #f63;
 }
 
-.highlight-rexx-dark .rx-ssuf
+/* String suffixes                                                            */
+.highlight-rexx-dark .rx-bstr.rx-ssuf,
+.highlight-rexx-dark .rx-xstr.rx-ssuf,
+.highlight-rexx-dark .rx-ystr.rx-ssuf,
+.highlight-rexx-dark .rx-pstr.rx-ssuf,
+.highlight-rexx-dark .rx-gstr.rx-ssuf,
+.highlight-rexx-dark .rx-tstr.rx-ssuf,
+.highlight-rexx-dark .rx-ustr.rx-ssuf
 {
   color: #0ff;
 }
 
-.highlight-rexx-dark .rx-oquo,
-.highlight-rexx-dark .rx-cquo
+/* Opening quotes                                                             */
+.highlight-rexx-dark  .rx-str.rx-oquo,
+.highlight-rexx-dark .rx-bstr.rx-oquo,
+.highlight-rexx-dark .rx-xstr.rx-oquo,
+.highlight-rexx-dark .rx-ystr.rx-oquo,
+.highlight-rexx-dark .rx-pstr.rx-oquo,
+.highlight-rexx-dark .rx-gstr.rx-oquo,
+.highlight-rexx-dark .rx-tstr.rx-oquo,
+.highlight-rexx-dark .rx-ustr.rx-oquo
 {
   color: #ff0;
 }
+
+/* Closing quotes                                                             */
+.highlight-rexx-dark  .rx-str.rx-cquo,
+.highlight-rexx-dark .rx-bstr.rx-cquo,
+.highlight-rexx-dark .rx-xstr.rx-cquo,
+.highlight-rexx-dark .rx-ystr.rx-cquo,
+.highlight-rexx-dark .rx-pstr.rx-cquo,
+.highlight-rexx-dark .rx-gstr.rx-cquo,
+.highlight-rexx-dark .rx-tstr.rx-cquo,
+.highlight-rexx-dark .rx-ustr.rx-cquo
+{
+  color: #ff0;
+}
+
+
+/******************************************************************************/
+/* END Strings                                                                */
+/******************************************************************************/
+
 
 /* Local variables */
 .highlight-rexx-dark .rx-var,
