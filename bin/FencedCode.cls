@@ -83,8 +83,6 @@
 --   extraletters= <string>
 --     Allows symbols to contain characters present in <string>, which should
 --     be specified between quotes.
---   number= "whole" | "detail"
---     Determines how numbers are highlighted. "detail" is the default.
 --  .numberLines (or .number-lines)
 --     [Please note that the leading dot is necessary!]
 --     The code listing will include line numbers on the left.
@@ -116,8 +114,6 @@
 --   startFrom=nnn
 --     When used with .numberLines, "nnn" will be the line number
 --     of the first line in the listing.
---   string= "whole" | "detail"
---     Determines how strings are highlighted. "detail" is the default.
 --   style=<style>
 --     Enclose the code with a <div class="highlight-rexx-<style>"> tag.
 --     Default is "dark".
@@ -239,8 +235,6 @@ MissingEndMarker:
   Options.special     = "group"         -- All specials are displayed the same
   Options.constant    = "full"          -- Flexibility with taken constants
   Options.assignment  = "group"         -- Assignments are displayed the same
-  Options.number      = "detail"        -- Set number highlighting mode
-  Options.string      = "detail"        -- Set string highlighting mode
   Options.style       = defaultStyle    -- Set default style
   Options.classprefix = "rx-"           -- Default HTML class prefix is "rx-"
   Options.["SOURCE"]  = ""              -- No external source by default
@@ -282,7 +276,6 @@ MissingEndMarker:
         When "numberwidth"  Then Options.numberwidth  = Integer(value,2,5)
         When "patchfile"    Then Options.patchfile    = value
         When "patch"        Then Options.patch        = value
-        When "string"       Then Options.string       = value
         When "style"        Then Options.style        = value
         When "size"         Then Options.size         = value
         When "operator" Then

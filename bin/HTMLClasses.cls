@@ -392,12 +392,12 @@ SkipOverSpecial:
 String:
   Call Assign Arg(1), Arg(2)
   pa2 = prefix||Arg(2)
-  If Options.String == "detail" Then Do
-    HTMLClass[ Arg(1), .EL.STRING_OPENING_DELIMITER ] = pa2 prefix"oquo"
-    HTMLClass[ Arg(1), .EL.STRING_CONTENTS          ] = pa2 prefix"scon"
-    HTMLClass[ Arg(1), .EL.STRING_CLOSING_DELIMITER ] = pa2 prefix"cquo"
-    HTMLClass[ Arg(1), .EL.STRING_SUFFIX            ] = pa2 prefix"ssuf"
-  End
+
+  HTMLClass[ Arg(1), .EL.STRING_OPENING_DELIMITER ] = pa2 prefix"oquo"
+  HTMLClass[ Arg(1), .EL.STRING_CONTENTS          ] = pa2 prefix"scon"
+  HTMLClass[ Arg(1), .EL.STRING_CLOSING_DELIMITER ] = pa2 prefix"cquo"
+  HTMLClass[ Arg(1), .EL.STRING_SUFFIX            ] = pa2 prefix"ssuf"
+
   Return
 
 SkipOverStrings:
@@ -418,11 +418,11 @@ Constant:
   open   = .EL.STRING_OPENING_DELIMITER
   close  = .EL.STRING_CLOSING_DELIMITER
   suffix = .EL.STRING_SUFFIX
-  If Options.String == "detail" Then Do
-    HTMLClass[ constant, Arg(1), open   ] = value prefix"oquo"
-    HTMLClass[ constant, Arg(1), close  ] = value prefix"cquo"
-    HTMLClass[ constant, Arg(1), suffix ] = value prefix"ssuf"
-  End
+
+  HTMLClass[ constant, Arg(1), open   ] = value prefix"oquo"
+  HTMLClass[ constant, Arg(1), close  ] = value prefix"cquo"
+  HTMLClass[ constant, Arg(1), suffix ] = value prefix"ssuf"
+
 Return
 
 SkipOverConstant:

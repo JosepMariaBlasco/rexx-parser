@@ -56,8 +56,6 @@ If op[1] \== "-" | fn == "-" Then Leave
     Select Case Lower(op)
       When "--startfrom"       Then options.startFrom   = Natural(value)
       When "--style"           Then options.style       = value
-      When "--string"          Then options.string      = value
-      When "--number"          Then options.number      = value
       When "--width"           Then options.width       = Natural(value)
       When "--pad"             Then options.pad         = Natural(value)
       When "--patch"           Then Do
@@ -220,14 +218,12 @@ Options:
   -h, --html             Select HTML mode
   -l, --latex            Select LaTeX mode
       --noprolog         Do not print a prolog (LaTeX only)
-      --number=MODE      MODE can be "whole" or "detail" (the default)
   -n, --numberlines      Print line numbers
       --patch="PATCHES"  Apply semicolon-separated PATCHES
       --patchfile=FILE   Load patches from FILE
       --pad=N            Pad doc-comments and ::resources to N characters
       --prolog           Print a prolog (LaTeX only)
       --startFrom=N      Start line numbers at N
-      --string=MODE      MODE can be "whole" or "detail" (the default)
   -s, --style=STYLE      Use "rexx-STYLE.css" (default is "dark")
       --tutor            Enable TUTOR-flavored Unicode
   -u, --unicode          Enable TUTOR-flavored Unicode

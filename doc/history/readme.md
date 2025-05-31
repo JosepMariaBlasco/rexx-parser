@@ -22,8 +22,9 @@ Version history
   <li> Allow symbolic color names in CSS files (20250531).
   <li> Fix https://github.com/JosepMariaBlasco/rexx-parser/issues/13 (20250531).
   <li> Relax doc-comment requirements: now they can be placed anywhere (20250531).
-  <li> Remove the compound= highlighting option. If one wants homogeneus
-       highlighting for stems, one can always design an appropriate style (20250531).
+  <li> **Breaking change**: Remove the compound= highlighting option. Anyone wanting homogeneus
+       highlighting can design his own style (20250531).
+  <li> **Breaking change**: Make detailed string and number highlighting mandatory, for the same reason (20250531).
 <tr><td>20250421<td>0.2b<td>
 <ul>
   <li> (Almost) complete early-checking of BIFs.

@@ -94,8 +94,6 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
   If \ Options.~hasIndex(classprefix) Then Options.classprefix = "rx-"
   If \ Options.~hasIndex(style)       Then Options.style       = "dark"
   If \ Options.~hasIndex(startFrom)   Then Options.startFrom   = 1
-  If \ Options.~hasIndex(string)      Then Options.string      = "detail"
-  If \ Options.~hasIndex(number)      Then Options.number      = "detail"
 
   If Verify(Options.style, XRange(AlNum)".-_") > 0 Then
     Raise Halt -
@@ -248,23 +246,21 @@ Syntax:
   constant = .EL.TAKEN_CONSTANT
   If element < constant                 Then Signal TakenConstant
 
-  -- Compound variables are optionally displayed highlighting all the
+  -- Compound variables are displayed highlighting all the
   -- elements in the tail.
   If element < .ALL.COMPOUND_VARIABLES  Then Signal CompoundVariable
 
   If element < .ALL.STRINGS Then Do
     -- Strings that are numbers and are not X, B or U
-    If Options.number \== "whole",                         -
-      element \< .EL.HEX_STRING || .EL.BINARY_STRING || .EL.UNICODE_STRING, -
+    If element \< .EL.HEX_STRING || .EL.BINARY_STRING || .EL.UNICODE_STRING, -
       DataType(element~value) == "NUM" Then Signal Numbers
     -- Detailed string highlighting
-    If Options.string \== "whole"      Then Signal String
+    Signal String
   End
 
-  -- Detailed highlighting of numbers is also optional
+  -- Detailed highlighting of numbers
 
-  If element < .ALL.NUMBERS, Options.number \== "whole" Then
-    Signal Numbers
+  If element < .ALL.NUMBERS            Then Signal Numbers
 
   -- Classic comments may be multi-line, in which case they also
   -- require special handling
@@ -291,7 +287,7 @@ NewLine:
 Return
 
 TakenConstant:
-  If Options.string \== "whole", element~isAString Then Signal String
+  If element~isAString Then Signal String
   tag = HTMLClass[ constant, element~subCategory ]
   Call Highlight constant, element~subCategory, tag, element~source
 Exit
