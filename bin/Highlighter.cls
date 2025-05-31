@@ -93,7 +93,6 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
   If \ Options.~hasIndex(constant)    Then Options.constant    = "full"
   If \ Options.~hasIndex(classprefix) Then Options.classprefix = "rx-"
   If \ Options.~hasIndex(style)       Then Options.style       = "dark"
-  If \ Options.~hasIndex(compound)    Then Options.compound    = 1
   If \ Options.~hasIndex(startFrom)   Then Options.startFrom   = 1
   If \ Options.~hasIndex(string)      Then Options.string      = "detail"
   If \ Options.~hasIndex(number)      Then Options.number      = "detail"
@@ -277,7 +276,6 @@ Syntax:
   If element < .EL.RESOURCE_DATA Then Signal ResourceData
 
   -- Standard case
-StandardCase:
   tag = HTMLClass[ element~category ]
   Call Highlight element~category, "", tag, element~source
 
@@ -491,7 +489,6 @@ String:
 Exit
 
 CompoundVariable:
-  If \options.compound Then Signal StandardCase
   Do part Over element~parts
     tag = HTMLClass[ part~category ]
     Call Highlight part~category, "", tag, part~source

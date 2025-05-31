@@ -74,14 +74,6 @@ order.
 
 Define the class prefix used for HTML classes. Default is "rx-".
 
-#### `compound= "full" | "yes" | "1" | "true"`
-
-Use full detailed compound variable tail highlighing.
-
-#### `compound= "variable" | "no" | "0" | "false"`
-
-Highlight compound variables as a whole.
-
 #### `constant= "group" | "full" | "detail"`
 
 Determines how taken constants (strings or symbols taken as a

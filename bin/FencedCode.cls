@@ -77,10 +77,6 @@
 --     both a generic and a specific class will be assigned.
 --   classprefix= "rx-"
 --     Define the class prefix used for HTML classes. Default is "rx-".
---   compound= "full" | "yes" | "1" | "true"
---     Use full detailed compound variable tail highlighing.
---   compound= "variable" | "no" | "0" | "false"
---     Highlight compound variables as a whole
 --   constant= "group" | "full" | "detail"
 --     Determines how taken constants (strings or symbols taken as a
 --     constant) will be highlighted.
@@ -239,7 +235,6 @@ MissingEndMarker:
 
   -- Default options
   Options.            = 0
-  Options.compound    = 1               -- Full display of compound variables
   Options.operator    = "group"         -- All operators are displayed the same
   Options.special     = "group"         -- All specials are displayed the same
   Options.constant    = "full"          -- Flexibility with taken constants
@@ -290,12 +285,6 @@ MissingEndMarker:
         When "string"       Then Options.string       = value
         When "style"        Then Options.style        = value
         When "size"         Then Options.size         = value
-        When "compound"     Then
-          Select Case Lower(value)
-            When "full", "yes", "1", "true"     Then Options.compound = 1
-            When "variable", "no", "0", "false" Then Options.compound = 0
-            Otherwise Exit BadValue()
-          End
         When "operator" Then
           Select Case Lower(value)
             When "group", "full", "detail" Then Options.operator   = Lower(value)

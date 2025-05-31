@@ -302,20 +302,10 @@ a number of *sub-parts*; you can decide which of
 the two aspects of a compound variable will determine
 the highlighting mode.
 
-<div class="row">
-<div class="col-xs-6">
 ```rexx
-  -- As an indexed reference
+  -- An indexed reference
   Say Matrix.1.2A.j..
 ```
-</div>
-<div class="col-xs-6">
-```rexx {compound=false}
-  -- As a whole
-  Say Matrix.1.2A.j..
-```
-</div>
-</div>
 
 You can select the compound variable highlighting
 mode using the `compound=true|false` attribute
