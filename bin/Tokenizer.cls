@@ -25,6 +25,7 @@
 /* 20250115         Add "<<" and "\<<" methods                                */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional number to decimal                       */
+/* 20250531    0.2c Implement more flexible rules for doc-comments            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -191,7 +192,8 @@ Return semicolon
 
 ::Method init
   Expose package source line col len lines tail -
-    BOS bosReturned eosReached eolAfterEosReturned
+    BOS bosReturned eosReached eolAfterEosReturned -
+    StandardDocCommentAllowed MarkdownDocCommentAllowed
 
   Use Strict Arg package
 
@@ -213,6 +215,21 @@ Return semicolon
 
   If lines > 0 Then
     len               = Length(source[line]) -- Length of current line
+
+  AllowedDocComments = Upper( ChangeStr(",",Global.Option( DocComments )," ") )
+
+  StandardDocCommentAllowed = -
+    ( WordPos( All,      AllowedDocComments) > 0 ) | -
+    ( WordPos( Standard, AllowedDocComments) > 0 ) | -
+    ( WordPos( Block   , AllowedDocComments) > 0 ) | -
+    ( WordPos( Classic , AllowedDocComments) > 0 )
+
+  MarkdownDocCommentAllowed = -
+    ( WordPos( All,      AllowedDocComments) > 0 ) | -
+    ( WordPos( Line    , AllowedDocComments) > 0 ) | -
+    ( WordPos( Markdown, AllowedDocComments) > 0 )
+
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -457,9 +474,37 @@ Return element
 
 ::Method Line.Comment
 
-  Expose package line col len
+  Expose package source line lines col len MarkdownDocCommentAllowed
 
-  Return self~InsertNewElement( .Line.Comment~new(package, line, col, len + 1) )
+
+  startLine = line
+  startCol  = col
+  If \MarkdownDocCommentAllowed Then Signal NormalLineComment
+  If \IsADocCommentLine(line)       Then Signal NormalLineComment
+
+  Do While line < lines, IsADocCommentLine(line+1)
+    line = line + 1
+    len  = source[line]~length
+  End
+
+  If line > startLine Then col = 1 -- Return the whole line
+
+  comment = .Line.Comment~new(package, startLine, startCol, line, len + 1)
+
+  Call SetCategory comment, .EL.DOC_COMMENT_MARKDOWN
+
+  Return self~InsertNewElement( comment )
+
+IsADocCommentLine: Procedure expose source
+  Arg line
+  starting = source[line]~strip~left(4)
+  If starting[1,3] \== "---" Then Return .False
+  If starting[4]    == "-"   Then Return .False
+Return .True
+
+NormalLineComment:
+  comment = .Line.Comment~new(package, line, col, line, len + 1)
+  Return self~InsertNewElement( comment )
 
 /******************************************************************************/
 /* CLASSIC COMMENTS                                                           */
@@ -467,7 +512,8 @@ Return element
 
 ::Method Standard.Comment
 
-  Use Local c startLine startColumn searchStart nesting slashPos slashLine
+  Use Local c startLine startColumn searchStart nesting starting -
+    slashPos slashLine
 
   -- Save the starting point of our comment
   startLine   = line
@@ -503,9 +549,20 @@ GotAComment:
 
   len = Length( source[line] )
 
-  Return self~InsertNewElement(                                          -
-    .Standard.Comment~new( package, startLine, startColumn, line, pos ) -
-  )
+  comment = .Standard.Comment~new( package, startLine, startColumn, line, pos )
+
+  If StandardDocCommentAllowed Then Do
+    starting = source[startLine]~strip~Left(4)
+    If starting[1,3] \== "/**" Then Signal Done
+    If starting[4]    == "*"   Then Signal Done
+    ending   = source[line]~strip~Right(3)
+    If ending[2,2]   \== "*/"  Then Signal Done
+    If ending[1]      == "*"   Then Signal Done
+    Call SetCategory comment, .EL.DOC_COMMENT
+  End
+
+Done:
+  Return self~InsertNewElement( comment )
 
 -- Unmatched comment delimiter ("/*") on line &1.
  6.001: Syntax(  6.001, tail, startLine )
@@ -1050,7 +1107,7 @@ EndDelimiterFound:
 --------------------------------------------------------------------------------
 
 ::Class Standard.Comment Public subclass Element
-::Method value -- A placeholded
+::Method value -- A placeholder
   If self~category == .EL.STANDARD_COMMENT Then Return "/* A COMMENT */"
   Else Return "/* A DOC-COMMENT */"
 ::Method init
@@ -1084,18 +1141,18 @@ EndDelimiterFound:
 ::Class Line.Comment Public subclass Element
 ::Method init
   Expose package line start end
-  Use Strict Arg package, line, start, end
+  Use Strict Arg package, line, start, endLine, end
   self~init:super
   self~category = .EL.LINE_COMMENT
-  self~ignored = 1 -- Classic comments are always ignored
-  self~from = line start
-  self~to   = line end
+  self~ignored = 1 -- Line comments are always ignored
+  self~from = line    start
+  self~to   = endLine end
 ::Method source
-  Expose package line start end
+  Expose package line start endLine end
   If self~category == .EL.LINE_COMMENT Then
     Return package~source[line][start, end-start]
   Parse Value self~from With startLine  startCol
-  Parse Value self~to   With endLine  endCol
+  Parse Value self~to   With endLine    endCol
   Do lineNo = startLine To endLine
     line = package~source[lineNo]
     Select case lineNo

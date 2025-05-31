@@ -27,10 +27,10 @@ will not display at all in the GitHub version, as GitHub does not implement
 the `source` attribute for Rexx fenced code blocks.
 
 ~~~rexx {.numberLines startfrom=93 unicode}
-/*******************************************************************************/
-/* This is a sample Rexx code fragment, numbered, starting at line 93.         */
-/* It shows many of the features of the Rexx Parser.                           */
-/*******************************************************************************/
+/******************************************************************************/
+/* This is a sample Rexx code fragment, numbered, starting at line 93.        */
+/* It shows many of the features of the Rexx Parser.                          */
+/******************************************************************************/
 
 /**
  * This is a doc-comment, a special form of comment, similar to JavaDoc.

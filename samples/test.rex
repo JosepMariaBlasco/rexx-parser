@@ -1,7 +1,7 @@
-/*******************************************************************************/
-/* This is a sample Rexx code fragment, numbered, starting at line 93.         */
-/* It shows many of the features of the Rexx Parser.                           */
-/*******************************************************************************/
+/******************************************************************************/
+/* This is a sample Rexx code fragment, numbered, starting at line 93.        */
+/* It shows many of the features of the Rexx Parser.                          */
+/******************************************************************************/
 
 /**
  * This is a doc-comment, a special form of comment, similar to JavaDoc.

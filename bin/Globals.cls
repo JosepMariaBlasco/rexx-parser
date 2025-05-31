@@ -275,11 +275,11 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   --
   Call NewElements EL.STANDARD_COMMENT, EL.LINE_COMMENT
 
-  -- A EL.DOC_COMMENT is a standard ("block") comment that immediately
-  -- precedes a directive. It starts with "/**" and ends with "*/".
+  -- A EL.DOC_COMMENT is a standard ("block") comment that starts with "/**"
+  -- but not with "/***" and end with "*/" but not with "**/".
   --
   -- A EL.DOC_COMMENT_MARKDOWN is a set of contiguous line comments that
-  -- immediately precede a directive. They all start with "---".
+  -- start with "---" but not with "----".
   Call NewElements EL.DOC_COMMENT, EL.DOC_COMMENT_MARKDOWN
 
   --
