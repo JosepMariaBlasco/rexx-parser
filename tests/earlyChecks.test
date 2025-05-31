@@ -817,6 +817,7 @@
 Halt:
   Say ""
   Say "Program halted."
+  Pull
 Exit
 
 ::Requires "Test.Parser.cls"

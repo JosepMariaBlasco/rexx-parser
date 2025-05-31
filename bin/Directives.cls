@@ -432,7 +432,7 @@ SignedNumber:
 
 -- A ::CONSTANT directive with an expression requires
 -- a matching ::CLASS directive.
-99.906: Syntax( 99.906, CONSTANT )
+99.906: Syntax( 99.906, CONSTANT, name )
 
 --------------------------------------------------------------------------------
 

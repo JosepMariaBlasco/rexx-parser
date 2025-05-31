@@ -1,2 +1,0 @@
-::Constant C
-  Say "Hi!"

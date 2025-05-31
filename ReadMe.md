@@ -34,7 +34,6 @@ the `source` attribute for Rexx fenced code blocks.
 
 /**
  * This is a doc-comment, a special form of comment, similar to JavaDoc.
- * It must appear immediately before a directive or a callable label.
  */
 ::Method myMethod Package Protected     -- Bold, underline, italic
   Expose x pos stem.

@@ -25,14 +25,71 @@
 
   Signal On Halt
 
-
   Call Test.Error 35.001, "a==b"
+
+  Call Test.Error 99.903,  '::Routine repetitious; ::Routine repetitious'
+  Call Test.Error 99.903,  '::Routine  repetitious; ::Routine "repetitious"'
+
+  Call Test.Error 99.905,  "::Method M Class"
+  Call Test.Error 99.906,  "::Constant c (1+2)"
+  Call Test.Error 99.907,  '::Method M; Say "Hi"; Expose a b c'
+
+  Call Test.Error 99.910,  '::Method M; Say "Hi"; Use Local x'
+
+  Call Test.Error 99.916,  "::Potato"
+  Call Test.Error 99.917,  '::Routine r external "library rxmath RxCalcSqrt xx"'
+
+  Call Test.Error 99.925,  '::Attribute "test "'
+
+  Call Test.Error 99.930,  "Use Arg a,...,b"
+  Call Test.Error 99.931,  '::Class C; ::Method A Class; ::Attribute A Get Class; Return 1'
+  Call Test.Error 99.931,  '::Attribute A Get; Return 1; ::Attribute A Get; Return 2'
+  Call Test.Error 99.931,  '::Class C; ::Method A; ::Attribute A Get; Return 1'
+  Call Test.Error 99.931,  '::Class C; ::Method "A=" Class; ::Attribute A Set Class; Return 1'
+  Call Test.Error 99.931,  '::Attribute A Set; Return 1; ::Attribute A Set; Return 2'
+  Call Test.Error 99.931,  '::Class C; ::Method "A="; ::Attribute A Set; Return 1'
+  Call Test.Error 99.931,  '::Attribute  A; ::Attribute "a"'
+  Call Test.Error 99.932,  '::Class Class; ::Method C Class; Say "Hi"; ::Constant C Two'
+  Call Test.Error 99.932,  '::Constant C One; ::Constant C Two'
+  Call Test.Error 99.932,  '::Class Class; ::Method C; Say "Hi"; ::Constant C Two'
+  Call Test.Error 99.932,  '::Constant  C  12; ::Constant "c" 14'
+  Call Test.Error 99.933,  '::Class C; ::Method M Abstract; Say "Hi!"'
+  Call Test.Error 99.934,  '::Method M Attribute; Say "Hi!"'
+  Call Test.Error 99.935,  '::Class C; ::attribute top set external "LIBRARY ooshapes rect_setTop"; Say "Hi!"'
+  Call Test.Error 99.936,  '::Class C; ::Method Init External "LIBRARY rxregexp RegExp_Init"; Say "Hi!"'
+  Call Test.Error 99.937,  '::Attribute A; Say "Hi!"'
+  Call Test.Error 99.938,  '::Constant C;  Say "Hi!"'
+  Call Test.Error 99.939, ('::Routine r external "LIBRARY rxmath RxCalcPi"', 'Say "Hi!"')
+  Call Test.Error 99.940, ('::Attribute a get abstract', 'Say "Hi!"')
+
+  Call Test.Error 99.942, ('::Resource r end pp', -
+                           'x',                   -
+                           'PP',                  -
+                           '',                    -
+                           '::Resource r',        -
+                           'y',                   -
+                           '::END')
+  Call Test.Error 99.942, ('::Resource r end pp', -
+                           'x',                   -
+                           'PP',                  -
+                           '',                    -
+                           '::Resource "r"',      -
+                           'y',                   -
+                           '::END')
+  Call Test.Error 99.943, ('::Resource r end pp','x')
+  Call Test.Error 99.944,  "::Requires R namespace rexx"
+
+  Call Test.Error 99.946,  '::Method M Delegate z; Say "Hello"'
+  Call Test.Error 99.947,  '::Attribute A get Delegate z; Say "Hello"'
+  Call Test.Error 99.948,  "Use local a.2"
+  Call Test.Error 99.950,  "Use Arg >a = 4"
 
   Exit
 
 Halt:
   Say ""
   Say "Program halted."
+  Pull
 Exit
 
 ::Requires "Test.Parser.cls"

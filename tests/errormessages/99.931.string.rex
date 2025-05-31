@@ -1,2 +1,0 @@
-::Attribute  A 
-::Attribute "a" 

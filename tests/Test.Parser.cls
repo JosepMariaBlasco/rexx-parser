@@ -1,5 +1,4 @@
 
-
   If .environment~Parser.Test.SimpleErrors == .Nil Then
      .environment~Parser.Test.SimpleErrors = 0
   If .environment~Parser.Test.Fast.OK      == .Nil Then
