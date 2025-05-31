@@ -1,15 +1,15 @@
 Highlighting examples
 ====================
 
-The following code highlights strings
+The following code highlights [strings](../features/strings/)
 by assigning a different background color
 depending on the Unicode (TUTOR) string type.
 
-Numbers are also highlighted, and they
+[Numbers](../features/numbers/) are also highlighted, and they
 inherit the background corresponding
 to the string type.
 
-Several strings used as names are also
+Several [strings used as numbers](../features/numbers/) are also
 highlighted; the quote delimiters and the
 string suffix are highlighted separately.
 

@@ -14,17 +14,20 @@ Version history
        now assigned a category of .EL.CONTINUATION. A new
        set .ALL.WHITESPACE_LIKE has been created that includes
        .EL.WHITESPACE and this new category.
-  <li> Fix https://github.com/JosepMariaBlasco/rexx-parser/issues/11.
+  <li> Fix <https://github.com/JosepMariaBlasco/rexx-parser/issues/11>.
   <li> Update css/rgflight.css, add rgfdark.css (Rony) (20250528).
   <li> Add support for detailed string highlighing (20250529).
   <li> Add support for detailed number highlighing (20250531).
   <li> Add a new rexx-test1 CSS file (20250531).
   <li> Allow symbolic color names in CSS files (20250531).
-  <li> Fix https://github.com/JosepMariaBlasco/rexx-parser/issues/13 (20250531).
+  <li> Fix <https://github.com/JosepMariaBlasco/rexx-parser/issues/13> (20250531).
   <li> Relax doc-comment requirements: now they can be placed anywhere (20250531).
   <li> **Breaking change**: Remove the compound= highlighting option. Anyone wanting homogeneus
        highlighting can design his own style (20250531).
   <li> **Breaking change**: Make detailed string and number highlighting mandatory, for the same reason (20250531).
+  <li> Document [string](/rexx-parser/doc/highlighter/features/strings/) and
+       [number](/rexx-parser/doc/highlighter/features/numbers/) highlighting,
+       and add a page showing some [examples](/rexx-parser/doc/highlighter/examples/) (20250531).
 <tr><td>20250421<td>0.2b<td>
 <ul>
   <li> (Almost) complete early-checking of BIFs.

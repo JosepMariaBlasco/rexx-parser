@@ -394,7 +394,6 @@ String:
   pa2 = prefix||Arg(2)
 
   HTMLClass[ Arg(1), .EL.STRING_OPENING_DELIMITER ] = pa2 prefix"oquo"
-  HTMLClass[ Arg(1), .EL.STRING_CONTENTS          ] = pa2 prefix"scon"
   HTMLClass[ Arg(1), .EL.STRING_CLOSING_DELIMITER ] = pa2 prefix"cquo"
   HTMLClass[ Arg(1), .EL.STRING_SUFFIX            ] = pa2 prefix"ssuf"
 

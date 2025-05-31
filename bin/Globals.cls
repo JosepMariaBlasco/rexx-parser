@@ -363,7 +363,6 @@ SkipOverTheInternalRoutines:            -- Main code continues here
 
   Call NewElements                      -
     EL.STRING_OPENING_DELIMITER,        - -- "'" or '"'
-    EL.STRING_CONTENTS,                 - --
     EL.STRING_CLOSING_DELIMITER,        - -- "'" or '"'
     EL.STRING_SUFFIX                      -- One of "BXYPGT"
 

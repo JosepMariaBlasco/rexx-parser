@@ -218,6 +218,8 @@ Crumb:
     When dochlfeat"/taken-constant" Then Return "Taken constants"
     When dochlfeat"/doc-comments"  Then Return "Doc-comments"
     When dochlfeat"/patches"       Then Return "Style patches"
+    When dochlfeat"/numbers"       Then Return "Detailed highlighting of numbers"
+    When dochlfeat"/strings"       Then Return "Detailed string highlighting"
 
     -- "/rexx-parser/doc/highlighter/html"
 
