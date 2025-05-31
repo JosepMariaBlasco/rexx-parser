@@ -1,0 +1,38 @@
+/******************************************************************************/
+/*                                                                            */
+/* otherChecks.test - Miscelaneous checks                                     */
+/* ======================================                                     */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20250531    0.2c First release                                             */
+/*                                                                            */
+/******************************************************************************/
+
+  If .environment~Parser.Test.SimpleErrors == .Nil Then
+    .environment~Parser.Test.SimpleErrors   = 0
+  If .environment~Parser.Test.OK           == .Nil Then
+    .environment~Parser.Test.OK             = 0
+
+  Signal On Halt
+
+
+  Call Test.Error 35.001, "a==b"
+
+  Exit
+
+Halt:
+  Say ""
+  Say "Program halted."
+Exit
+
+::Requires "Test.Parser.cls"

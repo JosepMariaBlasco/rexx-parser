@@ -20,6 +20,7 @@ Version history
   <li> Add support for detailed number highlighing (20250531).
   <li> Add a new rexx-test1 CSS file (20250531).
   <li> Allow symbolic color names in CSS files (20250531).
+  <li> Fix https://github.com/JosepMariaBlasco/rexx-parser/issues/13 (20250531).
 <tr><td>20250421<td>0.2b<td>
 <ul>
   <li> (Almost) complete early-checking of BIFs.

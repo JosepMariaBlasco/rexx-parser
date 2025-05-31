@@ -17,6 +17,7 @@
 /* 20241206    0.1  First public release                                      */
 /* 20241208    0.1a Accept options arg, pass it to tokenizer                  */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250531    0.2c Fix issue no. 13                                          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -130,8 +131,10 @@
   If t2 < .EL.COLON , t1 < .ALL.SYMBOLS_AND_STRINGS Then Exit self~Label.Clause
 
   -- Case 6: Symbol + assignment operator? --> An assignment
-  If t1 < .ALL.SYMBOLS, t2 < .ALL.ASSIGNMENTS Then
-    Exit self~Assignment.Instruction
+  If t1 < .ALL.SYMBOLS THEN Do
+    If t2 < .EL.OP.STRICT.EQUAL Then Signal 35.001 -- Special case
+    If t2 < .ALL.ASSIGNMENTS Then Exit self~Assignment.Instruction
+  End
 
   -- Case 4 (bis): Symbol + "[", "~" or "~~" -> Message instruction
   If t1 < .ALL.SYMBOLS, t2 < .ALL.OPS.MESSAGE_SEND Then
@@ -143,6 +146,9 @@
 
   -- Case 4 (ter): Command or message instruction
   Exit self~Command.Or.Message.Instruction
+
+-- Incorrect expression detected at "&1".
+35.001: Syntax( 35.001, t1, "==" )
 
 /******************************************************************************/
 /* generateElementsArray collects all the a priori non-ignorable elements     */

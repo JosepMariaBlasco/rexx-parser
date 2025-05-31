@@ -22,6 +22,7 @@
 /******************************************************************************/
 
 Call "earlyChecks.test"
+Call "otherChecks.test"
 
 my    = .context~package
 myDir = FileSpec("L",my~name)
