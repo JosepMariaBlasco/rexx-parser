@@ -21,7 +21,7 @@
 
 -- See https://www.w3.org/TR/css-color-4/#named-colors
 
-If .environment~HTML.Colors~isA(.Stem) Then Exit
+If .environment~HTML.Color~isA(.Stem) Then Exit
 
 Color. = ""
 

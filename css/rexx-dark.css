@@ -171,8 +171,8 @@
 }
 
 /* Message names */
-.highlight-rexx-dark .rx-const.rx-method {
-  color:#b8fa5c;
+.highlight-rexx-dark .rx-method {
+  color:bisque;
   font-style: italic;
 }
 

@@ -623,7 +623,10 @@ Exit
   Return Tag2Attr., TagColors.
 
 NormalizeColor: Procedure
+  Parse Arg color
   If color == ""           Then Return color
+  col = .HTML.Color[color]
+  If col \== "" Then Return col
   Parse Arg color +1 color
   If color == ""           Then Return color
   If Length( color ) \== 3 Then Return color
