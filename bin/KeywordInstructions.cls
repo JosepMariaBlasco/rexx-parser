@@ -1923,7 +1923,7 @@ Done:
       End
       When element < .ALL.OPS.REFERENCE Then Do
         Call NextElement
-        If \( element < (.EL.SIMPLE_VARIABLE || .EL.STEM_VARIABLEIABLE) ) Then Signal 20.931
+        If \( element < (.EL.SIMPLE_VARIABLE || .EL.STEM_VARIABLE) ) Then Signal 20.931
         element~setAssigned
         argList~append( (">", element) )
         Call NextElement

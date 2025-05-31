@@ -114,7 +114,10 @@
   If StandardDocCommentAllowed, docComment < .EL.STANDARD_COMMENT Then Do
     -- Comment has to start with "/**", with optional whitespace
     Parse Value docComment~from With line .
-    If package~source[line] <> "/**" Then Exit
+
+    starting = package~source[line]~strip
+    If \starting~startsWith("/**") Then Exit -- Has to be "/**"
+    If starting[4] == "*"          Then Exit -- and not "/***"
 
     -- Absorb whitespace before, if any
     If docComment~from~word(2) \== "1" Then Do

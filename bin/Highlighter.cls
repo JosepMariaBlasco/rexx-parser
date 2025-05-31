@@ -29,7 +29,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250519    0.2b Fix error computing mypath, add dependencies              */
 /* 20250520         Ensure that options. == 0                                 */
-/* 20250529    0.2c Add support for detailed string highlighing               */
+/* 20250529    0.2c Add support for detailed string and number highlighing    */
 /*                                                                            */
 /******************************************************************************/
 
@@ -96,6 +96,7 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
   If \ Options.~hasIndex(compound)    Then Options.compound    = 1
   If \ Options.~hasIndex(startFrom)   Then Options.startFrom   = 1
   If \ Options.~hasIndex(string)      Then Options.string      = "detail"
+  If \ Options.~hasIndex(number)      Then Options.number      = "detail"
 
   If Verify(Options.style, XRange(AlNum)".-_") > 0 Then
     Raise Halt -
@@ -252,11 +253,19 @@ Syntax:
   -- elements in the tail.
   If element < .ALL.COMPOUND_VARIABLES  Then Signal CompoundVariable
 
-  -- Strings may get different highlighting for the initial and
-  -- final quotes and for the string suffix.
+  If element < .ALL.STRINGS Then Do
+    -- Strings that are numbers and are not X, B or U
+    If Options.number \== "whole",                         -
+      element \< .EL.HEX_STRING || .EL.BINARY_STRING || .EL.UNICODE_STRING, -
+      DataType(element~value) == "NUM" Then Signal Numbers
+    -- Detailed string highlighting
+    If Options.string \== "whole"      Then Signal String
+  End
 
-  If Options.string \== "whole", element < .ALL.STRINGS
-                                        Then Signal String
+  -- Detailed highlighting of numbers is also optional
+
+  If element < .ALL.NUMBERS, Options.number \== "whole" Then
+    Signal Numbers
 
   -- Classic comments may be multi-line, in which case they also
   -- require special handling
@@ -331,21 +340,129 @@ BlockComments:
   End
 Exit
 
-String:
-  eSource               = element~source
+Numbers:
+  Call ComputeSourceCatsOpenCloseAndSuffix
 
+  -- Highlight the opening quote, if any
+  If q \== "" Then
+    Call Highlight .EL.STRING_OPENING_DELIMITER, "",     open,  q
+
+  -- That's the number we have to deal with
+  If      q == ""   Then Nop
+  Else If hasSuffix Then eSource = SubStr( eSource, 2, Length(eSource) - 3 )
+  Else                   eSource = SubStr( eSource, 2, Length(eSource) - 2 )
+
+  -- Compute the default tag(s)
+  tag = HTMLClass[ cat ]
+
+  -- Initial blanks (--> that's a string)
+  p = Verify(eSource, " ")
+  If p > 1 Then Call Highlight cat, subCat, tag, Left( eSource, p - 1 )
+
+  -- Optional sign (for strings also)
+  s = eSource[p]
+  If s == "+" | s == "-" Then Do
+    nSign = HTMLClass[ .EL.NUMBER_SIGN ]
+    Call Highlight .EL.NUMBER_SIGN, "", tag nSign, s
+    p += 1
+  End
+
+  -- There may be some blanks after the sign
+  p2 = Verify(eSource, " ",, p)
+  If p2 > p Then Do
+    len = p2 - p
+    Call Highlight .EL.INTEGER_PART, "", tag, SubStr( eSource, p, len )
+    p = p2
+  End
+
+  -- Integer part
+  p2 = Verify( eSource, "012345789",, p )
+  If p2 == 0 | p2 > p Then Do
+    If p2 == 0 Then len = Length( eSource ) - p + 1
+    Else            len = p2 - p
+    intPart = HTMLClass[ .EL.INTEGER_PART ]
+    Call Highlight .EL.INTEGER_PART, "", tag intPart, SubStr( eSource, p, len )
+    p = p2
+  End
+  If p == 0 Then Signal NumberDone
+
+  -- Decimal point
+  If eSource[p] == "." Then Do
+    decPoint = HTMLClass[ .EL.DECIMAL_POINT ]
+    Call Highlight .EL.DECIMAL_POINT, "", tag decPoint, "."
+    p = p + 1
+  End
+
+  -- Fractional part
+  p2 = Verify( eSource, "0123456789",, p )
+  If p2 == 0 | p2 > p Then Do
+    If p2 == 0 Then len = Length( eSource ) - p + 1
+    Else            len = p2 - p
+    fracPart = HTMLClass[ .EL.FRACTIONAL_PART ]
+    Call Highlight .EL.FRACTIONAL_PART, "", tag fracPart, SubStr( eSource, p, len )
+    p = p2
+  End
+  If p == 0 Then Signal NumberDone
+
+  -- Exponent mark
+  e = eSource[p]
+  eMark = HTMLClass[ .EL.EXPONENT_MARK ]
+  Call Highlight .EL.EXPONENT_MARK, "", tag eMark, e
+  p = p + 1
+
+  -- Exponent sign
+  s = eSource[p]
+  If s == "-" | s == "+" Then Do
+    eSign = HTMLClass[ .EL.EXPONENT_SIGN ]
+    Call Highlight .EL.EXPONENT_SIGN, "", tag eSign, s
+    p = p + 1
+  End
+
+  -- The exponent itself
+  p2 = Verify( eSource, "0123456789",, p )
+  If p2 == 0 | p2 > p Then Do
+    If p2 == 0 Then len = Length( eSource ) - p + 1
+    Else            len = p2 - p
+    expo = HTMLClass[ .EL.EXPONENT ]
+    Call Highlight .EL.EXPONENT, "", tag expo, SubStr( eSource, p, len )
+    p = p2
+  End
+
+  -- Final whitespace (that was a string)
+  If p \== 0 Then Call Highlight cat, subCat, tag, SubStr( eSource, p )
+
+NumberDone:
+  -- Highligth the closing quote and suffix, if any
+  If q \== "" Then Do
+    Call Highlight .EL.STRING_CLOSING_DELIMITER, "",     close, q
+    If hasSuffix Then
+      Call Highlight .EL.STRING_SUFFIX,          "", string_suffix_tag, suffix
+  End
+
+Exit
+
+ComputeSourceCatsOpenCloseAndSuffix:
+
+  eSource               = element~source
+  q                     = eSource[1]
+  If q \== "'", q \== '"' Then q = ""
   cat                   = element~category
   If element < constant Then subcat = element~subCategory
+  Else                       subcat = ""
+  hasSuffix             =  q \== "" & eSource~right(1) \== q
+
+  If q == "" Then Return
 
   If element < constant Then
     open  = HTMLClass[ constant, subcat, .EL.STRING_OPENING_DELIMITER ]
   Else
     open  = HTMLClass[ cat, .EL.STRING_OPENING_DELIMITER ]
+
   If element < constant Then
     close = HTMLClass[ constant, subcat, .EL.STRING_CLOSING_DELIMITER ]
   Else
     close = HTMLClass[ cat, .EL.STRING_CLOSING_DELIMITER ]
-  hasSuffix = Pos(element~source~right(1),"'""") == 0
+
   If hasSuffix Then Do
     If element < constant Then
       string_suffix_tag = HTMLClass[ constant, subcat, .EL.STRING_SUFFIX ]
@@ -353,26 +470,25 @@ String:
       string_suffix_tag = HTMLClass[ cat, .EL.STRING_SUFFIX ]
     suffix              = Right( eSource, 1 )
   End
-  If element < constant Then Do
-    tag                 = HTMLClass[ constant, element~subCategory ]
-    subcat              = element~subCategory
-  End
-  Else Do
-    tag                 = HTMLClass[ element~category ]
-    subcat              = ""
-  End
 
-  ch                    = eSource[1]
-  If hasSuffix Then source = SubStr( eSource, 2, Length(eSource) - 3 )
-  Else              source = SubStr( eSource, 2, Length(eSource) - 2 )
+Return
 
-  Call Highlight .EL.STRING_OPENING_DELIMITER, "",     open,  ch
-  Call Highlight cat,                          subcat, tag,  source
-  Call Highlight .EL.STRING_CLOSING_DELIMITER, "",     close, ch
+String:
+  Call ComputeSourceCatsOpenCloseAndSuffix
+
+  If element < constant Then tag = HTMLClass[ constant, subCat ]
+  Else                       tag = HTMLClass[ cat ]
+
+  If hasSuffix Then eSource = SubStr( eSource, 2, Length(eSource) - 3 )
+  Else              eSource = SubStr( eSource, 2, Length(eSource) - 2 )
+
+  Call Highlight .EL.STRING_OPENING_DELIMITER, "",     open,  q
+  Call Highlight cat,                          subcat, tag,  eSource
+  Call Highlight .EL.STRING_CLOSING_DELIMITER, "",     close, q
   If hasSuffix Then
     Call Highlight .EL.STRING_SUFFIX,          "", string_suffix_tag, suffix
 
-  Exit
+Exit
 
 CompoundVariable:
   If \options.compound Then Signal StandardCase

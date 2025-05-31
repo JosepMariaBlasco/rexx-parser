@@ -160,14 +160,6 @@ SkipOverAssign:
   Call Assign   .EL.SYMBOL_LITERAL,              "lit"
   Call Assign   .EL.PERIOD,                      "lit"
 
---------------------------------------------------------------------------------
--- Numbers                                                                    --
---------------------------------------------------------------------------------
-
-  Call Assign   .EL.EXPONENTIAL_NUMBER,          "exp"
-  Call Assign   .EL.DECIMAL_NUMBER,              "deci"
-  Call Assign   .EL.INTEGER_NUMBER,              "int"
-
 /******************************************************************************/
 /* COMMENTS                                                                   */
 /******************************************************************************/
@@ -363,6 +355,26 @@ SkipOverSpecial:
   Call Special .EL.ELLIPSIS,                     "ellipsis"
 
 /******************************************************************************/
+/* NUMBERS                                                                    */
+/******************************************************************************/
+
+--------------------------------------------------------------------------------
+-- Numbers                                                                    --
+--------------------------------------------------------------------------------
+
+  Call Assign   .EL.EXPONENTIAL_NUMBER,          "exp"
+  Call Assign   .EL.DECIMAL_NUMBER,              "deci"
+  Call Assign   .EL.INTEGER_NUMBER,              "int"
+
+  Call Assign   .EL.NUMBER_SIGN,                 "nsign"
+  Call Assign   .EL.INTEGER_PART,                "ipart"
+  Call Assign   .EL.DECIMAL_POINT,               "dpoint"
+  Call Assign   .EL.FRACTIONAL_PART,             "fpart"
+  Call Assign   .EL.EXPONENT_MARK,               "emark"
+  Call Assign   .EL.EXPONENT_SIGN,               "esign"
+  Call Assign   .EL.EXPONENT,                    "expon"
+
+/******************************************************************************/
 /* STRINGS                                                                    */
 /******************************************************************************/
 
@@ -382,6 +394,7 @@ String:
   pa2 = prefix||Arg(2)
   If Options.String == "detail" Then Do
     HTMLClass[ Arg(1), .EL.STRING_OPENING_DELIMITER ] = pa2 prefix"oquo"
+    HTMLClass[ Arg(1), .EL.STRING_CONTENTS          ] = pa2 prefix"scon"
     HTMLClass[ Arg(1), .EL.STRING_CLOSING_DELIMITER ] = pa2 prefix"cquo"
     HTMLClass[ Arg(1), .EL.STRING_SUFFIX            ] = pa2 prefix"ssuf"
   End

@@ -307,15 +307,18 @@ SkipOverTheInternalRoutines:            -- Main code continues here
    .EL.DECIMAL_NUMBER, .EL.INTEGER_NUMBER, .EL.EXPONENTIAL_NUMBER
 
   -- Decimal and exponential numbers can be viewed as a single element,
-  -- or as a sequence of smaller elements. The following four categories
+  -- or as a sequence of smaller elements. The following categories
   -- are never assigned directly by the Parser, but they can be used by
   -- other tools, like the Highlighter.
 
   Call NewElements                      -
-    EL.DECIMAL_POINT,                   - -- Not a TAIL_SEPARATOR not a PERIOD.
     EL.NUMBER_SIGN,                     - -- "+" or "-", inside strings only
-    EL.EXPONENT_SIGN,                   - -- "+" or "-"
-    EL.EXPONENT_MARK                     -- "E" or "e"
+    EL.INTEGER_PART,                    - -- Digits before the decimal point
+    EL.DECIMAL_POINT,                   - -- Not a TAIL_SEPARATOR nor a PERIOD.
+    EL.FRACTIONAL_PART,                 - -- Digits after the decimal point
+    EL.EXPONENT_MARK,                   - -- "E" or "e"
+    EL.EXPONENT_SIGN,                   - -- "+" or "-", optional
+    EL.EXPONENT                           -- 1 or more digits
 
   ------------------------------------------------------------------------------
   -- STRINGS                                                                  --
@@ -353,13 +356,14 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   --
   -- the "contents" part will inherit one of the string categories above.
   --
-  -- NOTICE: The Rexx Parser will never assign any of the three following
+  -- NOTICE: The Rexx Parser will never assign any of the following
   -- categories to an element. They are provided here for the benefit of
   -- tools like the Rexx Highlighter.
   --
 
   Call NewElements                      -
     EL.STRING_OPENING_DELIMITER,        - -- "'" or '"'
+    EL.STRING_CONTENTS,                 - --
     EL.STRING_CLOSING_DELIMITER,        - -- "'" or '"'
     EL.STRING_SUFFIX                      -- One of "BXYPGT"
 

@@ -205,6 +205,7 @@ Crumb:
     When dochl"/paged-media"       Then Return "CSS Paged Media"
     When dochl"/ansi"              Then Return "ANSI"
     When dochl"/latex"             Then Return "(Lua)LaTeX"
+    When dochl"/examples"          Then Return "Highlighting examples"
     When dochl"/htmlclasses"       Then Return "HTMLClasses"
     When dochl"/fencedcode"        Then Return "Fenced Code Blocks"
 

@@ -39,9 +39,10 @@ the `source` attribute for Rexx fenced code blocks.
 ::Method myMethod Package Protected     -- Bold, underline, italic
   Expose x pos stem.
 
+  a   = 12.34e-56 + " -98.76e+123 "     -- Highlighting of numbers
   len = Length( Stem.12.2a.x.y )        -- A built-in function call
   pos = Pos( "S", "String" )            -- An internal function call
-  Call External pos, len, .True, 12     -- An external function call
+  Call External pos, len, .True         -- An external function call
   .environment~test.2.x = test.2.x      -- Method call, compound variable
 
   Exit "नमस्ते"G,  "P ≝ 𝔐",  "🦞🍐"     -- Unicode strings
@@ -63,8 +64,8 @@ in the corresponding copyright notices.
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.2c, refresh 20250530.
-You can download it <a href="Rexx-Parser-0.2c-20250530.zip">here</a>.
+The current release is beta 0.2c, refresh 20250531.
+You can download it <a href="Rexx-Parser-0.2c-20250531.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).

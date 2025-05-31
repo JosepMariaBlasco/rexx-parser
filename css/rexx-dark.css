@@ -25,8 +25,9 @@
 /*                                                                            */
 /******************************************************************************/
 
-
+/******************************************************************************/
 /* Support for line numbers                                                   */
+/******************************************************************************/
 
 .highlight-rexx-dark pre.number-lines    { padding-left: 50px; }
 .highlight-rexx-dark pre.number-lines.w3 { padding-left: 58px; }
@@ -47,12 +48,16 @@
 .highlight-rexx-dark pre.number-lines.w5 code:before { width:72px; }
 
 /* Default: black background, text at ~80% */
-/* The "rexx" class is applied as a fallback when no suitable class is found */
+/* The "rexx" class is applied as a fallback when no suitable class is found  */
 .highlight-rexx-dark pre,
 .highlight-rexx-dark .rexx {
   background-color: #000;
   color: #aaa;
 }
+
+/******************************************************************************/
+/* END Support for line numbers                                               */
+/******************************************************************************/
 
 /******************************************************************************/
 /* Other taken constants                                                      */
@@ -72,7 +77,7 @@
 .highlight-rexx-dark .rx-const.rx-oquo,
 .highlight-rexx-dark .rx-const.rx-cquo
 {
-  color: #fff;
+  color: #ff0;
 }
 
 /******************************************************************************/
@@ -111,12 +116,6 @@
 {
   color: #93a1ed;
   font-style: italic;
-}
-/* Numbers */
-.highlight-rexx-dark .rx-int,
-.highlight-rexx-dark .rx-deci,
-.highlight-rexx-dark .rx-exp {
-  color:#3cc;
 }
 
 /* Special characters, operators */
@@ -172,7 +171,7 @@
 }
 
 /* Message names */
-.highlight-rexx-dark .rx-method {
+.highlight-rexx-dark .rx-const.rx-method {
   color:#b8fa5c;
   font-style: italic;
 }
@@ -232,11 +231,52 @@
   color: #ff0;
 }
 
-
 /******************************************************************************/
 /* END Strings                                                                */
 /******************************************************************************/
 
+/******************************************************************************/
+/* Numbers                                                                    */
+/******************************************************************************/
+
+/* Simple highlighting (does not highlight strings which are numbers)         */
+
+.highlight-rexx-dark .rx-int,          /* Integers                            */
+.highlight-rexx-dark .rx-deci,         /* Decimals (w/ a dot, no exponent)    */
+.highlight-rexx-dark .rx-exp {         /* Exponentials (w/ or w/o a dot)      */
+  color:#3cc;
+}
+
+/* Detailed highlighting (includes non X and B strings that are numbers)      */
+
+.highlight-rexx-dark .rx-nsign         /* number sign (for strings)           */
+{
+  color: #93a1ed;
+}
+
+.highlight-rexx-dark .rx-ipart,        /* integer part                        */
+.highlight-rexx-dark .rx-fpart,        /* fractional part                     */
+.highlight-rexx-dark .rx-expon         /* the exponent itself                 */
+{
+  color:#3cc;
+}
+
+.highlight-rexx-dark .rx-dpoint        /* decimal point                       */
+{
+  color: #93a1ed;
+}
+.highlight-rexx-dark .rx-emark         /* exponent mark ("E" or "e")          */
+{
+  color: #93a1ed;
+}
+.highlight-rexx-dark .rx-esign         /* (optional) exponent sign            */
+{
+  color: #93a1ed;
+}
+
+/******************************************************************************/
+/* END Numbers                                                                */
+/******************************************************************************/
 
 /* Local variables */
 .highlight-rexx-dark .rx-var,
