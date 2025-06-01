@@ -1,1 +1,0 @@
-::Class C very big

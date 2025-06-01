@@ -223,7 +223,7 @@ Done:
 19.905: Syntax( 19.905, ATTRIBUTE)
 
 -- String or symbol expected as ::ATTRIBUTE directive name.
-19.914: Syntax( 19.914, ATTRIBUTE)
+19.914: Syntax( 19.914, ATTRIBUTE, name)
 
 -- Unknown keyword on ::ATTRIBUTE directive; found "&1".
 25.925: Syntax( 25.925, ATTRIBUTE, keyword )
@@ -335,16 +335,16 @@ Return
 19.901: Syntax( 19.901, CLASS )
 
 -- String or symbol expected after METACLASS keyword.
-19.906: Syntax( 19.906, CLASS )
+19.906: Syntax( 19.906, CLASS, element )
 
 -- String or symbol expected after SUBCLASS keyword.
-19.907: Syntax( 19.907, CLASS )
+19.907: Syntax( 19.907, CLASS, element )
 
 -- String or symbol expected after INHERIT keyword.
-19.908: Syntax( 19.908, CLASS )
+19.908: Syntax( 19.908, CLASS, element )
 
 -- String or symbol expected after MIXINCLASS keyword.
-19.913: Syntax( 19.913, CLASS )
+19.913: Syntax( 19.913, CLASS, element )
 
 -- Unknown keyword on ::CLASS directive; found "&1".
 25.901: Syntax( 25.901, CLASS, keyword )
@@ -384,7 +384,7 @@ Return
   If next < .ALL.OPS.ADDITIVE Then Do
     sign = next
     number = TheElementAfter( next, ignoreBlanks )
-    If number \< .ALL.NUMBERS Then Signal 19.916
+    If number \< .ALL.NUMBERS Then Call 19.916 number
     Call SetConstantName number, .CONSTANT.VALUE
     If NoMoreDataAfter( number ) Then Signal SignedNumber
   End
@@ -398,7 +398,7 @@ Return
     Signal Expression
   End
 
-  If next \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.916
+  If next \< .ALL.SYMBOLS_AND_STRINGS Then Call 19.916 next
   Call SetConstantName next, .CONSTANT.VALUE
   value = next
   If NoMoreDataAfter( value ) Then Signal "VALUE"
@@ -422,10 +422,10 @@ SignedNumber:
   Return .Constant.Directive~new( package, begin, end, name, , ,sign, number )
 
 -- String or symbol expected as ::CONSTANT directive name.
-19.915: Syntax( 19.915, CONSTANT )
+19.915: Syntax( 19.915, CONSTANT, name )
 
 -- String or symbol expected as ::CONSTANT value.
-19.916: Syntax( 19.916, CONSTANT )
+19.916: Syntax( 19.916, CONSTANT, Arg(1) )
 
 -- Data must not follow the ::CONSTANT value; found "&1".
 21.913: Syntax( 21.913, CONSTANT, next)
@@ -539,7 +539,7 @@ Done:
   Return .Method.Directive~new( package, begin, end, name, options. )
 
 -- String or symbol expected after ::METHOD keyword.
-19.902: Syntax( 19.902, METHOD )
+19.902: Syntax( 19.902, METHOD, name )
 
 -- String expected after EXTERNAL keyword.
 19.905: Syntax( 19.905, METHOD )
@@ -641,13 +641,13 @@ Done:
   Return .Options.Directive~new( package, begin, end, options. )
 
 -- String or symbol expected as DIGITS value.
-19.917: Syntax( 19.917, OPTIONS )
+19.917: Syntax( 19.917, OPTIONS, element )
 
 -- String or symbol expected as FUZZ value.
-19.918: Syntax( 19.918, OPTIONS )
+19.918: Syntax( 19.918, OPTIONS, element )
 
 -- String or symbol expected as TRACE value.
-19.919: Syntax( 19.919, OPTIONS )
+19.919: Syntax( 19.919, OPTIONS, element )
 
 -- Symbol expected after the FORM keyword.
 20.925: Syntax( 20.925, OPTIONS )
@@ -805,10 +805,10 @@ Done:
   Return .Resource.Directive~new( package, begin, end, name, delimiter )
 
 -- String or symbol expected as ::RESOURCE directive name.
-19.920: Syntax( 19.920, RESOURCE )
+19.920: Syntax( 19.920, RESOURCE, name )
 
 -- String or symbol expected after ::RESOURCE END keyword.
-19.921: Syntax( 19.921, RESOURCE )
+19.921: Syntax( 19.921, RESOURCE, delimiterElement )
 
 -- Data must not follow the ::RESOURCE directive; found "&1".
 21.914: Syntax( 21.914, delimiterElement, end )
@@ -889,7 +889,7 @@ Done:
   )
 
 -- String or symbol expected after ::ROUTINE keyword.
-19.903: Syntax( 19.903, ROUTINE )
+19.903: Syntax( 19.903, ROUTINE, routineName )
 
 -- Symbol or string expected after &1 &2 keyword.
 19.925: Syntax( 19.925, ROUTINE )

@@ -273,7 +273,7 @@ End.Clause:
 
 -- END corresponding to block on line &2 must not have a symbol
 -- following it because there is no LABEL or control variable; found "&1".
-10.003: Syntax( 10.003, END, name, doLine )
+10.003: Syntax( 10.003, END, doLine, name )
 
 -- DO instruction on line &1 requires matching END.
 14.001: Syntax( 14.001, instruction~end, doLine )
@@ -410,7 +410,7 @@ End.Clause:
 
 -- END corresponding to block on line &2 must not have a symbol
 -- following it because there is no LABEL or control variable; found "&1".
-10.003: Syntax( 10.003, END, name, loopLine )
+10.003: Syntax( 10.003, END, loopLine, name )
 
 -- DO or LOOP instruction on line &1 requires matching END.
 14.005: Syntax( 14.005, instruction~end, LOOP~from~word(1) )

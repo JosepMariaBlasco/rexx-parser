@@ -832,7 +832,7 @@ Done:
 20.908: Syntax( 20.908, ITERATE )
 
 -- Data must not follow the ITERATE name; found "&1".
-21.908: Syntax( 21.908, ITERATE )
+21.908: Syntax( 21.908, ITERATE, element )
 
 -- Symbol following ITERATE ("&1") must either match the label
 -- of a current loop or be omitted.
