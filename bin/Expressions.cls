@@ -147,7 +147,7 @@
   Return .Expression.List~new(expressions, .Nil)
 
 -- Missing expression in logical expression list.
-35.929: Syntax( 35.929, Arg(1), Arg(1) )
+35.929: Syntax( 35.929, Arg(1) )
 
 --------------------------------------------------------------------------------
 

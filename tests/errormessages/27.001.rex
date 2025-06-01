@@ -1,1 +1,0 @@
-Do While 1 Until 0

@@ -25,8 +25,159 @@
 
   Signal On Halt
 
-  Call Test.Error 35.001, "a==b"
+  Call Test.Error 25.911,  "Raise LostDigits Exit 1 Return 2"
+  Call Test.Error 25.912,  "Guard On blah"
+  Call Test.Error 25.913,  "Guard us"
+  Call Test.Error 25.914,  "Call   On Error  severe"
+  Call Test.Error 25.915,  "Signal On Syntax errors"
+  Call Test.Error 25.916,  "Forward backward"
+  Call Test.Error 25.917,  "Forward to (one) to (two)"
+  Call Test.Error 25.918,  "Forward arguments (a) array (b)"
+  Call Test.Error 25.919,  "Forward Continue Continue"
 
+  Call Test.Error 25.921,  "Forward class (a) class (b)"
+  Call Test.Error 25.922,  "Forward message (m) message (n)"
+  Call Test.Error 25.923,  "Select us"
+  Call Test.Error 25.924,  "::Options Tralfamadore"
+  Call Test.Error 25.925,  "::Attribute A is nice"
+  Call Test.Error 25.926,  "::Resource very big"
+  Call Test.Error 25.927,  "::Options NoValue is unacceptable"
+  Call Test.Error 25.928,  "::Annotate my words"
+  Call Test.Error 25.929,  "Use Strict Rules"
+  Call Test.Error 25.930,  'Address COMMAND "C" With Input Stem s. Input Stem t.'
+  Call Test.Error 25.931,  'Address COMMAND "C" With Output Stem s. Output Stem t.'
+  Call Test.Error 25.932,  'Address COMMAND "C" With Error Stem s. Error Stem t.'
+  Call Test.Error 25.933,  'Address COMMAND "C" With Input Very fast'
+  Call Test.Error 25.934,  'Address COMMAND "C" With gleeful joy'
+
+  Call Test.Error 26.004,  "Parse Var v 12.2"
+  Call Test.Error 26.005,  "::Options digits many"
+  Call Test.Error 26.006,  "::Options fuzz frizch"
+
+  Call Test.Error 27.001,  "Do While 1 Until 0"
+
+  Call Test.Error 27.901,  "Do Forever more"
+  Call Test.Error 27.902,  "Do ubt = 1 By 2 By 3"
+  Call Test.Error 27.902,  "Do ubt = 1 For 2 For 3"
+  Call Test.Error 27.902,  "Do with index one index two over me"
+  Call Test.Error 27.902,  "Do with item one item two over me"
+  Call Test.Error 27.902,  "Do a over b for 1 for 2"
+  Call Test.Error 27.902,  "Do ubt = 1 To 2 To 3"
+  Call Test.Error 27.902,  "Do with index i over me for 1 for 2"
+
+  Call Test.Error 27.904,  "Do With Item A *"
+  Call Test.Error 27.904,  "Do With Index I"
+
+  Call Test.Error 27.905,  "Do label l counter c"
+  Call Test.Error 27.905,  "Do counter c"
+
+  Call Test.Error 28.003,  "Do j = 1 By 1; Leave k; End"
+  Call Test.Error 28.004,  "Do j = 1 By 1; Iterate k; End"
+  Call Test.Error 28.005, ("Do Label l1",                 -
+                           "  Select label l1",           -
+                           "    When 1 Then Do Label l2", -
+                           "      If 1 then Do Label l3", -
+                           "        Iterate l1",          -
+                           "      End",                   -
+                           "    End",                     -
+                           "  End",                       -
+                           "End")
+
+  Call Test.Error 31.002,  "Do 2a = 1"
+  Call Test.Error 31.002,  "Do Counter 2a Forever"
+  Call Test.Error 31.002,  "Drop 2a"
+  Call Test.Error 31.002,  "Do With index 2a"
+  Call Test.Error 31.002,  "Do With item 2a"
+  Call Test.Error 31.002,  "Parse Var 2a"
+  Call Test.Error 31.002,  "Use Arg 3"
+  Call Test.Error 31.003,  "Use Arg .aa"
+  Call Test.Error 31.003,  "Parse Var .a"
+  Call Test.Error 31.003,  "Do With item .a"
+  Call Test.Error 31.003,  "Do With index .a"
+  Call Test.Error 31.003,  "Drop .a"
+  Call Test.Error 31.003,  "Do Counter .a Forever"
+  Call Test.Error 31.003,  "Do .a = 1"
+
+  Call Test.Error 35.001,  "a==b"
+  Call Test.Error 35.001,  "Say a [2]"
+  Call Test.Error 35.001,  "Use Arg a = +"
+  Call Test.Error 35.001,  "Raise Novalue Return +"
+  Call Test.Error 35.001,  "a[2] +="
+  Call Test.Error 35.001,  "Forward Message +"
+  Call Test.Error 35.001,  "Address COMMAND With Input Using +"
+
+  Call Test.Error 35.904,  "Do i = "
+  Call Test.Error 35.905,  "Do i = 1 By"
+  Call Test.Error 35.906,  "Do i = 1 To"
+  Call Test.Error 35.907,  "Do i = 1 For"
+  Call Test.Error 35.907,  "Do c over (1,2) for"
+  Call Test.Error 35.907,  "Do With index ix over o for"
+
+  Call Test.Error 35.911,  "Do c Over"
+  Call Test.Error 35.911,  "Do with index ix Over"
+  Call Test.Error 35.912,  "Interpret"
+  Call Test.Error 35.913,  "Options"
+
+  Call Test.Error 35.915,  "Signal Value"
+  Call Test.Error 35.916,  "Trace Value"
+  Call Test.Error 35.917,  "Numeric Form Value"
+  Call Test.Error 35.918,  "x ="
+
+  Call Test.Error 35.922,  "Raise NoValue Description"
+  Call Test.Error 35.923,  "Raise NoValue Additional"
+  Call Test.Error 35.924,  "Forward Array"
+  Call Test.Error 35.925,  "Forward To"
+  Call Test.Error 35.926,  "Forward Arguments"
+  Call Test.Error 35.927,  "Forward Message"
+  Call Test.Error 35.928,  "Forward Class"
+  Call Test.Error 35.929,  "If a, ,c  Then d"
+  Call Test.Error 35.929,  "If a,b,c, Then d"
+
+  Call Test.Error 35.930,  "Use arg a = 12 b"
+
+  Call Test.Error 35.933,  "Select Case"
+
+  Call Test.Error 35.935,  "Address COMMAND With Input Stream"
+
+  Call Test.Error 36.901,  "a(b"
+  Call Test.Error 36.902,  "a[b"
+
+  Call Test.Error 37.002,  "a[b)"
+  Call Test.Error 37.002,  "a + b )"
+
+  Call Test.Error 37.901,  "a(b]"
+  Call Test.Error 37.901,  "a + b ]"
+
+  Call Test.Error 38.001,  "Parse Var x *"
+  Call Test.Error 38.002,  "Parse Var x +*"
+  Call Test.Error 38.003,  "Parse Value"
+
+  Call Test.Error 40.028,  'Call XRange "Clang"'
+
+  Call Test.Error 46.901,  "Drop a (b"
+  Call Test.Error 46.902,  "Use Arg a, b *"
+
+  Call Test.Error 47.002,  "Do; Nop; X: End"
+  Call Test.Error 47.002,  "Do; X: Nop; End"
+  Call Test.Error 47.002,  "Loop; Nop; X: End"
+  Call Test.Error 47.002,  "Loop; X: Nop; End"
+  Call Test.Error 47.003,  "If 1 Then; X: Nop"
+  Call Test.Error 47.004,  "Select;    When 1 Then; X: Nop;                             End"
+  Call Test.Error 47.004,  "Select;    When 1 Then     Nop;    When 1     Then; X: Nop; End"
+  Call Test.Error 47.004,  "Select; X: When 1 Then     Nop;                             End"
+  Call Test.Error 47.004,  "Select;    When 1 Then     Nop; X: When 1     Then     Nop; End"
+
+  Call Test.Error 89.001,  "Use Arg a, +"
+
+  Call Test.Error 98.992,  "Expose x"
+  Call Test.Error 98.993,  "Use Local l"
+
+  Call Test.Error 99.901,  '::Class C; ::Class  C Public'
+  Call Test.Error 99.901,  '::Class C; ::Class "c"'
+  Call Test.Error 99.902,  "::Class C; ::Method M Class; ::Method M Class"
+  Call Test.Error 99.902,  "::Class C; ::Method M; ::Method M "
+  Call Test.Error 99.902,  "::Method M; ::Method  M "
+  Call Test.Error 99.902,  '::Method M; ::Method "m"'
   Call Test.Error 99.903,  '::Routine repetitious; ::Routine repetitious'
   Call Test.Error 99.903,  '::Routine  repetitious; ::Routine "repetitious"'
 

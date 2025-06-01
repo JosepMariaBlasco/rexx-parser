@@ -1,1 +1,0 @@
-Do with index i over me for 1 for 2

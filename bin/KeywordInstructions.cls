@@ -1980,7 +1980,7 @@ NextElement:
 
 -- The USE instruction requires a comma-separated list
 -- of variables or assignment message terms.
-89.001: Syntax( 89.001, keyword )
+89.001: Syntax( 89.001, keyword, element )
 
 -- The "..." argument marker can only appear at the end of the argument list.
 99.930: Syntax( 99.930, keyword )

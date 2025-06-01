@@ -1,1 +1,0 @@
-Address COMMAND "C" With Input Stem s. Input Stem t.

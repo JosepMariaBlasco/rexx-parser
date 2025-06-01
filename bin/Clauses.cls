@@ -1067,7 +1067,7 @@ Keyword:
 20.934: Syntax( 20.934, keyword )
 
 -- Only one WHILE or UNTIL condition can be used on the same loop.
-27.001: Syntax( 27.001, keyword )
+27.001: Syntax( 27.001, keyword, element )
 
 -- Incorrect data following FOREVER keyword on the loop; found "&1".
 27.901: Syntax( 27.901, keyword, element )
