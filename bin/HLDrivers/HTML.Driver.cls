@@ -59,8 +59,11 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
 
     self~say( "<style>" )
     Do tail Over Tag2Attr.~allIndexes
-      If tail~length > 1 Then classes = HTMLClass[ constant, tail[3] ]
-      Else                    classes = HTMLClass[ tail ]
+      Select Case tail~length
+        When 3 Then classes = HTMLClass[ constant, tail[3] ]
+        When 5 Then classes = HTMLClass[ constant, tail[3], tail[5] ]
+        Otherwise   classes = HTMLClass[ tail ]
+      End
       lastClass = Word( classes, Words( classes ) )
       Parse Value Tag2Attr.tail With attr color"/"background
       style = ""

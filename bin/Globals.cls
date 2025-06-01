@@ -24,6 +24,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional numbers to decimal                      */
 /* 20250529    0.2c Add support for parts of a string                         */
+/* 20250601         Add ALL.STRING_DELIMITERS and ALL.STRING_COMPONENTS       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -365,6 +366,15 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     EL.STRING_OPENING_DELIMITER,        - -- "'" or '"'
     EL.STRING_CLOSING_DELIMITER,        - -- "'" or '"'
     EL.STRING_SUFFIX                      -- One of "BXYPGT"
+
+  Call NewSet ALL.STRING_DELIMITERS,    - -- To handle both quotes at once
+   .EL.STRING_OPENING_DELIMITER,        -
+   .EL.STRING_CLOSING_DELIMITER
+
+  Call NewSet ALL.STRING_COMPONENTS,    - -- To handle all components of all strings
+   .ALL.STRINGS,                        -
+   .ALL.STRING_DELIMITERS,              -
+   .EL.STRING_SUFFIX
 
   ------------------------------------------------------------------------------
   -- VAR_SYMBOLS                                                              --

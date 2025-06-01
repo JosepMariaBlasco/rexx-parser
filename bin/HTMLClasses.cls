@@ -401,6 +401,11 @@ String:
 
 SkipOverStrings:
 
+  HTMLClass[ .EL.STRING_OPENING_DELIMITER ] = prefix"oquo"
+  HTMLClass[ .EL.STRING_CLOSING_DELIMITER ] = prefix"cquo"
+  HTMLClass[ .EL.STRING_SUFFIX            ] = prefix"ssuf"
+
+
 /******************************************************************************/
 /* STRINGS OR SYMBOLS TAKEN AS A CONSTANT                                     */
 /******************************************************************************/

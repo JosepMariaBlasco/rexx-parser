@@ -16,6 +16,7 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20241206    0.1  First public release                                      */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250601    0.2c Add support for CSS colors                                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -195,6 +196,8 @@ BadMode:
   Return attr fg"/"bg
 
 Normalize:
+  col = .HTML.Color[Arg(1)]
+  If col \== "" Then Return col
   If Length(Arg(1)) == 6 Then Return Arg(1)
   Parse Value Arg(1) With a +1 b +1 c +1
   Return Space( a a b b c c , 0 )
