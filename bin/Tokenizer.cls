@@ -987,7 +987,7 @@ UString:
   Parse Value tail~to With tailLine tailEnd
 
   -- There is some extra stuff in the line.
-  -- It has to be ignored (see SourceForge doc. bug. no. 307).
+  -- It has to be ignored (see doc. bug. no. 307).
   If tailLine == line, tailEnd < len | tail~from \== tail~to Then Do
     self~InsertNewElement( IgnoredData( source, line, tailEnd ) )
     fromLine = line + 1

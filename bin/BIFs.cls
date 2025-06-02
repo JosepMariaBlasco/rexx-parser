@@ -125,14 +125,9 @@
   --
   -- NOTE: BEEP, DIRECTORY and FILESPEC are defined as BIFs in rexxref,
   -- but they are treated by the ooRexx interpreter as if they were
-  -- part of RexxUtil.
-  --
-  -- See https://sourceforge.net/p/oorexx/bugs/1885/ for details.
+  -- part of RexxUtil. See bug 1885 for details.
   --
   -- We add them here as BIFs as per rexxref
-  --
-  -- See also https://sourceforge.net/p/oorexx/bugs/2006/ and
-  -- https://sourceforge.net/p/oorexx/documentation/341/
   --
   -- BIFs marked SPECIAL are handled in SecondPass.cls
   --
@@ -372,7 +367,7 @@ If .rxcheck.debug = 1 Then Trace ?a
         If Pos(Upper(letter), type) == 0 Then Signal 40.904
         -- TODO RXQUEUE and STREAM special casess
       End
-      When "ABILMNOSUVWX9", "BLT", "MN" Then Do -- See https://sourceforge.net/p/oorexx/bugs/2007/
+      When "ABILMNOSUVWX9", "BLT", "MN" Then Do
         letter = Left(value, 1)
         If Pos(Upper(letter), type) == 0 Then Signal 93.915
       End
@@ -391,11 +386,10 @@ If .rxcheck.debug = 1 Then Trace ?a
         If BIFName \== "RANDOM", nArgs == 1, Left(value,1) = "-" Then Signal 93.927
       End
       When "LENGTH", "POS", "WHOLE", "WHOLE>0", "WHOLE>=0" Then Do
-        -- See https://sourceforge.net/p/oorexx/bugs/2008/
         If \DataType(value,"Internal") Then Signal 40.012
         Select Case Type
           When "LENGTH"   Then If value <  0 Then
-            If WordPos(BIFName, "CHARIN") > 0 Then Nop -- See https://sourceforge.net/p/oorexx/bugs/2011/
+            If WordPos(BIFName, "CHARIN") > 0 Then Nop -- See bug 2011
             Else                                   Signal 93.923
           When "POS"      Then If value <= 0 Then  Signal 93.924
           When "WHOLE>0"  Then Do
@@ -419,7 +413,7 @@ If .rxcheck.debug = 1 Then Trace ?a
             End
             Else If value <  0 Then Do
               If BIFName == "RANDOM"                                   Then Signal 40.013
-              If WordPos(BIFName, "CHANGESTR COPIES FORMAT TRUNC") > 0 Then Signal 93.906 -- See https://sourceforge.net/p/oorexx/bugs/2010/
+              If WordPos(BIFName, "CHANGESTR COPIES FORMAT TRUNC") > 0 Then Signal 93.906 -- See bug 2010
             End
             Else If BIFName == "RANDOM", value > 999999999             Then Signal 40.013
           End

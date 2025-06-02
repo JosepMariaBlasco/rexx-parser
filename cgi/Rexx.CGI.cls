@@ -133,7 +133,7 @@
   ------------------------------------------------------------------------------
   -- There is a bug in the Linux version of ooRexx by which trailing slashes  --
   -- are wrongly accepted at the end of a filename. We don't want that.       --
-  -- See https://sourceforge.net/p/oorexx/bugs/1940/                          --
+  -- See bug no 1940.                                                         --
   ------------------------------------------------------------------------------
 
   If file~endsWith("/") Then Do

@@ -761,7 +761,7 @@ Done:
 /*   normal parsing rules. An added complication stems from the fact that     */
 /*   there is an ambiguity in the syntax regarding possible extra characters  */
 /*   after an explicit semicolon after ::RESOURCE. See documentation bug      */
-/*   https://sourceforge.net/p/oorexx/documentation/307/ for details.         */
+/*   307 for details.                                                         */
 /*                                                                            */
 /*   The syntax we will be using is the following:                            */
 /*                                                                            */

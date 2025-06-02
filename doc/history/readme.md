@@ -28,6 +28,7 @@ Version history
   <li> Document [string](/rexx-parser/doc/highlighter/features/strings/) and
        [number](/rexx-parser/doc/highlighter/features/numbers/) highlighting,
        and add a page showing some [examples](/rexx-parser/doc/highlighter/examples/) (20250531).
+  <li> Added [Related ooRexx bugs](/rexx-parser/doc/oorexx-bugs/) page (20250602).
 <tr><td>20250421<td>0.2b<td>
 <ul>
   <li> (Almost) complete early-checking of BIFs.

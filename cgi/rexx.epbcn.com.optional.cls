@@ -192,6 +192,7 @@ Crumb:
     When doc"/treeapi"             Then Return "Tree API"
     When doc"/elementapi"          Then Return "Element API"
     When doc"/samples"             Then Return "Samples"
+    When doc"/oorexx-bugs"         Then Return "Related ooRexx bugs"
     When doc"/utilities"           Then Return "Utilities"
     When doc"/utilities/rxcheck"   Then Return "RxCheck"
     When doc"/utilities/highlight" Then Return "Highlight"

@@ -24,6 +24,11 @@
 Call "earlyChecks.test"
 Call "otherChecks.test"
 
+------------------------------------------------------------------------------
+
+Say "Total" .Parser.Test.SimpleErrors "simple errors."
+Say "Total" .Parser.Test.OK "OK tests."
+
 my    = .context~package
 myDir = FileSpec("L",my~name)
 

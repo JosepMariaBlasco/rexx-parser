@@ -866,8 +866,8 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   --
   -- Any data after the end delimiter is ignored. Similarly, data found
   -- in the same logical line, after the resource directive (that is,
-  -- after an explicit semicolon) is also ignored (see SourceForge
-  -- documentation bug no. 307).
+  -- after an explicit semicolon) is also ignored (see documentation
+  -- bug no. 307).
   --
   Call NewElement EL.RESOURCE_IGNORED_DATA
 
