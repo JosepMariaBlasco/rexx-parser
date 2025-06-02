@@ -313,7 +313,7 @@ Arguments:
 19.002: Syntax( 19.002, CALL )
 
 -- Symbol expected as a routine name of qualified CALL instruction.
-20.922: Syntax( 20.922, CALL )
+20.922: Syntax( 20.922, CALL, name )
 
 -- Left parenthesis "(" in position &1 on line &2
 -- requires a corresponding right parenthesis ")".

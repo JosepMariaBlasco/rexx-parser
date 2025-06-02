@@ -109,7 +109,7 @@ Done:
 20.919: Syntax( 20.919, ANNOTATE, name )
 
 -- Symbol expected for the ::ANNOTATE type.
-20.924: Syntax( 20.924, ANNOTATE )
+20.924: Syntax( 20.924, ANNOTATE, keyword )
 
 -- Unknown keyword on ::ANNOTATE directive; found "&1".
 25.928: Syntax( 25.928, ANNOTATE, keyword )
@@ -196,7 +196,8 @@ Done:
       When "ABSTRACT" Then options.abstract = 1
       When "DELEGATE" Then Do
         thisDelegateName = TheElementAfter( keyword )
-        If thisDelegateName \< .ALL.SYMBOLS_AND_STRINGS Then Signal 20.926
+        If thisDelegateName \< .ALL.SYMBOLS_AND_STRINGS Then
+          Call 20.926 thisDelegateName
         options.delegateName = thisDelegateName
         keyword = TheElementAfter( thisDelegateName, ignoreBlanks )
         Iterate -- Jump directly to next keyword, if any
@@ -204,7 +205,7 @@ Done:
       When "EXTERNAL" Then Do -- Should check spec syntax
         spec = TheElementAfter( keyword )
         If spec  < .EL.END_OF_CLAUSE  Then Signal 19.905
-        If spec \< .ALL.STRINGS Then Signal 20.926
+        If spec \< .ALL.STRINGS Then Call 20.926 spec
         options.external = spec~value
         keyword = TheElementAfter( spec, ignoreBlanks )
         Iterate -- Jump directly to next keyword, if any
@@ -220,7 +221,7 @@ Done:
   Return .Attribute.Directive~new( package, begin, end, name, options. )
 
 -- String expected after EXTERNAL keyword.
-19.905: Syntax( 19.905, ATTRIBUTE)
+19.905: Syntax( 19.905, ATTRIBUTE, spec)
 
 -- String or symbol expected as ::ATTRIBUTE directive name.
 19.914: Syntax( 19.914, ATTRIBUTE, name)
@@ -229,7 +230,7 @@ Done:
 25.925: Syntax( 25.925, ATTRIBUTE, keyword )
 
 -- Symbol expected after the DELEGATE keyword.
-20.926: Syntax( 20.926, ATTRIBUTE)
+20.926: Syntax( 20.926, ATTRIBUTE, Arg(1))
 
 -- CLASS keyword on ::METHOD directive requires a matching ::CLASS directive.
 99.905: Syntax( 99.905, ATTRIBUTE)
@@ -517,7 +518,7 @@ SignedNumber:
         thisDelegateName = TheElementAfter( keyword )
         ignoreBlanksToTheRight = 1
         If thisDelegateName \< .ALL.SYMBOLS_AND_STRINGS Then
-          Signal 20.926
+          Call 20.926 thisDelegateName
         options.delegateName = thisDelegateName
         keyword = TheElementAfter( thisDelegateName, ignoreBlanksToTheRight )
         Iterate -- Jump directly to next keyword, if any
@@ -542,13 +543,13 @@ Done:
 19.902: Syntax( 19.902, METHOD, name )
 
 -- String expected after EXTERNAL keyword.
-19.905: Syntax( 19.905, METHOD )
+19.905: Syntax( 19.905, METHOD, spec )
 
 -- Unknown keyword on ::METHOD directive; found "&1".
 25.902: Syntax( 25.902, METHOD, keyword )
 
 -- Symbol expected after the DELEGATE keyword.
-20.926: Syntax( 20.926, METHOD )
+20.926: Syntax( 20.926, METHOD, Arg(1) )
 
 -- CLASS keyword on ::METHOD directive requires a matching ::CLASS directive.
 99.905: Syntax( 99.905, METHOD )
@@ -650,7 +651,7 @@ Done:
 19.919: Syntax( 19.919, OPTIONS, element )
 
 -- Symbol expected after the FORM keyword.
-20.925: Syntax( 20.925, OPTIONS )
+20.925: Syntax( 20.925, OPTIONS, element )
 
 -- Symbol expected after &1 keyword.
 20.929: Syntax( 20.929, OPTIONS, theCondition )
@@ -734,7 +735,7 @@ Done:
   Return .Requires.Directive~new( package, begin, end, programName, options. )
 
 -- String or symbol expected after ::REQUIRES keyword.
-19.904: Syntax( 19.904, REQUIRES )
+19.904: Syntax( 19.904, REQUIRES, programName )
 
 -- Symbol expected after NAMESPACE keyword.
 20.920: Syntax( 20.920, REQUIRES )

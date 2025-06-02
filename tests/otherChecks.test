@@ -85,7 +85,9 @@
   Call Test.Error 19.901,  "Say hi; ::Class"
   Call Test.Error 19.902,  "Say hi; ::Class C; ::Method"
   Call Test.Error 19.903,  "Say hi; ::Routine"
-
+  Call Test.Error 19.904,  "Say hi; ::Requires"
+  Call Test.Error 19.905,  "Say hi; ::Attribute a external"
+  Call Test.Error 19.905,  "Say hi; ::Method M External"
   Call Test.Error 19.906,  "Say hi; ::Class C Metaclass"
   Call Test.Error 19.907,  "Say hi; ::Class C Subclass"
   Call Test.Error 19.908,  "Say hi; ::Class C Inherit"
@@ -105,11 +107,55 @@
   Call Test.Error 19.924,  "::Annotate package kk"
   Call Test.Error 19.925,  "::Class C; ::Annotate class *"
 
+  Call Test.Error 20.901,  "Drop *"
+  Call Test.Error 20.902,  "Expose"
+  Call Test.Error 20.903,  "Parse"
+  Call Test.Error 20.904,  "Parse Var *"
+  Call Test.Error 20.905,  "Numeric *"
+  Call Test.Error 20.906,  "Drop (*"
+  Call Test.Error 20.907,  "Leave *"
+  Call Test.Error 20.908,  "Iterate *"
+  Call Test.Error 20.909,  "Do; End *"
 
+  Call Test.Error 20.911,  "Call   On  *"
+  Call Test.Error 20.911,  "Signal On  *"
+  Call Test.Error 20.912,  "Call   Off *"
+  Call Test.Error 20.912,  "Signal Off *"
 
+  Call Test.Error 20.914,  "Raise"
+  Call Test.Error 20.915,  "Call   On  User *"
+  Call Test.Error 20.915,  "Signal On  User *"
+  Call Test.Error 20.915,  "Call   Off User *"
+  Call Test.Error 20.915,  "Signal Off User *"
+  Call Test.Error 20.916,  "::*"
+  Call Test.Error 20.917,  "this~length:*"
+  Call Test.Error 20.918,  "Do     Label *"
+  Call Test.Error 20.918,  "Loop   Label *"
+  Call Test.Error 20.918,  "Select Label *"
+  Call Test.Error 20.919,  "::Annotate package *"
+  Call Test.Error 20.920,  "::Requires a NameSpace *"
 
+  Call Test.Error 20.922,  "Call ah:*"
+  Call Test.Error 20.923,  "a = b + c:*"
+  Call Test.Error 20.924,  "::Annotate *"             -- <-
+  Call Test.Error 20.925,  "::Options form *"         -- <-
+  Call Test.Error 20.926,  "::Attribute a Delegate *" -- <-
+  Call Test.Error 20.926,  "::Method m Delegate *   " -- <-
+  Call Test.Error 20.927,  "::Method M; Use Local * "
 
+  Call Test.Error 20.929,  "Do   With Index *"
+  Call Test.Error 20.929,  "Loop With Index *"
+  Call Test.Error 20.929,  "Do   With Item  *"
+  Call Test.Error 20.929,  "Loop With Item  *"
 
+  Call Test.Error 20.930,  "a = >a.2"
+  Call Test.Error 20.930,  "a = >*"
+  Call Test.Error 20.931,  "Use Arg >a.2"
+  Call Test.Error 20.931,  "Use Arg >*"
+  Call Test.Error 20.932,  "Address COMMAND With Input stem c.2"
+  Call Test.Error 20.933,  "Address COMMAND With"
+  Call Test.Error 20.934,  "Do   counter *"
+  Call Test.Error 20.934,  "Loop counter *"
 
   Call Test.Error 21.901,  "Nop pop"
 
