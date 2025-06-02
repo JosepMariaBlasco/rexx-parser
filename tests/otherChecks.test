@@ -50,8 +50,11 @@
   Call Test.Error 10.002,  "Loop Label k i = 1 To 3; Say 'Hi';   End j"
   Call Test.Error 10.002,  "Do           i = 1 To 3; Say 'Hi';   End j"
   Call Test.Error 10.002,  "Loop         i = 1 To 3; Say 'Hi';   End j"
-
+  Call Test.Error 10.003,  "Do;   Say "Hi"; End j"
+  Call Test.Error 10.003,  "Loop; Say "Hi"; End j"
   Call Test.Error 10.004,  "Select Label l; When 1 Then Say Nop; End j"
+
+  Call Test.Error 10.007,  "Select; When 1 Then Say Nop; End j"
 
   Call Test.Error 13.001,  "i = @"
 
@@ -137,10 +140,10 @@
 
   Call Test.Error 20.922,  "Call ah:*"
   Call Test.Error 20.923,  "a = b + c:*"
-  Call Test.Error 20.924,  "::Annotate *"             -- <-
-  Call Test.Error 20.925,  "::Options form *"         -- <-
-  Call Test.Error 20.926,  "::Attribute a Delegate *" -- <-
-  Call Test.Error 20.926,  "::Method m Delegate *   " -- <-
+  Call Test.Error 20.924,  "::Annotate *"
+  Call Test.Error 20.925,  "::Options form *"
+  Call Test.Error 20.926,  "::Attribute a Delegate *"
+  Call Test.Error 20.926,  "::Method m Delegate *   "
   Call Test.Error 20.927,  "::Method M; Use Local * "
 
   Call Test.Error 20.929,  "Do   With Index *"

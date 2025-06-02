@@ -15,6 +15,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20250426    0.2b Initial release                                           */
+/* 20250602    0.2c Take into account substitution position                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -72,6 +73,7 @@
         Exit 1
       End
       Do While Pos("<Sub ",Text) >  0
+        position = ""
         Parse var text before"<Sub" things "/>"after
         Parse var things 'position="'position'"'
         If \DataType(position, "W") Then Do
@@ -83,7 +85,11 @@
           Say "Name not found for" major"."minor"."
           Exit 1
         End
-        text = before"<"name">"after
+        If position = "" Then Do
+          Say "Position not found for" major"."minor"."
+          Exit 1
+        End
+        text = before"<"position":"name">"after
       End
       Say '  Secondary["'major"."minor'"] = "'ChangeStr('"',text,'""')'"'
       nMessages += 1
@@ -110,8 +116,8 @@
   Say '  substitutions = Arg(2)'
   Say '  Do arg Over substitutions'
   Say '    If Pos("<",message) == 0 Then Leave'
-  Say '    Parse Var message before "<" ">"after'
-  Say '    message = before || arg || after'
+  Say '    Parse Var message before "<"pos":" ">"after'
+  Say '    message = before || Arg(pos+2) || after'
   Say '  End'
   Say '  Return message'
   Say

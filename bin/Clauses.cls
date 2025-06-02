@@ -544,7 +544,7 @@ NoLabels:
 
 -- END corresponding to SELECT on line &2 must not have a symbol
 -- following it because there is no LABEL; found "&1".
-10.007: Syntax( 10.007, END, name, selectLine )
+10.007: Syntax( 10.007, END, selectLine, name )
 
 -- SELECT instruction on line &1 requires matching END.
 14.002: Syntax( 14.002, next~end , selectLine )
