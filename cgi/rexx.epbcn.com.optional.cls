@@ -113,6 +113,8 @@ Crumb:
 
   Select Case Arg(1)
 
+    When "/tools"                  Then Return "Tools and utilities"
+
     -- Tokenizer
 
     When "/tokenizer"              Then Return "Tokenizer"

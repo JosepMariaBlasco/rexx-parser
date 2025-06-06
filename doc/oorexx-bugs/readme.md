@@ -3,6 +3,89 @@ Related ooRexx bugs
 
 --------------------------
 
+During the process of writing the Parser and the highlighter, a number
+of bugs in the ooRexx interpreter have been uncovered. We are listing them
+here for reference.
+
+## The symbol part of a namespace-qualified symbol cannot be an expression terminator
+
+I.e., `Do i = N:to To 2` is valid, if namespace `N` exists
+(see <https://sourceforge.net/p/oorexx/bugs/1945/#80b2/a9a0>),
+but this is not documented in RexxRef chapter 16. That's an unreported
+bug (besides the just referenced comment).
+
+## The label bugs
+
+See the following two posts in the developers list, and their
+corresponding threads:
+
+* <https://sourceforge.net/p/oorexx/mailman/message/58813104/>
+* <https://sourceforge.net/p/oorexx/mailman/message/58832816/>
+
+In particular, if you follow the second thread, you will see that
+Mike C. comments, in <https://sourceforge.net/p/oorexx/mailman/message/58833223/>:
+
+> So I'd go for option 2.  Labels in themselves are neither useless nor evil (they are used to 'name' a loop, or other point of interest; for example, "see weirdcode: below").   Branching to them can indeed be 'bad' nowadays, so it's the attempt to branch to them that should be flagged, not the label itself, which is just a label.
+
+and in <https://sourceforge.net/p/oorexx/mailman/message/58844205/>,
+
+>Lifting that restriction would be good .. it is really against the concept of a 'label'.
+>
+>The (Concise) Oxford Dictionary includes, under label:
+>
+>   > _Computing:  a string of characters used to refer to a particular instruction in a program._
+>
+>which is exactly the intent I had for labels (hence 'Trace L'), and in
+>NetRexx the labelling of loops, etc.   A label is just a name.
+>
+>So any restriction should be in something that branches to a 'bad' place.
+>It's not the fault of the label :-).
+
+What is Mike referring to? Well, some modifications
+have been introduced in the ooRexx interpreter. **These modifications
+<u>disallow labels that cannot be branched to</u>, instead of <u>disallowing only the branches themselves</u>.**
+This unfortunate confusion is a mistake, because it breaks compatibility
+with other processors, like Regina, and goes against ANSI. It would have
+been enough to _disallow branching_ to these labels, and not the labels themselves
+(again, this is what ANSI recommends).
+
+See the following bugs:
+
+* <https://sourceforge.net/p/oorexx/bugs/1945/> and
+* <https://sourceforge.net/p/oorexx/bugs/1946/>,
+
+and also the whole chain of comments and references in each of these bugs.
+
+Please note that the name for bug [1945](https://sourceforge.net/p/oorexx/bugs/1945/)
+has been changed from "Interpreter hangs when SIGNALing into a SELECT instruction"
+to "No labels should be allowed within DO/LOOP, IF, SELECT",
+which begs the question. Similarly, the name for
+[1946](https://sourceforge.net/p/oorexx/bugs/1946/) has been changed from
+"SIGNAL inside group instructions should produce a 16.2 syntax error"
+to "Labels should not be allowed within DO/LOOP, IF, SELECT", and the bug has been
+marked as "wont-fix", as it has been "consolidated" with
+[1946](https://sourceforge.net/p/oorexx/bugs/1946/).
+
+Regarding [1945](https://sourceforge.net/p/oorexx/bugs/1945/),
+apart from [1946](https://sourceforge.net/p/oorexx/bugs/1946/),
+it also consolidated [1977](https://sourceforge.net/p/oorexx/bugs/1977/),
+[1978](https://sourceforge.net/p/oorexx/bugs/1978/),
+[1979](https://sourceforge.net/p/oorexx/bugs/1979/) and
+[1980](https://sourceforge.net/p/oorexx/bugs/1980/),
+which is unfortunate, because it has become a very large bug,
+and these ofted tend to be unmanageable
+
+For example,
+
+* `::Method M; L: Expose m` complains that `EXPOSE` should be the first instruction
+  in a method, not that `X` is not allowed in such a place (the same happens
+  with `USE LOCAL`; see <https://sourceforge.net/p/oorexx/bugs/1945/#e174>).
+* `If 1 Then Nop; X: Else Nop` complains that the label `ELSE` is not allowed (should be `X`).
+* `If 1; X: Then; Nop` complains that there is no `THEN` clause, when there is one;
+  what is wrong (if we accept that such labels are not allowed) is the label `"X"`.
+* `If 1 Then X: Nop` and `If 1 Then; X: Nop` produce different results,
+  and the first version complains about a label named `"IF"`.
+
 ## ADDITIONAL array wrong
 
 * <https://sourceforge.net/p/oorexx/bugs/2022/> (`ADDITIONAL` array wrong in a large number of messages).

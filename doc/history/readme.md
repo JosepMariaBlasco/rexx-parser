@@ -29,6 +29,8 @@ Version history
        [number](/rexx-parser/doc/highlighter/features/numbers/) highlighting,
        and add a page showing some [examples](/rexx-parser/doc/highlighter/examples/) (20250531).
   <li> Added [Related ooRexx bugs](/rexx-parser/doc/oorexx-bugs/) page (20250602).
+  <li> Add --from and --to options to elements.rex. Create a /bin/tools subdirectory,
+       and add a new cielab.cls utility and Rony Flatscher's w3c_colors.cls (20250606).
 <tr><td>20250421<td>0.2b<td>
 <ul>
   <li> (Almost) complete early-checking of BIFs.

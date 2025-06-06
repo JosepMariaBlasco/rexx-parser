@@ -22,6 +22,7 @@
 /*                  Binary directory is now "bin" instead of "cls"            */
 /*                  Move "modules" directory inside "bin"                     */
 /* 20250426    0.2b Fix compound count, simplify REQUIRES                     */
+/* 20250606    0.2c Add --from and --to options                               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -42,6 +43,8 @@
 --------------------------------------------------------------------------------
 
   unicode = 0
+  opFrom  = 1
+  opTo    = "*"
 
   Parse Arg file
 
@@ -51,6 +54,12 @@ ProcessOptions:
   If option[1] == "-" Then Do
     Select Case Lower(option)
       When "-u", "--tutor", "--unicode" Then unicode = 1
+      When "--help" Then Do
+        Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
+        Exit 1
+      End
+      When "--from" Then opFrom = Integer()
+      When "--to"   Then opTo   = Integer()
       Otherwise
         Say "Invalid option '"option"'."
         Exit 1
@@ -60,13 +69,6 @@ ProcessOptions:
   Else file = option file
 
   file = Strip(file)
-
-  -- Display help if appropriate
-  If file = "" | -
-    (Words(file) == 1 & "--help /?"~caselessContainsWord(file) ) Then Do
-    Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
-    Exit 1
-  End
 
   -- Filename may contain blanks
   c = file[1]
@@ -85,6 +87,11 @@ ProcessOptions:
   -- We need to compute the source separately to properly handle syntax errors
   source = CharIn(file,1,Chars(file))~makeArray
   Call CharOut file
+
+  -- Adjust "opTo" if necessary
+
+  If opTo = "*"          Then opTo = source~items
+  If opTo > source~items Then opTo = source~items
 
   -- Print a nice prolog
   Say myName".rex run on" Date() "at" Time()
@@ -111,13 +118,25 @@ ProcessOptions:
   elements = 0
   compound = 0
   Do Counter elements Until element == .Nil
-    Call Print element
+    Parse Value element~from With line .
+    If line >  opTo   Then Leave
+    If line >= opFrom Then Call Print element
     element = element~next
   End
   Say "Total:" elements "elements and" compound "compound symbol elements examined."
 
   -- We are done
   Exit 0
+
+--------------------------------------------------------------------------------
+
+Integer:
+  Parse Var file n file
+  If \DataType(n,"W") | n <= 0 Then Do
+    Say "Positive whole number expected, found '"n"'."
+    Exit 1
+  End
+  Return n
 
 --------------------------------------------------------------------------------
 
@@ -144,7 +163,7 @@ Print:
     Say " ("AorAN(ConstantName(element~subCategory))" taken_constant)"
   End
   Else Do
-    Say " ("AorAN(CategoryName(element~category))")"
+    Say " ( A" CategoryName(element~category)")"
     If element < .ALL.COMPOUND_VARIABLES Then Call Compound
   End
   If value == .Nil Then Do
@@ -216,11 +235,15 @@ Syntax:
 ::Requires "modules/print/print.cls"
 ::Resource Help end "::End"
 Usage: myName [options] FILE
+
 Transform FILE into a list of elements and list them.
 
 Options:
-     --tutor      Enable TUTOR-flavored Unicode
- -u, --unicode    Enable TUTOR-flavored Unicode
+     --from [LINE] Show elements starting at line LINE
+     --help        Display this information
+     --to   [LINE] Stop showing elements after line LINE
+     --tutor       Enable TUTOR-flavored Unicode
+ -u, --unicode     Enable TUTOR-flavored Unicode
 
 The 'myname' program is part of the Rexx Parser package, and is distributed
 under the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
