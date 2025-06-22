@@ -170,23 +170,35 @@ BadMode:
         If color~contains(":") Then Do
           Parse Var color color":"background
           If background[1] \== "#" Then Do
+            alpha = ""
+            If Pos("/",background) > 0 Then Do
+              Parse Var background background"/"alpha
+              Call NormalizeAlpha
+            End
             bg = .HTML.Color[background]
             If bg == .Nil Then Signal BadBackground
+            bg = bg || alpha
           End
           Else Do
             bg = SubStr(background,2)
-            If \"3 6"~containsWord( Length(bg) ) Then Signal BadBackground
+            If \"3 4 6 8"~containsWord( Length(bg) ) Then Signal BadBackground
             If \bg~dataType("X") Then Signal BadBackground
             bg = Normalize(bg)
           End
         End
         If color[1] \== "#" Then Do
+          alpha = ""
+          If Pos("/",color) > 0 Then Do
+            Parse Var color color"/"alpha
+            Call NormalizeAlpha
+          End
           fg = .HTML.Color[color]
           If fg == .Nil Then Signal BadColor
+          fg = fg || alpha
         End
         Else Do
           fg = SubStr(color,2)
-          If \"3 6"~containsWord( Length(fg) ) Then Signal BadColor
+          If \"3 4 6 8"~containsWord( Length(fg) ) Then Signal BadColor
           If \fg~dataType("X") Then Signal BadColor
           fg = Normalize(fg)
         End
@@ -199,9 +211,35 @@ BadMode:
 Normalize:
   col = .HTML.Color[Arg(1)]
   If col \== "" Then Return col
-  If Length(Arg(1)) == 6 Then Return Arg(1)
-  Parse Value Arg(1) With a +1 b +1 c +1
-  Return Space( a a b b c c , 0 )
+  Select Case Length(Arg(1))
+    When 6, 8 Then Return Arg(1)
+    When 3 Then Do
+      If Length(Arg(1)) == 6 Then Return Arg(1)
+      Parse Value Arg(1) With a +1 b +1 c +1
+      Return Space( a a b b c c , 0 )
+    End
+    When 4 Then Do
+      If Length(Arg(1)) == 6 Then Return Arg(1)
+      Parse Value Arg(1) With r +1 g +1 b +1 a +1
+      Return Space( r r g g b b a a , 0 )
+    End
+  End
+
+NormalizeAlpha:
+  If Right(alpha,1) == "%" Then Do
+    al = Left(alpha,Length(alpha)-1)
+    If al > 100 Then Signal BadAlpha
+    If al <   0 Then Signal BadAlpha
+    alpha = Format(al*255/100,,0)~d2x(2)
+    Return
+  End
+  If alpha > 1  Then Signal BadAlpha
+  If alpha < 0  Then Signal BadAlpha
+  alpha = Format(alpha*255,,0)~d2x(2)
+  Return
+
+BadAlpha:
+  Raise Syntax 93.900 Additional("Bad alpha '"alpha"'")
 
 BadNo:
   Raise Syntax 93.900 Additional("Invalid option 'no "option"'")

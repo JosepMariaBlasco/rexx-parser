@@ -150,7 +150,7 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
       patch = Options.additional
   End
   If      patch~isA(.String) Then patch = .StylePatch~of( patch )
-  Else If patch~isA(.Array)  Then patch = .StylePatch~of(patch)
+  Else If patch~isA(.Array)  Then patch = .StylePatch~of( patch )
   Else If patch \== .Nil     Then
     .Validate~classType("patch", patch, .StylePatch)
   Options.!Patch = patch
@@ -618,11 +618,32 @@ Exit
 
 NormalizeColor: Procedure
   Parse Arg color
-  If color == ""           Then Return color
+  alpha = ""
+  If Pos("/", color) > 0 Then Do
+    Parse Var color color"/"alpha
+    Call NormalizeAlpha
+  End
+  If color == "" Then Return color
   col = .HTML.Color[color]
-  If col \== "" Then Return col
+  If col \== "" Then Return col || alpha
   Parse Arg color +1 color
   If color == ""           Then Return color
-  If Length( color ) \== 3 Then Return color
+  If Length( color ) \== 3 Then Return color || alpha
   Parse Value color With a +1 b +1 c +1
-  Return Space( a a b b c c , 0 )
+  Return Space( a a b b c c alpha , 0 )
+
+NormalizeAlpha:
+  If Right(alpha,1) == "%" Then Do
+    al = Left(alpha,Length(alpha)-1)
+    If al > 100 Then Signal BadAlpha
+    If al <   0 Then Signal BadAlpha
+    alpha = Format(al*255/100,,0)~d2x(2)
+    Return
+  End
+  If alpha > 1  Then Signal BadAlpha
+  If alpha < 0  Then Signal BadAlpha
+  alpha = Format(alpha*255,,0)~d2x(2)
+  Return
+
+BadAlpha:
+  Raise Syntax 93.900 Additional("Bad alpha '"alpha"'")

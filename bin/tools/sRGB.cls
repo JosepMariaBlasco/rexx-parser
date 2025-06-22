@@ -14,10 +14,11 @@
 /* the CSS Color Module Level 4 definition of colours. See                    */
 /* https://www.w3.org/TR/css-color-4/ for details.                            */
 /*                                                                            */
-/* sRGB colors can be created from three- or six-digits hexadecimal strings,  */
-/* or by providing three blank-separated values, which can be percentages     */
-/* ended with a "%" character, between 0 and 100, or non-necessarily integer  */
-/* whole numbers between 0 and 255.                                           */
+/* sRGB colors can be created from three-, four-, six- or eight-digits        */
+/* hexadecimal strings, or by providing three blank-separated values,         */
+/* which can be percentages ended with a "%" character, between 0 and 100,    */
+/* or non-necessarily integer whole numbers between 0 and 255, optionally     */
+/* followed by a slash and an alpha value between 0 and 1, or a percentage.   */
 /*                                                                            */
 /* The class provides conversions to:                                         */
 /*   + Linear RGB                                                             */
@@ -33,6 +34,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20250621    0.2c First version                                             */
+/* 20250622    0.2d Add support for alpha values                              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -76,19 +78,31 @@
 ---
 --- Creates a sRGB color value
 ---
---- @param r_g_b Three blank-separated primaries, or a single three or six
+--- @param r_g_b_a Three blank-separated primaries, optionally followed by a
+--    slash and an alpha value, or a single three, four, six or eight
 ---   characters hexadecimal value, with an optional leading "#" character.
 ---
 --- When providing blank-separated primaries, each primary can be specified
 --- as a number between 0 and 255, or as a percentage between 0 and 100.
+---
+--- Alpha values default to 1 (100%), and they can be specified
+--- as a number between 0 and 1, or as a percentage between 0 and 100.
+---
 --- Non-integers and exponentials are accepted.
 ---
 
 ::Method init
 
-  Expose R G B
+  Expose R G B A
 
-  Use Strict Arg r_g_b
+  A = 1 -- Default is no transparency
+
+  Use Strict Arg r_g_b_a
+
+  If Pos("/", r_g_b_a) > 1 Then Do
+    Parse Var r_g_b_a r_g_b "/" A
+  End
+  Else r_g_b = r_g_b_a
 
   Select Case Words(r_g_b)
     When 1 Then Signal Hex
@@ -104,6 +118,7 @@ Three:
   Call Validate >R, "Red"
   Call Validate >G, "Green"
   Call Validate >B, "Blue"
+  Call ValidateAlpha
 
   Return
 
@@ -114,7 +129,7 @@ Validate: Procedure
     If DataType(val) \== "NUM" Then Signal NoNumber
     If val < 0                 Then Signal Negative
     If val > 100               Then Signal TooBig
-    value = value / 100
+    value = val / 100
     Return
   End
   If DataType(value) \== "NUM" Then Signal NoNumber
@@ -123,39 +138,76 @@ Validate: Procedure
   value = value / 255
 Return
 
+ValidateAlpha:
+  If right(A,1) == "%" Then Do
+    val = Left(A,Length(A)-1)
+    If DataType(val) \== "NUM" Then Signal AlphaNoNumber
+    If val < 0                 Then Signal AlphaNegative
+    If val > 100               Then Signal AlphaTooBig
+    A = val / 100
+    Return
+  End
+  val = A
+  If DataType(A) \== "NUM"     Then Signal AlphaNoNumber
+  If A < 0                     Then Signal AlphaNegative
+  If A > 1                     Then Signal AlphaTooBig
+Return
+
 Hex:
-  hex = r_g_b
+  hex = r_g_b_a
   If hex[1] == "#" Then hex = SubStr(hex,2)
+  If \DataType(hex,"X") Then Signal BadHex
+  A = "FF"
   Select Case Length(hex)
     When 6 Then Parse Var hex r +2 g +2 b
+    When 8 Then Parse Var hex r +2 g +2 b +2 a
     When 3 Then Do
       Parse Var hex r +1 g +1 b
       R = R || R
       G = G || G
       B = B || B
     End
-    Otherwise Signal BadHexLength
+    When 3 Then Do
+      Parse Var hex r +1 g +1 b +1 a
+      R = R || R
+      G = G || G
+      B = B || B
+      A = A || A
+    End
+    Otherwise Signal BadHex
   End
   R = R~x2d / 255
   G = G~x2d / 255
   B = B~x2d / 255
+  A = A~x2d / 255
 Return
 
-BadHexLength: Raise Syntax 93.900 -
-  Array( "Argument should be a 3- or 6-digit hexadecimal number, optionally" -
-    "preceded by a '#' character. Found '"r_g_b"'" )
+AlphaNoNumber: Call 93.900Alpha "a number or a percentage"
 
-OneOrThree: Raise Syntax 93.900 -
-  Array( "One or three words expected, found '"r_g_b"'." )
+AlphaNegative: Call 93.900Alpha "zero or positive"
+
+AlphaTooBig:   Call 93.900Alpha -
+  "smaller than or equal to 1 (or 100 if specified as a percentage)"
+
+BadHex:        Raise Syntax 93.900 -
+  Array( "Argument should be a 3-. 4-. 6- or 8-digit hexadecimal number, optionally" -
+    "preceded by a '#' character. Found '"r_g_b_a"'" )
+
+OneOrThree:    Raise Syntax 93.900 -
+  Array( "One or three words expected, found '"r_g_b_a"'." )
 
 NoNumber: Call 93.900 "primary should be a number or a percentage"
 
 Negative: Call 93.900 "primary should be zero or positive"
 
-TooBig:   Call 93.900 "primary should be smaller than 255" -
+TooBig:   Call 93.900 "primary should be smaller or equal to 255" -
     "(or 100 if specified as a percentage)"
 
-93.900: Raise Syntax 93.900 Array(Color Arg(1)", found '"value"'")
+93.900:
+  Raise Syntax 93.900 Array(Color Arg(1)", found '"value"'")
+
+93.900Alpha:
+  Raise Syntax 93.900 Array( "Alpha should be" Arg(1)", found '"val"'" )
 
 --------------------------------------------------------------------------------
 -- METHOD MAKESTRING                                                          --
@@ -170,7 +222,7 @@ TooBig:   Call 93.900 "primary should be smaller than 255" -
 ---
 
 ::Method makeString Public
-  Expose R G B
+  Expose R G B A
 
   Use Strict Arg precision = 2
 
@@ -178,9 +230,10 @@ TooBig:   Call 93.900 "primary should be smaller than 255" -
   If precision < 0             Then Raise Syntax 93.906 Array(1, precision)
   If precision > 18            Then Raise Syntax 93.908 Array(1, 18, precision)
 
-  Return P(R) P(G) P(B)
+  Return P(R) P(G) P(B) "/" PA()"%"
 
-P: Return Format( Arg(1) * 255,,precision)
+P:  Return Format( Arg(1) * 255,,precision)
+PA: Return Format( A      * 100,,precision)
 
 --------------------------------------------------------------------------------
 -- METHOD TOLINEAR                                                            --
