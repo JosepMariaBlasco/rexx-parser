@@ -27,8 +27,8 @@
    @param colorname one of the W3C defined color names
    @param distance optional from colorName, distance a real number between 0 and 1, or a %
    @author  Rony G. Flatscher, Josep Maria Blasco (c) 2025
-   @since   2025-06-05 - 2025-06-21
-   @version 1.3
+   @since   2025-06-05 - 2025-06-22
+   @version 1.4
 
    License: AL 2.0
 */
@@ -46,6 +46,14 @@ do
       end
 
       Parse Arg color number
+      if number="" then
+      do
+         Say "-------------------"
+         say ".W3C_Colors~nearest(color="color")"
+         say
+         .W3C_Colors~nearest( color )
+         exit
+      end
       if NumberOrPercentage(number) then
       do
          Say "-------------------"
