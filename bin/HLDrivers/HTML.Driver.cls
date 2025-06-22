@@ -17,6 +17,7 @@
 /* 20250101    0.1e First version                                             */
 /* 20250120    0.1f Add size option                                           */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -65,7 +66,7 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
         Otherwise   classes = HTMLClass[ tail ]
       End
       lastClass = Word( classes, Words( classes ) )
-      Parse Value Tag2Attr.tail With attr color"/"background
+      Parse Value Tag2Attr.tail With attr color":"background
       style = ""
       Do c Over attr~makeArray("")
         Select Case c

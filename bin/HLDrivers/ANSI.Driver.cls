@@ -17,6 +17,7 @@
 /* 20250101    0.1e First version                                             */
 /* 20250105    0.1f Support style patches                                     */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -64,7 +65,7 @@ If \.environment~hasIndex( ANSI.Highlighter ) Then
   End
 
   Parse Value self~tags2highlight(tags, extra) -
-    With bold italic underline color"/"background
+    With bold italic underline color":"background
 
   command = ""
   If bold              Then command ||= "1;"
@@ -81,7 +82,7 @@ If \.environment~hasIndex( ANSI.Highlighter ) Then
 ::Method EnsureWidth
   Expose Options. output
   Tag2Attr.  = Options.!Tag2Attr
-  Parse Value Tag2Attr.["rexx"] With "/"background
+  Parse Value Tag2Attr.["rexx"] With ":"background
   If background = "" Then Return
   background = color2SGR(background)
   len = Columns( output[ output~last ] ) - options.!numberWidth - 1

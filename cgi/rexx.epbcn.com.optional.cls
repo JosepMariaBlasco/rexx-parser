@@ -17,6 +17,7 @@
 /* 20241217    0.1c First public release                                      */
 /* 20241229    0.1e Make non-essential parts of the page non-printable.       */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250621    0.2c Partial support for .rex and .cls files                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -104,6 +105,7 @@ Crumb:
   parser       = "/rexx-parser"
   print        = "/rexx-parser/doc/print"
   doc          = "/rexx-parser/doc"
+  bin          = "/rexx-parser/bin"
   guide        = doc"/guide"
   ref          = doc"/ref"
   dochl        = doc"/highlighter"
@@ -164,6 +166,11 @@ Crumb:
     When parser                    Then Return "Parser"
     When parser"/highlighter"      Then Return "Highlighter"
     When parser"/tests"            Then Return "Tests"
+
+    -- "/rexx-parser/bin"
+
+    When bin                       Then Return "bin"
+    When bin"/tools"               Then Return "Tools"
 
     -- "/rexx-parser/doc/guide"
 
@@ -241,7 +248,12 @@ Crumb:
     When docpub"/36/2025-05-06-The-Rexx-Highlighter"
                                    Then Return "The Rexx Highlighter"
 
-    Otherwise                           Return "XXX"
+    Otherwise
+      If Arg(1)~startsWith("/rexx-parser/bin/tools/") Then Do
+        Parse Value Reverse(Arg(1)) With fn"/"
+        Return Reverse(fn)
+      End
+      Return "XXX"
   End
 
 --------------------------------------------------------------------------------

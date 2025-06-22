@@ -10,7 +10,7 @@ Doc-comments can be placed anywhere in the source file.
 
 **Standard doc-comments** start with `"/**` and end with `"*/"`.
 
-~~~rexx {pad=80 patch="element el.doc_comment #000/#c4c"}
+~~~rexx {pad=80 patch="element el.doc_comment #000:#c4c"}
 /******************************************************************************/
 /* This is a set of three classic comments, forming a box.                    */
 /******************************************************************************/
@@ -28,7 +28,7 @@ Doc-comments can be placed anywhere in the source file.
 of line comments starting with exactly three dashes
 (that is, with `"---"` but not with `"----"`).
 
-~~~rexx {pad=80 patch="element el.doc_comment_markdown #FF0/#22f"}
+~~~rexx {pad=80 patch="element el.doc_comment_markdown #FF0:#22f"}
 --------------------------------------------------------------------------------
 -- This is a set of five line comments, forming a box. All the lines are      --
 -- recognized as line comments, because they start with either less or more   --

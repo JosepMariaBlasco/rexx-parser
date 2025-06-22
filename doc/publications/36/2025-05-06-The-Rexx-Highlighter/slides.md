@@ -418,7 +418,7 @@ Doc-comments can be placed before a directive, or before a callable label.
 **Standard doc-comments** start with `"/**` and end
 with `"*/"`.
 
-~~~rexx {pad=80 patch="element el.doc_comment #000/#c4c"}
+~~~rexx {pad=80 patch="element el.doc_comment #000:#c4c"}
 /******************************************************************************/
 /* This is a set of three classic comments, forming a box.                    */
 /******************************************************************************/
@@ -439,7 +439,7 @@ Markdown doc-comments {.slide}
 of line comments starting with exactly three dashes
 (that is, with `"---"` but not with `"----"`).
 
-~~~rexx {pad=80 patch="e doc_comment_markdown #FF0/#22f"}
+~~~rexx {pad=80 patch="e doc_comment_markdown #FF0:#22f"}
 --------------------------------------------------------------------------------
 -- This is a set of three line comments, forming a box.                       --
 --------------------------------------------------------------------------------
@@ -685,7 +685,7 @@ E SIMPLE_VARIABLE #000/#cc0 bold; N METHOD #000/#c0c
 
 The patch in action:
 
-~~~rexx {patch="E SIMPLE_VARIABLE #000/#cc0 bold; N METHOD #000/#c0c"}
+~~~rexx {patch="E SIMPLE_VARIABLE #000/#cc0 bold; N METHOD #000:#c0c"}
 ::Method methodName
   len = Length("String")
   n   = Pos("x", value)

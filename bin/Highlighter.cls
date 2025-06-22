@@ -30,6 +30,7 @@
 /* 20250519    0.2b Fix error computing mypath, add dependencies              */
 /* 20250520         Ensure that options. == 0                                 */
 /* 20250529    0.2c Add support for detailed string and number highlighing    */
+/* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -422,7 +423,7 @@ Numbers:
     p = p2
   End
 
-  -- Final whitespace (that was a string)
+  -- Final whitespace (in the case of strings)
   If p \== 0 Then Call Highlight cat, subCat, tag, SubStr( eSource, p )
 
 NumberDone:
@@ -605,8 +606,8 @@ Exit
       If \b~startsWith(".") Then Iterate
       Parse Var b (".")key
       keys = keys key
-      Tag2Attr.key  = attr color"/"background
-      TagColors.key = color"/"background
+      Tag2Attr.key  = attr color":"background
+      TagColors.key = color":"background
     End
 
     If keys == "" Then Iterate

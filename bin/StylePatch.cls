@@ -17,6 +17,7 @@
 /* 20241206    0.1  First public release                                      */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250601    0.2c Add support for CSS colors                                */
+/* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -166,8 +167,8 @@ BadMode:
       Otherwise
         If no Then Signal BadNo
         color = option
-        If color~contains("/") Then Do
-          Parse Var color color"/"background
+        If color~contains(":") Then Do
+          Parse Var color color":"background
           If background[1] \== "#" Then Do
             bg = .HTML.Color[background]
             If bg == .Nil Then Signal BadBackground
@@ -193,7 +194,7 @@ BadMode:
     no = 0
   End
   If no Then Signal BadFinalNo
-  Return attr fg"/"bg
+  Return attr fg":"bg
 
 Normalize:
   col = .HTML.Color[Arg(1)]

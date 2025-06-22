@@ -17,6 +17,8 @@ Options
 -------
 
 ----------------------------- ------------------------------
+`--from [LINE]`               Show elements starting at line LINE
+`--to   [LINE]`               Stop showing elements after line LINE
 `--tutor`                     Enable TUTOR-flavored Unicode
 `-u`, `--unicode`&nbsp;&nbsp; Enable TUTOR-flavored Unicode
 ----------------------------- ------------------------------

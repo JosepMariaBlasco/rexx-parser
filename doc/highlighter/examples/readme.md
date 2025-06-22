@@ -29,9 +29,9 @@ Say "0110 1000"B "FA E0"X "4565"U
 "Length": Say "Length"(2) + "LENGTH"(2) + "LENGTH"G(2) + 2~"length"
 ~~~
 
-The same code block, with a patch that sets `All String_delimiters /green`:
+The same code block, with a patch that sets `All String_delimiters :green`:
 
-~~~rexx {style=test1 unicode patch="All String_delimiters /green"}
+~~~rexx {style=test1 unicode patch="All String_delimiters :green"}
 Say "Hello"  || 12.34e-56 || " + 12.34e-56 "
 Say "Hello"Y || 12.34e-56 || " + 12.34e-56 "Y
 Say "Hello"P || 12.34e-56 || " + 12.34e-56 "P
@@ -43,11 +43,11 @@ Say "0110 1000"B "FA E0"X "4565"U
 "Length": Say "Length"(2) + "LENGTH"(2) + "LENGTH"G(2) + 2~"length"
 ~~~
 
-Ditto, with `All String_components /teal`. Please note that
+Ditto, with `All String_components :teal`. Please note that
 in the case of taken constant strings, only the quotes and the
 optional suffix obey the patch.
 
-~~~rexx {style=test1 unicode patch="All String_components /teal"}
+~~~rexx {style=test1 unicode patch="All String_components :teal"}
 Say "Hello"  || 12.34e-56 || " + 12.34e-56 "
 Say "Hello"Y || 12.34e-56 || " + 12.34e-56 "Y
 Say "Hello"P || 12.34e-56 || " + 12.34e-56 "P

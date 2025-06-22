@@ -128,7 +128,7 @@ will be padded up to <em>column</em> if they have less than
 contrasting backgrounds, because it will ensure that the
 whole resource/comment displays as a rectangle.
 
-~~~rexx {pad=80 patch="element EL.RESOURCE_DATA #FF0/#F0F"}
+~~~rexx {pad=80 patch="element EL.RESOURCE_DATA #FF0:#F0F"}
 --------------------------------------------------------------------------------
 -- This code block is using "pad=80" and a high-contrast style patch for      --
 -- ::RESOURCE data lines.                                                     --

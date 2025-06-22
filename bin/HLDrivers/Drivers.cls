@@ -17,6 +17,7 @@
 /* 20241231    0.1e First version                                             */
 /* 20250222    0.2  Add drive to path for requires                            */
 /* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -105,21 +106,21 @@ End
   background = ""
 
   Do tag Over tags~makeArray(" ")
-    Parse Value Tag2Attr.tag With attr fg"/"bg
+    Parse Value Tag2Attr.tag With attr fg":"bg
     attrs ||= attr
     If fg \== "" Then color      = fg
     If bg \== "" Then background = bg
   End
 
   If extra \== "" Then Do
-    Parse Value extra With attr fg"/"bg
+    Parse Value extra With attr fg":"bg
     attrs ||= attr
     If fg \== "" Then color      = fg
     If bg \== "" Then background = bg
   End
 
   If background = "" Then Do
-    Parse Value Tag2Attr.["rexx"] With "/"background
+    Parse Value Tag2Attr.["rexx"] With ":"background
   End
 
   bold      = .False
@@ -138,4 +139,4 @@ End
     End
   End
 
-  Return bold italic underline color"/"background
+  Return bold italic underline color":"background

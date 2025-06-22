@@ -18,6 +18,7 @@
 /* 20250105    0.1f Support style patches                                     */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250502    0.2b Update --prolog not to emit HTML classes                  */
+/* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -73,7 +74,7 @@ If \.environment~hasIndex( LaTeX.Highlighter ) Then
 
   envOptions   =  ""
 
-  Parse Value TagColors.["rexx"] With "/"background
+  Parse Value TagColors.["rexx"] With ":"background
   If background \== "" Then
     envoptions ||= ",backgroundcolor={\color[HTML]{"background"}}"
 
@@ -110,10 +111,10 @@ Color2RGB: -- hhhhhh --> r,g,b
     Else                      patch = Tag2Attr.category.subCategory
   End
 
-  Parse Var patch patchAttrs patchColor"/"patchBackground
+  Parse Var patch patchAttrs patchColor":"patchBackground
 
   Parse Value self~tags2highlight(tags, "") -
-    With bold italic underline color"/"background
+    With bold italic underline color":"background
 
   string = LatexEscape(string)
   command = ""
@@ -126,7 +127,7 @@ Color2RGB: -- hhhhhh --> r,g,b
   Else Do
     color = ""
     Do tag Over tags~makeArray(" ")
-      Parse Value TagColors.tag With fg"/"
+      Parse Value TagColors.tag With fg":"
       If fg \== "" Then color = fg
     End
     If color \== ""    Then
@@ -138,7 +139,7 @@ Color2RGB: -- hhhhhh --> r,g,b
   Else Do
     background = ""
     Do tag Over tags~makeArray(" ")
-      Parse Value TagColors.tag With "/"bg
+      Parse Value TagColors.tag With ":"bg
       If bg \== "" Then background
     End
     If background \== "" Then

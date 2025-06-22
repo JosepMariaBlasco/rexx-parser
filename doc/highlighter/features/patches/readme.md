@@ -10,7 +10,7 @@ a certain form of "highlighting inside the highlighting",
 which can be very useful in a number of contexts, like
 teaching, or when preparing technical demos.
 
-```rexx {patch="n method #000/#c0c; element Simple_Variable #000/#cc0 bold"}
+```rexx {patch="n method #000:#c0c; element Simple_Variable #000:#cc0 bold"}
 ::Method methodName
   -- In this code fragment, the standard dark mode highlighting style is used.
   -- Additionally, local variables are specially highlighted with a bold black
@@ -32,7 +32,7 @@ Style patches can be specified inline using the `patch=` attribute of the `rexx`
 fenced code block marker. As an example, here is the source for the above code block:
 
 <pre>
-&#96;``rexx {patch="n method #000/#c0c; element Simple_Variable #000/#cc0 bold"}
+&#96;``rexx {patch="n method #000:#c0c; element Simple_Variable #000:#cc0 bold"}
 ::Method methodName
   -- In this code fragment, the standard dark mode highlighting style is used.
   -- Additionally, local variables are specially highlighted with a bold black

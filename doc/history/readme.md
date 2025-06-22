@@ -8,6 +8,9 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20250622<td>0.2d<td>
+  <li> **Breaking change**: The character used to separate foreground
+       and background colors in style patches is now ":" (was "/").
 <tr><td>20250427<td>0.2c<td>
 <ul>
   <li> **Breaking change**: Continuation chars "-" and "," are
@@ -31,6 +34,8 @@ Version history
   <li> Added [Related ooRexx bugs](/rexx-parser/doc/oorexx-bugs/) page (20250602).
   <li> Add --from and --to options to elements.rex. Create a /bin/tools subdirectory,
        and add a new cielab.cls utility and Rony Flatscher's w3c_colors.cls (20250606).
+  <li> Substitute cielab.cls for sRGB.cls, which is more accurate (20250621).
+  <li> CGI: Add support for .rex and .cls files (20250621).
 <tr><td>20250421<td>0.2b<td>
 <ul>
   <li> (Almost) complete early-checking of BIFs.

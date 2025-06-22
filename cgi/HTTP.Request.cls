@@ -110,7 +110,7 @@ NoGetAndPost:
 --------------------------------------------------------------------------------
 -- ARG                                                                        --
 --                                                                            --
---   Syntax:    (n is an integer, s a string                                  --
+--   Syntax:    (n is an integer, s a string)                                 --
 --     arg()                  --> Number of arguments                         --
 --     arg(n[,Value])         --> value for nth argument                      --
 --     arg(s[,Value])         --> value for argname=s, or ""                  --
@@ -234,7 +234,7 @@ NoGetAndPost:
 
   lFrom = from~length
 
-  to    = .MutableBuffer~new(,,lFrom)
+  to    = .MutableBuffer~new(,lFrom)
 
   Do i = 1 To lFrom
     c = from~substr(i,1)
