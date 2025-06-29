@@ -66,9 +66,9 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
         Otherwise   classes = HTMLClass[ tail ]
       End
       lastClass = Word( classes, Words( classes ) )
-      Parse Value Tag2Attr.tail With attr color":"background
+      Parse Value Tag2Attr.tail With b i u  color":"background
       style = ""
-      Do c Over attr~makeArray("")
+      Do c Over (b i u)~makeArray(" ")
         Select Case c
           When "b" Then style ||= "font-weight:normal; "
           When "B" Then style ||= "font-weight:bold; "
