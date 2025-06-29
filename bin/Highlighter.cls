@@ -87,14 +87,14 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
     Raise Halt
   End
 
-  If \ Options.~hasIndex(mode)        Then Options.mode        = "HTML"
-  If \ Options.~hasIndex(operator)    Then Options.operator    = "group"
-  If \ Options.~hasIndex(assignment)  Then Options.assignment  = "group"
-  If \ Options.~hasIndex(special)     Then Options.special     = "group"
-  If \ Options.~hasIndex(constant)    Then Options.constant    = "full"
-  If \ Options.~hasIndex(classprefix) Then Options.classprefix = "rx-"
-  If \ Options.~hasIndex(style)       Then Options.style       = "dark"
-  If \ Options.~hasIndex(startFrom)   Then Options.startFrom   = 1
+  Call Default mode,        "HTML"
+  Call Default operator,    "group"
+  Call Default assignment,  "group"
+  Call Default special,     "group"
+  Call Default constant,    "full"
+  Call Default classprefix, "rx-"
+  Call Default style,       "dark"
+  Call Default startFrom,   1
 
   If Verify(Options.style, XRange(AlNum)".-_") > 0 Then
     Raise Halt -
@@ -105,19 +105,16 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
   End
   Options.mode = Upper( Options.mode )
 
-  -- For ANSI and LaTex highlight, read manually the CSS
-  If Options.mode == "ANSI" | Options.mode == "LATEX" Then Do
-    array = ParseCSS(Options.)
-    Tag2Attr.  = array[1]
-    TagColors. = array[2]
-    Options.!Tag2Attr  = Tag2Attr.
-    Options.!TagColors = TagColors.
-  End
-
-  If Options.mode == "ANSI", \Options.~hasIndex(width)
-                                      Then Options.width       = 80
+  If Options.mode == "ANSI" Then Call Default width, 80
 
   Options.!Source    = source
+
+  Return
+
+Default:
+  Use Arg key, value
+  If \ Options.~hasIndex(key)   Then Options.key   = value
+Return
 
 --------------------------------------------------------------------------------
 -- PARSE method                                                               --
@@ -241,27 +238,27 @@ Syntax:
   End
 
   -- If this is an inserted element, there is nothing to print
-  If element~from == element~to         Then Return
+  If element~from == element~to          Then Return
 
   -- Strings or symbols taken as a constant require special handling
   constant = .EL.TAKEN_CONSTANT
-  If element < constant                 Then Signal TakenConstant
+  If element < constant                  Then Signal TakenConstant
 
   -- Compound variables are displayed highlighting all the
   -- elements in the tail.
-  If element < .ALL.COMPOUND_VARIABLES  Then Signal CompoundVariable
+  If element < .ALL.COMPOUND_VARIABLES   Then Signal CompoundVariable
 
   If element < .ALL.STRINGS Then Do
     -- Strings that are numbers and are not X, B or U
     If element \< .EL.HEX_STRING || .EL.BINARY_STRING || .EL.UNICODE_STRING, -
-      DataType(element~value) == "NUM" Then Signal Numbers
+      DataType(element~value) == "NUM"  Then Signal Numbers
     -- Detailed string highlighting
     Signal String
   End
 
   -- Detailed highlighting of numbers
 
-  If element < .ALL.NUMBERS            Then Signal Numbers
+  If element < .ALL.NUMBERS             Then Signal Numbers
 
   -- Classic comments may be multi-line, in which case they also
   -- require special handling
@@ -270,16 +267,16 @@ Syntax:
   If element < .EL.DOC_COMMENT_MARKDOWN Then Signal BlockComments
 
   -- Process ::Resources (probably multi-line)
-  If element < .EL.RESOURCE_DATA Then Signal ResourceData
+  If element < .EL.RESOURCE_DATA        Then Signal ResourceData
 
   -- Standard case
   tag = HTMLClass[ element~category ]
-  Call Highlight element~category, "", tag, element~source
+  Call Highlight element~category, "", "", tag, element~source
 
 Exit
 
 Highlight:
-  Options.!Driver~highlight( Arg(1), Arg(2), Arg(3), Arg(4) )
+  Options.!Driver~highlight( Arg(1), Arg(2), Arg(3), Arg(4), Arg(5) )
 Return
 
 NewLine:
@@ -290,7 +287,7 @@ Return
 TakenConstant:
   If element~isAString Then Signal String
   tag = HTMLClass[ constant, element~subCategory ]
-  Call Highlight constant, element~subCategory, tag, element~source
+  Call Highlight constant, element~subCategory, "", tag, element~source
 Exit
 
 ResourceData:
@@ -306,7 +303,7 @@ ResourceData:
     sourceLine = source[line]
     If padding > 0, padding > sourceLine~length Then
       sourceLine = Left(sourceLine, padding)
-    Call Highlight element~category, "", tag, sourceLine
+    Call Highlight element~category, "", "", tag, sourceLine
   End
   displayLine = currentLine + c + options.startFrom - 1
   Call NewLine displayLine
@@ -326,7 +323,7 @@ BlockComments:
     End
     If element < .ALL.DOC_COMMENTS, padding > 0, padding > line~length Then
       line = Left(line, options.pad)
-    Call Highlight element~category, "", tag, line
+    Call Highlight element~category, "", "", tag, line
   End
   If element < .ALL.DOC_COMMENTS Then Do
     currentLine += 1
@@ -340,7 +337,7 @@ Numbers:
 
   -- Highlight the opening quote, if any
   If q \== "" Then
-    Call Highlight .EL.STRING_OPENING_DELIMITER, "",     open,  q
+    Call Highlight .EL.STRING_OPENING_DELIMITER, "", "", open,  q
 
   -- That's the number we have to deal with
   If      q == ""   Then Nop
@@ -352,13 +349,13 @@ Numbers:
 
   -- Initial blanks (--> that's a string)
   p = Verify(eSource, " ")
-  If p > 1 Then Call Highlight cat, subCat, tag, Left( eSource, p - 1 )
+  If p > 1 Then Call Highlight cat, subCat, "", tag, Left( eSource, p - 1 )
 
   -- Optional sign (for strings also)
   s = eSource[p]
   If s == "+" | s == "-" Then Do
     nSign = HTMLClass[ .EL.NUMBER_SIGN ]
-    Call Highlight .EL.NUMBER_SIGN, "", tag nSign, s
+    Call Highlight .EL.NUMBER_SIGN, "", "", tag nSign, s
     p += 1
   End
 
@@ -366,7 +363,7 @@ Numbers:
   p2 = Verify(eSource, " ",, p)
   If p2 > p Then Do
     len = p2 - p
-    Call Highlight .EL.INTEGER_PART, "", tag, SubStr( eSource, p, len )
+    Call Highlight .EL.INTEGER_PART, "", "", tag, SubStr( eSource, p, len )
     p = p2
   End
 
@@ -376,7 +373,7 @@ Numbers:
     If p2 == 0 Then len = Length( eSource ) - p + 1
     Else            len = p2 - p
     intPart = HTMLClass[ .EL.INTEGER_PART ]
-    Call Highlight .EL.INTEGER_PART, "", tag intPart, SubStr( eSource, p, len )
+    Call Highlight .EL.INTEGER_PART, "", "", tag intPart, SubStr( eSource, p, len )
     p = p2
   End
   If p == 0 Then Signal NumberDone
@@ -384,7 +381,7 @@ Numbers:
   -- Decimal point
   If eSource[p] == "." Then Do
     decPoint = HTMLClass[ .EL.DECIMAL_POINT ]
-    Call Highlight .EL.DECIMAL_POINT, "", tag decPoint, "."
+    Call Highlight .EL.DECIMAL_POINT, "", "", tag decPoint, "."
     p = p + 1
   End
 
@@ -394,7 +391,7 @@ Numbers:
     If p2 == 0 Then len = Length( eSource ) - p + 1
     Else            len = p2 - p
     fracPart = HTMLClass[ .EL.FRACTIONAL_PART ]
-    Call Highlight .EL.FRACTIONAL_PART, "", tag fracPart, SubStr( eSource, p, len )
+    Call Highlight .EL.FRACTIONAL_PART, "", "", tag fracPart, SubStr( eSource, p, len )
     p = p2
   End
   If p == 0 Then Signal NumberDone
@@ -402,14 +399,14 @@ Numbers:
   -- Exponent mark
   e = eSource[p]
   eMark = HTMLClass[ .EL.EXPONENT_MARK ]
-  Call Highlight .EL.EXPONENT_MARK, "", tag eMark, e
+  Call Highlight .EL.EXPONENT_MARK, "", "", tag eMark, e
   p = p + 1
 
   -- Exponent sign
   s = eSource[p]
   If s == "-" | s == "+" Then Do
     eSign = HTMLClass[ .EL.EXPONENT_SIGN ]
-    Call Highlight .EL.EXPONENT_SIGN, "", tag eSign, s
+    Call Highlight .EL.EXPONENT_SIGN, "", "", tag eSign, s
     p = p + 1
   End
 
@@ -419,19 +416,19 @@ Numbers:
     If p2 == 0 Then len = Length( eSource ) - p + 1
     Else            len = p2 - p
     expo = HTMLClass[ .EL.EXPONENT ]
-    Call Highlight .EL.EXPONENT, "", tag expo, SubStr( eSource, p, len )
+    Call Highlight .EL.EXPONENT, "", "", tag expo, SubStr( eSource, p, len )
     p = p2
   End
 
   -- Final whitespace (in the case of strings)
-  If p \== 0 Then Call Highlight cat, subCat, tag, SubStr( eSource, p )
+  If p \== 0 Then Call Highlight cat, subCat, "", tag, SubStr( eSource, p )
 
 NumberDone:
   -- Highligth the closing quote and suffix, if any
   If q \== "" Then Do
-    Call Highlight .EL.STRING_CLOSING_DELIMITER, "",     close, q
+    Call Highlight .EL.STRING_CLOSING_DELIMITER, "", "", close, q
     If hasSuffix Then
-      Call Highlight .EL.STRING_SUFFIX,          "", string_suffix_tag, suffix
+      Call Highlight .EL.STRING_SUFFIX,          "", "", string_suffix_tag, suffix
   End
 
 Exit
@@ -477,173 +474,17 @@ String:
   If hasSuffix Then eSource = SubStr( eSource, 2, Length(eSource) - 3 )
   Else              eSource = SubStr( eSource, 2, Length(eSource) - 2 )
 
-  Call Highlight .EL.STRING_OPENING_DELIMITER, "",     open,  q
-  Call Highlight cat,                          subcat, tag,  eSource
-  Call Highlight .EL.STRING_CLOSING_DELIMITER, "",     close, q
+  Call Highlight .EL.STRING_OPENING_DELIMITER, "",     "", open,  q
+  Call Highlight cat,                          subcat, "", tag,   eSource
+  Call Highlight .EL.STRING_CLOSING_DELIMITER, "",     "", close, q
   If hasSuffix Then
-    Call Highlight .EL.STRING_SUFFIX,          "", string_suffix_tag, suffix
+    Call Highlight .EL.STRING_SUFFIX,          "",     "", string_suffix_tag, suffix
 
 Exit
 
 CompoundVariable:
   Do part Over element~parts
     tag = HTMLClass[ part~category ]
-    Call Highlight part~category, "", tag, part~source
+    Call Highlight part~category, "", "", tag, part~source
   End
 Exit
-
---------------------------------------------------------------------------------
--- PARSECSS Routine                                                           --
---------------------------------------------------------------------------------
-
--- See https://en.wikipedia.org/wiki/Xterm#/media/File:Xterm-256color.svg
-
-::Routine ParseCSS
-
-  Use Strict Arg Options.
-
-  prefix = Options.classPrefix
-  style  = Options.style
-  patch  = Options.!Patch
-
-  cssFileName = .File~new( .."/css/rexx-"style".css")
-  If \cssFileName~exists | \cssFileName~isFile Then Do
-    Say "File '"cssFileName~absolutePath"' does not exist."
-    Raise Halt
-  End
-
-  source = CharIn(cssFileName,1,Chars(cssFileName))
-  Call Stream cssFileName,"c","close"
-
-  -- Very simple CSS parsing
-
-  -- Copy into a mutable buffer to speed things up
-  source = .MutableBuffer~new(source)
-
-  -- Delete block comments
-  Loop
-    open  = source~pos("/*")
-  If open == 0 Then Leave
-    close = source~pos("*/")
-    source~overlay(" ", open, close - open + 2 )
-  End
-
-  -- Get rid of CRs and LFs
-  source~translate("  ","0d0a"x)
-
-  -- Get rid of multiple spaces
-  source~space
-
-  Tag2Attr.  = ""
-  TagColors. = ""
-
-  Loop Until source == ""
-    Parse Var source selectors "{"attributes"}" source
-
-    attr       = "."
-    attributes = Space(attributes,0)
-    basicAttr  = ""
-    color      = ""
-    background = ""
-    Loop Until attributes == ""
-      Parse Var attributes attribute";" attributes
-      Select Case Lower( attribute )
-        When "font-style:italic"         Then Do
-          attr      ||= "I"
-          basicAttr ||= "3;"
-        End
-        When "font-style:normal"         Then Do
-          attr      ||= "i"
-          basicAttr ||= "23;"
-        End
-        When "text-decoration:underline" Then Do
-          attr      ||= "U"
-          basicAttr ||= "4;"
-        End
-        When "text-decoration:none" Then Do
-          attr      ||= "u"
-          basicAttr ||= "24;"
-        End
-        When "font-weight:bold"          Then Do
-          attr      ||= "B"
-          basicAttr ||= "1;"
-        End
-        When "font-weight:normal"        Then Do
-          attr      ||= "b"
-          basicAttr ||= "21;"
-        End
-        Otherwise Do
-          Parse Var attribute key":"value
-          Select Case key
-            When "color"            Then color      = value
-            When "background-color" Then background = value
-            Otherwise Nop
-          End
-        End
-      End
-    End
-
-    color      = NormalizeColor( color )
-    background = NormalizeColor( background )
-
-    -- We now examine the selectors. We are only interesed in selectors
-    -- of the form
-    --
-    --   .highlight-rexx-<style> .key
-    --
-    -- Where <style> is the default style, or the style
-    -- specified as an option.
-
-    keys = ""
-    sel = selectors
-    Loop Until sel == ""
-      Parse Var sel selector"," sel
-      -- No initial dot
-      If Word(selector,2)[1] \== "." Then Iterate
-      Parse Var selector a b c
-      If c \== "" Then Iterate
-      If a \== ".highlight-rexx-"style Then Iterate
-      If \b~startsWith(".") Then Iterate
-      Parse Var b (".")key
-      keys = keys key
-      Tag2Attr.key  = attr color":"background
-      TagColors.key = color":"background
-    End
-
-    If keys == "" Then Iterate
-
-  End
-
-  Return Tag2Attr., TagColors.
-
-NormalizeColor: Procedure
-  Parse Arg color
-  alpha = ""
-  If Pos("/", color) > 0 Then Do
-    Parse Var color color"/"alpha
-    Call NormalizeAlpha
-  End
-  If color == "" Then Return color
-  col = .HTML.Color[color]
-  If col \== "" Then Return col || alpha
-  Parse Arg color +1 color
-  If color == ""           Then Return color
-  If Length( color ) \== 3 Then Return color || alpha
-  Parse Value color With a +1 b +1 c +1
-  Return Space( a a b b c c alpha , 0 )
-
-NormalizeAlpha:
-  If Right(alpha,1) == "%" Then Do
-    al = Left(alpha,Length(alpha)-1)
-    If al > 100 Then Signal BadAlpha
-    If al <   0 Then Signal BadAlpha
-    alpha = Format(al*255/100,,0)~d2x(2)
-    Return
-  End
-  If alpha > 1  Then Signal BadAlpha
-  If alpha < 0  Then Signal BadAlpha
-  alpha = Format(alpha*255,,0)~d2x(2)
-  Return
-
-BadAlpha:
-  Raise Syntax 93.900 Additional("Bad alpha '"alpha"'")

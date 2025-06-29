@@ -26,7 +26,7 @@ has version control, bug reporting, and all the features offered by GitHub.
 will not display at all in the GitHub version, as GitHub does not implement
 the `source` attribute for Rexx fenced code blocks.
 
-~~~rexx {.numberLines startfrom=93 unicode}
+~~~rexx {.numberLines startfrom=93 unicode numberWidth=5}
 /******************************************************************************/
 /* This is a sample Rexx code fragment, numbered, starting at line 93.        */
 /* It shows many of the features of the Rexx Parser.                          */
@@ -63,8 +63,8 @@ in the corresponding copyright notices.
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.2d, refresh 20250622.
-You can download it <a href="Rexx-Parser-0.2d-20250622.zip">here</a>.
+The current release is beta 0.2d, refresh 20250629.
+You can download it <a href="Rexx-Parser-0.2d-20250629.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).

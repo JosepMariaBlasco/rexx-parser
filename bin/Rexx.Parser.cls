@@ -28,6 +28,7 @@
  .environment~Rexx.Routine = .Rexx.Routine
 
 ::Requires "HTMLColors.cls"
+::Requires "StyleSheet.cls"
 ::Requires "DebugSettings.cls"
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Globals.cls"

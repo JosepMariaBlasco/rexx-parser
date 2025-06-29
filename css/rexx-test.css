@@ -1,0 +1,29 @@
+/******************************************************************************/
+/*                                                                            */
+/* rexx-test.css - Test stylesheet                                            */
+/* ===============================                                            */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20250626    0.2d First version                                             */
+/*                                                                            */
+/******************************************************************************/
+
+.highlight-rexx-test {
+  .rx-cm   {color: #008800;}
+  .rx-lncm {color: red;}
+  .rx-cquo {color: green; background-color:black;}
+  .rx-method.rx-cquo {color: yellow; background-color:green;}
+  .rx-const.rx-method {color: red; background-color:lightgray;}
+  .rx-const.rx-oquo {color: yellow; background-color:pink;}
+}
+

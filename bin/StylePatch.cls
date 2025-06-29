@@ -144,6 +144,9 @@ BadMode:
   Use Arg attributes
   option  = ''
   If attributes = "" Then Signal BadOption
+  b       = "-"
+  i       = "-"
+  u       = "-"
   attr    = "."
   fg      = ""
   bg      = ""
@@ -156,28 +159,23 @@ BadMode:
     End
     Select Case option
       When "bold"      Then
-        If no Then attr ||= "b"
-        Else       attr ||= "B"
+        If no Then b = "b"
+        Else       b = "B"
       When "italic"    Then
-        If no Then attr ||= "i"
-        Else       attr ||= "I"
+        If no Then i = "i"
+        Else       i = "I"
       When "underline" Then
-        If no Then attr ||= "u"
-        Else       attr ||= "U"
+        If no Then u = "u"
+        Else       u = "U"
       Otherwise
         If no Then Signal BadNo
         color = option
         If color~contains(":") Then Do
           Parse Var color color":"background
           If background[1] \== "#" Then Do
-            alpha = ""
-            If Pos("/",background) > 0 Then Do
-              Parse Var background background"/"alpha
-              Call NormalizeAlpha
-            End
             bg = .HTML.Color[background]
             If bg == .Nil Then Signal BadBackground
-            bg = bg || alpha
+            bg = bg || "ff"
           End
           Else Do
             bg = SubStr(background,2)
@@ -187,14 +185,9 @@ BadMode:
           End
         End
         If color[1] \== "#" Then Do
-          alpha = ""
-          If Pos("/",color) > 0 Then Do
-            Parse Var color color"/"alpha
-            Call NormalizeAlpha
-          End
           fg = .HTML.Color[color]
           If fg == .Nil Then Signal BadColor
-          fg = fg || alpha
+          fg = fg || "ff"
         End
         Else Do
           fg = SubStr(color,2)
@@ -206,7 +199,7 @@ BadMode:
     no = 0
   End
   If no Then Signal BadFinalNo
-  Return attr fg":"bg
+  Return b i u fg":"bg
 
 Normalize:
   col = .HTML.Color[Arg(1)]

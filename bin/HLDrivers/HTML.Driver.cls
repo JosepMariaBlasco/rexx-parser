@@ -22,7 +22,7 @@
 /******************************************************************************/
 
 If \.environment~hasIndex( HTML.Highlighter ) Then
-  .environment~HTML.Highlighter = .HTML.Highlighter
+ .environment~HTML.Highlighter = .HTML.Highlighter
 
 ::Class HTML.Highlighter SubClass Highlighter.Driver Public
 
@@ -111,7 +111,7 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
 -- Print a highlighted element value
 
 ::Method Highlight
-  Use Strict Arg category, subCategory, tags, string
+  Use Strict Arg category, subCategory, variant, tags, string
   self~emit( '<span class="'tags'">'Escape(string)'</span>' )
   Exit
 

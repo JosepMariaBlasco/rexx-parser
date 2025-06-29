@@ -419,6 +419,7 @@ Constant:
     When "detail" Then value = prefix||Arg(2)
   End
   HTMLClass[ constant, Arg(1) ] = value
+
   open   = .EL.STRING_OPENING_DELIMITER
   close  = .EL.STRING_CLOSING_DELIMITER
   suffix = .EL.STRING_SUFFIX

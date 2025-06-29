@@ -12,10 +12,11 @@ Version history
 <ul>
   <li> **Breaking change**: The character used to separate foreground
        and background colors in style patches is now ":" (was "/").
-  <li> Correspondingly, colors in CSS and style patches now accept alpha values,
-       in the forms namedcolor/alpha, #rgba and #rrggbbaa.
+  <li> Correspondingly, colors in CSS and now accept alpha values,
+       in the forms #rgba and #rrggbbaa.
   <li> .rex and .cls files are now automatically highlighted if
        "view=highlight" is added as a query string.
+  <li> Major rewrite of the CSS parsing algorithms (20250629).
 <tr><td>20250427<td>0.2c<td>
 <ul>
   <li> **Breaking change**: Continuation chars "-" and "," are

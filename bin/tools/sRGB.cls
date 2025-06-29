@@ -17,7 +17,7 @@
 /* sRGB colors can be created from three-, four-, six- or eight-digits        */
 /* hexadecimal strings, or by providing three blank-separated values,         */
 /* which can be percentages ended with a "%" character, between 0 and 100,    */
-/* or non-necessarily integer whole numbers between 0 and 255, optionally     */
+/* or (non-necessarily integer) numbers between 0 and 255, optionally         */
 /* followed by a slash and an alpha value between 0 and 1, or a percentage.   */
 /*                                                                            */
 /* The class provides conversions to:                                         */

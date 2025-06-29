@@ -28,9 +28,9 @@ Style patches
 -- Lines starting with "--" are comments and are ignored
 --
 -- Patch simple variable elements to display as bold black over 75% yellow
-element EL.SIMPLE_VARIABLE #000/#cc0 bold
+element EL.SIMPLE_VARIABLE #000:#cc0 bold
 -- Patch method names to display as black over 75% magenta
-name  METHOD.NAME        #000/#c0c
+name  METHOD.NAME        #000:#c0c
 ~~~
 
 Style patches have a very simple format: they
@@ -76,7 +76,7 @@ are arrays of strings consisting of:
 + Element categories, category sets, and subcategories
   [are described in detail here](/rexx-parser/doc/ref/categories/).
 
-```rexx {patch="n method #000/#c0c; element Simple_Variable #000:#cc0 bold"}
+```rexx {patch="n method #000:#c0c; element Simple_Variable #000:#cc0 bold"}
 ::Method methodName
   -- In this code fragment, the standard dark mode highlighting style is used.
   -- Additionally, local variables are specially highlighted with a bold black

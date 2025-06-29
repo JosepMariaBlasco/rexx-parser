@@ -61,7 +61,6 @@ If \.environment~hasIndex( LaTeX.Highlighter ) Then
 ::Method Prolog
   Expose Options.
 
-  TagColors. = Options.!TagColors
   style      = Options.style
 
   -- We print the prolog only when requested
@@ -74,7 +73,8 @@ If \.environment~hasIndex( LaTeX.Highlighter ) Then
 
   envOptions   =  ""
 
-  Parse Value TagColors.["rexx"] With ":"background
+  Parse Value self~CachedCSS(style, "rexx") With ":"background
+
   If background \== "" Then
     envoptions ||= ",backgroundcolor={\color[HTML]{"background"}}"
 
@@ -97,18 +97,20 @@ Color2RGB: -- hhhhhh --> r,g,b
 ::Method Highlight
   Expose Options.
 
-  TagColors. = Options.!TagColors
   style      = Options.style
 
-  Use Strict Arg category, subCategory, tags, string
+  Use Strict Arg category, subCategory, variant, tags, string
 
   patch = Options.!Patch
   If patch == .Nil Then patch = ""
   Else Do
     patch. = patch~getPatch
     Tag2Attr. = patch.!Tag2Attr
-    If subCategory == "" Then patch = Tag2Attr.category
-    Else                      patch = Tag2Attr.category.subCategory
+    Select
+      When variant     \== "" Then patch = Tag2Attr.category.subCategory.variant
+      When subCategory \== "" Then patch = Tag2Attr.category.subCategory
+      Otherwise                    patch = Tag2Attr.category
+    End
   End
 
   Parse Var patch patchAttrs patchColor":"patchBackground
@@ -127,7 +129,7 @@ Color2RGB: -- hhhhhh --> r,g,b
   Else Do
     color = ""
     Do tag Over tags~makeArray(" ")
-      Parse Value TagColors.tag With fg":"
+      Parse Value Tag2Attr.tag With . . . fg":"
       If fg \== "" Then color = fg
     End
     If color \== ""    Then
@@ -139,7 +141,7 @@ Color2RGB: -- hhhhhh --> r,g,b
   Else Do
     background = ""
     Do tag Over tags~makeArray(" ")
-      Parse Value TagColors.tag With ":"bg
+      Parse Value Tag2Attr.tag With . . . ":"bg
       If bg \== "" Then background
     End
     If background \== "" Then
