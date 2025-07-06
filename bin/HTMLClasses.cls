@@ -166,7 +166,7 @@ SkipOverAssign:
 /******************************************************************************/
 
   Call Assign   .EL.LINE_COMMENT,                "lncm"
-  Call Assign   .EL.DOC_COMMENT_MARKDOWN,        "markdown-doc-comment"
+  Call Assign   .EL.DOC_COMMENT_MARKDOWN,        "doc-comment-markdown"
   Call Assign   .EL.STANDARD_COMMENT,            "cm"
   Call Assign   .EL.DOC_COMMENT,                 "doc-comment"
 
@@ -178,7 +178,7 @@ DocComms:
 
   pa2  = prefix||Arg(2)
   doc1 = prefix"doc-comment"
-  doc2 = prefix"markdown-doc-comment"
+  doc2 = prefix"doc-comment-markdown"
 
   HTMLClass[ .EL.DOC_COMMENT,          Arg(1)   ] = doc1 pa2
   HTMLClass[ .EL.DOC_COMMENT_MARKDOWN, Arg(1)   ] = doc2 pa2

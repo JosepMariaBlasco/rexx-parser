@@ -96,7 +96,7 @@
 /******************************************************************************/
 
   .rx-doc-comment,                      /* Classic style doc-comments         */
-  .rx-markdown-doc-comment {            /* Markdown style doc-comments        */
+  .rx-doc-comment-markdown {            /* Markdown style doc-comments        */
 
     color: #93a1ed;                     /* Default values (for "block"..      */
     font-style: italic;                 /* ..highlighting.                    */

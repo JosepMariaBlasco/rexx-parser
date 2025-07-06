@@ -12,13 +12,13 @@ Version history
 <ul>
   <li> **Breaking change**: The character used to separate foreground
        and background colors in style patches is now ":" (was "/").
-  <li> Correspondingly, colors in CSS and now accept alpha values,
+  <li> Colors in CSS now accept alpha values,
        in the forms `#rgba` and `#rrggbbaa`.
-  <li> `.rex` and `.cls` files are now automatically highlighted when
-       `"view=highlight"` is added as a query string.
+  <li> `.rex` and `.cls` files are now automatically highlighted, but only when
+       `"view=highlight"` is added to the URL as a query string.
   <li> Major rewrite of [the CSS parsing algorithms](../highlighter/css/) (20250629).
   <li> **Breaking change**: the `rx-doc-cm` class has been renamed
-       to `rx-doc-comment`, and `rx-doc-lncm` to `rx-markdown-doc-comment` (20250706).
+       to `rx-doc-comment`, and `rx-doc-lncm` to `rx-doc-comment-markdown` (20250706).
   <li> Add support for [detailed highlighting of doc-comments](../highlighter/features/doc-comments/) (20250706).
 <tr><td>20250427<td>0.2c<td>
 <ul>
