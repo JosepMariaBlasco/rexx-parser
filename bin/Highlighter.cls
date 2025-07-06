@@ -31,6 +31,7 @@
 /* 20250520         Ensure that options. == 0                                 */
 /* 20250529    0.2c Add support for detailed string and number highlighing    */
 /* 20250622    0.2d Change fg/bg char separator to ":"                        */
+/* 20250630         Add support for doc-comment subelements                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -88,6 +89,7 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
   End
 
   Call Default mode,        "HTML"
+  Call Default docComments, "detailed"
   Call Default operator,    "group"
   Call Default assignment,  "group"
   Call Default special,     "group"
@@ -221,8 +223,8 @@ Syntax:
   Exit
 
 /******************************************************************************/
-/* Print -- Process an element: enclose it between the relevant HTML tags     */
-/*   and append it to the output array.                                       */
+/* PRINT -- Process an element: tag it appropriately and append it            */
+/*          to the output array.                                              */
 /******************************************************************************/
 
 ::Routine Print
@@ -257,17 +259,22 @@ Syntax:
   End
 
   -- Detailed highlighting of numbers
+  If element < .ALL.NUMBERS               Then Signal Numbers
 
-  If element < .ALL.NUMBERS             Then Signal Numbers
-
-  -- Classic comments may be multi-line, in which case they also
-  -- require special handling
-  If element < .EL.STANDARD_COMMENT     Then Signal BlockComments
-  If element < .EL.DOC_COMMENT          Then Signal BlockComments
-  If element < .EL.DOC_COMMENT_MARKDOWN Then Signal BlockComments
+  -- Classic comments and doc-comments may be multi-line,
+  -- in which case they also require special handling
+  If element < .EL.STANDARD_COMMENT       Then Signal BlockComments
+  If options.docComments == "detailed"    Then Do
+    If element < .EL.DOC_COMMENT          Then Signal DocComment
+    If element < .EL.DOC_COMMENT_MARKDOWN Then Signal DocComment
+  End
+  Else Do
+    If element < .EL.DOC_COMMENT          Then Signal BlockComments
+    If element < .EL.DOC_COMMENT_MARKDOWN Then Signal BlockComments
+  End
 
   -- Process ::Resources (probably multi-line)
-  If element < .EL.RESOURCE_DATA        Then Signal ResourceData
+  If element < .EL.RESOURCE_DATA          Then Signal ResourceData
 
   -- Standard case
   tag = HTMLClass[ element~category ]
@@ -290,6 +297,10 @@ TakenConstant:
   Call Highlight constant, element~subCategory, "", tag, element~source
 Exit
 
+--------------------------------------------------------------------------------
+-- RESOURCE DATA                                                              --
+--------------------------------------------------------------------------------
+
 ResourceData:
   start   = element~from~word(1)
   end     = element~  to~word(1)
@@ -310,6 +321,10 @@ ResourceData:
   currentLine += end - start + 1
 Exit
 
+--------------------------------------------------------------------------------
+-- BLOCK COMMENTS                                                             --
+--------------------------------------------------------------------------------
+
 BlockComments:
   comment = element~source
   lines   = comment~items
@@ -321,16 +336,13 @@ BlockComments:
       displayLine = currentLine + options.startFrom - 1
       Call NewLine displayLine
     End
-    If element < .ALL.DOC_COMMENTS, padding > 0, padding > line~length Then
-      line = Left(line, options.pad)
     Call Highlight element~category, "", "", tag, line
   End
-  If element < .ALL.DOC_COMMENTS Then Do
-    currentLine += 1
-    displayLine = currentLine + options.startFrom - 1
-    Call NewLine displayLine
-  End
 Exit
+
+--------------------------------------------------------------------------------
+-- NUMBERS                                                                    --
+--------------------------------------------------------------------------------
 
 Numbers:
   Call ComputeSourceCatsOpenCloseAndSuffix
@@ -465,6 +477,10 @@ ComputeSourceCatsOpenCloseAndSuffix:
 
 Return
 
+--------------------------------------------------------------------------------
+-- STRINGS                                                                    --
+--------------------------------------------------------------------------------
+
 String:
   Call ComputeSourceCatsOpenCloseAndSuffix
 
@@ -482,9 +498,55 @@ String:
 
 Exit
 
+--------------------------------------------------------------------------------
+-- COMPOUND VARIABLES                                                         --
+--------------------------------------------------------------------------------
+
 CompoundVariable:
   Do part Over element~parts
     tag = HTMLClass[ part~category ]
     Call Highlight part~category, "", "", tag, part~source
   End
 Exit
+
+--------------------------------------------------------------------------------
+-- DOC-COMMENTS                                                               --
+--------------------------------------------------------------------------------
+
+DocComment:
+  padding = options.pad
+  lineNo = ""
+  lineLength = 0
+  elCat = element~category
+  Do Counter partNo part Over element~parts
+    newlineNo = part[1]
+    If lineNo \== newLineNo Then Do
+      If lineNo \== "" Then Do
+        currentline += 1
+        displayLine = currentLine + options.startFrom - 1
+        Call NewLine displayLine
+        lineLength = 0
+      End
+      lineNo = newLineNo
+    End
+    cat    = part[2]
+    string = part[3]
+    lineLength += Length( string )
+    tag = HTMLClass[ elCat, cat ]
+    Call Highlight elementCat elCat cat, "", "", tag, string
+    If padding > 0, lineLength < padding Then Do
+      If partNo == element~parts~items Then pad = 1
+      Else If partNo < element~parts~items, newLineNo < element~parts[partNo+1][1] Then pad = 1
+      Else pad = 0
+      If pad Then Do
+        cat = .EL.DOC_COMMENT_WHITESPACE
+        tag = HTMLClass[ elCat, cat ]
+        Call Highlight elementCat elCat cat, "", "", tag, Copies(" ", padding - lineLength )
+      End
+    End
+  End
+  currentline += 1
+  displayLine = currentLine + options.startFrom - 1
+  Call NewLine displayLine
+Exit
+

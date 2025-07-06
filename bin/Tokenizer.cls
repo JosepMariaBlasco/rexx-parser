@@ -476,24 +476,19 @@ Return element
 
   Expose package source line lines col len MarkdownDocCommentAllowed
 
-
   startLine = line
   startCol  = col
   If \MarkdownDocCommentAllowed Then Signal NormalLineComment
-  If \IsADocCommentLine(line)       Then Signal NormalLineComment
+  If \IsADocCommentLine(line)   Then Signal NormalLineComment
 
   Do While line < lines, IsADocCommentLine(line+1)
     line = line + 1
     len  = source[line]~length
   End
 
-  If line > startLine Then col = 1 -- Return the whole line
-
   comment = .Line.Comment~new(package, startLine, startCol, line, len + 1)
 
-  Call SetCategory comment, .EL.DOC_COMMENT_MARKDOWN
-
-  Return self~InsertNewElement( comment )
+  Return self~Markdown.DocComment( comment )
 
 IsADocCommentLine: Procedure expose source
   Arg line
@@ -505,6 +500,237 @@ Return .True
 NormalLineComment:
   comment = .Line.Comment~new(package, line, col, line, len + 1)
   Return self~InsertNewElement( comment )
+
+/******************************************************************************/
+/* MARKDOWN DOC-COMMENT                                                       */
+/******************************************************************************/
+
+::Method Markdown.DocComment
+
+  Expose package source commentParts theLine inTagValue inTagDescription -
+    summaryFound inMainDescription classicDocComment
+
+  Use Strict Arg comment
+
+  commentParts      = comment~parts
+
+  classicDocComment = 0
+
+  -- Set the right category. This applies when we look at the element
+  -- as a whole.
+  Call SetCategory comment, .EL.DOC_COMMENT_MARKDOWN
+
+  -- We now perform a rough parsing of the whole doc-comment, and store
+  -- its parts in the "parts" attribute.
+
+  -- We first have to calculate which is the "outer" part of the doc-comment.
+  -- See https://docs.oracle.com/en/java/javase/23/javadoc/using-markdown-documentation-comments.html
+  --
+  -- "The content of the comment is [...] determined as follows:
+  --
+  --  * Any leading whitespace and the three initial forward slash (/)
+  --    characters are removed from each line.
+  --
+  --  * The lines are then shifted left, by removing leading whitespace
+  --    characters, until the non-blank line with the least leading
+  --    whitespace characters has no remaining leading whitespace characters.
+  --
+  --  * Additional leading whitespace characters and any trailing whitespace
+  --    characters in each line are preserved."
+  --
+
+  Parse Value comment~from With first .
+  Parse Value comment~to   With last  .
+
+  leading_whitespace  = 1000
+  Do theLine = first To last
+    Parse Value source[theLine] With "---"rest
+    p = Verify(rest,"2009"X)
+    If p == 0 Then p = Length(rest) + 1
+    leading_whitespace = Min(leading_whitespace, p)
+  End
+  leading_whitespace -= 1
+
+  inMainDescription   = 1
+  summaryFound        = 0
+
+  Do theLine = first To last
+    Parse Value source[theLine] With before"---"line
+    after    = Left(line, leading_whitespace)
+    armature = before"---"after
+    self~AddArmature( armature )
+    line     = SubStr(line, leading_whitespace + 1)
+    self~ProcessDocCommentLine( line )
+  End
+
+  Return self~InsertNewElement( comment )
+
+::Method ProcessDocCommentLine
+
+  Expose inMainDescription classicDocComment
+
+  Use Arg line
+
+  -- If this is a classic doc-comment ending with "*/", we have to
+  -- deal with this final part of the armature at the end.
+  endDocComment = ""
+  If classicDocComment, line~strip("T")~right(2) == "*/" Then Do
+    Parse Var line line"*/"after
+    endDocComment = "*/"after
+  End
+
+  c = line~strip("L")[1]
+
+  -- A line starting with "@" ends the main description
+  If c == "@" Then inMainDescription = 0
+
+  If inMainDescription Then
+    self~ProcessDocCommentMainDescriptionLine( line )
+  Else -- Process block tags
+    self~ProcessDocCommentTagListLine( c, line )
+
+  If endDocComment \== "" Then
+    self~AddArmature( endDocComment )
+
+::Method ProcessDocCommentMainDescriptionLine
+  Expose summaryFound
+
+  Use Arg line
+
+  -- Summary processed? A main description line
+  If summaryFound Then Do
+    self~AddMainDescription( line )
+    Return
+  End
+
+  -- Summary still not found: empty lines before the summary
+  If line = "" Then Do
+    self~AddWhitespace( line )
+    Return
+  End
+
+  -- Summary starts, may have some whitespace before
+  line = self~InitialBlanks( line )
+
+  -- Is there a dot in the summary line
+  p = Pos(".",line)
+  -- No ".": summary may continue in next line
+  If p == 0 | (p > 0 & p < Length(line) & \ line~matchChar(p+1,"2009"X) )Then Do
+    self~AddSummary( line )
+    Return
+  End
+
+  -- We have a summary ending with a dot.
+  summary = Left(line,p)
+  self~AddSummary( summary )
+  summaryFound = 1
+
+  -- Something left? That's the main description starting
+  If p < Length(line) Then self~AddMainDescription( SubStr(line, p + 1) )
+
+::Method ProcessDocCommentTagListLine
+  Expose inTagValue inTagDescription
+
+  Use Arg c, line
+
+  If c == "@" Then Do
+    self~DocCommentStartBlockTag( line )
+    Return
+  End
+
+  line = self~InitialBlanks( line )
+  If inTagValue Then self~AddTagValue( line )
+  Else            self~AddTagDescription( line )
+
+::Method DocCommentStartBlockTag
+  Expose inTagValue inTagDescription
+
+  Use Arg line
+
+  inTagValue       = 0
+  inTagDescription = 0
+
+  line = self~InitialBlanks( line )
+  Parse Var line tag line
+  self~AddTag( tag )
+  If line \== "" Then line = self~InitialBlanks( " "line )
+  Select Case tag
+    When "@author" Then Do
+      self~AddTagValue( line )
+      inTagValue = 1
+    End
+    When "@param" Then Do
+      Parse Var line value line
+      self~AddTagValue( value )
+      If line \== "" Then line = self~InitialBlanks( " "line )
+      self~AddTagDescription( line )
+      inTagDescription = 1
+    End
+    When "@condition" Then Do
+      If Words(line) == 1 Then Do
+        self~AddTagValue( line )
+        inTagDescription = 1
+        Return
+      End
+      Parse Var line name rest
+      self~AddTagValue( name )
+      If rest \== "" Then rest = self~InitialBlanks( " "rest )
+      If WordPos(Lower(name), "error failure syntax user") > 0 Then Do
+        Parse Var rest word rest
+        self~AddTagValue( word )
+        If rest \== "" Then rest = self~InitialBlanks( " "rest )
+      End
+      If rest \== "" Then self~AddTagDescription( rest )
+      inTagDescription = 1
+    End
+    Otherwise
+      self~AddTagDescription( line )
+      inTagDescription = 1
+  End
+
+--------------------------------------------------------------------------------
+-- A series of small methods to construct the doc-comment parts               --
+--------------------------------------------------------------------------------
+
+::Method InitialBlanks
+  Use arg string
+  p = Verify(string, "2009"X)
+  If p = 0 Then Do
+    self~AddWhitespace( string )
+    Return ""
+  End
+  If p = 1 Then Return string
+  blanks = Left(string,p-1)
+  self~AddWhitespace( blanks )
+Return SubStr(string, p)
+
+::Method AddArmature
+  Expose commentParts theLine
+  commentParts~append( (theLine, .EL.DOC_COMMENT_ARMATURE,         Arg(1) ) )
+
+::Method AddMainDescription
+  Expose commentParts theLine
+  commentParts~append( (theLine, .EL.DOC_COMMENT_MAIN_DESCRIPTION, Arg(1) ) )
+
+::Method AddSummary
+  Expose commentParts theLine
+  commentParts~append( (theLine, .EL.DOC_COMMENT_SUMMARY,          Arg(1) ) )
+
+::Method AddTag
+  Expose commentParts theLine
+  commentParts~append( (theLine, .EL.DOC_COMMENT_TAG,              Arg(1) ) )
+
+::Method AddTagDescription
+  Expose commentParts theLine
+  commentParts~append( (theLine, .EL.DOC_COMMENT_TAG_DESCRIPTION,  Arg(1) ) )
+
+::Method AddTagValue
+  Expose commentParts theLine
+  commentParts~append( (theLine, .EL.DOC_COMMENT_TAG_VALUE,        Arg(1) ) )
+
+::Method AddWhitespace
+  Expose commentParts theLine
+  commentParts~append( (theLine, .EL.DOC_COMMENT_WHITESPACE,       Arg(1) ) )
 
 /******************************************************************************/
 /* CLASSIC COMMENTS                                                           */
@@ -558,7 +784,9 @@ GotAComment:
     ending   = source[line]~strip~Right(3)
     If ending[2,2]   \== "*/"  Then Signal Done
     If ending[1]      == "*"   Then Signal Done
-    Call SetCategory comment, .EL.DOC_COMMENT
+
+    Return self~Classic.DocComment( comment )
+
   End
 
 Done:
@@ -566,6 +794,65 @@ Done:
 
 -- Unmatched comment delimiter ("/*") on line &1.
  6.001: Syntax(  6.001, tail, startLine )
+
+/******************************************************************************/
+/* CLASSIC DOC-COMMENT                                                        */
+/******************************************************************************/
+
+::Method Classic.DocComment
+
+  Expose package source commentParts theLine inTagValue inTagDescription -
+    summaryFound inMainDescription classicDocComment
+
+  Use Strict Arg comment
+
+  commentParts   = comment~parts
+
+  classicDocComment = 1
+
+  -- Set the right category. This applies when we look at the element
+  -- as a whole.
+  Call SetCategory comment, .EL.DOC_COMMENT
+
+  Parse Value comment~from With first firstCol
+  Parse Value comment~to   With last  lastCol
+
+  inMainDescription   = 1
+  summaryFound        = 0
+
+  Do theLine = first To last
+    Select Case theLine
+      When first Then Do
+        thisLine = SubStr(source[theLine], firstCol)
+        Parse Value thisLine With before"/**"line
+        p = Verify(line,"2009"X)
+        If p == 0 Then Do
+          self~AddArmature( thisLine )
+          self~ProcessDocCommentLine( "" )
+        End
+        Else Do
+          self~AddArmature( before"/**"Left(line,p-1) )
+          self~ProcessDocCommentLine( SubStr(line,p) )
+        End
+      End
+      Otherwise
+        thisLine = source[theLine]
+        c = thisLine~strip("L")[1]
+        If c == "*" Then Do
+          Parse Var thisLine before"*"thisLine
+          before = before"*"
+        End
+        Else before = ""
+        p = Verify(thisLine, "2009"X)
+        If p == 0 Then self~AddArmature( before || thisLine )
+        Else Do
+          self~AddArmature( before || Left(thisLine, p - 1) )
+          self~ProcessDocCommentLine( SubStr(thisLine,p) )
+        End
+    End
+  End
+
+  Return self~InsertNewElement( comment )
 
 /******************************************************************************/
 /* OPERATOR character sequences                                               */
@@ -688,6 +975,11 @@ Return
 
   p = source[line]~verify(whitespace,,col)
   If p == 0 Then p = len + 1
+
+  -- Special case: a markdown doc-comment preceded by whitespace
+  If col == 1, source[line][p,3] == "---", source[line][p+3] \== "-" Then
+    Return self~Line.Comment
+
   element = .WhiteSpace.Element~new( line, col, p, source[line] )
   self~InsertNewElement( element )
 
@@ -1107,17 +1399,19 @@ EndDelimiterFound:
 --------------------------------------------------------------------------------
 
 ::Class Standard.Comment Public subclass Element
+::Attribute parts
 ::Method value -- A placeholder
   If self~category == .EL.STANDARD_COMMENT Then Return "/* A COMMENT */"
   Else Return "/* A DOC-COMMENT */"
 ::Method init
-  Expose         package  startLine  startCol  endLine  endCol
+  Expose         package  startLine  startCol  endLine  endCol parts
   Use Strict Arg package, startLine, startCol, endLine, endCol
   self~init:super
+  self~parts    = Array()
   self~category = .EL.STANDARD_COMMENT
-  self~ignored = 1 -- Classic comments are always ignored
-  self~from = startLine startCol
-  self~to   = endLine   endCol
+  self~ignored  = 1 -- Classic comments are always ignored
+  self~from     = startLine startCol
+  self~to       = endLine   endCol
 ::Method isMultiLine
   Expose startLine endLine
   Return startLine \== endLine
@@ -1139,14 +1433,16 @@ EndDelimiterFound:
 --------------------------------------------------------------------------------
 
 ::Class Line.Comment Public subclass Element
+::Attribute parts
 ::Method init
   Expose package line start end
   Use Strict Arg package, line, start, endLine, end
   self~init:super
+  self~parts    = Array()
   self~category = .EL.LINE_COMMENT
-  self~ignored = 1 -- Line comments are always ignored
-  self~from = line    start
-  self~to   = endLine end
+  self~ignored  = 1 -- Line comments are always ignored
+  self~from     = line    start
+  self~to       = endLine end
 ::Method source
   Expose package line start endLine end
   If self~category == .EL.LINE_COMMENT Then

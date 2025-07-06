@@ -33,10 +33,15 @@ the `source` attribute for Rexx fenced code blocks.
 /******************************************************************************/
 
 /**
- * This is a doc-comment, a special form of comment, similar to JavaDoc.
+ * This is a doc-comment. The first statement, up to the first period,
+ * is the summary, and the rest is the description.
+ *
+ * @param name Description
  */
-::Method myMethod Package Protected     -- Bold, underline, italic
+::Method open Package Protected         -- Bold, underline, italic
   Expose x pos stem.
+
+  Use Strict Arg name
 
   a   = 12.34e-56 + " -98.76e+123 "     -- Highlighting of numbers
   len = Length( Stem.12.2a.x.y )        -- A built-in function call
@@ -47,7 +52,9 @@ the `source` attribute for Rexx fenced code blocks.
   Exit "नमस्ते"G,  "P ≝ 𝔐",  "🦞🍐"     -- Unicode strings
 
 ---
---- When a doc-comment starts with "---", it's a _Markdown_ doc-comment.
+---  This is the main description summary.
+---
+---  _Markdown doc-comment_ lines start with "---".
 ---
 Pos: Procedure                          -- A label
   Return "POS"( Arg(1), Arg(2) ) + 1    -- Built-in function calls
@@ -63,8 +70,8 @@ in the corresponding copyright notices.
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.2d, refresh 20250629.
-You can download it <a href="Rexx-Parser-0.2d-20250629.zip">here</a>.
+The current release is beta 0.2d, refresh 20250706.
+You can download it <a href="Rexx-Parser-0.2d-20250706.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).

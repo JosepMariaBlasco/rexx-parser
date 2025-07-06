@@ -25,6 +25,7 @@
 /* 20250406         Rename fractional numbers to decimal                      */
 /* 20250529    0.2c Add support for parts of a string                         */
 /* 20250601         Add ALL.STRING_DELIMITERS and ALL.STRING_COMPONENTS       */
+/* 20250629         Add support for doc-comment subelements                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -277,20 +278,55 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewElements EL.STANDARD_COMMENT, EL.LINE_COMMENT
 
   -- A EL.DOC_COMMENT is a standard ("block") comment that starts with "/**"
-  -- but not with "/***" and end with "*/" but not with "**/".
+  -- but not with "/***" and ends with "*/" but not with "**/".
   --
   -- A EL.DOC_COMMENT_MARKDOWN is a set of contiguous line comments that
   -- start with "---" but not with "----".
   Call NewElements EL.DOC_COMMENT, EL.DOC_COMMENT_MARKDOWN
 
-  --
-  Call NewSet ALL.DOC_COMMENTS,      -
-    .EL.DOC_COMMENT, .EL.DOC_COMMENT_MARKDOWN
-  Call NewSet ALL.NON_DOC_COMMENTS,  -
-    .EL.STANDARD_COMMENT, .EL.LINE_COMMENT
-  Call NewSet ALL.COMMENTS,          -
-    .EL.STANDARD_COMMENT, .EL.LINE_COMMENT, -
-    .EL.DOC_COMMENT, .EL.DOC_COMMENT_MARKDOWN
+  -- Doc-comments are returned as a single element, but some of the finer
+  -- structure of the comment is also available via the "parts" method.
+  -- The following are the doc-comment (sub-)element categories.
+
+  Call NewElements -
+    EL.DOC_COMMENT_ARMATURE,         -  -- The enclosing outer block
+    EL.DOC_COMMENT_WHITESPACE,       -  -- Internal to the doc-comment contents
+    EL.DOC_COMMENT_SUMMARY,          -  -- The first statement
+    EL.DOC_COMMENT_MAIN_DESCRIPTION, -  -- Before the first @tag
+    EL.DOC_COMMENT_TAG,              -  -- Like @param. Includes the initial @
+    EL.DOC_COMMENT_TAG_VALUE,        -  -- E.g., the parameter name in @param
+    EL.DOC_COMMENT_TAG_DESCRIPTION      -- E.g., the param. desc. in @param
+
+  Call NewSet ALL.CLASSIC_DOC_COMMENTS,  -
+    .EL.DOC_COMMENT,                     -
+    .EL.DOC_COMMENT_ARMATURE,            -
+    .EL.DOC_COMMENT_WHITESPACE,          -
+    .EL.DOC_COMMENT_SUMMARY,             -
+    .EL.DOC_COMMENT_MAIN_DESCRIPTION,    -
+    .EL.DOC_COMMENT_TAG,                 -
+    .EL.DOC_COMMENT_TAG_VALUE,           -
+    .EL.DOC_COMMENT_TAG_DESCRIPTION
+  Call NewSet ALL.MARKDOWN_DOC_COMMENTS, -
+    .EL.DOC_COMMENT_MARKDOWN,            -
+    .EL.DOC_COMMENT_ARMATURE,            -
+    .EL.DOC_COMMENT_WHITESPACE,          -
+    .EL.DOC_COMMENT_SUMMARY,             -
+    .EL.DOC_COMMENT_MAIN_DESCRIPTION,    -
+    .EL.DOC_COMMENT_TAG,                 -
+    .EL.DOC_COMMENT_TAG_VALUE,           -
+    .EL.DOC_COMMENT_TAG_DESCRIPTION
+  Call NewSet ALL.DOC_COMMENTS,          -
+    .EL.DOC_COMMENT,                     -
+    .EL.DOC_COMMENT_MARKDOWN,            -
+    .EL.DOC_COMMENT_ARMATURE,            -
+    .EL.DOC_COMMENT_WHITESPACE,          -
+    .EL.DOC_COMMENT_SUMMARY,             -
+    .EL.DOC_COMMENT_MAIN_DESCRIPTION,    -
+    .EL.DOC_COMMENT_TAG,                 -
+    .EL.DOC_COMMENT_TAG_VALUE,           -
+    .EL.DOC_COMMENT_TAG_DESCRIPTION
+  Call NewSet ALL.NON_DOC_COMMENTS,  .EL.STANDARD_COMMENT, .EL.LINE_COMMENT
+  Call NewSet ALL.COMMENTS,          .ALL.DOC_COMMENTS,    .ALL.NON_DOC_COMMENTS
 
   ------------------------------------------------------------------------------
   -- NUMBERS                                                                  --

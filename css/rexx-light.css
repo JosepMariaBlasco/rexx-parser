@@ -22,6 +22,7 @@
 /* 20250406         Rename fractional numbers to decimal                      */
 /* 20250530    0.2c Add support for detailed string highlighting              */
 /* 20250629    0.2d Complete refactor to use nesting and "&"                  */
+/* 20250706         Add support for doc-comment subelements                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -81,19 +82,52 @@
 
   .rx-ws, .rx-cont { color: #cc0; }
 
+
 /******************************************************************************/
-/* Comments and doc-comments                                                  */
-/* =========================                                                  */
+/* Standard (non-doc) comments                                                */
+/* ===========================                                                */
 /******************************************************************************/
 
-  .rx-cm, .rx-lncm {                    /* Non-doc comments                   */
+  .rx-cm,                               /* Classic, block comments            */
+  .rx-lncm {                            /* Line comments                      */
     color: #080;
     font-style: italic;
   }
 
-  .rx-doc-cm, .rx-doc-lncm {            /* Doc-comments                       */
-    color: #008;
-    font-style: italic;
+/******************************************************************************/
+/* Doc-comments                                                               */
+/* ============                                                               */
+/******************************************************************************/
+
+  .rx-doc-comment,                      /* Classic style doc-comments         */
+  .rx-markdown-doc-comment {            /* Markdown style doc-comments        */
+
+    color: #93a1ed;                     /* Default values (for "block"..      */
+    font-style: italic;                 /* ..highlighting.                    */
+
+    &.rx-doc-comment-armature,          /* Armature, whitespace and main      */
+    &.rx-doc-comment-whitespace,        /* description share the same style.  */
+    &.rx-doc-comment-main-description {
+      color: #93a1ed;
+      font-style: italic;
+    }
+    &.rx-doc-comment-summary {          /* Initial summary statement.         */
+      color: purple;
+      text-decoration:underline;
+      font-style: normal;
+    }
+    &.rx-doc-comment-tag {              /* @block-tag                         */
+      color: chocolate;
+      font-style: normal;
+    }
+    &.rx-doc-comment-tag-value {        /* As the name in "@param name".      */
+      color: #f6f;
+      font-style: normal;
+    }
+    &.rx-doc-comment-tag-description {  /* Text after @deprecated.            */
+      color: teal;
+      font-style: italic;
+    }
   }
 
 /******************************************************************************/

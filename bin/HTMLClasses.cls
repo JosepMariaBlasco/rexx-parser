@@ -24,6 +24,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional numbers to decimal                      */
 /* 20250528    0.2c Add support for detailed string highlighting              */
+/* 20250630    0.2d Add support for doc-comment subelements                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -161,15 +162,38 @@ SkipOverAssign:
   Call Assign   .EL.PERIOD,                      "lit"
 
 /******************************************************************************/
-/* COMMENTS                                                                   */
+/* COMMENTS AND DOC-COMMENTS                                                  */
 /******************************************************************************/
 
--- We style doc-comments the same as non-doc comments by default
-
   Call Assign   .EL.LINE_COMMENT,                "lncm"
-  Call Assign   .EL.DOC_COMMENT_MARKDOWN,        "doc-lncm"
+  Call Assign   .EL.DOC_COMMENT_MARKDOWN,        "markdown-doc-comment"
   Call Assign   .EL.STANDARD_COMMENT,            "cm"
-  Call Assign   .EL.DOC_COMMENT,                 "doc-cm"
+  Call Assign   .EL.DOC_COMMENT,                 "doc-comment"
+
+
+  Signal SkipOverDocComms
+
+DocComms:
+  Call Assign Arg(1), Arg(2)
+
+  pa2  = prefix||Arg(2)
+  doc1 = prefix"doc-comment"
+  doc2 = prefix"markdown-doc-comment"
+
+  HTMLClass[ .EL.DOC_COMMENT,          Arg(1)   ] = doc1 pa2
+  HTMLClass[ .EL.DOC_COMMENT_MARKDOWN, Arg(1)   ] = doc2 pa2
+
+  Return
+
+SkipOverDocComms:
+
+  Call DocComms .EL.DOC_COMMENT_ARMATURE,        "doc-comment-armature"
+  Call DocComms .EL.DOC_COMMENT_WHITESPACE,      "doc-comment-whitespace"
+  Call DocComms .EL.DOC_COMMENT_SUMMARY,         "doc-comment-summary"
+  Call DocComms .EL.DOC_COMMENT_MAIN_DESCRIPTION,"doc-comment-main-description"
+  Call DocComms .EL.DOC_COMMENT_TAG,             "doc-comment-tag"
+  Call DocComms .EL.DOC_COMMENT_TAG_VALUE,       "doc-comment-tag-value"
+  Call DocComms .EL.DOC_COMMENT_TAG_DESCRIPTION, "doc-comment-tag-description"
 
 /******************************************************************************/
 /* RESOURCES                                                                  */

@@ -65,6 +65,8 @@
   If .Parser.Options~hasIndex( earlyCheck ) Then
     checkSignal = .Parser.Options~earlyCheck~hasItem( signal )
 
+  -- TODO: This should be recursive, not iterative
+
   Do clause Over body~clauses
     Select Case clause~class
       When .Signal.Instruction, .Signal.On.Instruction Then
@@ -113,7 +115,7 @@ If .rxcheck.debug = 1 Then Trace ?a
   routines   = package~routines
 
   Do routine Over body~calledRoutineNames
-    name = routine[1]
+    name  = routine[1]
     label = name~value
     type  = name~invocationType
     Select

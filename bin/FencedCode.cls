@@ -24,6 +24,7 @@
 /* 20250317         Support a defaultstyle parameter (default="dark")         */
 /* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250529    0.2c Add support for detailed string highlighting              */
+/* 20250706    0.2d Add support for detailed doc-comment highlighting         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -80,6 +81,8 @@
 --   constant= "group" | "full" | "detail"
 --     Determines how taken constants (strings or symbols taken as a
 --     constant) will be highlighted.
+--   doccomments= "detailed" | "block"
+--     Determines whether doc-comment parts are individually highlighted.
 --   extraletters= <string>
 --     Allows symbols to contain characters present in <string>, which should
 --     be specified between quotes.
@@ -231,6 +234,7 @@ MissingEndMarker:
 
   -- Default options
   Options.            = 0
+  Options.doccomments = "detailed"      -- Individually highlight sub-elements
   Options.operator    = "group"         -- All operators are displayed the same
   Options.special     = "group"         -- All specials are displayed the same
   Options.constant    = "full"          -- Flexibility with taken constants
@@ -278,6 +282,11 @@ MissingEndMarker:
         When "patch"        Then Options.patch        = value
         When "style"        Then Options.style        = value
         When "size"         Then Options.size         = value
+        When "doccomments"  Then
+          Select Case Lower(value)
+            When "detailed", "block"       Then Options.doccomments   = Lower(value)
+            Otherwise Exit BadValue()
+          End
         When "operator" Then
           Select Case Lower(value)
             When "group", "full", "detail" Then Options.operator   = Lower(value)

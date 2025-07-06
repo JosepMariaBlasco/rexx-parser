@@ -66,8 +66,8 @@
 /******************************************************************************/
 
 /* doc-comments                                                               */
-.highlight-rexx-rgflight .rx-doc-cm,
-.highlight-rexx-rgflight .rx-doc-lncm
+.highlight-rexx-rgflight .rx-doc-comment,
+.highlight-rexx-rgflight .rx-markdown-doc-comment
 {
   color: #008;
   font-style: italic;

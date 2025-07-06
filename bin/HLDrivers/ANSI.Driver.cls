@@ -62,7 +62,7 @@ End
     patch. = patch~getPatch
     Tag2Attr. = patch.!Tag2Attr
     Select
-      When variant     \== "" Then extra = Tag2Attr.category.subCategory.variante
+      When variant     \== "" Then extra = Tag2Attr.category.subCategory.variant
       When subCategory \== "" Then extra = Tag2Attr.category.subCategory
       Otherwise                    extra = Tag2Attr.category
     End
