@@ -1,1 +1,1 @@
-var = "Hi"
+Say "Hi!"

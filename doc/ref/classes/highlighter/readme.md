@@ -53,7 +53,7 @@ The default value for this option is `rx-`.
 One of `full`, `yes`,  `1` or `true`, meaning *yes*,
 or `variable`, `no`, `0`, or `false`, meaning *no*.
 
-Determines whether, *yes** or *no*, full detailed compound variable
+Determines whether, *yes* or *no*, full detailed compound variable
 tail highlighing is desired.
 
 The default value for this option is `1`.
@@ -69,10 +69,20 @@ as a constant.
 
 The default value for this option is `full`.
 
+##### `doccomments`
+
+One of `detailed` or `block`. When `detailed` is selected,
+some of the doc-comments elements, like the initial summary statement,
+the main description or the final block tags, are highlighted
+separately; when `block` is selected, the whole doc-comment
+is highlighted as a whole, with a single style.
+
+The default value for this option is `detailed`.
+
 ##### `mode`
 
-One of `HTML`, `ANSI` or `LaTeX`, this value selects the desired
-type of highlighting.
+One of `HTML`, `ANSI` or `LaTeX`. This value selects the desired
+mode of highlighting.
 
 The default value for this option is `HTML`.
 
@@ -122,6 +132,14 @@ line displayed. This option is ignored When
 [numberlines](#numberlines) is `0`.
 
 The default value for this option is `1`.
+
+#### `string`
+
+This options affects string highlighting.
+When its value is <code>detail</code> (the default),
+the opening and closing quotes and
+the optional suffix get a distinct highlighting; when it is "whole",
+the whole string is highlighted using a single style.
 
 #### `style`
 

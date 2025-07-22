@@ -17,6 +17,7 @@
 /* 20241217    0.1c First public release                                      */
 /* 20241229    0.1e Make non-essential parts of the page non-printable.       */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250621    0.2c Partial support for .rex and .cls files                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -104,6 +105,7 @@ Crumb:
   parser       = "/rexx-parser"
   print        = "/rexx-parser/doc/print"
   doc          = "/rexx-parser/doc"
+  bin          = "/rexx-parser/bin"
   guide        = doc"/guide"
   ref          = doc"/ref"
   dochl        = doc"/highlighter"
@@ -112,6 +114,8 @@ Crumb:
   docpub       = doc"/publications"
 
   Select Case Arg(1)
+
+    When "/tools"                  Then Return "Tools and utilities"
 
     -- Tokenizer
 
@@ -163,6 +167,11 @@ Crumb:
     When parser"/highlighter"      Then Return "Highlighter"
     When parser"/tests"            Then Return "Tests"
 
+    -- "/rexx-parser/bin"
+
+    When bin                       Then Return "bin"
+    When bin"/tools"               Then Return "Tools"
+
     -- "/rexx-parser/doc/guide"
 
     When guide                     Then Return "User Guide"
@@ -192,6 +201,7 @@ Crumb:
     When doc"/treeapi"             Then Return "Tree API"
     When doc"/elementapi"          Then Return "Element API"
     When doc"/samples"             Then Return "Samples"
+    When doc"/oorexx-bugs"         Then Return "Related ooRexx bugs"
     When doc"/utilities"           Then Return "Utilities"
     When doc"/utilities/rxcheck"   Then Return "RxCheck"
     When doc"/utilities/highlight" Then Return "Highlight"
@@ -202,9 +212,11 @@ Crumb:
 
     When dochl                     Then Return "Highlighter"
     When dochl"/cgi"               Then Return "CGI"
+    When dochl"/css"               Then Return "CSS support"
     When dochl"/paged-media"       Then Return "CSS Paged Media"
     When dochl"/ansi"              Then Return "ANSI"
     When dochl"/latex"             Then Return "(Lua)LaTeX"
+    When dochl"/examples"          Then Return "Highlighting examples"
     When dochl"/htmlclasses"       Then Return "HTMLClasses"
     When dochl"/fencedcode"        Then Return "Fenced Code Blocks"
 
@@ -217,6 +229,8 @@ Crumb:
     When dochlfeat"/taken-constant" Then Return "Taken constants"
     When dochlfeat"/doc-comments"  Then Return "Doc-comments"
     When dochlfeat"/patches"       Then Return "Style patches"
+    When dochlfeat"/numbers"       Then Return "Detailed highlighting of numbers"
+    When dochlfeat"/strings"       Then Return "Detailed string highlighting"
 
     -- "/rexx-parser/doc/highlighter/html"
 
@@ -235,7 +249,12 @@ Crumb:
     When docpub"/36/2025-05-06-The-Rexx-Highlighter"
                                    Then Return "The Rexx Highlighter"
 
-    Otherwise                           Return "XXX"
+    Otherwise
+      If Arg(1)~startsWith("/rexx-parser/bin/tools/") Then Do
+        Parse Value Reverse(Arg(1)) With fn"/"
+        Return Reverse(fn)
+      End
+      Return "XXX"
   End
 
 --------------------------------------------------------------------------------

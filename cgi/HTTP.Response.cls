@@ -42,7 +42,6 @@
   order   = .Array~new
   headers = .Directory~new
 
-
 --------------------------------------------------------------------------------
 -- PRINTHEADERS                                                               --
 --------------------------------------------------------------------------------
@@ -88,7 +87,8 @@
   If messageName~endsWith("=") Then Do
     messageName = messageName[1, Length(messageName) - 1]
     messageName = Process(messageName)
-    order~append( messageName )
+    If \ headers~hasIndex( messageName ) Then
+      order~append( messageName )
     headers[ messageName ] = Arg(2)
     Return
   End

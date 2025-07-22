@@ -1,1 +1,0 @@
-Loop with index *

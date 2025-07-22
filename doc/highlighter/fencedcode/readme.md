@@ -74,14 +74,6 @@ order.
 
 Define the class prefix used for HTML classes. Default is "rx-".
 
-#### `compound= "full" | "yes" | "1" | "true"`
-
-Use full detailed compound variable tail highlighing.
-
-#### `compound= "variable" | "no" | "0" | "false"`
-
-Highlight compound variables as a whole.
-
 #### `constant= "group" | "full" | "detail"`
 
 Determines how taken constants (strings or symbols taken as a
@@ -136,7 +128,7 @@ will be padded up to <em>column</em> if they have less than
 contrasting backgrounds, because it will ensure that the
 whole resource/comment displays as a rectangle.
 
-~~~rexx {pad=80 patch="element EL.RESOURCE_DATA #FF0/#F0F"}
+~~~rexx {pad=80 patch="element EL.RESOURCE_DATA #FF0:#F0F"}
 --------------------------------------------------------------------------------
 -- This code block is using "pad=80" and a high-contrast style patch for      --
 -- ::RESOURCE data lines.                                                     --

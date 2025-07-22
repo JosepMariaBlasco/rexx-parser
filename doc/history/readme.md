@@ -8,6 +8,45 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20250622<td>0.2d<td>
+<ul>
+  <li> **Breaking change**: The character used to separate foreground
+       and background colors in style patches is now ":" (was "/").
+  <li> Colors in CSS now accept alpha values,
+       in the forms `#rgba` and `#rrggbbaa`.
+  <li> `.rex` and `.cls` files are now automatically highlighted, but only when
+       `"view=highlight"` is added to the URL as a query string.
+  <li> Major rewrite of [the CSS parsing algorithms](../highlighter/css/) (20250629).
+  <li> **Breaking change**: the `rx-doc-cm` class has been renamed
+       to `rx-doc-comment`, and `rx-doc-lncm` to `rx-doc-comment-markdown` (20250706).
+  <li> Add support for [detailed highlighting of doc-comments](../highlighter/features/doc-comments/) (20250706).
+  <li> Add Set.Directive.SubKeyword, .EL.DIRECTIVE_SUBKEYWORD, .ALL.DIRECTIVE_KEYWORDS and rx-dskw (20220725).
+  <li> Begin extensive refactoring to test and fix the Tree API (20220725).
+<tr><td>20250427<td>0.2c<td>
+<ul>
+  <li> **Breaking change**: Continuation chars "-" and "," are
+       now assigned a category of .EL.CONTINUATION. A new
+       set .ALL.WHITESPACE_LIKE has been created that includes
+       .EL.WHITESPACE and this new category.
+  <li> Fix <https://github.com/JosepMariaBlasco/rexx-parser/issues/11>.
+  <li> Update css/rgflight.css, add rgfdark.css (Rony) (20250528).
+  <li> Add support for detailed string highlighing (20250529).
+  <li> Add support for detailed number highlighing (20250531).
+  <li> Add a new rexx-test1 CSS file (20250531).
+  <li> Allow symbolic color names in CSS files (20250531).
+  <li> Fix <https://github.com/JosepMariaBlasco/rexx-parser/issues/13> (20250531).
+  <li> Relax doc-comment requirements: now they can be placed anywhere (20250531).
+  <li> **Breaking change**: Remove the compound= highlighting option. Anyone wanting homogeneus
+       highlighting can design his own style (20250531).
+  <li> **Breaking change**: Make detailed string and number highlighting mandatory, for the same reason (20250531).
+  <li> Document [string](/rexx-parser/doc/highlighter/features/strings/) and
+       [number](/rexx-parser/doc/highlighter/features/numbers/) highlighting,
+       and add a page showing some [examples](/rexx-parser/doc/highlighter/examples/) (20250531).
+  <li> Added [Related ooRexx bugs](/rexx-parser/doc/oorexx-bugs/) page (20250602).
+  <li> Add --from and --to options to elements.rex. Create a /bin/tools subdirectory,
+       and add a new cielab.cls utility and Rony Flatscher's w3c_colors.cls (20250606).
+  <li> Substitute cielab.cls for sRGB.cls, which is more accurate (20250621).
+  <li> CGI: Add support for .rex and .cls files (20250621).
 <tr><td>20250421<td>0.2b<td>
 <ul>
   <li> (Almost) complete early-checking of BIFs.

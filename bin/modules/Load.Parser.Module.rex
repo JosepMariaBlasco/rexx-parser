@@ -18,7 +18,8 @@
 /* 20250318    0.2  Change syntax to class::method                            */
 /* 20250326         Detect when a module tries to define an already-defined   */
 /*                  method.                                                   */
-/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250714    0.2d Add 'override' parameter                                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -26,8 +27,14 @@
 /* A common initializer for all Rexx parser modules                           */
 /******************************************************************************/
 
--- A list of package names (without the .cls extension), separated by blanks
-Use Strict Arg dependencies = ""
+--
+-- Parameters
+--
+-- Dependencies: A list of package names (without the .cls extension),
+--   separated by blanks
+-- Override: true when existing methods can be redefined by this execution
+--   of the loader.
+Use Strict Arg dependencies = "", override = 0
 
 -- We were called by a prolog routine, located in a certain package.
 callerPackage = .context~stackFrames[2]~executable~package
@@ -61,7 +68,7 @@ Do name Over methods
     Raise Halt
   End
   theClass = .environment[ class ]
-  If HasMethod( theClass, method ) Then Do
+  If \override, HasMethod( theClass, method ) Then Do
     Say "Internal error! Method" method "already defined in class" class"."
     Raise Halt
   End

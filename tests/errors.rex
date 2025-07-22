@@ -22,6 +22,12 @@
 /******************************************************************************/
 
 Call "earlyChecks.test"
+Call "otherChecks.test"
+
+------------------------------------------------------------------------------
+
+Say "Total" .Parser.Test.SimpleErrors "simple errors."
+Say "Total" .Parser.Test.OK "OK tests."
 
 my    = .context~package
 myDir = FileSpec("L",my~name)
@@ -160,7 +166,6 @@ Do i = 1 To files~items
   Drop source.major.minor
 Say "Processing" file"..."
 -- Second pass not implemented yet & some interpreter bugs
-If file~startsWith("99.913") Then Iterate
 If file~startsWith("47.003.else.clause.rex")   Then Iterate -- BUG
 If file~startsWith("47.003.then.clause.rex")   Then Iterate -- BUG
 If file~startsWith("47.004.then.clause.1.rex") Then Iterate -- BUG

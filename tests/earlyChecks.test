@@ -97,7 +97,6 @@
   Call Test.Error 40.004, "Call Arg a,b,c               "  -- Maximum of two arguments
   Call Test.Error 40.005, "Call Arg ,'e'                "  -- Argument 1 is required when Arg(2,'e') = 1
   Call Test.Error 40.012, "Call Arg '*'                 "  -- First argument must be a whole number
-  -- See https://sourceforge.net/p/oorexx/bugs/2008/
   Call Test.Error 40.014, "Call Arg 0                   "  -- First argument must be pisitive
   Call Test.Error 40.904, "Call Arg 1,'*'               "  -- Second argument must be one of AENO
 
@@ -176,9 +175,7 @@
 
   Call Test.Error 40.004, "Call CharIn a, b, c, d       "  -- Maximum of three arguments
   Call Test.Error 40.012, "Call CharIn a, '*'           "  -- Argument 2 must be a whole number
-  -- Cannot check for -1, see https://sourceforge.net/p/oorexx/bugs/2011/
   Call Test.Error 40.012, "Call CharIn a,    , '*'      "  -- Argument 3 must be a whole number
-  -- Cannot check for -1, see https://sourceforge.net/p/oorexx/bugs/2011/
 
   -- CHAROUT
   Call Test.Error 40.004, "Call CharOut a, b, c, d       "  -- Maximum of three arguments
@@ -807,16 +804,12 @@
   Call Test.OK            "Call XRange 'Upper'          "
   Call Test.OK            "Call XRange 'XDigit'         "
 
-  ------------------------------------------------------------------------------
-
-  Say "Total" .Parser.Test.SimpleErrors "simple errors."
-  Say "Total" .Parser.Test.OK "OK tests."
-
   Exit
 
 Halt:
   Say ""
   Say "Program halted."
+  Pull
 Exit
 
 ::Requires "Test.Parser.cls"

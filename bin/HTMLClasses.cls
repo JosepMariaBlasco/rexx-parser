@@ -23,6 +23,9 @@
 /* 20250116    0.1f Add support for EL.SUBKEYWORD                             */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional numbers to decimal                      */
+/* 20250528    0.2c Add support for detailed string highlighting              */
+/* 20250630    0.2d Add support for doc-comment subelements                   */
+/* 20250722         Add "dskw" for .EL.DIRECTIVE_SUBKEYWORD                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -115,14 +118,15 @@ SkipOverAssign:
 -- Keywords                                                                   --
 --------------------------------------------------------------------------------
 --
--- Directive keywords have a special element category, different from
--- instruction keywords, and, correspondingly, they can be assigned a different
--- HTML class, if so desired.
+-- Directive keywords and subkeywordshave a special element category, different
+-- from instruction keywords, and, correspondingly, they can be assigned
+-- a different HTML class, if so desired.
 --
 
   Call Assign   .EL.KEYWORD,                     "kw"
   Call Assign   .EL.SUBKEYWORD,                  "skw"
   Call Assign   .EL.DIRECTIVE_KEYWORD,           "dkw"
+  Call Assign   .EL.DIRECTIVE_SUBKEYWORD,        "dskw"
 
 --------------------------------------------------------------------------------
 -- Variables                                                                  --
@@ -159,37 +163,39 @@ SkipOverAssign:
   Call Assign   .EL.SYMBOL_LITERAL,              "lit"
   Call Assign   .EL.PERIOD,                      "lit"
 
---------------------------------------------------------------------------------
--- Numbers                                                                    --
---------------------------------------------------------------------------------
-
-  Call Assign   .EL.EXPONENTIAL_NUMBER,          "exp"
-  Call Assign   .EL.DECIMAL_NUMBER,              "deci"
-  Call Assign   .EL.INTEGER_NUMBER,              "int"
-
 /******************************************************************************/
-/* STRINGS                                                                    */
+/* COMMENTS AND DOC-COMMENTS                                                  */
 /******************************************************************************/
-
-  Call Assign   .EL.BINARY_STRING,               "bstr"
-  Call Assign   .EL.STRING,                      "str"
-  Call Assign   .EL.HEX_STRING,                  "xstr"
-  Call Assign   .EL.BYTES_STRING,                "ystr"
-  Call Assign   .EL.CODEPOINTS_STRING,           "pstr"
-  Call Assign   .EL.GRAPHEMES_STRING,            "gstr"
-  Call Assign   .EL.TEXT_STRING,                 "tstr"
-  Call Assign   .EL.UNICODE_STRING,              "ustr"
-
-/******************************************************************************/
-/* COMMENTS                                                                   */
-/******************************************************************************/
-
--- We style doc-comments the same as non-doc comments by default
 
   Call Assign   .EL.LINE_COMMENT,                "lncm"
-  Call Assign   .EL.DOC_COMMENT_MARKDOWN,        "doc-lncm"
+  Call Assign   .EL.DOC_COMMENT_MARKDOWN,        "doc-comment-markdown"
   Call Assign   .EL.STANDARD_COMMENT,            "cm"
-  Call Assign   .EL.DOC_COMMENT,                 "doc-cm"
+  Call Assign   .EL.DOC_COMMENT,                 "doc-comment"
+
+
+  Signal SkipOverDocComms
+
+DocComms:
+  Call Assign Arg(1), Arg(2)
+
+  pa2  = prefix||Arg(2)
+  doc1 = prefix"doc-comment"
+  doc2 = prefix"doc-comment-markdown"
+
+  HTMLClass[ .EL.DOC_COMMENT,          Arg(1)   ] = doc1 pa2
+  HTMLClass[ .EL.DOC_COMMENT_MARKDOWN, Arg(1)   ] = doc2 pa2
+
+  Return
+
+SkipOverDocComms:
+
+  Call DocComms .EL.DOC_COMMENT_ARMATURE,        "doc-comment-armature"
+  Call DocComms .EL.DOC_COMMENT_WHITESPACE,      "doc-comment-whitespace"
+  Call DocComms .EL.DOC_COMMENT_SUMMARY,         "doc-comment-summary"
+  Call DocComms .EL.DOC_COMMENT_MAIN_DESCRIPTION,"doc-comment-main-description"
+  Call DocComms .EL.DOC_COMMENT_TAG,             "doc-comment-tag"
+  Call DocComms .EL.DOC_COMMENT_TAG_VALUE,       "doc-comment-tag-value"
+  Call DocComms .EL.DOC_COMMENT_TAG_DESCRIPTION, "doc-comment-tag-description"
 
 /******************************************************************************/
 /* RESOURCES                                                                  */
@@ -203,14 +209,11 @@ SkipOverAssign:
   Call Assign   .EL.RESOURCE_IGNORED_DATA,       "res-ignore"
 
 /******************************************************************************/
-/* WHITESPACE                                                                 */
+/* WHITESPACE AND CONTINUATIONS                                               */
 /******************************************************************************/
---
--- Note that elements with the .EL.WHITESPACE class include
--- continuation characters "-" and ","
---
 
   Call Assign   .EL.WHITESPACE,                  "ws"
+  Call Assign   .EL.CONTINUATION,                "cont"
 
 /******************************************************************************/
 /* OPERATORS                                                                  */
@@ -378,6 +381,58 @@ SkipOverSpecial:
   Call Special .EL.ELLIPSIS,                     "ellipsis"
 
 /******************************************************************************/
+/* NUMBERS                                                                    */
+/******************************************************************************/
+
+--------------------------------------------------------------------------------
+-- Numbers                                                                    --
+--------------------------------------------------------------------------------
+
+  Call Assign   .EL.EXPONENTIAL_NUMBER,          "exp"
+  Call Assign   .EL.DECIMAL_NUMBER,              "deci"
+  Call Assign   .EL.INTEGER_NUMBER,              "int"
+
+  Call Assign   .EL.NUMBER_SIGN,                 "nsign"
+  Call Assign   .EL.INTEGER_PART,                "ipart"
+  Call Assign   .EL.DECIMAL_POINT,               "dpoint"
+  Call Assign   .EL.FRACTIONAL_PART,             "fpart"
+  Call Assign   .EL.EXPONENT_MARK,               "emark"
+  Call Assign   .EL.EXPONENT_SIGN,               "esign"
+  Call Assign   .EL.EXPONENT,                    "expon"
+
+/******************************************************************************/
+/* STRINGS                                                                    */
+/******************************************************************************/
+
+  Call String   .EL.BINARY_STRING,               "bstr"
+  Call String   .EL.STRING,                      "str"
+  Call String   .EL.HEX_STRING,                  "xstr"
+  Call String   .EL.BYTES_STRING,                "ystr"
+  Call String   .EL.CODEPOINTS_STRING,           "pstr"
+  Call String   .EL.GRAPHEMES_STRING,            "gstr"
+  Call String   .EL.TEXT_STRING,                 "tstr"
+  Call String   .EL.UNICODE_STRING,              "ustr"
+
+  Signal SkipOverStrings
+
+String:
+  Call Assign Arg(1), Arg(2)
+  pa2 = prefix||Arg(2)
+
+  HTMLClass[ Arg(1), .EL.STRING_OPENING_DELIMITER ] = pa2 prefix"oquo"
+  HTMLClass[ Arg(1), .EL.STRING_CLOSING_DELIMITER ] = pa2 prefix"cquo"
+  HTMLClass[ Arg(1), .EL.STRING_SUFFIX            ] = pa2 prefix"ssuf"
+
+  Return
+
+SkipOverStrings:
+
+  HTMLClass[ .EL.STRING_OPENING_DELIMITER ] = prefix"oquo"
+  HTMLClass[ .EL.STRING_CLOSING_DELIMITER ] = prefix"cquo"
+  HTMLClass[ .EL.STRING_SUFFIX            ] = prefix"ssuf"
+
+
+/******************************************************************************/
 /* STRINGS OR SYMBOLS TAKEN AS A CONSTANT                                     */
 /******************************************************************************/
 
@@ -390,6 +445,15 @@ Constant:
     When "detail" Then value = prefix||Arg(2)
   End
   HTMLClass[ constant, Arg(1) ] = value
+
+  open   = .EL.STRING_OPENING_DELIMITER
+  close  = .EL.STRING_CLOSING_DELIMITER
+  suffix = .EL.STRING_SUFFIX
+
+  HTMLClass[ constant, Arg(1), open   ] = value prefix"oquo"
+  HTMLClass[ constant, Arg(1), close  ] = value prefix"cquo"
+  HTMLClass[ constant, Arg(1), suffix ] = value prefix"ssuf"
+
 Return
 
 SkipOverConstant:

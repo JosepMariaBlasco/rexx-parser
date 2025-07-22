@@ -76,7 +76,7 @@ The returned value is a string
 with the following format
 
 ~~~
-bold italic underline color"/"background
+bold italic underline color":"background
 ~~~
 
 where *bold*, *italic* and *underline* are boolean values (that is,

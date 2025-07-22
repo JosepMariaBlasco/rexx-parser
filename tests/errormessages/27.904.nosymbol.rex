@@ -1,1 +1,0 @@
-Do With index i

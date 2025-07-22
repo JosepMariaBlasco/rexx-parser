@@ -1,1 +1,0 @@
-::Resource R END *

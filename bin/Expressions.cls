@@ -80,8 +80,9 @@
 ::Attribute begin
 ::Attribute end
 ::Method init
-  Expose args end
+  Expose args begin end
   args = arg(1, "A")
+  begin = args[1]~begin
   end = args~lastItem~end
 
 /******************************************************************************/
@@ -147,7 +148,7 @@
   Return .Expression.List~new(expressions, .Nil)
 
 -- Missing expression in logical expression list.
-35.929: Syntax( 35.929, Arg(1), Arg(1) )
+35.929: Syntax( 35.929, Arg(1) )
 
 --------------------------------------------------------------------------------
 
@@ -173,10 +174,17 @@
   Expose args
   Return args == .Nil
 ::Method init
-  Expose args argList end
+  Expose args argList begin end
   Use Strict Arg args, end
   argList = Array()
+
+  begin = .Nil
+
   If args \== .Nil Then Do
+
+    -- Calculate begin
+    first = args~firstItem
+    begin = first~begin
 
     -- Calculate end
     last = args~lastItem
@@ -216,7 +224,7 @@
 
   If element \< .ALL.OPS.ALTERNATIVE Then Leave
 
-    and_expressions~append( element~value )
+    and_expressions~append( element )
     element        = TheElementAfter( element )
 
   End
@@ -253,8 +261,8 @@
 
   If element \< .EL.OP.AND Then Leave
 
-    comparisons~append( element~value )
-    element        = TheElementAfter( element )
+    comparisons~append( element )
+    element = TheElementAfter( element )
 
   End
 
@@ -293,7 +301,7 @@
 
     If element \< .ALL.OPS.COMPARISON Then Leave
 
-    concatenations~append( element~value )
+    concatenations~append( element )
     element      = TheElementAfter( element )
 
   End
@@ -316,8 +324,8 @@
 
   Use Strict Arg package, begin, terminators
 
-  additions      = Array()
-  element           = begin
+  additions       = Array()
+  element         = begin
   newTerminators  = terminators || .ALL.OPS.CONCATENATION
 
   Loop
@@ -328,7 +336,7 @@
 
   If element \< .ALL.OPS.CONCATENATION Then Leave
 
-    additions~append( element~value )
+    additions~append( element )
     element      = TheElementAfter( element )
 
   End
@@ -364,7 +372,7 @@
 
   If element \< .ALL.OPS.ADDITIVE Then Leave
 
-    multiplications~append( element~value )
+    multiplications~append( element )
     element      = TheElementAfter( element )
 
   End
@@ -435,7 +443,8 @@
 
   If element \< .EL.OP.POWER Then Leave
 
-    expressionArray~append( "**" )
+    expressionArray~append( element )
+    -- expressionArray~append( "**" )
     element        = TheElementAfter( element )
 
   End
@@ -468,7 +477,7 @@
       When .EL.OP.MINUS Then Call SetCategory element, .EL.OP.PREFIX.MINUS
       Otherwise Nop -- "\" is always a prefix operator
     End
-    prefixes~append( element~value )
+    prefixes~append( element )
     element =  TheElementAfter( element )
   End
 
@@ -481,6 +490,7 @@
 --------------------------------------------------------------------------------
 
 ::Class Prefix.Expression Public SubClass Rexx.Expression
+::Attribute begin
 ::Attribute end
 ::Attribute prefixes
 ::Attribute term
@@ -492,8 +502,9 @@
     Else Return .nil
   Return option = "E"
 ::Method init
-  Expose prefixes term end
+  Expose prefixes term begin end
   Use Strict Arg prefixes, term
+  begin = prefixes[1]
   end = term~end
 
 /******************************************************************************/
@@ -625,8 +636,9 @@ FunctionCall:
   Expose string
   Return string
 ::Method init
-  Expose string end
+  Expose begin string end
   Use Strict Arg string
+  begin = string
   end = TheElementAfter( string )
 
 /******************************************************************************/
@@ -659,9 +671,10 @@ FunctionCall:
 ::Attribute end
 ::Attribute subExpression Get
 ::Method init
-  Expose subExpression end
+  Expose subExpression begin end
   Use Strict Arg subExpression
-  end = TheElementAfter( subExpression~end )
+  begin = subexpression~begin
+  end   = TheElementAfter( subExpression~end )
 
 --------------------------------------------------------------------------------
 -- Simple.Message.Term                                                        --
@@ -733,11 +746,12 @@ Return
 ::Method value
   Return self~symbol
 ::Method init
-  Expose symbol end
+  Expose symbol begin end
 
   Use Strict Arg package, symbol
 
-  end = TheElementAfter( symbol )
+  begin = symbol
+  end   = TheElementAfter( symbol )
 
 --------------------------------------------------------------------------------
 -- COMPOUND.VARIABLE.TERM                                                     --
@@ -839,9 +853,10 @@ Return
 ::Attribute begin
 ::Attribute end
 ::Method init
-  Expose stem parts end
+  Expose stem parts begin end
   Use Strict Arg stem, parts
-  end = TheElementAfter( stem )
+  begin = stem
+  end   = TheElementAfter( stem )
 
 --------------------------------------------------------------------------------
 -- STEM.VARIABLE.TERM                                                         --
@@ -875,12 +890,14 @@ Return
 
 ::Class Stem.Variable.Term Public SubClass Rexx.Term
 ::Constant items 1
+::Attribute begin
 ::Attribute end
 ::Attribute stem
 ::Method init
   Expose stem end
   Use Strict Arg stem
-  end = TheElementAfter( stem )
+  begin = stem
+  end   = TheElementAfter( stem )
 
 --------------------------------------------------------------------------------
 -- Namespace-qualified symbols                                                --
@@ -897,8 +914,6 @@ Return
   element = TheElementAfter( symbol )
   If element \< .EL.LEFT_PARENTHESIS Then
     Exit .NameSpace.Qualified.ClassName~new( nameSpace, symbol )
-
--- xxx
 
   routineName  = symbol
   Call SetConstantName routineName, .EXTERNAL.PACKAGE.FUNCTION.NAME
@@ -948,11 +963,15 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class Function.Call.Term Public SubClass Rexx.Term
+::Attribute argumentList
+::Attribute begin
 ::Attribute end
+::Attribute name
 ::Method init
-  Expose name argumentList end
+  Expose name argumentList begin end
   Use Strict Arg name, argumentList
-  end = TheElementAfter( argumentList~end )
+  begin = name
+  end   = TheElementAfter( argumentList~end )
 
 --------------------------------------------------------------------------------
 
@@ -1011,10 +1030,13 @@ Return
 ::Class Indexed.Term Public SubClass Rexx.Term
 ::Attribute begin
 ::Attribute end
+::Attribute term         Get
+::Attribute argumentList Get
 ::Method init
-  Expose term argumentList end
+  Expose term argumentList begin end
   Use Strict Arg term, argumentList
   rBracket = argumentList~end
+  begin    = term~begin
   end      = TheElementAfter( rBracket )
 
 --------------------------------------------------------------------------------
@@ -1075,9 +1097,15 @@ Return
 ::Class Message.Term Public SubClass Rexx.Term
 ::Attribute begin
 ::Attribute end
+::Attribute term
+::Attribute operator
+::Attribute messageName
+::Attribute scope
+::Attribute arguments
 ::Method init
-  Expose term operator messageName scope arguments end
+  Expose term operator messageName scope arguments begin end
   Use Strict Arg term, operator, messageName, scope, arguments
+  begin = term~begin
   Call SetConstantName messageName, .METHOD.NAME
   If arguments == .Nil Then
     If scope \== .Nil Then end = TheElementAfter( scope       )

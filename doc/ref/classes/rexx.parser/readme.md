@@ -106,13 +106,10 @@ of comma- or blank- separated case-insensitive option words.
 The following options are recognized:
 
 - `ALL`, the default, means that both standard (block) comments
-  and line comments located immediately before a directive
-  or a callable label are inspected to see if they are doc-comments.
-- `LINE` and `MARKDOWN` mean that line comments located immediately
-  before a directive or a callable label are inspected to see
+  and line comments are inspected to see if they are doc-comments.
+- `LINE` and `MARKDOWN` mean that line comments are inspected to see
   if they are doc-comments.
 - `STANDARD`, `BLOCK` and `CLASSIC` mean that standard comments
-  located immediately before a directive or a callable label
   are inspected to see if they are doc-comments.
 
 #### <code>extraLetters=<em>string</em></code> {#extraletters}

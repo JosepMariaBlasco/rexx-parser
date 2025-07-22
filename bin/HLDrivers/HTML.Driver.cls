@@ -17,11 +17,12 @@
 /* 20250101    0.1e First version                                             */
 /* 20250120    0.1f Add size option                                           */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /*                                                                            */
 /******************************************************************************/
 
 If \.environment~hasIndex( HTML.Highlighter ) Then
-  .environment~HTML.Highlighter = .HTML.Highlighter
+ .environment~HTML.Highlighter = .HTML.Highlighter
 
 ::Class HTML.Highlighter SubClass Highlighter.Driver Public
 
@@ -59,12 +60,15 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
 
     self~say( "<style>" )
     Do tail Over Tag2Attr.~allIndexes
-      If tail~length > 1 Then classes = HTMLClass[ constant, tail[3] ]
-      Else                    classes = HTMLClass[ tail ]
+      Select Case tail~length
+        When 3 Then classes = HTMLClass[ constant, tail[3] ]
+        When 5 Then classes = HTMLClass[ constant, tail[3], tail[5] ]
+        Otherwise   classes = HTMLClass[ tail ]
+      End
       lastClass = Word( classes, Words( classes ) )
-      Parse Value Tag2Attr.tail With attr color"/"background
+      Parse Value Tag2Attr.tail With b i u  color":"background
       style = ""
-      Do c Over attr~makeArray("")
+      Do c Over (b i u)~makeArray(" ")
         Select Case c
           When "b" Then style ||= "font-weight:normal; "
           When "B" Then style ||= "font-weight:bold; "
@@ -107,7 +111,7 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
 -- Print a highlighted element value
 
 ::Method Highlight
-  Use Strict Arg category, subCategory, tags, string
+  Use Strict Arg category, subCategory, variant, tags, string
   self~emit( '<span class="'tags'">'Escape(string)'</span>' )
   Exit
 

@@ -11,36 +11,50 @@ The Rexx Parser
 
 The Rexx Parser is hosted on:
 
-- <https://rexx.epbcn.com/rexx-parser/> (daily builds *and* releases).
-- <https://github.com/JosepMariaBlasco/rexx-parser/> (releases only).
+- <https://rexx.epbcn.com/rexx-parser/> (daily builds *and* releases,
+  full documentation).
+- <https://github.com/JosepMariaBlasco/rexx-parser/> (releases only,
+  documentation is partial due to the limitations of GitHub highlighting).
 
-The copy at <https://rexx.epbcn.com/rexx-parser/> uses the Rexx Highlighter
-to display Rexx programs, and therefore has better highlihting.
-On the other hand, the copy at
+The documentation copy at <https://rexx.epbcn.com/rexx-parser/> uses
+the Rexx Highlighter to display Rexx programs, and therefore has better
+highlihting. On the other hand, the copy at
 <https://github.com/JosepMariaBlasco/rexx-parser/>
 has version control, bug reporting, and all the features offered by GitHub.
 
-~~~rexx {.numberLines startfrom=93}
-/*******************************************************************************/
-/* This is a sample Rexx code fragment, numbered, starting at line 93.         */
-/* It shows many of the features of the Rexx Parser.                           */
-/*******************************************************************************/
+**Beware**: some of the program listings that appear in this documentation
+will not display at all in the GitHub version, as GitHub does not implement
+the `source` attribute for Rexx fenced code blocks.
+
+~~~rexx {.numberLines startfrom=93 unicode numberWidth=5}
+/******************************************************************************/
+/* This is a sample Rexx code fragment, numbered, starting at line 93.        */
+/* It shows many of the features of the Rexx Parser.                          */
+/******************************************************************************/
 
 /**
- * This is a doc-comment, a special form of comment, similar to JavaDoc.
- * It must appear immediately before a directive or a callable label.
+ * This is a doc-comment. The first statement, up to the first period,
+ * is the summary, and the rest is the description.
+ *
+ * @param name Description
  */
-::Method myMethod Package Protected     -- Bold, underline, italic
+::Method open Package Protected         -- Bold, underline, italic
   Expose x pos stem.
 
+  Use Strict Arg name
+
+  a   = 12.34e-56 + " -98.76e+123 "     -- Highlighting of numbers
   len = Length( Stem.12.2a.x.y )        -- A built-in function call
   pos = Pos( "S", "String" )            -- An internal function call
-  Call External pos, len, .True, 12     -- An external function call
-  .environment~test.2.x = test.2.x      -- Method call, compound variable...
-  Exit .test.2.x                        -- ...and environment variable
+  Call External pos, len, .True         -- An external function call
+  .environment~test.2.x = test.2.x      -- Method call, compound variable
+
+  Exit "नमस्ते"G,  "P ≝ 𝔐",  "🦞🍐"     -- Unicode strings
 
 ---
---- When a doc-comment starts with "---", it's a _Markdown_ doc-comment.
+---  This is the main description summary.
+---
+---  _Markdown doc-comment_ lines start with "---".
 ---
 Pos: Procedure                          -- A label
   Return "POS"( Arg(1), Arg(2) ) + 1    -- Built-in function calls
@@ -49,13 +63,15 @@ Pos: Procedure                          -- A label
 The **Rexx Parser** is a full Abstract Syntax Tree (AST)
 parser for Rexx and ooRexx written by Josep Maria Blasco
 &lt;<josep.maria.blasco@epbcn.com>&gt; and distributed
-under [the Apache 2.0 license](LICENSE).
+under [the Apache 2.0 license](LICENSE). Some files may
+contain contributions from other authors, as attributed
+in the corresponding copyright notices.
 
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.2b, refresh 20250526.
-You can download it <a href="Rexx-Parser-0.2b-20250526.zip">here</a>.
+The current release is beta 0.2d, refresh 20250722.
+You can download it <a href="Rexx-Parser-0.2d-20250722.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).

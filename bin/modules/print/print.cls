@@ -519,7 +519,7 @@ Process:
 
 --------------------------------------------------------------------------------
 
-::Method "Call.Value::String"
+::Method "Call.Value.Instruction::String"
   Expose expression arguments
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"CALL ("expression")"

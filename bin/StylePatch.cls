@@ -16,6 +16,8 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20241206    0.1  First public release                                      */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250601    0.2c Add support for CSS colors                                */
+/* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -142,6 +144,9 @@ BadMode:
   Use Arg attributes
   option  = ''
   If attributes = "" Then Signal BadOption
+  b       = "-"
+  i       = "-"
+  u       = "-"
   attr    = "."
   fg      = ""
   bg      = ""
@@ -154,26 +159,27 @@ BadMode:
     End
     Select Case option
       When "bold"      Then
-        If no Then attr ||= "b"
-        Else       attr ||= "B"
+        If no Then b = "b"
+        Else       b = "B"
       When "italic"    Then
-        If no Then attr ||= "i"
-        Else       attr ||= "I"
+        If no Then i = "i"
+        Else       i = "I"
       When "underline" Then
-        If no Then attr ||= "u"
-        Else       attr ||= "U"
+        If no Then u = "u"
+        Else       u = "U"
       Otherwise
         If no Then Signal BadNo
         color = option
-        If color~contains("/") Then Do
-          Parse Var color color"/"background
+        If color~contains(":") Then Do
+          Parse Var color color":"background
           If background[1] \== "#" Then Do
             bg = .HTML.Color[background]
             If bg == .Nil Then Signal BadBackground
+            bg = bg || "ff"
           End
           Else Do
             bg = SubStr(background,2)
-            If \"3 6"~containsWord( Length(bg) ) Then Signal BadBackground
+            If \"3 4 6 8"~containsWord( Length(bg) ) Then Signal BadBackground
             If \bg~dataType("X") Then Signal BadBackground
             bg = Normalize(bg)
           End
@@ -181,10 +187,11 @@ BadMode:
         If color[1] \== "#" Then Do
           fg = .HTML.Color[color]
           If fg == .Nil Then Signal BadColor
+          fg = fg || "ff"
         End
         Else Do
           fg = SubStr(color,2)
-          If \"3 6"~containsWord( Length(fg) ) Then Signal BadColor
+          If \"3 4 6 8"~containsWord( Length(fg) ) Then Signal BadColor
           If \fg~dataType("X") Then Signal BadColor
           fg = Normalize(fg)
         End
@@ -192,12 +199,40 @@ BadMode:
     no = 0
   End
   If no Then Signal BadFinalNo
-  Return attr fg"/"bg
+  Return b i u fg":"bg
 
 Normalize:
-  If Length(Arg(1)) == 6 Then Return Arg(1)
-  Parse Value Arg(1) With a +1 b +1 c +1
-  Return Space( a a b b c c , 0 )
+  col = .HTML.Color[Arg(1)]
+  If col \== "" Then Return col
+  Select Case Length(Arg(1))
+    When 6, 8 Then Return Arg(1)
+    When 3 Then Do
+      If Length(Arg(1)) == 6 Then Return Arg(1)
+      Parse Value Arg(1) With a +1 b +1 c +1
+      Return Space( a a b b c c , 0 )
+    End
+    When 4 Then Do
+      If Length(Arg(1)) == 6 Then Return Arg(1)
+      Parse Value Arg(1) With r +1 g +1 b +1 a +1
+      Return Space( r r g g b b a a , 0 )
+    End
+  End
+
+NormalizeAlpha:
+  If Right(alpha,1) == "%" Then Do
+    al = Left(alpha,Length(alpha)-1)
+    If al > 100 Then Signal BadAlpha
+    If al <   0 Then Signal BadAlpha
+    alpha = Format(al*255/100,,0)~d2x(2)
+    Return
+  End
+  If alpha > 1  Then Signal BadAlpha
+  If alpha < 0  Then Signal BadAlpha
+  alpha = Format(alpha*255,,0)~d2x(2)
+  Return
+
+BadAlpha:
+  Raise Syntax 93.900 Additional("Bad alpha '"alpha"'")
 
 BadNo:
   Raise Syntax 93.900 Additional("Invalid option 'no "option"'")

@@ -30,15 +30,19 @@
  .environment~             Address.Instruction =             .Address.Instruction
  .environment~                 Arg.Instruction =                 .Arg.Instruction
  .environment~                Call.Instruction =                .Call.Instruction
+ .environment~          Call.Value.Instruction =          .Call.Value.Instruction
  .environment~            Call.Off.Instruction =            .Call.Off.Instruction
  .environment~             Call.On.Instruction =             .Call.On.Instruction
+
  .environment~                Drop.Instruction =                .Drop.Instruction
+ .environment~                Exit.Instruction =                .Exit.Instruction
  .environment~              Expose.Instruction =              .Expose.Instruction
  .environment~             Forward.Instruction =             .Forward.Instruction
  .environment~               Guard.Instruction =               .Guard.Instruction
  .environment~           Interpret.Instruction =           .Interpret.Instruction
  .environment~             Iterate.Instruction =             .Iterate.Instruction
  .environment~               Leave.Instruction =               .Leave.Instruction
+ .environment~                Loop.Instruction =                .Loop.Instruction
  .environment~                 Nop.Instruction =                 .Nop.Instruction
  .environment~             Numeric.Instruction =             .Numeric.Instruction
  .environment~               Parse.Instruction =               .Parse.Instruction
@@ -46,6 +50,8 @@
  .environment~             Options.Instruction =             .Options.Instruction
  .environment~           Procedure.Instruction =           .Procedure.Instruction
  .environment~               Raise.Instruction =               .Raise.Instruction
+ .environment~              Return.Instruction =              .Return.Instruction
+ .environment~                 Say.Instruction =                 .Say.Instruction
  .environment~              Signal.Instruction =              .Signal.Instruction
  .environment~        Signal.Value.Instruction =        .Signal.Value.Instruction
  .environment~          Signal.Off.Instruction =          .Signal.Off.Instruction
@@ -54,7 +60,6 @@
  .environment~             Use.Arg.Instruction =             .Use.Arg.Instruction
  .environment~           Use.Local.Instruction =           .Use.Local.Instruction
 
- .environment~               Call.Value =               .Call.Value
  .environment~ NameSpace.Qualified.Call = .NameSpace.Qualified.Call
 
  .environment~                        Template =                        .Template
@@ -274,8 +279,12 @@ GetExpression:
   -- prepareExpression above may have promoted whitespace after the
   -- closing ")" to a blank operator.
   If element < .EL.OP.BLANK Then Do
-    Call SetCategory element, .EL.WHITESPACE          -- Demote, ..
-    element~makeIgnorable                          -- .. make ignorable..
+    c = element~source
+    If c == "-" | c == "," Then
+      Call SetCategory element, .EL.CONTINUATION       -- Demote, ..
+    Else
+      Call SetCategory element, .EL.WHITESPACE         -- Demote, ..
+    element~makeIgnorable                              -- .. make ignorable..
     element = TheElementAfter( element, ignoreBlanks ) -- .. and skip.
   End
   Signal Arguments
@@ -288,7 +297,7 @@ Arguments:
     If nameSpace == .Nil Then Do
       name~invocationType = "CALL"
       package~currentBody~calledRoutineNames~append( (name, arguments) )
-      -- We don't need to assign a subcategory here, because We
+      -- We don't need to assign a subcategory here, because we
       -- will assign a finer subcategory in the second pass.
       Return .Call.Instruction~new( package, begin, element, name, arguments )
     End
@@ -301,7 +310,7 @@ Arguments:
     End
   End
   Else
-    Return .Call.Value~new(           -
+    Return .Call.Value.Instruction~new(           -
       package, begin, element, expression, arguments -
     )
 
@@ -309,7 +318,7 @@ Arguments:
 19.002: Syntax( 19.002, CALL )
 
 -- Symbol expected as a routine name of qualified CALL instruction.
-20.922: Syntax( 20.922, CALL )
+20.922: Syntax( 20.922, CALL, name )
 
 -- Left parenthesis "(" in position &1 on line &2
 -- requires a corresponding right parenthesis ")".
@@ -319,6 +328,7 @@ Arguments:
 
 ::Class Call.Instruction Public SubClass Rexx.Instruction
 ::Attribute name
+::Attribute arguments
 ::Method init
   Expose name arguments
   Use Strict Arg package, begin, end, name, arguments
@@ -336,7 +346,9 @@ Arguments:
 
 -- Call (expression) args                                                     --
 
-::Class Call.Value Public SubClass Rexx.Instruction
+::Class Call.Value.Instruction Public SubClass Rexx.Instruction
+::Attribute expression
+::Attribute arguments
 ::Method init
   Expose expression arguments
   Use Strict Arg package, begin, end, expression, arguments
@@ -772,6 +784,7 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Interpret.Instruction Public SubClass Rexx.Instruction
+::Attribute expression Get
 ::Method init
   Expose expression
   Use Strict Arg package, begin, end, expression
@@ -828,7 +841,7 @@ Done:
 20.908: Syntax( 20.908, ITERATE )
 
 -- Data must not follow the ITERATE name; found "&1".
-21.908: Syntax( 21.908, ITERATE )
+21.908: Syntax( 21.908, ITERATE, element )
 
 -- Symbol following ITERATE ("&1") must either match the label
 -- of a current loop or be omitted.
@@ -841,6 +854,8 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Iterate.Instruction Public SubClass Rexx.Instruction
+::Attribute label
+::Attribute iteration
 ::Method init
   Expose label iteration
   Use Strict Arg package, begin, end, label, iteration
@@ -1213,7 +1228,7 @@ FirstOptions:
 
   If EXPOSE < .ALL.VAR_SYMBOLS, EXPOSE~value = "EXPOSE" Then Do
     Call SetSubkeyword EXPOSE
-    If elements[3] < .EL.WHITESPACE Then elements~delete( 3 )
+    If elements[3] < .ALL.WHITESPACE_LIKE Then elements~delete( 3 )
     Return Name.List.Instruction(                -
       package, .Procedure.Instruction, begin, end, elements -
     )
@@ -1892,7 +1907,7 @@ Done:
           Signal 31.003
         element = term~end
         -- Consume blanks after ")" and "]"
-        If element < .EL.WHITESPACE Then Do
+        If element < .ALL.WHITESPACE_LIKE Then Do
           element~makeIgnorable
           element = TheElementAfter( element )
         End
@@ -1919,7 +1934,7 @@ Done:
       End
       When element < .ALL.OPS.REFERENCE Then Do
         Call NextElement
-        If \( element < (.EL.SIMPLE_VARIABLE || .EL.STEM_VARIABLEIABLE) ) Then Signal 20.931
+        If \( element < (.EL.SIMPLE_VARIABLE || .EL.STEM_VARIABLE) ) Then Signal 20.931
         element~setAssigned
         argList~append( (">", element) )
         Call NextElement
@@ -1976,7 +1991,7 @@ NextElement:
 
 -- The USE instruction requires a comma-separated list
 -- of variables or assignment message terms.
-89.001: Syntax( 89.001, keyword )
+89.001: Syntax( 89.001, keyword, element )
 
 -- The "..." argument marker can only appear at the end of the argument list.
 99.930: Syntax( 99.930, keyword )
@@ -2069,7 +2084,12 @@ NextElement:
     If element < .EL.LEFT_PARENTHESIS Then Do
       element = TheElementAfter( element, ignoreBlanks )
       Call GetASymbol 1
-      pName = Symbol.Term(package, element, .EL.WHITESPACE || .EL.RIGHT_PARENTHESIS || .EL.LEFT_PARENTHESIS, inExpose )
+      pName = Symbol.Term( -
+        package,           -
+        element,           -
+       .ALL.WHITESPACE_LIKE || .EL.RIGHT_PARENTHESIS || .EL.LEFT_PARENTHESIS, -
+        inExpose           -
+      )
       element = TheElementAfter( element, ignoreBlanks )
       If element \< .EL.RIGHT_PARENTHESIS Then Signal 46.901
       nameList~append( Array( pName ) )
@@ -2077,7 +2097,12 @@ NextElement:
     End
     Else Do
       Call GetASymbol 0
-      nameList~append( Symbol.Term(package, element, .EL.WHITESPACE || .EL.LEFT_PARENTHESIS, inExpose) )
+      nameList~append( Symbol.Term(                  -
+        package,                                     -
+        element,                                     -
+       .ALL.WHITESPACE_LIKE || .EL.LEFT_PARENTHESIS, -
+        inExpose                                     -
+      ) )
       If class == .Expose.Instruction Then
         package~currentBody~exposed[] = element~value
     End
@@ -2249,7 +2274,7 @@ GetASymbol:
         element = term~end
 
         -- Consume blanks after ")" and "]"
-        If element < .EL.WHITESPACE Then Do
+        If element < .ALL.WHITESPACE_LIKE Then Do
           element~makeIgnorable
           element = TheElementAfter( element )
         End
@@ -2272,7 +2297,7 @@ GetASymbol:
         template = Positional.Template( package, element )
         list~append( template )
         element = template~end
-        If element < .EL.WHITESPACE Then
+        If element < .ALL.WHITESPACE_LIKE Then
           element = TheElementAfter( element, ignoreBlanks )
         Iterate
       End
@@ -2280,7 +2305,7 @@ GetASymbol:
         template = Subexpression.Template( package, element )
         list~append( template )
         element = template~end
-        If element < .EL.WHITESPACE Then
+        If element < .ALL.WHITESPACE_LIKE Then
           element = TheElementAfter( element, ignoreBlanks )
         Iterate
       End
@@ -2371,7 +2396,7 @@ GetASymbol:
   -- to the right, but in this case we do need to ignore such blanks,
   -- if present.
 
-  If element < .EL.WHITESPACE Then Do
+  If element < .ALL.WHITESPACE_LIKE Then Do
     next = TheElementAfter( element )
     element~makeIgnorable
     subExpression~end = next

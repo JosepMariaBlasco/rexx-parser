@@ -28,9 +28,9 @@ Style patches
 -- Lines starting with "--" are comments and are ignored
 --
 -- Patch simple variable elements to display as bold black over 75% yellow
-element EL.SIMPLE_VARIABLE #000/#cc0 bold
+element EL.SIMPLE_VARIABLE #000:#cc0 bold
 -- Patch method names to display as black over 75% magenta
-name  METHOD.NAME        #000/#c0c
+name  METHOD.NAME        #000:#c0c
 ~~~
 
 Style patches have a very simple format: they
@@ -53,7 +53,7 @@ are arrays of strings consisting of:
      <pre>All <em>set</em> <em>highlighting</em></pre>
   `All` can be abbreviated to `A`, and the *set* can omit
   the `ALL.` prefix, if desired.
-+ Highlighting patched for *taken constant names*:
++ Highlighting patches for *taken constant names*:
      <pre>Name <em>constantName</em> <em>highlighting</em></pre>
   `Name` can be abbreviated to `N`, and the *constantName* can
   omit the `.NAME` suffix, if desired.
@@ -62,13 +62,13 @@ are arrays of strings consisting of:
   + *Foreground colors*, in the format `#rgb`, `#rrggbb`, or
     one of the 147 standard CSS named colors
     [defined here](https://www.w3.org/TR/css-color-4/#named-colors).
-  + *Foreground/background color combination*,
-    in the format `fg/bg` (with no blanks),
+  + *Foreground:background color combination*,
+    in the format `fg:bg` (with no blanks),
     where `fg` and `bg` are either `#rgb`, `#rrggbb`, or
     one of the 147 CSS named colors
     [defined here](https://www.w3.org/TR/css-color-4/#named-colors).
-  + *Background colors*, in the format `/#rgb`, `/#rrggbb`, or
-    a dash immediately followed by one of the 147 standard CSS named colors
+  + *Background colors*, in the format `:#rgb`, `:#rrggbb`, or
+    a colon immediately followed by one of the 147 standard CSS named colors
     [defined here](https://www.w3.org/TR/css-color-4/#named-colors).
   + One of the single words `bold`, `italic` or `underline`.
   + The single word `no`, which has to be followed by
@@ -76,7 +76,7 @@ are arrays of strings consisting of:
 + Element categories, category sets, and subcategories
   [are described in detail here](/rexx-parser/doc/ref/categories/).
 
-```rexx {patch="n method #000/#c0c; element Simple_Variable #000/#cc0 bold"}
+```rexx {patch="n method #000:#c0c; element Simple_Variable #000:#cc0 bold"}
 ::Method methodName
   -- In this code fragment, the standard dark mode highlighting style is used.
   -- Additionally, local variables are specially highlighted with a bold black

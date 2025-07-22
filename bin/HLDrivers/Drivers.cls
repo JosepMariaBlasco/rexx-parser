@@ -17,11 +17,12 @@
 /* 20241231    0.1e First version                                             */
 /* 20250222    0.2  Add drive to path for requires                            */
 /* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /*                                                                            */
 /******************************************************************************/
 
 -- We call all the drivers (the .cls files) in our own directory,
--- unless ourselves.
+-- except ourselves.
 
 If .environment~Highlighter.Driver == .Nil Then Do
    .environment~Highlighter.Driver =  .Highlighter.Driver
@@ -35,7 +36,13 @@ If .environment~Highlighter.Driver == .Nil Then Do
     If driver~endsWith(".cls") Then     -- Call every driver in turn
       Call (mypath||driver)
   End
+
+  stem. = ""
+ .environment~CSS.Cache = stem.
+
 End
+
+::Requires "StyleSheet.cls"
 
 /******************************************************************************/
 /* Base class, should be subclassed by actual drivers                         */
@@ -77,20 +84,55 @@ End
     Options.!numberWidth = nWidth       -- Store in options.
   End
 
--- Conceptually, this is CHAROUT , Arg(1)
+--------------------------------------------------------------------------
+-- CachedCSS                                                            --
+--------------------------------------------------------------------------
+
+---
+--- Return a version of the CSS associated with some tags.
+---
+--- @param style A style, like "dark" or "light".
+--- @parem tags  A list of CSS classes.
+---
+--- @return A string, "b i u fg':'bg".
+---
+
+::Method CachedCSS Public
+
+  Use Strict Arg style, tags
+
+  -- Was "tags" already normalized?
+  newTags = .CSS.Cache[style,tags]
+
+  -- It was: return it
+  If newTags \== "" Then Return newTags
+
+  -- It was not: normalize it, cache and return the results
+
+  newTags = GetHighlight(style, tags )
+
+ .CSS.Cache[style,tags] = newTags
+
+  Return newTags
+
+--------------------------------------------------------------------------
+-- Conceptually, EMIT Arg(1) is CHAROUT , Arg(1)                        --
+--------------------------------------------------------------------------
 
 ::Method Emit
   Expose output
-  output[ output~last ] ||= Arg(1)      -- Collate Arg(1) to the current line
+  output[ output~last ] ||= Arg(1)      -- Append to the current line
 
--- Conceptually, this is SAY Arg(1)
+--------------------------------------------------------------------------
+-- Conceptually, this is SAY Arg(1)                                     --
+--------------------------------------------------------------------------
 
 ::Method Say
   Expose output
   self~emit( Arg(1) )
   output~append("")                     -- Start a new, empty line
 
--- Used by the terminal and LaTeX highlighter.
+-- Used by the ANSI and LaTeX highlighter.
 -- The HTML Highlighter uses inline <style>s.
 
 ::Method tags2highlight
@@ -98,29 +140,24 @@ End
 
   Use Strict Arg tags, extra
 
-  Tag2Attr.  = Options.!Tag2Attr
+  style      = Options.Style
 
-  attrs      = ""
+  Parse Value self~CachedCSS(style, tags) With x y z fg":"bg
+  attrs = x y z
   color      = ""
   background = ""
-
-  Do tag Over tags~makeArray(" ")
-    Parse Value Tag2Attr.tag With attr fg"/"bg
-    attrs ||= attr
-    If fg \== "" Then color      = fg
-    If bg \== "" Then background = bg
-  End
+  If fg \== "" Then color      = fg
+  If bg \== "" Then background = bg
 
   If extra \== "" Then Do
-    Parse Value extra With attr fg"/"bg
-    attrs ||= attr
+    Parse Value extra With x y z fg":"bg
+    attrs ||= x y z
     If fg \== "" Then color      = fg
     If bg \== "" Then background = bg
   End
 
-  If background = "" Then Do
-    Parse Value Tag2Attr.["rexx"] With "/"background
-  End
+  If background = "" Then
+    Parse Value self~CachedCSS(style, "rexx") With ":"background
 
   bold      = .False
   italic    = .False
@@ -138,4 +175,4 @@ End
     End
   End
 
-  Return bold italic underline color"/"background
+  Return bold italic underline color":"background

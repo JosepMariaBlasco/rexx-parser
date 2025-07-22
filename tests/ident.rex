@@ -22,13 +22,6 @@
 
 Signal On Syntax
 
-mypath =  FileSpec("Path",.context~package~name)
-parent = .File~new(mypath"..")~absolutePath
-
--- We can't do ::Requires "../Rexx.Parser.cls" because of a bug in the
--- interpreter
--- .context~package~addPackage(.Package~new(parent"/Rexx.Parser.cls"))
-
 Parse Arg args
 args = Strip( args )
 

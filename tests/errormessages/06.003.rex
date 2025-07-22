@@ -1,2 +1,0 @@
-Say "Hello!
-Say i

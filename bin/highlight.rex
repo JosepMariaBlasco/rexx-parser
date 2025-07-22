@@ -23,13 +23,18 @@
 /* 20250108         Add --pad= option                                         */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx.parser        */
 /* 20250526    0.2b Add --css opt. & "-" to select stdin (thanks, Rony!)      */
+/* 20250529    0.2c Add support for detailed string and number highlighting   */
+/* 20250706    0.2d Add support for detailed doc-comment highlighting         */
 /*                                                                            */
 /******************************************************************************/
 
 Parse Arg fn
 
 -- Remember how we were called
-Parse Source . how .
+Parse Source . how myself
+myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
+myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
+sep = .File~separator
 
 -- We will store our processed options in a stem
 options. = 0
@@ -54,6 +59,13 @@ If op[1] \== "-" | fn == "-" Then Leave
       When "--style"           Then options.style       = value
       When "--width"           Then options.width       = Natural(value)
       When "--pad"             Then options.pad         = Natural(value)
+      When "--doccomments"     Then Do
+        If WordPos(value,"detailed block") == 0 Then Do
+          Say "Invalid value '"value"'."
+          Exit 1
+        End
+        options.doccomments   = value
+      End
       When "--patch"           Then Do
         Call AllowQuotes
         If value = "" Then patch = .Nil
@@ -147,11 +159,6 @@ If Options.css == 0 Then Do
   Exit
 End
 
--- Get our own path
-Parse Source . . myself
-myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
-sep = .File~separator
-
 -- Pick selected style
 If Options.style == 0 Then mystyle = "dark"
 Else                       mystyle = Options.style
@@ -164,9 +171,9 @@ local   = Stream(Directory()||sep"rexx-"mystyle".css","c","query exists")
 Do line Over .Resources[HTML]
   Select Case line
     When "[*CSS*]" Then Do
-      Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-"mystyle".css'>"
-      Say  "    <link rel='stylesheet' href='file:///"cssPath"'>"
-      If local \== "" Then Say  "    <link rel='stylesheet' href='rexx-"mystyle".css'>"
+      Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-"mystyle".css'></link>"
+      Say  "    <link rel='stylesheet' href='file:///"cssPath"'></link>"
+      If local \== "" Then Say  "    <link rel='stylesheet' href='rexx-"mystyle".css'></link>"
     End
     When "[*CONTENTS*]" Then Say ProcessSource()
     Otherwise Say line
@@ -216,6 +223,7 @@ and we highlight it directly.
 Options:
   -a, --ansi             Select ANSI mode
       --css              Include links to css files (HTML only)
+      --doccomments=detailed|block Select highlighting level for doc-comments
   -h, --html             Select HTML mode
   -l, --latex            Select LaTeX mode
       --noprolog         Do not print a prolog (LaTeX only)

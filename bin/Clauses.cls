@@ -24,10 +24,12 @@
 
  .environment~                  End.Of.Source =                  .End.Of.Source
 
+ .environment~                      Do.Clause =                      .Do.Clause
  .environment~                     End.Clause =                     .End.Clause
  .environment~                    Else.Clause =                    .Else.Clause
  .environment~                      If.Clause =                      .If.Clause
  .environment~                   Label.Clause =                   .Label.Clause
+ .environment~                    Loop.Clause =                    .Loop.Clause
  .environment~                    Null.Clause =                    .Null.Clause
  .environment~               Iterative.Clause =               .Iterative.Clause
  .environment~               Otherwise.Clause =               .Otherwise.Clause
@@ -273,7 +275,7 @@ End.Clause:
 
 -- END corresponding to block on line &2 must not have a symbol
 -- following it because there is no LABEL or control variable; found "&1".
-10.003: Syntax( 10.003, END, name, doLine )
+10.003: Syntax( 10.003, END, doLine, name )
 
 -- DO instruction on line &1 requires matching END.
 14.001: Syntax( 14.001, instruction~end, doLine )
@@ -410,7 +412,7 @@ End.Clause:
 
 -- END corresponding to block on line &2 must not have a symbol
 -- following it because there is no LABEL or control variable; found "&1".
-10.003: Syntax( 10.003, END, name, loopLine )
+10.003: Syntax( 10.003, END, loopLine, name )
 
 -- DO or LOOP instruction on line &1 requires matching END.
 14.005: Syntax( 14.005, instruction~end, LOOP~from~word(1) )
@@ -544,7 +546,7 @@ NoLabels:
 
 -- END corresponding to SELECT on line &2 must not have a symbol
 -- following it because there is no LABEL; found "&1".
-10.007: Syntax( 10.007, END, name, selectLine )
+10.007: Syntax( 10.007, END, selectLine, name )
 
 -- SELECT instruction on line &1 requires matching END.
 14.002: Syntax( 14.002, next~end , selectLine )
@@ -663,6 +665,7 @@ NoLabels:
 --------------------------------------------------------------------------------
 
 ::Class Command.Instruction Public SubClass Rexx.Instruction
+::Attribute expression Get
 ::Method init
   Expose expression
   Use Strict Arg package, begin, end, expression
@@ -674,7 +677,7 @@ NoLabels:
 
 ::Routine Do.Clause Public
   Use Strict Arg package, begin, end, elements
-  Return Iterative.Clause( package, .DO.Clause, begin, end, elements )
+  Return Iterative.Clause( package, .Do.Clause, begin, end, elements )
 
 --------------------------------------------------------------------------------
 
@@ -702,12 +705,13 @@ NoLabels:
 
   Use Strict Arg package, begin, end, elements
 
-  END = elements[1]
+  ENDKeyword = elements[1]
 
-  name         = TheElementAfter( END )
+  name         = TheElementAfter( ENDKeyword )
   options.     = .False
   ignoreBlanks = .True
 
+  end = name
   If name < .EL.END_OF_CLAUSE Then Signal Done
 
   If name \< .ALL.SYMBOLS Then Signal 20.909
@@ -717,6 +721,7 @@ NoLabels:
 
   element = TheElementAfter( name, ignoreBlanks )
 
+  end = element
   If element \< .EL.END_OF_CLAUSE Then Signal 21.909
 
 Done:
@@ -726,13 +731,13 @@ Done:
   Return .End.Clause~new( package, begin, end, options. )
 
 -- END has no corresponding DO, LOOP, or SELECT.
-10.001: Syntax( 10.001, END )
+10.001: Syntax( 10.001, ENDKeyword )
 
 -- Symbol expected after END keyword.
-20.909: Syntax( 20.909, END )
+20.909: Syntax( 20.909, ENDKeyword )
 
 -- Data must not follow the END name; found "&1".
-21.909: Syntax( 21.909, END, element )
+21.909: Syntax( 21.909, ENDKeyword, element )
 
 --------------------------------------------------------------------------------
 
@@ -828,7 +833,7 @@ Continue:
   If element < .EL.END_OF_CLAUSE Then Signal Done
   If element < .ALL.SYMBOLS Then Do
     tValue = element~value
-    If next < .EL.OP.EQUAL      Then Signal "Classic Do/Loop"
+    If next < .EL.OP.EQUAL           Then Signal "Classic Do/Loop"
     If \label,   tValue == "LABEL"   Then Signal "Label option"
     If \counter, tValue == "COUNTER" Then Signal "Counter option"
     If next < .ALL.SYMBOLS Then Do
@@ -1067,7 +1072,7 @@ Keyword:
 20.934: Syntax( 20.934, keyword )
 
 -- Only one WHILE or UNTIL condition can be used on the same loop.
-27.001: Syntax( 27.001, keyword )
+27.001: Syntax( 27.001, keyword, element )
 
 -- Incorrect data following FOREVER keyword on the loop; found "&1".
 27.901: Syntax( 27.901, keyword, element )
@@ -1106,15 +1111,57 @@ Keyword:
 
 ::Class Iterative.Clause Public SubClass Rexx.Clause
 ::Attribute label   Get
+::Attribute counter Get
 ::Attribute control Get
+::Attribute while   Get
+::Attribute until   Get
+::Attribute type    Get
 ::Method init
-  Expose label control options.
+  Expose label counter control while until type options.
   Use Strict Arg package, begin, end, options.
   label   = ""
+  counter = ""
   control = ""
-  If options.~hasIndex("LABEL")   Then label   = options.["LABEL"]
-  If options.~hasIndex("CONTROL") Then control = options.["CONTROL"]
+  until   = .Nil
+  while   = .Nil
+  count   = 0
+  type    = ""
+
+  -- Count LABEL and COUNTER
+  If HasOption("label")   Then Do
+    count  += 1
+    label   = Option("label")
+  End
+  If HasOption("counter") Then Do
+    count  += 1
+    counter = Option("counter")
+  End
+
+  -- Control variable
+  If HasOption("control") Then control = Option("control")
+
+  -- Compute the loop type
+  Select Case options.~items - count
+    When 0 Then type = "simple"
+    When 1 Then
+      Select
+        When HasOption("while") Then Do
+          type = "while"
+          while = Option("while")
+        End
+        When HasOption("until") Then Do
+          type = "until"
+          until = Option("until")
+        End
+        Otherwise Nop
+      End
+    Otherwise Nop
+  End
   self~init:super( package, begin, end )
+  Return
+
+HasOption: Return options.~hasIndex(Upper(Arg(1)))
+Option:    Return options.[         Upper(Arg(1))]
 
 /******************************************************************************/
 /* LABEL                                                                      */
@@ -1200,6 +1247,7 @@ Message.Instruction:
 --------------------------------------------------------------------------------
 
 ::Class Message.Instruction Public SubClass Rexx.Instruction
+::Attribute expression
 ::Method init
   Expose expression
   Use Strict Arg package, begin, end, expression
@@ -1208,6 +1256,9 @@ Message.Instruction:
 --------------------------------------------------------------------------------
 
 ::Class Message.Assignment.Instruction Public SubClass Rexx.Instruction
+::Attribute lhs      Get
+::Attribute operator Get
+::Attribute rhs      Get
 ::Method init
   Expose lhs operator rhs
   Use Strict Arg package, begin, end, lhs, operator, rhs
@@ -1272,9 +1323,9 @@ Message.Instruction:
 
   element = TheElementAfter( SELECT )
 
-  If element  < .EL.END_OF_CLAUSE Then Signal Done
+  If element  < .EL.END_OF_CLAUSE   Then Signal Done
 
-  If element \< .ALL.VAR_SYMBOLS  Then Signal 25.923
+  If element \< .ALL.VAR_SYMBOLS    Then Signal 25.923
 
   kValue = element~value
   If Pos(kValue, "LABEL CASE") == 0 Then Signal 25.923
@@ -1322,11 +1373,16 @@ Done:
 
 ::Class Select.Clause Public SubClass Rexx.Clause
 ::Attribute label Get
+::Attribute case  Get
 ::Method init
-  Expose label options.
+  Expose label case options.
   Use Strict Arg package, begin, end, options.
   label = ""
+  case  = .Nil
+
   If options.~hasIndex("LABEL") Then label = options.["LABEL"]
+  If options.~hasIndex("CASE")  Then case  = options.["CASE"]
+
   self~init:super( package, begin, end )
 
 /******************************************************************************/
@@ -1381,10 +1437,19 @@ Done:
 /******************************************************************************/
 
 ::Class Do.Instruction Public SubClass Iterative.Instruction
+::Attribute doClause
+::Attribute instructions
+::Attribute endClause
 ::Method init
   Expose doClause  instructions  endClause
   Use Strict Arg package, doClause, instructions, endClause
   self~init:super(package, doClause~begin, endClause~end)
+::Method labels
+  Expose doClause
+  Return doClause~labels
+::Method nullClauses
+  Expose doClause
+  Return doClause~nullClauses
 
 /******************************************************************************/
 /* IF Instruction                                                             */
@@ -1418,16 +1483,34 @@ Done:
 /******************************************************************************/
 
 ::Class Loop.Instruction Public SubClass Iterative.Instruction
+::Attribute loopClause
+::Method doClause -- Simplifies code
+  Return self~loopClause
+::Attribute instructions
+::Attribute endClause
 ::Method init
   Expose loopClause instructions endClause
   Use Strict Arg package, loopClause, instructions, endClause
   self~init:super( package, loopClause~begin, endClause~end )
+::Method labels
+  Expose loopClause
+  Return loopClause~labels
+::Method nullClauses
+  Expose loopClause
+  Return loopClause~nullClauses
 
 /******************************************************************************/
 /* SELECT Instruction                                                         */
 /******************************************************************************/
 
 ::Class Select.Instruction Public SubClass Block.Instruction
+
+::Attribute SelectClause           Get
+::Attribute   WhenThenInstructions Get
+::Attribute   OtherwiseClause      Get
+::Attribute     OtherwiseSequence  Get
+::Attribute EndClause              Get
+
 ::Method init
   Expose                    -
     selectClause            -
@@ -1444,3 +1527,10 @@ Done:
     endClause
 
   self~init:super(package, selectClause~begin, endClause~end )
+
+::Method labels
+  Expose selectClause
+  Return selectClause~labels
+::Method nullClauses
+  Expose selectClause
+  Return selectClause~nullClauses

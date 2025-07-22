@@ -170,23 +170,3 @@ name. If the such a label does not exist, a 16.1 `SYNTAX` error is raised
 ```rexx
   Signal NoNo                 -- Label "NONO" not found
 ```
-
-# Bugs {#bugs}
-
-In the process of writing the code for the early check Parser feature, we have
-uncovered a number of ooRexx bugs. We are listing them here for reference.
-
-* <https://sourceforge.net/p/oorexx/bugs/2006/>.
-* <https://sourceforge.net/p/oorexx/bugs/2007/>.
-* <https://sourceforge.net/p/oorexx/bugs/2008/>.
-* <https://sourceforge.net/p/oorexx/bugs/2009/>.
-* <https://sourceforge.net/p/oorexx/bugs/2010/>.
-* <https://sourceforge.net/p/oorexx/bugs/2011/>.
-* <https://sourceforge.net/p/oorexx/bugs/2012/>.
-* <https://sourceforge.net/p/oorexx/bugs/2014/>.
-* <https://sourceforge.net/p/oorexx/bugs/2015/>.
-* <https://sourceforge.net/p/oorexx/bugs/2016/>.
-
-## Related Bugs
-
-* <https://sourceforge.net/p/oorexx/bugs/1885/>.

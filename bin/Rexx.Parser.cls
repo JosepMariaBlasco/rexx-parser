@@ -28,6 +28,7 @@
  .environment~Rexx.Routine = .Rexx.Routine
 
 ::Requires "HTMLColors.cls"
+::Requires "StyleSheet.cls"
 ::Requires "DebugSettings.cls"
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Globals.cls"
@@ -329,6 +330,7 @@ CheckThatUseLocalIsValid:
 ::Attribute publicClasses           -- [Similar to the ooRexx Package class]
 ::Attribute privateClasses
 ::Attribute publicRoutines          -- [Similar to the ooRexx Package class]
+::Attribute privateRoutines
 ::Attribute definedMethods          -- [Similar to the ooRexx Package class]
 ::Attribute blockInstructionsStack  -- Stack of active block instructions
 

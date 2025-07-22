@@ -47,7 +47,16 @@ extensible system of [drivers](#drivers).
 #### CSS {#css}
 
 The highlighter is distributed with an
-extensible system of **CSS styles**.
+extensible system of **CSS stylessheets**.
+These stylesheets have to use a limited subset
+of CSS, as, although they are _directly used_ by the
+HTML highlighter (i.e., by web browsers),
+they are _interpreted_ in by the ANSI and LaTeX
+drivers.
+
+You can read about the supported level of CSS and
+the interpretation process [here](css/).
+
 Two samples are provided:
 <code>[rexx-light.css](/rexx-parser/css/rexx-light.css)</code>,
 a light grey background one (currently incomplete),
@@ -75,6 +84,7 @@ You can select a style by using the `style=` attribute on a
 `--style=` option of the [highlight](../utilities/highlight/) utility.
 The [Highlighter class](../ref/classes/highlighter/) class
 also allows to specify a style in the options argument.
+
 
 #### The style patch system {#stylepatch}
 

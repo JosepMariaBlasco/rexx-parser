@@ -23,6 +23,10 @@
 /* 20250116         Add EL.PARSE_PERIOD                                       */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional numbers to decimal                      */
+/* 20250529    0.2c Add support for parts of a string                         */
+/* 20250601         Add ALL.STRING_DELIMITERS and ALL.STRING_COMPONENTS       */
+/* 20250629         Add support for doc-comment subelements                   */
+/* 20250722    0.2d Add .EL.DIRECTIVE_SUBKEYWORD and .ALL.DIRECTIVE_KEYWORDS  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -53,7 +57,7 @@
   Return .Parser.ConstantName[Arg(1)]
 
 /******************************************************************************/
-/* LoadElementConstants -- Load global constants into the environment           */
+/* LoadElementConstants -- Load global constants into the environment         */
 /******************************************************************************/
 
 ::Routine LoadElementConstants Private
@@ -257,8 +261,11 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   -- bo                := [blank+]                                     (6.2.2.9)
   --
   -- Will be promoted to EL.OP.BLANK in certain contexts.
+  Call NewElement EL.WHITESPACE         -- "20"X and "09"X
   --
-  Call NewElement EL.WHITESPACE
+  Call NewElement EL.CONTINUATION       -- "," and "-" at end of line
+  --
+  Call NewSet ALL.WHITESPACE_LIKE, .EL.WHITESPACE, .EL.CONTINUATION
 
   ------------------------------------------------------------------------------
   -- Comments and documentation comments (doc-comments)                       --
@@ -271,21 +278,56 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   --
   Call NewElements EL.STANDARD_COMMENT, EL.LINE_COMMENT
 
-  -- A EL.DOC_COMMENT is a standard ("block") comment that immediately
-  -- precedes a directive. It starts with "/**" and ends with "*/".
+  -- A EL.DOC_COMMENT is a standard ("block") comment that starts with "/**"
+  -- but not with "/***" and ends with "*/" but not with "**/".
   --
   -- A EL.DOC_COMMENT_MARKDOWN is a set of contiguous line comments that
-  -- immediately precede a directive. They all start with "---".
+  -- start with "---" but not with "----".
   Call NewElements EL.DOC_COMMENT, EL.DOC_COMMENT_MARKDOWN
 
-  --
-  Call NewSet ALL.DOC_COMMENTS,      -
-    .EL.DOC_COMMENT, .EL.DOC_COMMENT_MARKDOWN
-  Call NewSet ALL.NON_DOC_COMMENTS,  -
-    .EL.STANDARD_COMMENT, .EL.LINE_COMMENT
-  Call NewSet ALL.COMMENTS,          -
-    .EL.STANDARD_COMMENT, .EL.LINE_COMMENT, -
-    .EL.DOC_COMMENT, .EL.DOC_COMMENT_MARKDOWN
+  -- Doc-comments are returned as a single element, but some of the finer
+  -- structure of the comment is also available via the "parts" method.
+  -- The following are the doc-comment (sub-)element categories.
+
+  Call NewElements -
+    EL.DOC_COMMENT_ARMATURE,         -  -- The enclosing outer block
+    EL.DOC_COMMENT_WHITESPACE,       -  -- Internal to the doc-comment contents
+    EL.DOC_COMMENT_SUMMARY,          -  -- The first statement
+    EL.DOC_COMMENT_MAIN_DESCRIPTION, -  -- Before the first @tag
+    EL.DOC_COMMENT_TAG,              -  -- Like @param. Includes the initial @
+    EL.DOC_COMMENT_TAG_VALUE,        -  -- E.g., the parameter name in @param
+    EL.DOC_COMMENT_TAG_DESCRIPTION      -- E.g., the param. desc. in @param
+
+  Call NewSet ALL.CLASSIC_DOC_COMMENTS,  -
+    .EL.DOC_COMMENT,                     -
+    .EL.DOC_COMMENT_ARMATURE,            -
+    .EL.DOC_COMMENT_WHITESPACE,          -
+    .EL.DOC_COMMENT_SUMMARY,             -
+    .EL.DOC_COMMENT_MAIN_DESCRIPTION,    -
+    .EL.DOC_COMMENT_TAG,                 -
+    .EL.DOC_COMMENT_TAG_VALUE,           -
+    .EL.DOC_COMMENT_TAG_DESCRIPTION
+  Call NewSet ALL.MARKDOWN_DOC_COMMENTS, -
+    .EL.DOC_COMMENT_MARKDOWN,            -
+    .EL.DOC_COMMENT_ARMATURE,            -
+    .EL.DOC_COMMENT_WHITESPACE,          -
+    .EL.DOC_COMMENT_SUMMARY,             -
+    .EL.DOC_COMMENT_MAIN_DESCRIPTION,    -
+    .EL.DOC_COMMENT_TAG,                 -
+    .EL.DOC_COMMENT_TAG_VALUE,           -
+    .EL.DOC_COMMENT_TAG_DESCRIPTION
+  Call NewSet ALL.DOC_COMMENTS,          -
+    .EL.DOC_COMMENT,                     -
+    .EL.DOC_COMMENT_MARKDOWN,            -
+    .EL.DOC_COMMENT_ARMATURE,            -
+    .EL.DOC_COMMENT_WHITESPACE,          -
+    .EL.DOC_COMMENT_SUMMARY,             -
+    .EL.DOC_COMMENT_MAIN_DESCRIPTION,    -
+    .EL.DOC_COMMENT_TAG,                 -
+    .EL.DOC_COMMENT_TAG_VALUE,           -
+    .EL.DOC_COMMENT_TAG_DESCRIPTION
+  Call NewSet ALL.NON_DOC_COMMENTS,  .EL.STANDARD_COMMENT, .EL.LINE_COMMENT
+  Call NewSet ALL.COMMENTS,          .ALL.DOC_COMMENTS,    .ALL.NON_DOC_COMMENTS
 
   ------------------------------------------------------------------------------
   -- NUMBERS                                                                  --
@@ -301,6 +343,20 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     EL.DECIMAL_NUMBER,  EL.INTEGER_NUMBER,  EL.EXPONENTIAL_NUMBER
   Call NewSet ALL.NUMBERS,            -
    .EL.DECIMAL_NUMBER, .EL.INTEGER_NUMBER, .EL.EXPONENTIAL_NUMBER
+
+  -- Decimal and exponential numbers can be viewed as a single element,
+  -- or as a sequence of smaller elements. The following categories
+  -- are never assigned directly by the Parser, but they can be used by
+  -- other tools, like the Highlighter.
+
+  Call NewElements                      -
+    EL.NUMBER_SIGN,                     - -- "+" or "-", inside strings only
+    EL.INTEGER_PART,                    - -- Digits before the decimal point
+    EL.DECIMAL_POINT,                   - -- Not a TAIL_SEPARATOR nor a PERIOD.
+    EL.FRACTIONAL_PART,                 - -- Digits after the decimal point
+    EL.EXPONENT_MARK,                   - -- "E" or "e"
+    EL.EXPONENT_SIGN,                   - -- "+" or "-", optional
+    EL.EXPONENT                           -- 1 or more digits
 
   ------------------------------------------------------------------------------
   -- STRINGS                                                                  --
@@ -329,6 +385,33 @@ SkipOverTheInternalRoutines:            -- Main code continues here
    .EL.GRAPHEMES_STRING,                -
    .EL.TEXT_STRING,                     -
    .EL.UNICODE_STRING
+
+  --
+  -- Strings can be viewed as a single element,
+  -- but also as a sequence of parts:
+  --
+  --   string  :=  delimiter contents delimiter [suffix]
+  --
+  -- the "contents" part will inherit one of the string categories above.
+  --
+  -- NOTICE: The Rexx Parser will never assign any of the following
+  -- categories to an element. They are provided here for the benefit of
+  -- tools like the Rexx Highlighter.
+  --
+
+  Call NewElements                      -
+    EL.STRING_OPENING_DELIMITER,        - -- "'" or '"'
+    EL.STRING_CLOSING_DELIMITER,        - -- "'" or '"'
+    EL.STRING_SUFFIX                      -- One of "BXYPGT"
+
+  Call NewSet ALL.STRING_DELIMITERS,    - -- To handle both quotes at once
+   .EL.STRING_OPENING_DELIMITER,        -
+   .EL.STRING_CLOSING_DELIMITER
+
+  Call NewSet ALL.STRING_COMPONENTS,    - -- To handle all components of all strings
+   .ALL.STRINGS,                        -
+   .ALL.STRING_DELIMITERS,              -
+   .EL.STRING_SUFFIX
 
   ------------------------------------------------------------------------------
   -- VAR_SYMBOLS                                                              --
@@ -370,9 +453,18 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   -- The parser marks the appropriate var_symbols symbols as keywords,
   -- or as directive keywords.
   --
-  Call NewElements EL.KEYWORD, EL.SUBKEYWORD, EL.DIRECTIVE_KEYWORD
+  Call NewElements                     -
+    EL.KEYWORD,                        -
+    EL.SUBKEYWORD,                     -
+    EL.DIRECTIVE_KEYWORD,              -
+    EL.DIRECTIVE_SUBKEYWORD
 
-  Call NewSet ALL.KEYWORDS, .EL.KEYWORD, .EL.SUBKEYWORD
+  Call NewSet ALL.KEYWORDS,            -
+   .EL.KEYWORD,                        -
+   .EL.SUBKEYWORD
+  Call NewSet ALL.DIRECTIVE_KEYWORDS,  -
+   .EL.DIRECTIVE_KEYWORD,              -
+   .EL.DIRECTIVE_SUBKEYWORD
   --
   -- An expression is terminated by an end-of-clause, or by a keyword.
   -- The PrepareExpression routine assigns the EL.KEYWORD element category
@@ -800,14 +892,16 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   ------------------------------------------------------------------------------
   --
   -- Set of continuation characters. A continuation character will be mutated
-  -- to the EL.WHITESPACE element category.
+  -- to the EL.CONTINUATION element category.
+  --
   Call NewSet ALL.CONTINUATION_CHARACTERS, .EL.COMMA, .EL.OP.MINUS
 
   ------------------------------------------------------------------------------
   -- Templates                                                                --
   ------------------------------------------------------------------------------
   --
-  -- Set of position prefixes
+  -- Set of position prefixes (for PARSE templates)
+  --
   Call NewSet ALL.POSITION_PREFIXES, .EL.OP.EQUAL, .EL.OP.PLUS, .EL.OP.MINUS
 
   ------------------------------------------------------------------------------
@@ -818,8 +912,8 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   --
   -- Any data after the end delimiter is ignored. Similarly, data found
   -- in the same logical line, after the resource directive (that is,
-  -- after an explicit semicolon) is also ignored (see SourceForge
-  -- documentation bug no. 307).
+  -- after an explicit semicolon) is also ignored (see documentation
+  -- bug no. 307).
   --
   Call NewElement EL.RESOURCE_IGNORED_DATA
 
@@ -830,7 +924,7 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewSet IGNORE_WHITESPACE_AFTER,  -
     .ALL.OPERATORS,                     - -- An operator (compound or not)
     .ALL.ASSIGNMENTS,                   - -- An (extended) assignment
-    .EL.WHITESPACE,                     - -- Previous whitespace
+    .ALL.WHITESPACE_LIKE,               - -- Previous whitespace & continuations
     .EL.END_OF_CLAUSE,                  - -- At the beginning of a clause
     .EL.DIRECTIVE_START,                - -- "::"
     .EL.LEFT_PARENTHESIS,               - -- "("

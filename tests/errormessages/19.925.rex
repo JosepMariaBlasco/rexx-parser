@@ -1,2 +1,0 @@
-::Class C
-::Annotate class *

@@ -109,7 +109,7 @@ Done:
 20.919: Syntax( 20.919, ANNOTATE, name )
 
 -- Symbol expected for the ::ANNOTATE type.
-20.924: Syntax( 20.924, ANNOTATE )
+20.924: Syntax( 20.924, ANNOTATE, keyword )
 
 -- Unknown keyword on ::ANNOTATE directive; found "&1".
 25.928: Syntax( 25.928, ANNOTATE, keyword )
@@ -165,7 +165,7 @@ Done:
 
     If \allOptions~hasItem( keyword~value ) Then Signal 25.925
 
-    Call SetKeyword keyword, .True
+    Call Set.Directive.SubKeyword keyword
 
     kValue = keyword~value
 
@@ -196,7 +196,8 @@ Done:
       When "ABSTRACT" Then options.abstract = 1
       When "DELEGATE" Then Do
         thisDelegateName = TheElementAfter( keyword )
-        If thisDelegateName \< .ALL.SYMBOLS_AND_STRINGS Then Signal 20.926
+        If thisDelegateName \< .ALL.SYMBOLS_AND_STRINGS Then
+          Call 20.926 thisDelegateName
         options.delegateName = thisDelegateName
         keyword = TheElementAfter( thisDelegateName, ignoreBlanks )
         Iterate -- Jump directly to next keyword, if any
@@ -204,7 +205,7 @@ Done:
       When "EXTERNAL" Then Do -- Should check spec syntax
         spec = TheElementAfter( keyword )
         If spec  < .EL.END_OF_CLAUSE  Then Signal 19.905
-        If spec \< .ALL.STRINGS Then Signal 20.926
+        If spec \< .ALL.STRINGS Then Call 20.926 spec
         options.external = spec~value
         keyword = TheElementAfter( spec, ignoreBlanks )
         Iterate -- Jump directly to next keyword, if any
@@ -220,16 +221,16 @@ Done:
   Return .Attribute.Directive~new( package, begin, end, name, options. )
 
 -- String expected after EXTERNAL keyword.
-19.905: Syntax( 19.905, ATTRIBUTE)
+19.905: Syntax( 19.905, ATTRIBUTE, spec)
 
 -- String or symbol expected as ::ATTRIBUTE directive name.
-19.914: Syntax( 19.914, ATTRIBUTE)
+19.914: Syntax( 19.914, ATTRIBUTE, name)
 
 -- Unknown keyword on ::ATTRIBUTE directive; found "&1".
 25.925: Syntax( 25.925, ATTRIBUTE, keyword )
 
 -- Symbol expected after the DELEGATE keyword.
-20.926: Syntax( 20.926, ATTRIBUTE)
+20.926: Syntax( 20.926, ATTRIBUTE, Arg(1))
 
 -- CLASS keyword on ::METHOD directive requires a matching ::CLASS directive.
 99.905: Syntax( 99.905, ATTRIBUTE)
@@ -278,7 +279,7 @@ Done:
 
     If \allOptions~hasItem( keyword~value ) Then Signal 25.901
 
-    Call SetKeyword keyword, .True
+    Call Set.Directive.SubKeyword keyword
 
     kValue = keyword~value
 
@@ -335,16 +336,16 @@ Return
 19.901: Syntax( 19.901, CLASS )
 
 -- String or symbol expected after METACLASS keyword.
-19.906: Syntax( 19.906, CLASS )
+19.906: Syntax( 19.906, CLASS, element )
 
 -- String or symbol expected after SUBCLASS keyword.
-19.907: Syntax( 19.907, CLASS )
+19.907: Syntax( 19.907, CLASS, element )
 
 -- String or symbol expected after INHERIT keyword.
-19.908: Syntax( 19.908, CLASS )
+19.908: Syntax( 19.908, CLASS, element )
 
 -- String or symbol expected after MIXINCLASS keyword.
-19.913: Syntax( 19.913, CLASS )
+19.913: Syntax( 19.913, CLASS, element )
 
 -- Unknown keyword on ::CLASS directive; found "&1".
 25.901: Syntax( 25.901, CLASS, keyword )
@@ -384,7 +385,7 @@ Return
   If next < .ALL.OPS.ADDITIVE Then Do
     sign = next
     number = TheElementAfter( next, ignoreBlanks )
-    If number \< .ALL.NUMBERS Then Signal 19.916
+    If number \< .ALL.NUMBERS Then Call 19.916 number
     Call SetConstantName number, .CONSTANT.VALUE
     If NoMoreDataAfter( number ) Then Signal SignedNumber
   End
@@ -398,7 +399,7 @@ Return
     Signal Expression
   End
 
-  If next \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.916
+  If next \< .ALL.SYMBOLS_AND_STRINGS Then Call 19.916 next
   Call SetConstantName next, .CONSTANT.VALUE
   value = next
   If NoMoreDataAfter( value ) Then Signal "VALUE"
@@ -422,17 +423,17 @@ SignedNumber:
   Return .Constant.Directive~new( package, begin, end, name, , ,sign, number )
 
 -- String or symbol expected as ::CONSTANT directive name.
-19.915: Syntax( 19.915, CONSTANT )
+19.915: Syntax( 19.915, CONSTANT, name )
 
 -- String or symbol expected as ::CONSTANT value.
-19.916: Syntax( 19.916, CONSTANT )
+19.916: Syntax( 19.916, CONSTANT, Arg(1) )
 
 -- Data must not follow the ::CONSTANT value; found "&1".
 21.913: Syntax( 21.913, CONSTANT, next)
 
 -- A ::CONSTANT directive with an expression requires
 -- a matching ::CLASS directive.
-99.906: Syntax( 99.906, CONSTANT )
+99.906: Syntax( 99.906, CONSTANT, name )
 
 --------------------------------------------------------------------------------
 
@@ -488,7 +489,7 @@ SignedNumber:
 
     If \allOptions~hasItem( keyword~value ) Then Signal 25.902
 
-    Call SetKeyword keyword, .True
+    Call Set.Directive.SubKeyword keyword
 
     kValue = keyword~value
 
@@ -517,7 +518,7 @@ SignedNumber:
         thisDelegateName = TheElementAfter( keyword )
         ignoreBlanksToTheRight = 1
         If thisDelegateName \< .ALL.SYMBOLS_AND_STRINGS Then
-          Signal 20.926
+          Call 20.926 thisDelegateName
         options.delegateName = thisDelegateName
         keyword = TheElementAfter( thisDelegateName, ignoreBlanksToTheRight )
         Iterate -- Jump directly to next keyword, if any
@@ -539,16 +540,16 @@ Done:
   Return .Method.Directive~new( package, begin, end, name, options. )
 
 -- String or symbol expected after ::METHOD keyword.
-19.902: Syntax( 19.902, METHOD )
+19.902: Syntax( 19.902, METHOD, name )
 
 -- String expected after EXTERNAL keyword.
-19.905: Syntax( 19.905, METHOD )
+19.905: Syntax( 19.905, METHOD, spec )
 
 -- Unknown keyword on ::METHOD directive; found "&1".
 25.902: Syntax( 25.902, METHOD, keyword )
 
 -- Symbol expected after the DELEGATE keyword.
-20.926: Syntax( 20.926, METHOD )
+20.926: Syntax( 20.926, METHOD, Arg(1) )
 
 -- CLASS keyword on ::METHOD directive requires a matching ::CLASS directive.
 99.905: Syntax( 99.905, METHOD )
@@ -589,7 +590,7 @@ Done:
     If element \< .ALL.SYMBOLS            Then Signal 25.924
     tValue = element~value
     If WordPos(tValue, allOptions) == 0 Then Signal 25.924
-    Call SetKeyword element, .True
+    Call Set.Directive.SubKeyword element
     theCondition = element
     element = TheElementAfter( element )
     Select
@@ -598,7 +599,7 @@ Done:
         If element \< .ALL.SYMBOLS Then Signal 20.929
         If WordPos( element~value, "CONDITION SYNTAX") == 0 Then Signal 25.927
         options.condition = element~value
-        Call SetKeyword element, .True
+        Call Set.Directive.SubKeyword element
         element = TheElementAfter( element )
       End
       When tValue == "PROLOG"   Then options.prolog = 1
@@ -607,7 +608,7 @@ Done:
         If element \< .ALL.SYMBOLS Then Signal 20.925
         If WordPos( element~value, "SCIENTIFIC ENGINEERING") == 0 Then Signal 25.011
         options.form = element~value
-        Call SetKeyword element, .True
+        Call Set.Directive.SubKeyword element
         element = TheElementAfter( element )
       End
       When tValue == "TRACE" Then Do
@@ -641,16 +642,16 @@ Done:
   Return .Options.Directive~new( package, begin, end, options. )
 
 -- String or symbol expected as DIGITS value.
-19.917: Syntax( 19.917, OPTIONS )
+19.917: Syntax( 19.917, OPTIONS, element )
 
 -- String or symbol expected as FUZZ value.
-19.918: Syntax( 19.918, OPTIONS )
+19.918: Syntax( 19.918, OPTIONS, element )
 
 -- String or symbol expected as TRACE value.
-19.919: Syntax( 19.919, OPTIONS )
+19.919: Syntax( 19.919, OPTIONS, element )
 
 -- Symbol expected after the FORM keyword.
-20.925: Syntax( 20.925, OPTIONS )
+20.925: Syntax( 20.925, OPTIONS, element )
 
 -- Symbol expected after &1 keyword.
 20.929: Syntax( 20.929, OPTIONS, theCondition )
@@ -709,7 +710,7 @@ Done:
 
   If WordPos(kvalue, "LIBRARY NAMESPACE") == 0 Then Call 25.904 keyword
 
-  Call SetKeyword keyword, .True
+  Call Set.Directive.SubKeyword keyword
 
   If kValue == "LIBRARY" Then Do
     options.library = 1
@@ -734,7 +735,7 @@ Done:
   Return .Requires.Directive~new( package, begin, end, programName, options. )
 
 -- String or symbol expected after ::REQUIRES keyword.
-19.904: Syntax( 19.904, REQUIRES )
+19.904: Syntax( 19.904, REQUIRES, programName )
 
 -- Symbol expected after NAMESPACE keyword.
 20.920: Syntax( 20.920, REQUIRES )
@@ -760,7 +761,7 @@ Done:
 /*   normal parsing rules. An added complication stems from the fact that     */
 /*   there is an ambiguity in the syntax regarding possible extra characters  */
 /*   after an explicit semicolon after ::RESOURCE. See documentation bug      */
-/*   https://sourceforge.net/p/oorexx/documentation/307/ for details.         */
+/*   307 for details.                                                         */
 /*                                                                            */
 /*   The syntax we will be using is the following:                            */
 /*                                                                            */
@@ -789,7 +790,7 @@ Done:
 
     If keyword \< .ALL.SYMBOLS Then Signal 25.926
     If keyword~value \== "END" Then Signal 25.926
-    Call SetKeyword keyword, .True
+    Call Set.Directive.SubKeyword keyword
 
     delimiterElement = TheElementAfter( keyword )
     If delimiterElement \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.921
@@ -805,10 +806,10 @@ Done:
   Return .Resource.Directive~new( package, begin, end, name, delimiter )
 
 -- String or symbol expected as ::RESOURCE directive name.
-19.920: Syntax( 19.920, RESOURCE )
+19.920: Syntax( 19.920, RESOURCE, name )
 
 -- String or symbol expected after ::RESOURCE END keyword.
-19.921: Syntax( 19.921, RESOURCE )
+19.921: Syntax( 19.921, RESOURCE, delimiterElement )
 
 -- Data must not follow the ::RESOURCE directive; found "&1".
 21.914: Syntax( 21.914, delimiterElement, end )
@@ -861,7 +862,7 @@ Done:
 
     If \allOptions~hasItem( keyword~value ) Then Signal 25.903
 
-    Call SetKeyword keyword, .True
+    Call Set.Directive.SubKeyword keyword
 
     Select Case keyword~value
       When "PUBLIC", "PRIVATE" Then Do
@@ -889,7 +890,7 @@ Done:
   )
 
 -- String or symbol expected after ::ROUTINE keyword.
-19.903: Syntax( 19.903, ROUTINE )
+19.903: Syntax( 19.903, ROUTINE, routineName )
 
 -- Symbol or string expected after &1 &2 keyword.
 19.925: Syntax( 19.925, ROUTINE )

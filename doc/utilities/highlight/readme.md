@@ -29,6 +29,7 @@ is a Rexx file, it is highlighted accordingly.
 ------------------------------------------------------- ------------------------------
 `-a`, `--ansi`                                          Select ANSI SGR terminal highlighting
 `--css`                                                 Include links to css files (HTML only)
+`--doccomments=detailed|block`&nbsp;&nbsp;              Select highlighting level for doc-comments
 `-h`, `--html`                                          Select HTML highlighting
 `-l`, `--latex`                                         Select LaTeX highlighting
 `--noprolog`                                            Don't print a prolog
@@ -37,7 +38,7 @@ is a Rexx file, it is highlighted accordingly.
 `--patchfile=`<code><em>file</em></code>                Apply the patches contained in *file*.
 `--prolog`                                              Print a prolog (LaTeX driver only)
 `--startFrom=`<code><em>n</em></code>                   Start line numbers at *n*.
-`-s`, `--style=`<code><em>style</em></code>&nbsp;&nbsp; Use the <code>rexx-<em>style</em>.css</code> style sheet
+`-s`, `--style=`<code><em>style</em></code>             Use the <code>rexx-<em>style</em>.css</code> style sheet
 `--tutor`                                               Enable TUTOR-flavored Unicode
 `-u` , `--unicode`                                      Enable TUTOR-flavored Unicode
 `-w`, <code>--width=<em>n</em></code>                   Ensure that lines have width <em>n</em> (ANSI only)
@@ -61,6 +62,14 @@ in the current directory.
 **Note**: The `css` option is a quick and dirty hack intended to facilitate
 development in RAD scenarios, not a way to generate distribution-ready
 or production files.
+
+### --doccomments=[detailed|block]
+
+Select the highlighting level for doc-comments. When "detailed" is specified
+(the default), some sub-elements of doc-comments, like the summary
+statement, block tags or tag values, receive their own, separated
+styling; when "block" is specified, all the doc-comment as a whole
+gets a single style.
 
 #### -h, --html
 

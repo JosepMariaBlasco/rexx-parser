@@ -60,4 +60,9 @@ Versions
 - [Version history](history/).
 - [Future versions and to-do list](todo/).
 
+Related ooRexx bugs
+-------------------
+
+- [Related ooRexx bugs](oorexx-bugs/).
+
 

@@ -17,12 +17,14 @@
 /* 20250101    0.1e First version                                             */
 /* 20250105    0.1f Support style patches                                     */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /*                                                                            */
 /******************************************************************************/
 
 
-If \.environment~hasIndex( ANSI.Highlighter ) Then
+If \.environment~hasIndex( ANSI.Highlighter ) Then Do
   .environment~ANSI.Highlighter = .ANSI.Highlighter
+End
 
 ::Class ANSI.Highlighter SubClass Highlighter.Driver Public
 
@@ -52,19 +54,22 @@ If \.environment~hasIndex( ANSI.Highlighter ) Then
 ::Method Highlight
   Expose Options.
 
-  Use Strict Arg category, subCategory, tags, string
+  Use Strict Arg category, subCategory, variant, tags, string
 
   patch = Options.!Patch
   If patch == .Nil Then extra = ""
   Else Do
     patch. = patch~getPatch
     Tag2Attr. = patch.!Tag2Attr
-    If subCategory == "" Then extra = Tag2Attr.category
-    Else                      extra = Tag2Attr.category.subCategory
+    Select
+      When variant     \== "" Then extra = Tag2Attr.category.subCategory.variant
+      When subCategory \== "" Then extra = Tag2Attr.category.subCategory
+      Otherwise                    extra = Tag2Attr.category
+    End
   End
 
   Parse Value self~tags2highlight(tags, extra) -
-    With bold italic underline color"/"background
+    With bold italic underline color":"background
 
   command = ""
   If bold              Then command ||= "1;"
@@ -80,8 +85,8 @@ If \.environment~hasIndex( ANSI.Highlighter ) Then
 
 ::Method EnsureWidth
   Expose Options. output
-  Tag2Attr.  = Options.!Tag2Attr
-  Parse Value Tag2Attr.["rexx"] With "/"background
+  style = Options.style
+  Parse Value self~CachedCSS(style, "rexx") With ":"background
   If background = "" Then Return
   background = color2SGR(background)
   len = Columns( output[ output~last ] ) - options.!numberWidth - 1

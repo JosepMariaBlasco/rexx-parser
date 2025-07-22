@@ -1,1 +1,0 @@
-::Attribute A is nice

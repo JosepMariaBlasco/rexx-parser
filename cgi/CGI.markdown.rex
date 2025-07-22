@@ -39,6 +39,7 @@
 /* 20250523    0.2b Move HTTP.Request, HTTP.Response and Array.OutputStream   */
 /*                  to separate files.                                        */
 /* 20250524         Move generic CGI behaviour to Rexx.CGI.cls.               */
+/* 20250621    0.2c Add support for .rex and .cls files.                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -113,14 +114,21 @@ Exit
   URI  = self~URI
 
   ------------------------------------------------------------------------------
-  -- We only accept one optional query, of the form style=(light|dark)        --
+  -- We only accept one optional query, of the form "style=(light|dark)"      --
+  -- or "view=highlight" (only for .rex and .cls files)                       --
   ------------------------------------------------------------------------------
 
   style = "dark"
+  view  = "text"
   If uri~contains("?")  Then Do
     Parse Var uri uri"?"query
     ok = 0
-    If query~startsWith("style=") Then Do
+    If query~startsWith("view="), -
+      (uri~endsWith(".cls") | uri~endsWith(".rex")) Then Do
+      Parse Var query "view="view
+      If view == "highlight" Then ok = 1
+    End
+    Else If query~startsWith("style=") Then Do
       Parse Var query "style="style
       If style == "dark" | style == "light" Then ok = 1
     End
@@ -136,9 +144,9 @@ Exit
   ------------------------------------------------------------------------------
 
   -- In case we need to form canonical URLs
-  If      URI~endsWith( "readme.md") Then URI = Left(URI, Length(URI) -  9)
-  Else If URI~endsWith( "slides.md") Then URI = Left(URI, Length(URI) -  9)
-  Else If URI~endsWith("article.md") Then URI = Left(URI, Length(URI) - 10)
+  If      URI~endsWith(  "readme.md" ) Then URI = Left(URI, Length(URI) -  9)
+  Else If URI~endsWith(  "slides.md" ) Then URI = Left(URI, Length(URI) -  9)
+  Else If URI~endsWith( "article.md" ) Then URI = Left(URI, Length(URI) - 10)
 
   ------------------------------------------------------------------------------
   -- See if an accompanying extra style .css file exists                      --
@@ -166,6 +174,13 @@ Exit
 
   source = CharIn( file, 1, Chars(file) )~makeArray
   Call Stream file, "c", "close"
+
+  ------------------------------------------------------------------------------
+  -- Special case for .rex or .cls files                                      --
+  ------------------------------------------------------------------------------
+
+  If URI~endsWith( ".rex") Then Signal View
+  If URI~endsWith( ".cls") Then Signal View
 
   ------------------------------------------------------------------------------
   -- We process Rexx fenced code blocks first                                 --
@@ -208,8 +223,8 @@ Exit
       When line = "%extrastyle%"    Then
         If extraStyle \== "" Then
           Say "    <link rel='stylesheet' media='print' href='"extraStyle"'>"
-      When line = "%ownstyle%"    Then
-        If ownStyle \== "" Then
+      When line = "%ownstyle%"      Then
+        If ownStyle \== ""   Then
           Say "    <link rel='stylesheet'" -
               "href='/rexx-parser/css/print/"ownstyle".css'>"
       Otherwise Say line
@@ -221,6 +236,7 @@ Exit
   -- in fenced code blocks, and dynamically update the array to refer         --
   -- to these CSS files.                                                      --
   ------------------------------------------------------------------------------
+Hack:
 
   out   = .Array.Output
   lines = out~items
@@ -265,6 +281,79 @@ OptionalRoutineMissing:
   If code == 43.1, Condition("A")[1] = routineName Then Return
 Raise Propagate
 
+--------------------------------------------------------------------------------
+
+View:
+
+  If view \== "highlight" Then Do
+    self~Content_Type = "text/plain"
+    Do line Over source
+      Say line
+    End
+    Exit self~OK
+  End
+
+  fenced = .Array~of("~~~~~~~~~~~~~~rexx")
+  fenced ~ appendAll(source)
+  fenced ~ append("~~~~~~~~~~~~~~")
+
+  contents = FencedCode( file, fenced )
+
+  ------------------------------------------------------------------------------
+  -- Copy the HTML resource, with some substitutions                          --
+  ------------------------------------------------------------------------------
+
+  template = .Resources~DisplayRexx
+
+  Do line Over template
+    Select
+      When line = "%title%"         Then Say  URI
+      When line = "%header%"        Then Call OptionalCall PageHeader, URI
+      When line = "%contents%"      Then Do line Over contents; Say line; End
+      When line = "%footer%"        Then Call OptionalCall PageFooter
+      When line = "%sidebar%"       Then Call OptionalCall Sidebar, uri
+      When line = "%contentheader%" Then Call OptionalCall ContentHeader, uri
+      When line = "%extrastyle%"    Then Nop
+      When line = "%ownstyle%"      Then Nop
+      Otherwise Say line
+    End
+  End
+
+  Signal Hack
+
+
+-- We are loading a local copy of Bootstrap 3, customized to eliminate
+-- print media styles, and then we add our own media styles css.
+
+::Resource DisplayRexx
+<!doctype html>
+<html lang='en'>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+      %title%
+    </title>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+[*STYLES*]
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
+    %extrastyle%
+    <!--[if lt IE 9]>
+      <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    %contents%
+    <script src="/js/bootstrap.min.js"></script>
+  </body>
+</html>
+::END
+
+
 /******************************************************************************/
 /******************************************************************************/
 --                         Structure of a page:
@@ -284,9 +373,6 @@ Raise Propagate
 --
 /******************************************************************************/
 /******************************************************************************/
-
--- We are loading a local copy of Bootstrap 3, customized to eliminate
--- print media styles, and then we add our own media styles css.
 
 ::Resource HTML
 <!doctype html>
