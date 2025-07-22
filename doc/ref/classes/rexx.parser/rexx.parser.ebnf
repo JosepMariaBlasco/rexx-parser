@@ -1,5 +1,0 @@
-Rexx.Parser.new ::= "(" name "," (source)? ("," options)?  ")"
-
-Rexx.Parser.firstElement ::= "firstElement"
-
-Rexx.Parser.package ::= "package"

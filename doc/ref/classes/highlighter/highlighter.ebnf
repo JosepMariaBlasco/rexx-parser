@@ -1,3 +1,0 @@
-Highlighter.new ::= "new(" name "," source ("," options)?  ")"
-
-Highlighter.parse ::= "parse(" (patch)? ")"
