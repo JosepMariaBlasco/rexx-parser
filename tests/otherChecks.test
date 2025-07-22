@@ -1,0 +1,427 @@
+/******************************************************************************/
+/*                                                                            */
+/* otherChecks.test - Miscelaneous checks                                     */
+/* ======================================                                     */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20250531    0.2c First release                                             */
+/*                                                                            */
+/******************************************************************************/
+
+  If .environment~Parser.Test.SimpleErrors == .Nil Then
+    .environment~Parser.Test.SimpleErrors   = 0
+  If .environment~Parser.Test.OK           == .Nil Then
+    .environment~Parser.Test.OK             = 0
+
+  Signal On Halt
+
+  Call Test.Error 06.001, ("Say 'Hello!' /*/*        ", -
+                           "*/i = i + 1              ", -
+                           "                         ", -
+                           "/* */                    ")
+  Call Test.Error 06.002, ("Say 'Hello!              ", -
+                           "i = i + 1                ")
+  Call Test.Error 06.003, ('Say "Hello!              ', -
+                           'Say i                    ')
+
+  Call Test.Error 07.001,  "Select; End              "
+  Call Test.Error 07.002,  "Select Case n; i = 1     "
+  Call Test.Error 07.002,  "Select       ; i = 1     "
+
+  Call Test.Error 08.001,  "a = 2; Then Say n        "
+  Call Test.Error 08.002,  "a = 2; Else Say n        "
+
+  Call Test.Error 09.001,  "a = 2; When 1 Then Say n "
+  Call Test.Error 09.002,  "a = 2; Otherwise   Say n "
+
+  Call Test.Error 10.001,  "a = 2; End               "
+
+  Call Test.Error 10.002,  "Do   Label k i = 1 To 3; Say 'Hi';   End j"
+  Call Test.Error 10.002,  "Loop Label k i = 1 To 3; Say 'Hi';   End j"
+  Call Test.Error 10.002,  "Do           i = 1 To 3; Say 'Hi';   End j"
+  Call Test.Error 10.002,  "Loop         i = 1 To 3; Say 'Hi';   End j"
+  Call Test.Error 10.003,  "Do;   Say "Hi"; End j"
+  Call Test.Error 10.003,  "Loop; Say "Hi"; End j"
+  Call Test.Error 10.004,  "Select Label l; When 1 Then Say Nop; End j"
+
+  Call Test.Error 10.007,  "Select; When 1 Then Say Nop; End j"
+
+  Call Test.Error 13.001,  "i = @"
+
+  Call Test.Error 14.001,  "Do; Nop; i = 1                             "
+  Call Test.Error 14.002,  "Select; When 0 Then Say 1                  "
+  Call Test.Error 14.003,  "If a; Then                                 "
+  Call Test.Error 14.003,  "Select Case a; When 'A'; Then              "
+  Call Test.Error 14.004,  "If a Then Nop; Else                        "
+  Call Test.Error 14.005,  "Loop; Nop                                  "
+  Call Test.Error 14.901,  "Select; When 0 Then Nop; Otherwise Say Ugh "
+
+  Call Test.Error 15.001,  "x = 'FE 'X"
+  Call Test.Error 15.001,  "x = ' FE'X"
+  Call Test.Error 15.002,  "b = '11 'b"
+  Call Test.Error 15.002,  "b = ' 11'b"
+  Call Test.Error 15.003,  "X = '013BEFh88'x"
+  Call Test.Error 15.004,  "B = '0120001'B"
+  Call Test.Error 15.005,  "x = 'abc def'X"
+  Call Test.Error 15.006,  "B = '11000 00011'B"
+
+  Call Test.Error 18.001,  "If a = b; Say 2"
+  Call Test.Error 18.002,  "Select; When 1; Nop"
+
+  Call Test.Error 19.002,  "Call                    *"
+  Call Test.Error 19.003,  "Call   On Error    Name *"
+  Call Test.Error 19.003,  "Signal On Error    Name *"
+  Call Test.Error 19.003,  "Call   On User pop Name *"
+  Call Test.Error 19.003,  "Signal On User pop Name *"
+  Call Test.Error 19.004,  "Signal"
+
+  Call Test.Error 19.901,  "Say hi; ::Class"
+  Call Test.Error 19.902,  "Say hi; ::Class C; ::Method"
+  Call Test.Error 19.903,  "Say hi; ::Routine"
+  Call Test.Error 19.904,  "Say hi; ::Requires"
+  Call Test.Error 19.905,  "Say hi; ::Attribute a external"
+  Call Test.Error 19.905,  "Say hi; ::Method M External"
+  Call Test.Error 19.906,  "Say hi; ::Class C Metaclass"
+  Call Test.Error 19.907,  "Say hi; ::Class C Subclass"
+  Call Test.Error 19.908,  "Say hi; ::Class C Inherit"
+  Call Test.Error 19.909,  "Say hi; Say a~"
+
+  Call Test.Error 19.913,  "::Class C MixinClass"
+  Call Test.Error 19.914,  "::Attribute *"
+  Call Test.Error 19.915,  "::Constant *"
+  Call Test.Error 19.916,  "::Constant C *"
+  Call Test.Error 19.917,  "::Options digits *"
+  Call Test.Error 19.918,  "::Options fuzz *"
+  Call Test.Error 19.919,  "::Options trace *"
+  Call Test.Error 19.920,  "::Resource *"
+  Call Test.Error 19.921,  "::Resource R END *"
+
+  Call Test.Error 19.923,  "::Annotate package kk *"
+  Call Test.Error 19.924,  "::Annotate package kk"
+  Call Test.Error 19.925,  "::Class C; ::Annotate class *"
+
+  Call Test.Error 20.901,  "Drop *"
+  Call Test.Error 20.902,  "Expose"
+  Call Test.Error 20.903,  "Parse"
+  Call Test.Error 20.904,  "Parse Var *"
+  Call Test.Error 20.905,  "Numeric *"
+  Call Test.Error 20.906,  "Drop (*"
+  Call Test.Error 20.907,  "Leave *"
+  Call Test.Error 20.908,  "Iterate *"
+  Call Test.Error 20.909,  "Do; End *"
+
+  Call Test.Error 20.911,  "Call   On  *"
+  Call Test.Error 20.911,  "Signal On  *"
+  Call Test.Error 20.912,  "Call   Off *"
+  Call Test.Error 20.912,  "Signal Off *"
+
+  Call Test.Error 20.914,  "Raise"
+  Call Test.Error 20.915,  "Call   On  User *"
+  Call Test.Error 20.915,  "Signal On  User *"
+  Call Test.Error 20.915,  "Call   Off User *"
+  Call Test.Error 20.915,  "Signal Off User *"
+  Call Test.Error 20.916,  "::*"
+  Call Test.Error 20.917,  "this~length:*"
+  Call Test.Error 20.918,  "Do     Label *"
+  Call Test.Error 20.918,  "Loop   Label *"
+  Call Test.Error 20.918,  "Select Label *"
+  Call Test.Error 20.919,  "::Annotate package *"
+  Call Test.Error 20.920,  "::Requires a NameSpace *"
+
+  Call Test.Error 20.922,  "Call ah:*"
+  Call Test.Error 20.923,  "a = b + c:*"
+  Call Test.Error 20.924,  "::Annotate *"
+  Call Test.Error 20.925,  "::Options form *"
+  Call Test.Error 20.926,  "::Attribute a Delegate *"
+  Call Test.Error 20.926,  "::Method m Delegate *   "
+  Call Test.Error 20.927,  "::Method M; Use Local * "
+
+  Call Test.Error 20.929,  "Do   With Index *"
+  Call Test.Error 20.929,  "Loop With Index *"
+  Call Test.Error 20.929,  "Do   With Item  *"
+  Call Test.Error 20.929,  "Loop With Item  *"
+
+  Call Test.Error 20.930,  "a = >a.2"
+  Call Test.Error 20.930,  "a = >*"
+  Call Test.Error 20.931,  "Use Arg >a.2"
+  Call Test.Error 20.931,  "Use Arg >*"
+  Call Test.Error 20.932,  "Address COMMAND With Input stem c.2"
+  Call Test.Error 20.933,  "Address COMMAND With"
+  Call Test.Error 20.934,  "Do   counter *"
+  Call Test.Error 20.934,  "Loop counter *"
+
+  Call Test.Error 21.901,  "Nop pop"
+
+  Call Test.Error 21.903,  "Call    On  Error Name x *"
+  Call Test.Error 21.903,  "Signal  On  Error Name x *"
+  Call Test.Error 21.904,  "Call    Off Error pop"
+  Call Test.Error 21.904,  "Signal  Off Error pop"
+  Call Test.Error 21.905,  "Signal  label extra"
+  Call Test.Error 21.906,  "Trace   ?a    extra"
+  Call Test.Error 21.907,  "Leave   label extra"
+  Call Test.Error 21.908,  "Iterate label extra"
+  Call Test.Error 21.909,  "End     label extra"
+
+  Call Test.Error 21.911,  "Numeric Form engineering *"
+
+  Call Test.Error 21.913,  "::Constant C D E"
+  Call Test.Error 21.914, ('::Resource R end "::END" x', -
+                           "x",                          -
+                           "::END")
+
+  Call Test.Error 25.001,  "Call   On  Nope"
+  Call Test.Error 25.002,  "Call   Off Nope"
+  Call Test.Error 25.003,  "Signal On  Aww"
+  Call Test.Error 25.004,  "Signal Off Aww"
+
+  Call Test.Error 25.011,  "Numeric Form feeble"
+  Call Test.Error 25.012,  "Parse CaseLess me"
+  Call Test.Error 25.012,  "Parse me"
+  Call Test.Error 25.012,  "Parse Upper me"
+
+  Call Test.Error 25.015,  "Numeric environment"
+
+  Call Test.Error 25.017,  "Procedure Small"
+
+  Call Test.Error 25.901,  "::Class C very big"
+  Call Test.Error 25.902,  "::Method method method"
+  Call Test.Error 25.903,  "::Routine ROARR! GRRR!"
+  Call Test.Error 25.904,  "::Requires some Library *"
+  Call Test.Error 25.904,  "::Requires not good"
+  Call Test.Error 25.904,  "::Requires a *"
+  Call Test.Error 25.904,  "::Requires something NameSpace too long"
+  Call Test.Error 25.905,  "Use your brain"
+  Call Test.Error 25.906,  "Raise Once"
+  Call Test.Error 25.907,  "Raise LostDigits now"
+  Call Test.Error 25.908,  "Raise LostDigits Description (one) Description (two)"
+  Call Test.Error 25.909,  "Raise lostdigits additional (a) array (b)"
+
+  Call Test.Error 25.911,  "Raise LostDigits Exit 1 Return 2"
+  Call Test.Error 25.912,  "Guard On blah"
+  Call Test.Error 25.913,  "Guard us"
+  Call Test.Error 25.914,  "Call   On Error  severe"
+  Call Test.Error 25.915,  "Signal On Syntax errors"
+  Call Test.Error 25.916,  "Forward backward"
+  Call Test.Error 25.917,  "Forward to (one) to (two)"
+  Call Test.Error 25.918,  "Forward arguments (a) array (b)"
+  Call Test.Error 25.919,  "Forward Continue Continue"
+
+  Call Test.Error 25.921,  "Forward class (a) class (b)"
+  Call Test.Error 25.922,  "Forward message (m) message (n)"
+  Call Test.Error 25.923,  "Select us"
+  Call Test.Error 25.924,  "::Options Tralfamadore"
+  Call Test.Error 25.925,  "::Attribute A is nice"
+  Call Test.Error 25.926,  "::Resource very big"
+  Call Test.Error 25.927,  "::Options NoValue is unacceptable"
+  Call Test.Error 25.928,  "::Annotate my words"
+  Call Test.Error 25.929,  "Use Strict Rules"
+  Call Test.Error 25.930,  'Address COMMAND "C" With Input Stem s. Input Stem t.'
+  Call Test.Error 25.931,  'Address COMMAND "C" With Output Stem s. Output Stem t.'
+  Call Test.Error 25.932,  'Address COMMAND "C" With Error Stem s. Error Stem t.'
+  Call Test.Error 25.933,  'Address COMMAND "C" With Input Very fast'
+  Call Test.Error 25.934,  'Address COMMAND "C" With gleeful joy'
+
+  Call Test.Error 26.004,  "Parse Var v 12.2"
+  Call Test.Error 26.005,  "::Options digits many"
+  Call Test.Error 26.006,  "::Options fuzz frizch"
+
+  Call Test.Error 27.001,  "Do While 1 Until 0"
+
+  Call Test.Error 27.901,  "Do Forever more"
+  Call Test.Error 27.902,  "Do ubt = 1 By 2 By 3"
+  Call Test.Error 27.902,  "Do ubt = 1 For 2 For 3"
+  Call Test.Error 27.902,  "Do with index one index two over me"
+  Call Test.Error 27.902,  "Do with item one item two over me"
+  Call Test.Error 27.902,  "Do a over b for 1 for 2"
+  Call Test.Error 27.902,  "Do ubt = 1 To 2 To 3"
+  Call Test.Error 27.902,  "Do with index i over me for 1 for 2"
+
+  Call Test.Error 27.904,  "Do With Item A *"
+  Call Test.Error 27.904,  "Do With Index I"
+
+  Call Test.Error 27.905,  "Do label l counter c"
+  Call Test.Error 27.905,  "Do counter c"
+
+  Call Test.Error 28.003,  "Do j = 1 By 1; Leave k; End"
+  Call Test.Error 28.004,  "Do j = 1 By 1; Iterate k; End"
+  Call Test.Error 28.005, ("Do Label l1",                 -
+                           "  Select label l1",           -
+                           "    When 1 Then Do Label l2", -
+                           "      If 1 then Do Label l3", -
+                           "        Iterate l1",          -
+                           "      End",                   -
+                           "    End",                     -
+                           "  End",                       -
+                           "End")
+
+  Call Test.Error 31.002,  "Do 2a = 1"
+  Call Test.Error 31.002,  "Do Counter 2a Forever"
+  Call Test.Error 31.002,  "Drop 2a"
+  Call Test.Error 31.002,  "Do With index 2a"
+  Call Test.Error 31.002,  "Do With item 2a"
+  Call Test.Error 31.002,  "Parse Var 2a"
+  Call Test.Error 31.002,  "Use Arg 3"
+  Call Test.Error 31.003,  "Use Arg .aa"
+  Call Test.Error 31.003,  "Parse Var .a"
+  Call Test.Error 31.003,  "Do With item .a"
+  Call Test.Error 31.003,  "Do With index .a"
+  Call Test.Error 31.003,  "Drop .a"
+  Call Test.Error 31.003,  "Do Counter .a Forever"
+  Call Test.Error 31.003,  "Do .a = 1"
+
+  Call Test.Error 35.001,  "a==b"
+  Call Test.Error 35.001,  "Say a [2]"
+  Call Test.Error 35.001,  "Use Arg a = +"
+  Call Test.Error 35.001,  "Raise Novalue Return +"
+  Call Test.Error 35.001,  "a[2] +="
+  Call Test.Error 35.001,  "Forward Message +"
+  Call Test.Error 35.001,  "Address COMMAND With Input Using +"
+
+  Call Test.Error 35.904,  "Do i = "
+  Call Test.Error 35.905,  "Do i = 1 By"
+  Call Test.Error 35.906,  "Do i = 1 To"
+  Call Test.Error 35.907,  "Do i = 1 For"
+  Call Test.Error 35.907,  "Do c over (1,2) for"
+  Call Test.Error 35.907,  "Do With index ix over o for"
+
+  Call Test.Error 35.911,  "Do c Over"
+  Call Test.Error 35.911,  "Do with index ix Over"
+  Call Test.Error 35.912,  "Interpret"
+  Call Test.Error 35.913,  "Options"
+
+  Call Test.Error 35.915,  "Signal Value"
+  Call Test.Error 35.916,  "Trace Value"
+  Call Test.Error 35.917,  "Numeric Form Value"
+  Call Test.Error 35.918,  "x ="
+
+  Call Test.Error 35.922,  "Raise NoValue Description"
+  Call Test.Error 35.923,  "Raise NoValue Additional"
+  Call Test.Error 35.924,  "Forward Array"
+  Call Test.Error 35.925,  "Forward To"
+  Call Test.Error 35.926,  "Forward Arguments"
+  Call Test.Error 35.927,  "Forward Message"
+  Call Test.Error 35.928,  "Forward Class"
+  Call Test.Error 35.929,  "If a, ,c  Then d"
+  Call Test.Error 35.929,  "If a,b,c, Then d"
+
+  Call Test.Error 35.930,  "Use arg a = 12 b"
+
+  Call Test.Error 35.933,  "Select Case"
+
+  Call Test.Error 35.935,  "Address COMMAND With Input Stream"
+
+  Call Test.Error 36.901,  "a(b"
+  Call Test.Error 36.902,  "a[b"
+
+  Call Test.Error 37.002,  "a[b)"
+  Call Test.Error 37.002,  "a + b )"
+
+  Call Test.Error 37.901,  "a(b]"
+  Call Test.Error 37.901,  "a + b ]"
+
+  Call Test.Error 38.001,  "Parse Var x *"
+  Call Test.Error 38.002,  "Parse Var x +*"
+  Call Test.Error 38.003,  "Parse Value"
+
+  Call Test.Error 40.028,  'Call XRange "Clang"'
+
+  Call Test.Error 46.901,  "Drop a (b"
+  Call Test.Error 46.902,  "Use Arg a, b *"
+
+  Call Test.Error 47.002,  "Do; Nop; X: End"
+  Call Test.Error 47.002,  "Do; X: Nop; End"
+  Call Test.Error 47.002,  "Loop; Nop; X: End"
+  Call Test.Error 47.002,  "Loop; X: Nop; End"
+  Call Test.Error 47.003,  "If 1 Then; X: Nop"
+  Call Test.Error 47.004,  "Select;    When 1 Then; X: Nop;                             End"
+  Call Test.Error 47.004,  "Select;    When 1 Then     Nop;    When 1     Then; X: Nop; End"
+  Call Test.Error 47.004,  "Select; X: When 1 Then     Nop;                             End"
+  Call Test.Error 47.004,  "Select;    When 1 Then     Nop; X: When 1     Then     Nop; End"
+
+  Call Test.Error 89.001,  "Use Arg a, +"
+
+  Call Test.Error 98.992,  "Expose x"
+  Call Test.Error 98.993,  "Use Local l"
+
+  Call Test.Error 99.901,  '::Class C; ::Class  C Public'
+  Call Test.Error 99.901,  '::Class C; ::Class "c"'
+  Call Test.Error 99.902,  "::Class C; ::Method M Class; ::Method M Class"
+  Call Test.Error 99.902,  "::Class C; ::Method M; ::Method M "
+  Call Test.Error 99.902,  "::Method M; ::Method  M "
+  Call Test.Error 99.902,  '::Method M; ::Method "m"'
+  Call Test.Error 99.903,  '::Routine repetitious; ::Routine repetitious'
+  Call Test.Error 99.903,  '::Routine  repetitious; ::Routine "repetitious"'
+
+  Call Test.Error 99.905,  "::Method M Class"
+  Call Test.Error 99.906,  "::Constant c (1+2)"
+  Call Test.Error 99.907,  '::Method M; Say "Hi"; Expose a b c'
+
+  Call Test.Error 99.910,  '::Method M; Say "Hi"; Use Local x'
+
+  Call Test.Error 99.916,  "::Potato"
+  Call Test.Error 99.917,  '::Routine r external "library rxmath RxCalcSqrt xx"'
+
+  Call Test.Error 99.925,  '::Attribute "test "'
+
+  Call Test.Error 99.930,  "Use Arg a,...,b"
+  Call Test.Error 99.931,  '::Class C; ::Method A Class; ::Attribute A Get Class; Return 1'
+  Call Test.Error 99.931,  '::Attribute A Get; Return 1; ::Attribute A Get; Return 2'
+  Call Test.Error 99.931,  '::Class C; ::Method A; ::Attribute A Get; Return 1'
+  Call Test.Error 99.931,  '::Class C; ::Method "A=" Class; ::Attribute A Set Class; Return 1'
+  Call Test.Error 99.931,  '::Attribute A Set; Return 1; ::Attribute A Set; Return 2'
+  Call Test.Error 99.931,  '::Class C; ::Method "A="; ::Attribute A Set; Return 1'
+  Call Test.Error 99.931,  '::Attribute  A; ::Attribute "a"'
+  Call Test.Error 99.932,  '::Class Class; ::Method C Class; Say "Hi"; ::Constant C Two'
+  Call Test.Error 99.932,  '::Constant C One; ::Constant C Two'
+  Call Test.Error 99.932,  '::Class Class; ::Method C; Say "Hi"; ::Constant C Two'
+  Call Test.Error 99.932,  '::Constant  C  12; ::Constant "c" 14'
+  Call Test.Error 99.933,  '::Class C; ::Method M Abstract; Say "Hi!"'
+  Call Test.Error 99.934,  '::Method M Attribute; Say "Hi!"'
+  Call Test.Error 99.935,  '::Class C; ::attribute top set external "LIBRARY ooshapes rect_setTop"; Say "Hi!"'
+  Call Test.Error 99.936,  '::Class C; ::Method Init External "LIBRARY rxregexp RegExp_Init"; Say "Hi!"'
+  Call Test.Error 99.937,  '::Attribute A; Say "Hi!"'
+  Call Test.Error 99.938,  '::Constant C;  Say "Hi!"'
+  Call Test.Error 99.939, ('::Routine r external "LIBRARY rxmath RxCalcPi"', 'Say "Hi!"')
+  Call Test.Error 99.940, ('::Attribute a get abstract', 'Say "Hi!"')
+
+  Call Test.Error 99.942, ('::Resource r end pp', -
+                           'x',                   -
+                           'PP',                  -
+                           '',                    -
+                           '::Resource r',        -
+                           'y',                   -
+                           '::END')
+  Call Test.Error 99.942, ('::Resource r end pp', -
+                           'x',                   -
+                           'PP',                  -
+                           '',                    -
+                           '::Resource "r"',      -
+                           'y',                   -
+                           '::END')
+  Call Test.Error 99.943, ('::Resource r end pp','x')
+  Call Test.Error 99.944,  "::Requires R namespace rexx"
+
+  Call Test.Error 99.946,  '::Method M Delegate z; Say "Hello"'
+  Call Test.Error 99.947,  '::Attribute A get Delegate z; Say "Hello"'
+  Call Test.Error 99.948,  "Use local a.2"
+  Call Test.Error 99.950,  "Use Arg >a = 4"
+
+  Exit
+
+Halt:
+  Say ""
+  Say "Program halted."
+  Pull
+Exit
+
+::Requires "Test.Parser.cls"

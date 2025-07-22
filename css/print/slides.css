@@ -1,0 +1,87 @@
+.footnotes ol {
+  font-size:12px;
+}
+
+.footnotes ol li p {
+  margin-bottom: 0;
+}
+
+
+@media print {
+
+  body {background-color:#fff;}
+
+  .slide, .part {
+    break-before: page;
+  }
+
+  h1.slide{
+    margin-top:10px;
+    font-size:30px;
+  }
+
+  h1.part{
+    margin-top:200px;
+    font-size:40px;
+    color:blue;
+  }
+
+  div.sidebar{display: none;}
+
+  div.logo-and-title, nav.x-breadcrumb, nav.x-header, div.footer, hr.before-footer {
+    display: none;
+  }
+
+  .screenonly {
+    display: none;
+  }
+
+}
+
+
+@page {
+
+  margin: 10mm;
+  size: 263.11mm 148mm; /* Height of a landscape DIN A5, 16x9 */
+
+  @top-center {
+    content: "Running header - Override";
+    font-size: 9pt;
+    font-family: "Questrial", serif;
+    font-style: italic;
+  }
+
+  @bottom-left {
+    margin-left:17px;
+    content: "Running footer - Override";
+    font-size: 9pt;
+    font-family: "Questrial", serif;
+    font-style: italic;
+  }
+
+  @bottom-center {
+    content: "Running footer - Override";
+    font-size: 9pt;
+    font-family: "Questrial", serif;
+    font-style: italic;
+  }
+
+  @bottom-right {
+    margin-right:17px;
+    content: counter(page);
+    font-size: 9pt;
+    font-style: italic;
+  }
+}
+
+@page :first{
+  @top-center {
+    content: none;
+  }
+  @bottom-left {
+    content: none;
+  }
+  @bottom-right {
+    content: none;
+  }
+}
