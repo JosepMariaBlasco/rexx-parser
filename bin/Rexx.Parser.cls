@@ -105,7 +105,7 @@
 
   Use Strict Arg package, directive
 
-  inAMethodBody                  = directive~class == .Method.Directive
+  inAMethodBody = directive~class == .Method.Directive
 
   If directive~isA(.Attribute.Directive) Then Do
     -- Logic for attributes w and w/o bodies:
@@ -117,7 +117,9 @@
     If options.abstract \== ""   Then inAMethodBody = 1
   End
 
-  body                           = .Code.Body~new( package, directive )
+  body = .Code.Body~new( package, directive )
+  If inAMethodBody Then
+    body~isAMethodBody = .True
   package~currentBody            = body
   package~blockInstructionsStack = Array()
 
@@ -131,6 +133,8 @@
 
   If .Parser.Options~hasIndex( earlyCheck ) Then
     checkguard     = .Parser.Options~earlyCheck~hasItem( guard )
+
+  -- TODO EXPOSE, USE LOCAL and GUARD should be checked recursively.
 
   Loop Counter n Until instruction~class == .Implicit.Exit.Instruction
     instruction = package~clauser~Next.Instruction( NoFinalENDClause )
@@ -186,13 +190,14 @@ CheckThatUseLocalIsValid:
 
 ::Class Code.Body SubClass Block.Instruction
 
-::Attribute labels             -- All labels
-::Attribute clauses            -- All clauses
-::Attribute exposed            -- Explicitly EXPOSEd variables
-::Attribute uselocal           -- USE LOCAL variables (.Nil -> no USE LOCAL)
-::Attribute classMethod        -- True when this is a CLASS method
-::Attribute calledRoutineNames -- Symbols or strings
-::Attribute instructions       -- Array of instructions
+::Attribute labels              -- All non trace-only labels
+::Attribute clauses             -- All clauses
+::Attribute exposed             -- Explicitly EXPOSEd variables
+::Attribute uselocal            -- USE LOCAL variables (.Nil -> no USE LOCAL)
+::Attribute isAMethodBody       -- This is a METHOD body
+::Attribute classMethod         -- True when this is a CLASS method
+::Attribute calledRoutineNames  -- Symbols or strings
+::Attribute instructions        -- Array of instructions
 
 ::Method "[]"
   Expose instructions
@@ -201,17 +206,18 @@ CheckThatUseLocalIsValid:
 
 ::Method init
   Expose instructions labels clauses calledRoutineNames -
-    exposed useLocal classMethod
+    exposed useLocal classMethod isAMethodBody usesExitInstruction
 
   Use Strict Arg package, directive
 
-  labels             = Array()
-  clauses            = Array()
-  calledRoutineNames = Array()
-  instructions       = Array()
-  exposed            = Set()
-  useLocal           = .Nil
-  classMethod        = .False
+  labels              = .StringTable~new
+  clauses             = Array()
+  calledRoutineNames  = Array()
+  instructions        = Array()
+  exposed             = Set()
+  useLocal            = .Nil
+  classMethod         = .False
+  isAMethodBody       = .False
 
   If directive~class == .Method.Directive Then
     classMethod = directive~options.[class]
@@ -224,13 +230,28 @@ CheckThatUseLocalIsValid:
 
   Use Strict Arg instruction
 
+  -- This is called only for top-level instructions
+  -- Update the body labels stringtable with all the
+  -- non-trace-only top-level labels.
+  labels     = instruction~labels       -- Our labels
+  bodyLabels = self~labels              -- Pool of non trace-only labels
+  Loop theLabel Over labels             -- One by one...
+    value  = theLabel~label~value       -- ...pick the value (may be lowercase)
+    If bodyLabels~hasIndex(value) Then  -- Duplicate label? That is allowed,...
+      Nop                               -- ... but this is trace-only.
+    Else Do                             -- A new, non trace-only label
+      bodyLabels[value] = theLabel      -- Store it in the body label pool...
+      theLabel~traceOnly = .False       -- ...and mark as not trace-only.
+      theLabel~label~traceOnly= .False  -- Mark the element itself too.
+    End
+  End
+
   -- Update self~begin and self~end to accomodate the new instruction
   If self~begin == .Nil Then Do
     nullClauses = instruction~nullClauses
     If nullClauses \== .Nil, nullClauses~items > 0
       Then null  = nullClauses[1]~begin
       Else null  = .Nil
-    labels      = instruction~labels
     If labels      \== .Nil, labels     ~items > 0
       Then label = labels[1]~begin
       Else label = .Nil
@@ -770,7 +791,8 @@ Return
 
 --------------------------------------------------------------------------------
 -- Common routine: check that a directive body is empty (i.e., it consists    --
--- of null clauses) and return it. Otherwise, raise a 99.916 error.           --
+-- only of null clauses) and return that body. Otherwise, raise               --
+-- a 99.916 error.                                                            --
 --------------------------------------------------------------------------------
 
 ::Routine Empty.Body

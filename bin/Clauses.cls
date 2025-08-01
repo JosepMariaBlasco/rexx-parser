@@ -155,11 +155,8 @@
 
   Loop
     Select Case clause~class
-      When .Label.Clause Then Do
-        labels     ~append( clause )
-        package~currentBody~labels~append( clause~label~value )
-      End
-      When  .Null.Clause Then nullClauses~append( clause )
+      When .Label.Clause Then labels     ~append( clause )
+      When .Null.Clause  Then nullClauses~append( clause )
       Otherwise Leave
     End
     clause    = self~nextClause
@@ -1181,11 +1178,15 @@ Option:    Return options.[         Upper(Arg(1))]
 ::Class Label.Clause Public SubClass Rexx.Clause
 ::Attribute labelFor
 ::Attribute label
+::Attribute traceOnly
 ::Method init
-  Expose label labelFor
+  Expose label labelFor traceOnly
   Use Strict Arg package, begin, end, label
-  labelFor = .Nil
+  labelFor        = .Nil
+  traceOnly       = .True
+  label~traceOnly = .True
   self~init:super( package, begin, end )
+
 
 /******************************************************************************/
 /* LOOP Clause                                                              */

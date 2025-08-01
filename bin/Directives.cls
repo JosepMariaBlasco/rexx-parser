@@ -913,8 +913,6 @@ Done:
   self~init:super( package, begin, end )
 ::Attribute name     Get
 ::Attribute private  Get
--- TODO attributes can have bodies
---::Attribute external Get
 ::Method external
   Expose spec
   Return spec

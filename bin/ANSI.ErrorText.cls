@@ -642,10 +642,10 @@
   message = .ANSI.ErrorText.Secondary[major"."minor]
   If Arg(2,"O") Then Return message
   substitutions = Arg(2)
-  Do arg Over substitutions
-    If Pos("<",message) == 0 Then Leave
-    Parse Var message before "<"pos":" ">"after
-    message = before || Arg(pos+2) || after
+  Do Counter c arg Over substitutions
+    If Pos("<"c":",message) == 0 Then Leave
+    Parse Var message before ("<"c":") ">"after
+    message = before || arg || after
   End
   Return message
 

@@ -60,6 +60,11 @@
 
 ::Class Rexx.Instruction Public SubClass Rexx.Clause
 ::Constant isBlockInstruction 0
+::Attribute terminating -- True when all branches end with EXIT or RETURN
+::Method init
+  Use Strict Arg package, begin, end
+  self~init:super( package, begin, end )
+  terminating = 0
 
 /******************************************************************************/
 /* A Directive                                                                */

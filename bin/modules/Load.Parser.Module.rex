@@ -62,6 +62,7 @@ End
 --
 methods = callerPackage~definedMethods
 Do name Over methods
+  If Pos("::", name) == 0 Then Iterate
   Parse Var name class"::"method
   If .environment[ class ] == .Nil Then Do
     Say "Internal error! Class" class "not found."

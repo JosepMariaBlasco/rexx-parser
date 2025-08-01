@@ -27,6 +27,7 @@
 /* 20250601         Add ALL.STRING_DELIMITERS and ALL.STRING_COMPONENTS       */
 /* 20250629         Add support for doc-comment subelements                   */
 /* 20250722    0.2d Add .EL.DIRECTIVE_SUBKEYWORD and .ALL.DIRECTIVE_KEYWORDS  */
+/* 20250729         Add .ALL.EXPOSED_VARIABLES                                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -423,10 +424,14 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewElements                        -
     EL.SIMPLE_VARIABLE,  EL.COMPOUND_VARIABLE,  EL.STEM_VARIABLE
   -- The parser understands the difference between local and exposed variables
-  Call NewElements                        -
+  Call NewElements                      -
     EL.EXPOSED_SIMPLE_VARIABLE,         -
     EL.EXPOSED_COMPOUND_VARIABLE,       -
     EL.EXPOSED_STEM_VARIABLE
+  Call NewSet ALL.EXPOSED_VARIABLES,    -
+   .EL.EXPOSED_SIMPLE_VARIABLE,         -
+   .EL.EXPOSED_COMPOUND_VARIABLE,       -
+   .EL.EXPOSED_STEM_VARIABLE
   -- All forms of variable
   Call NewSet ALL.VAR_SYMBOLS,          -
     .EL.SIMPLE_VARIABLE,                -

@@ -96,7 +96,11 @@
 
   Use Strict Arg package, begin, terminators = "", options = ""
 
+  -- Logical expression lists can not have omitted expressions
   logical        = options~caselessContainsWord( "logical" )
+
+  -- Argument lists don't count final commas, contrary to array terms
+  arguments      = options~caselessContainsWord( "arguments" )
 
   expressions    = Array()
   element          = begin
@@ -119,6 +123,8 @@
       trailingComma = 1
     End
 
+    end = element
+
   If element < terminators Then Leave
 
     trailingComma = 0
@@ -127,25 +133,36 @@
     element = newOrExpression~end
     expressions~append( newOrExpression )
 
+    end = element
+
   If element \< .EL.COMMA Then Leave
 
     expressions~append( element )
 
     element = TheElementAfter( element )
+
+    end = element
+
     trailingComma = 1
     commasFound = 1
   End
 
-
   If trailingComma, logical Then Call 35.929 begin
 
+  If arguments Then Do
+    Do While expressions~lastItem~isA(.Element)
+      expressions~delete( expressions~last )
+    End
+  End
+
   Select Case expressions~items
-    When 0 Then Return .Expression.List~new(.Nil, begin)
+    When 0 Then Return .Expression.List~new(.Nil, begin, end)
     -- Only one expression and no commas? --> A classic expression
     When 1 Then If \commasFound Then Return expressions[1]
     Otherwise Nop
   End
-  Return .Expression.List~new(expressions, .Nil)
+
+  Return .Expression.List~new(expressions, begin, end)
 
 -- Missing expression in logical expression list.
 35.929: Syntax( 35.929, Arg(1) )
@@ -175,22 +192,13 @@
   Return args == .Nil
 ::Method init
   Expose args argList begin end
-  Use Strict Arg args, end
+  Use Strict Arg args, begin, end
   argList = Array()
-
-  begin = .Nil
 
   If args \== .Nil Then Do
 
     -- Calculate begin
-    first = args~firstItem
-    begin = first~begin
-
-    -- Calculate end
-    last = args~lastItem
-    If last~isA( .Special.Character.Sequence ) Then -- A .EL.COMMA
-      end = TheElementAfter( last )
-    Else end = last~end
+    begin = args~firstItem~begin
 
     -- Calculate the number of arguments (for argument lists)
     argN = 1
@@ -617,7 +625,7 @@ FunctionCall:
   next          = TheElementAfter( lParen )  -- Where to start parsing
   terminators   = .EL.RIGHT_PARENTHESIS      -- Terminator is ")"
 
-  arguments = Expression.List( package, next, terminators )
+  arguments = Expression.List( package, next, terminators, "arguments" )
 
   Call ExpectParenPair lParen, arguments~end
 
@@ -894,7 +902,7 @@ Return
 ::Attribute end
 ::Attribute stem
 ::Method init
-  Expose stem end
+  Expose stem begin end
   Use Strict Arg stem
   begin = stem
   end   = TheElementAfter( stem )
@@ -924,7 +932,8 @@ Return
   arguments = Expression.List(        -
     package,                          -
     next,                             - -- Where to begin parsing
-   .EL.RIGHT_PARENTHESIS              - -- Terminator is ")"
+   .EL.RIGHT_PARENTHESIS,             - -- Terminator is ")"
+    "arguments"                       -
   )
 
   Call ExpectParenPair lParen, arguments~end
@@ -949,7 +958,8 @@ Return
   arguments = Expression.List(           -
     package,                             -
     next,                                - -- Where to begin parsing
-    .EL.RIGHT_PARENTHESIS                - -- Terminators is ")"
+    .EL.RIGHT_PARENTHESIS,               - -- Terminators is ")"
+   "arguments"                           -
   )
 
   Call ExpectParenPair lParen, arguments~end
@@ -1010,10 +1020,11 @@ Return
   -- Store parenthesis location information
   Parse Value lBracket~from With line pos
 
-  arguments = Expression.List( -
-    package,                    -
-    TheElementAfter( lBracket ),  - -- Where to start parsing
-    terminators || .EL.RIGHT_BRACKET    - -- Add "]" to terminators
+  arguments = Expression.List(        -
+    package,                          -
+    TheElementAfter( lBracket ),      - -- Where to start parsing
+    terminators || .EL.RIGHT_BRACKET, - -- Add "]" to terminators
+   "arguments"                        -
   )
 
   -- Expecting a closing bracket now
@@ -1075,7 +1086,8 @@ Return
     arguments = Expression.List(        -
       package,                          -
       TheElementAfter( lParen ),        - -- Where to start parsing
-     .EL.RIGHT_PARENTHESIS              - -- Terminator is ")"
+     .EL.RIGHT_PARENTHESIS,             - -- Terminator is ")"
+     "arguments"                        -
     )
 
     Call ExpectParenPair lParen, arguments~end

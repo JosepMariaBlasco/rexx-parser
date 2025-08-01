@@ -291,7 +291,7 @@ GetExpression:
 
 Arguments:
   Call PrepareExpression element, ""
-  arguments = Expression.List( package, element, "" )
+  arguments = Expression.List( package, element, "", "arguments" )
   element = arguments~end
   If expression~isNil Then Do
     If nameSpace == .Nil Then Do
@@ -553,6 +553,10 @@ Arguments:
 
 ::Class Exit.Instruction Public SubClass Optional.Expression.Instruction
 ::Constant instructionName "EXIT"
+::Method init
+  Use Strict Arg package, begin, end, expression = .Nil
+  self~init:super( package, begin, end, expression )
+  self~terminating = .True
 
 /******************************************************************************/
 /* EXPOSE instruction                                                         */
@@ -1355,7 +1359,7 @@ FirstOptions:
         package, begin, end, condition, options.                      -
       )
       When element \< .ALL.VARIABLES_AND_KEYWORDS Then Signal 25.907
-      When WordPos( kValue, keywords ) == 0     Then Signal 25.907
+      When WordPos( kValue, keywords ) == 0       Then Signal 25.907
       Otherwise
         Call SetSubkeyword element
         Call ("OPTION."kValue)
@@ -1462,6 +1466,8 @@ Expression:
 --------------------------------------------------------------------------------
 
 ::Class Raise.Instruction Public SubClass Rexx.Instruction
+::Attribute options.
+::Attribute condition
 ::Method init
   Expose condition options.
   Use Strict Arg package, begin, end, condition, options.
@@ -1497,6 +1503,10 @@ Expression:
 
 ::Class Return.Instruction Public SubClass Optional.Expression.Instruction
 ::Constant instructionName "RETURN"
+::Method init
+  Use Strict Arg package, begin, end, expression = .Nil
+  self~init:super( package, begin, end, expression )
+  self~terminating = .True
 
 /******************************************************************************/
 /* SAY instruction                                                            */
