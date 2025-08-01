@@ -230,9 +230,10 @@ CheckThatUseLocalIsValid:
 
   Use Strict Arg instruction
 
-  -- This is called only for top-level instructions
-  -- Update the body labels stringtable with all the
-  -- non-trace-only top-level labels.
+  -- This is directly called only for top-level instructions.
+  -- We update the body labels stringtable with all the non-trace-only
+  -- top-level labels.
+
   labels     = instruction~labels       -- Our labels
   bodyLabels = self~labels              -- Pool of non trace-only labels
   Loop theLabel Over labels             -- One by one...
@@ -242,7 +243,7 @@ CheckThatUseLocalIsValid:
     Else Do                             -- A new, non trace-only label
       bodyLabels[value] = theLabel      -- Store it in the body label pool...
       theLabel~traceOnly = .False       -- ...and mark as not trace-only.
-      theLabel~label~traceOnly= .False  -- Mark the element itself too.
+      theLabel~label~traceOnly = .False -- Mark the element itself too.
     End
   End
 

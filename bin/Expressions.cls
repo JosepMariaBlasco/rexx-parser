@@ -89,7 +89,9 @@
 /* EXPRESSION LIST                                                            */
 /*   One of:                                                                  */
 /*     expression                           -- A classic expression, or...    */
-/*     [expression] ("," [expression]) *    -- ...an array term               */
+/*     [expression] ("," [expression]) *    -- ...an array term (trail        */
+/*   A classic expression, or an array term (where trailing commas are        */
+/*   meaningful), or an argument list (where trailing commas are discarded).  */
 /******************************************************************************/
 
 ::Routine Expression.List Public

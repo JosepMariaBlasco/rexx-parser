@@ -117,7 +117,7 @@
     label = name~value
     type  = name~invocationType
     Select
-      When name < .ALL.SYMBOLS, bodyLabels~hasItem(label) Then Do
+      When name < .ALL.SYMBOLS, bodyLabels~hasIndex(label) Then Do
         Select Case type
           When "FUNCTION" Then subCategory = .INTERNAL.FUNCTION.NAME
           When "CALL"     Then subCategory = .INTERNAL.SUBROUTINE.NAME
