@@ -24,6 +24,7 @@
 /* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250416    0.2a Add argument info to called routine chain                 */
 /* 20250419         Fix bug nos. 3, 6 & 7                                     */
+/* 20250803    0.2d Add support for array terms                               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -1063,6 +1064,9 @@ Expression:
     element = elements[2]
     Call PrepareExpression element
     expression = Expression.List( package, element, .EL.END_OF_CLAUSE )
+    -- In this context, an expression list is an array term
+    If expression~isA(.Expression.List) Then
+      expression = .Array.Term~new( expression )
   End
 
   Return class~new( package, begin, end, expression )
@@ -1882,7 +1886,7 @@ Done:
 
   Use Strict Arg package, begin, keyword, strict
 
-  argList        =  Array()
+  arguments        =  Array()
   ignoreBlanks   = .True
   argProcessed   = .False
   continue       = .EL.COMMA || .EL.END_OF_CLAUSE
@@ -1891,13 +1895,14 @@ Done:
   element           = keyword
 
   Call NextElement
-
   Call PrepareExpression element
+
+  N = 0
 
   Loop While element \< .EL.END_OF_CLAUSE
     Select
       When element < .EL.COMMA Then Do
-        If \argProcessed Then argList~append( Array("Nil") )
+        If \argProcessed Then N += 1
         argProcessed = .False -- Mark as processed
         Call NextElement        -- Consume the comma
         Iterate               -- Don't reset argProcessed at loop end
@@ -1922,7 +1927,8 @@ Done:
           element = TheElementAfter( element )
         End
         If element < continue Then Do
-          argList~append( ("Assign", term) )
+          N += 1
+          arguments[N] = term
           Call BackTrack
         End
         Else Do
@@ -1931,11 +1937,13 @@ Done:
           If \( element < afterEqualSign ) Then Signal 35.001
           If element < .EL.LEFT_PARENTHESIS Then Do
             subExpression = SubExpression( package, element, "" )
-            argList~append( ("SubExpression", term, subExpression) )
+            N += 1
+            arguments[N] = term, subExpression
             element = subExpression~end
           End
           Else Do
-            argList~append( ("Constant", var, element) )
+            N += 1
+            arguments[N] = term, element
             Call NextElement
             If \( element < continue ) Then Signal 35.930
           End
@@ -1943,10 +1951,13 @@ Done:
         End
       End
       When element < .ALL.OPS.REFERENCE Then Do
+        operator = element
         Call NextElement
-        If \( element < (.EL.SIMPLE_VARIABLE || .EL.STEM_VARIABLE) ) Then Signal 20.931
+        If element \< .ALL.REFERENCED_SYMBOLS Then Signal 20.931
         element~setAssigned
-        argList~append( (">", element) )
+        reference = .Variable.Reference.Term~new(operator, element)
+        N += 1
+        arguments[N] = reference
         Call NextElement
         If element < .EL.OP.EQUAL Then Signal 99.950
         Call BackTrack
@@ -1959,14 +1970,15 @@ Done:
 
 Return:
 
-  If \argProcessed Then argList~append( Array("Nil") )
+  If \argProcessed Then N += 1
 
-  Return .Use.Arg.Instruction~new( package, begin, element, strict, argList)
+  Return .Use.Arg.Instruction~new( package, begin, element, strict, arguments)
 
 Ellipsis:
   Call SetCategory element, .EL.ELLIPSIS
   argProcessed = .True
-  argList~append( Array("...") )
+  N += 1
+  arguments[N] = element
   element = TheElementAfter( element, ignoreBlanks )
   If element \< .EL.END_OF_CLAUSE Then Signal 99.930
   Signal Return
@@ -2012,9 +2024,11 @@ NextElement:
 --------------------------------------------------------------------------------
 
 ::Class Use.Arg.Instruction Public SubClass Rexx.Instruction
+::Attribute strict    Get
+::Attribute arguments Get
 ::Method init
-  Expose strict argList
-  Use Strict Arg package, begin, end, strict, argList
+  Expose strict arguments
+  Use Strict Arg package, begin, end, strict, arguments
   self~init:super( package, begin, end )
 
 /******************************************************************************/

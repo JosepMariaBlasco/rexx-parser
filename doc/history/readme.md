@@ -21,7 +21,8 @@ Version history
        to `rx-doc-comment`, and `rx-doc-lncm` to `rx-doc-comment-markdown` (20250706).
   <li> Add support for [detailed highlighting of doc-comments](../highlighter/features/doc-comments/) (20250706).
   <li> Add Set.Directive.SubKeyword, .EL.DIRECTIVE_SUBKEYWORD, .ALL.DIRECTIVE_KEYWORDS and rx-dskw (20220725).
-  <li> Begin extensive refactoring to test and fix the Tree API (20220725).
+  <li> Begin extensive refactoring to test and fix the Tree API (20250725).
+  <li> Add support for array terms (20250803).
 <tr><td>20250427<td>0.2c<td>
 <ul>
   <li> **Breaking change**: Continuation chars "-" and "," are

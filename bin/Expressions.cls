@@ -20,6 +20,7 @@
 /* 20250416    0.2a Add argument info to called routine chain                 */
 /* 20250419         Fix NAry.Expression crashing on SecondPass.               */
 /* 20250421    0.2b Argument lists in function calls not working properly.    */
+/* 20250803    0.2d Add support for array terms                               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -42,6 +43,7 @@
 
  .environment ~               Rexx.Term  =               .Rexx.Term
 
+ .environment ~              Array.Term  =              .Array.Term
  .environment ~  Compound.Variable.Term  =  .Compound.Variable.Term
  .environment ~            Indexed.Term  =            .Indexed.Term
  .environment ~      Function.Call.Term  =      .Function.Call.Term
@@ -175,27 +177,25 @@
 ::Attribute begin
 ::Attribute end
 ::Attribute args
-
 ::Method arg
-  Expose argList
+  Expose arguments
   Arg n, option +1
   Select Case Arg()
-    When 0 Then Return argList~size
-    When 1 Then Return argList[n]
+    When 0 Then Return arguments~size
+    When 1 Then Return arguments[n]
     Otherwise
       Select Case option
-        When "E" Then Return  argList~hasIndex(n)
-        When "O" Then Return \argList~hasIndex(n)
+        When "E" Then Return  arguments~hasIndex(n)
+        When "O" Then Return \arguments~hasIndex(n)
       End
   End
-
 ::Method isEmpty
   Expose args
   Return args == .Nil
 ::Method init
-  Expose args argList begin end
+  Expose args arguments begin end
   Use Strict Arg args, begin, end
-  argList = Array()
+  arguments = Array()
 
   If args \== .Nil Then Do
 
@@ -206,7 +206,7 @@
     argN = 1
     Do i = 1 To args~items
       If args[i]~isA( .Special.Character.Sequence ) Then argN += 1
-      Else argList[argN] = args[i]
+      Else arguments[argN] = args[i]
     End
 
   End
@@ -609,6 +609,26 @@
 35.001: Syntax( 35.001, begin, Arg(1) )
 
 --------------------------------------------------------------------------------
+-- ARRAY.TERM                                                        --
+--------------------------------------------------------------------------------
+
+::Class Array.Term Public SubClass Rexx.Term
+::Attribute expression_list Get
+::Method Init
+  Expose expression_list
+  Use Strict Arg expression_list
+::Method begin
+  Forward To (self~expression_list)
+::Method end
+  Forward To (self~expression_list)
+::Method arg
+  Forward To (self~expression_list)
+::Method args
+  Forward To (self~expression_list)
+::Method isEmpty
+  Forward To (self~expression_list)
+
+--------------------------------------------------------------------------------
 -- LITERAL.STRING.TERM                                                        --
 --------------------------------------------------------------------------------
 ::Routine Literal.String.Term
@@ -669,6 +689,10 @@ FunctionCall:
 
   subExpression~begin = lParen
   rParen = subExpression~end
+
+  -- In this context, an expression list is an array term.
+  If subExpression~isA(.Expression.List) Then
+    subExpression = .Array.Term~new( subExpression )
 
   Call ExpectParenPair lParen, rParen
 
@@ -964,6 +988,15 @@ Return
    "arguments"                           -
   )
 
+  -- Ensure that this is an expression list.
+  If \arguments~isA(.Expression.List) Then Do
+    arguments = .Expression.List~new(  -
+      Array(arguments),                -
+      arguments~begin,                 -
+      arguments~end                    -
+    )
+  End
+
   Call ExpectParenPair lParen, arguments~end
 
   name~invocationType = Function
@@ -1043,12 +1076,12 @@ Return
 ::Class Indexed.Term Public SubClass Rexx.Term
 ::Attribute begin
 ::Attribute end
-::Attribute term         Get
-::Attribute argumentList Get
+::Attribute term      Get
+::Attribute arguments Get
 ::Method init
-  Expose term argumentList begin end
-  Use Strict Arg term, argumentList
-  rBracket = argumentList~end
+  Expose term arguments begin end
+  Use Strict Arg term, arguments
+  rBracket = arguments~end
   begin    = term~begin
   end      = TheElementAfter( rBracket )
 

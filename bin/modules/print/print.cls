@@ -434,8 +434,8 @@ Call (loader) "BaseClassesAndRoutines"
 --------------------------------------------------------------------------------
 
 ::Method "Indexed.Term::String"
-  Expose term argumentList
-  Return ""term"["argumentList"]"
+  Expose term arguments
+  Return ""term"["arguments"]"
 
 --------------------------------------------------------------------------------
 
