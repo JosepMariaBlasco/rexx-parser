@@ -28,6 +28,7 @@
 /* 20250629         Add support for doc-comment subelements                   */
 /* 20250722    0.2d Add .EL.DIRECTIVE_SUBKEYWORD and .ALL.DIRECTIVE_KEYWORDS  */
 /* 20250729         Add .ALL.EXPOSED_VARIABLES                                */
+/* 20250808         Add support for length positional patterns                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -907,7 +908,12 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   --
   -- Set of position prefixes (for PARSE templates)
   --
-  Call NewSet ALL.POSITION_PREFIXES, .EL.OP.EQUAL, .EL.OP.PLUS, .EL.OP.MINUS
+  Call NewSet ALL.POSITION_PREFIXES,    -
+    .EL.OP.EQUAL,                       -
+    .EL.OP.PLUS,                        -
+    .EL.OP.MINUS,                       -
+    .EL.OP.GREATER_THAN,                -
+    .EL.OP.LOWER_THAN                   -
 
   ------------------------------------------------------------------------------
   -- Resources                                                                --

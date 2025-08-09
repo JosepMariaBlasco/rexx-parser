@@ -25,6 +25,7 @@
 /* 20250416    0.2a Add argument info to called routine chain                 */
 /* 20250419         Fix bug nos. 3, 6 & 7                                     */
 /* 20250803    0.2d Add support for array terms                               */
+/* 20250808         Add support for length positional patterns                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -1138,12 +1139,6 @@ Expression:
     End
   End
 
-Templates:
-  If element < .EL.END_OF_CLAUSE
-    Then templateList = .Nil
-    Else templateList = Template.List( package, element )
-  Return .Parse.Instruction~new( package, begin, end, options., templateList )
-
 SimpleCase:
   Call SetSubkeyword keyword
   options.variant = kValue
@@ -1157,8 +1152,8 @@ Var:
   c = Left( name~value , 1 )
   If c == "."             Then Signal 31.003
   If c >>= "0", c <<= "9" Then Signal 31.002
-  options.variant = VAR
-  options.var     = name
+  options.variant = "VAR"
+  options.["VAR"]     = name
   element = TheElementAfter( name, ignoreBlanks )
   Signal Templates
 
@@ -1167,9 +1162,9 @@ Value:
   element = TheElementAfter( keyword )
   If element < .EL.END_OF_CLAUSE Then Signal 38.003
   Call PrepareExpression element, "WITH"
-  options.variant = VALUE
+  options.variant = "VALUE"
   expression = Expression.List( package, element )
-  options.value   = expression
+  options.["EXPRESSION"] = expression
   element = expression~end
   If element < .EL.END_OF_CLAUSE Then Signal 38.003
   -- Now element is a .ALL.VAR_SYMBOLS with a value of WITH for sure
@@ -1192,6 +1187,10 @@ FirstOptions:
   Call SetSubkeyword keyword
   keyword = TheElementAfter( keyword )
   Return
+
+Templates:
+  templateList = Template.List( package, element )
+  Return .Parse.Instruction~new( package, begin, end, options., templateList )
 
 -- Symbol expected after PARSE keyword.
 20.903: Syntax( 20.903, PARSE )
@@ -1216,9 +1215,21 @@ FirstOptions:
 --------------------------------------------------------------------------------
 
 ::Class Parse.Instruction Public SubClass Rexx.Instruction
+::Method variant
+  Expose options.
+  Return options.variant
+::Method var
+  Expose options.
+  If options.variant == "VAR" Then Return options.var
+  Return .Nil
+::Method expression
+  Expose options.
+  If options.variant == "VALUE" Then Return options.expression
+  Return .Nil
+::Attribute templates Get
 ::Method init
-  Expose options. templateList
-  Use Strict Arg package, begin, end, options., templateList
+  Expose options. templates
+  Use Strict Arg package, begin, end, options., templates
   self~init:super( package, begin, end )
 
 /******************************************************************************/
@@ -1916,7 +1927,7 @@ Done:
         element~setAssigned
         -- Build a symbol term
         term = Symbol.Term( package, element, continue )
-        -- Now collect "[...]" and "~[~](...)" sequences
+        -- Now collect "[args]" and "~[~]method(args)" sequences
         term = Simple.Message.Term( package, term )
         If term~isA(.Symbol.Term), Left(term~symbol~value,1) == "." Then
           Signal 31.003
@@ -1928,7 +1939,7 @@ Done:
         End
         If element < continue Then Do
           N += 1
-          arguments[N] = term
+          arguments[N] = Array(term)
           Call BackTrack
         End
         Else Do
@@ -1957,7 +1968,7 @@ Done:
         element~setAssigned
         reference = .Variable.Reference.Term~new(operator, element)
         N += 1
-        arguments[N] = reference
+        arguments[N] = Array(reference)
         Call NextElement
         If element < .EL.OP.EQUAL Then Signal 99.950
         Call BackTrack
@@ -1978,7 +1989,7 @@ Ellipsis:
   Call SetCategory element, .EL.ELLIPSIS
   argProcessed = .True
   N += 1
-  arguments[N] = element
+  arguments[N] = Array(element)
   element = TheElementAfter( element, ignoreBlanks )
   If element \< .EL.END_OF_CLAUSE Then Signal 99.930
   Signal Return
@@ -2176,16 +2187,15 @@ GetASymbol:
 
   Use Strict Arg package, class, begin, end, elements
 
-  ARG = elements[1]
-
-  next = TheElementAfter( ARG )
-
-  -- When there is an end-of-clause after the keyword,
-  -- this is an empty template list
-  If next < .EL.END_OF_CLAUSE Then templateList = .Nil
-  Else                          templateList = Template.List( package, next )
-
-  Return class~new( package, begin, end, templateList )
+  Return class~new(                  -
+    package,                         -
+    begin,                           -
+    end,                             -
+    Template.List(                   -
+      package,                       -
+      TheElementAfter( elements[1] ) -
+    )                                -
+  )
 
 --------------------------------------------------------------------------------
 
@@ -2203,10 +2213,11 @@ GetASymbol:
 
   Use Strict Arg package, begin
 
-  templateList  = Array()
-  element         = begin
-  trailingComma = 0
-  ignoreBlanks  = .True
+  templateList       = .Template.List~new()
+  templateList~begin = begin
+  element            = begin
+  trailingComma      = 0
+  ignoreBlanks       = .True
 
   Loop While element \< .EL.END_OF_CLAUSE
 
@@ -2233,28 +2244,22 @@ GetASymbol:
 
   End
 
-  If trailingComma Then Do
-    templateList~append(.Nil)
-  End
+  If trailingComma Then templateList~append(.Nil)
 
-  -- Only one template and no commas? --> A single template
-  If templateList~items == 1 Then Return templateList[1]
+  templateList~end = element
 
-  Return .Template.List~new(templateList)
+  Return templateList
 
 --------------------------------------------------------------------------------
 
-::Class Template.List
-::Method init
-  Expose list
-  Use Strict Arg list
-::Method isEmpty
-  Expose list
-  Return list~items == 0
+::Class Template.List SubClass Array
+::Attribute begin
+::Attribute end
 
 --------------------------------------------------------------------------------
--- TEMPLATE                                                                   --
---   See ANSI 6.3.2.87-95:                                                    --
+--                                                                            --
+-- TEMPLATE (See ANSI 6.3.2.87-95):                                           --
+--                                                                            --
 --   template                  := (trigger | target | Msg38.1)+               --
 --     target                  := VAR_SYMBOL | '.'                            --
 --     trigger                 := pattern | positional                        --
@@ -2266,14 +2271,17 @@ GetASymbol:
 --         relative_positional := ('+' | '-') position                        --
 --                                                                            --
 --   ooRexx modifies the definition of "target" to also include message terms --
---   and allows full expressions between parenthesis in vrefp                 --
+--   and allows full expressions between parenthesis in vrefp; additionally,  --
+--   "length positional patterns" are introduced, starting with "<" and ">".  --
+--                                                                            --
 --------------------------------------------------------------------------------
 
 ::Routine Template Public
 
   Use Strict Arg package, begin
 
-  list = Array()
+  template = .Template~new
+  template~begin = begin
 
   ignoreBlanks = .true
 
@@ -2292,7 +2300,7 @@ GetASymbol:
         -- Build a symbol term
         term = Symbol.Term( package, element, terminators )
 
-        -- Now collect "[args]" and "~[~](args)" sequences
+        -- Now collect "[args]" and "~[~]method(args)" sequences
         term = Simple.Message.Term( package, term )
 
         element = term~end
@@ -2300,35 +2308,37 @@ GetASymbol:
         -- Consume blanks after ")" and "]"
         If element < .ALL.WHITESPACE_LIKE Then Do
           element~makeIgnorable
-          element = TheElementAfter( element )
+          ignoreBlanks = .True
+          element = TheElementAfter( element, ignoreBlanks )
         End
 
-        list~append(term)
+        template~append(term)    -- target
 
         Iterate
 
       End
       When element < .EL.PERIOD      Then Do
         Call SetCategory element, .EL.PARSE_PERIOD
-        list~append(element)
+        template~append(element) -- target
       End
-      When element < .ALL.STRINGS Then list~append(element)
+      When element < .ALL.STRINGS Then
+        template~append(element)
       When element < .ALL.NUMBERS Then Do
         If \DataType(element~value,"I") Then Signal 26.004
-        list~append(element)
+        template~append(element)
       End
       When element < .ALL.POSITION_PREFIXES  Then Do
-        template = Positional.Template( package, element )
-        list~append( template )
-        element = template~end
+        positional = Positional.Trigger( package, element )
+        template~append( positional )
+        element = positional~end
         If element < .ALL.WHITESPACE_LIKE Then
           element = TheElementAfter( element, ignoreBlanks )
         Iterate
       End
       When element < .EL.LEFT_PARENTHESIS           Then Do
-        template = Subexpression.Template( package, element )
-        list~append( template )
-        element = template~end
+        subExpression = Subexpression.Template( package, element )
+        template~append( subExpression )
+        element = subExpression~end
         If element < .ALL.WHITESPACE_LIKE Then
           element = TheElementAfter( element, ignoreBlanks )
         Iterate
@@ -2340,7 +2350,17 @@ GetASymbol:
 
   End
 
-  Return .Template~new( begin, element, list )
+  If template~items == 0 Then
+    template~end = template~begin
+  Else Do
+    lastItem = template~lastItem
+    If lastItem~isA(.Element) Then
+      template~end = lastItem~next
+    Else
+      template~end = lastItem~end
+  End
+
+  Return template
 
 -- Positional pattern of PARSE template must be a whole number; found "&1".
 26.004: Syntax( 26.004, begin, element )
@@ -2350,21 +2370,24 @@ GetASymbol:
 
 --------------------------------------------------------------------------------
 
-::Class Template
+::Class Template SubClass Array
+::Attribute begin
 ::Attribute end
+/*
 ::Method init
   Expose end list
   Use Strict Arg begin, end, list
 ::Method isEmpty
   Expose list
   Return list~items == 0
+*/
 
 /******************************************************************************/
-/* POSITIONAL.TEMPLATE                                                        */
-/*   ("=" | "+" | "-") position                                               */
+/* POSITIONAL.TRIGGER                                                         */
+/*   ("=" | "+" | "-" | ">" | "<") position                                   */
 /******************************************************************************/
 
-::Routine Positional.Template Public
+::Routine Positional.Trigger Public
 
   Use Strict Arg package, prefix
 
@@ -2378,7 +2401,7 @@ GetASymbol:
   End
 
   If element < .EL.LEFT_PARENTHESIS Then
-    Return .Prefixed.Template~new( -
+    Return .Prefixed.Template~new(                       -
       prefix, Subexpression.Template( package, element ) -
     )
 
@@ -2393,14 +2416,21 @@ GetASymbol:
 --------------------------------------------------------------------------------
 
 ::Class Prefixed.Template Public
+::Attribute prefix Get
+::Attribute elementOrSubExpression Get
+::Attribute begin
 ::Attribute end
 ::Method init
   Expose prefix elementOrSubExpression end
   Use Strict Arg prefix, elementOrSubExpression
-  If elementOrSubExpression~isA( .Element ) Then
-    end = TheElementAfter( elementOrSubExpression )
-  Else
-    end = elementOrSubExpression~end
+  If elementOrSubExpression~isA( .Element ) Then Do
+    begin = elementOrSubExpression
+    end   = TheElementAfter( elementOrSubExpression )
+  End
+  Else Do
+    begin = elementOrSubExpression~begin
+    end   = elementOrSubExpression~end
+  End
 
 /******************************************************************************/
 /* SUBEXPRESSION.TEMPLATE                                                     */

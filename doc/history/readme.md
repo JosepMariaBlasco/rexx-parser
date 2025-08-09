@@ -23,6 +23,7 @@ Version history
   <li> Add Set.Directive.SubKeyword, .EL.DIRECTIVE_SUBKEYWORD, .ALL.DIRECTIVE_KEYWORDS and rx-dskw (20220725).
   <li> Begin extensive refactoring to test and fix the Tree API (20250725).
   <li> Add support for array terms (20250803).
+  <li> Add support for length positional patterns (20250808).
 <tr><td>20250427<td>0.2c<td>
 <ul>
   <li> **Breaking change**: Continuation chars "-" and "," are

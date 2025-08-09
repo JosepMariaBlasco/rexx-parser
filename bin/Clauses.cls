@@ -1222,6 +1222,7 @@ Option:    Return options.[         Upper(Arg(1))]
 
 -- The IsAMessageInstruction routine will have inserted
 -- a dummy semicolon to  facilitate parsing. We will remove it now.
+
 MessageAssignment:
   elements[1]~setAssigned
   lhs           = expression
@@ -1235,6 +1236,8 @@ MessageAssignment:
   element          = TheElementAfter( operator )
   If element < .EL.END_OF_CLAUSE Then Signal 35.001
   rhs = Expression.List( package, element )
+  -- In this context, an expression list is an array term.
+  If rhs~isA(.Expression.List) then rhs = .Array.Term~new( rhs )
   Return .Message.Assignment.Instruction~new( -
     package, begin, end, lhs, operator, rhs   -
   )
