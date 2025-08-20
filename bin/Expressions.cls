@@ -107,13 +107,15 @@
   arguments      = options~caselessContainsWord( "arguments" )
 
   expressions    = Array()
-  element          = begin
+  element        = begin
   trailingComma  = 0
   stopParsing    = .EL.KEYWORD || .EL.END_OF_CLAUSE
   terminators  ||= stopParsing
   commasFound    = 0
+  end            = element              -- In case list is empty
 
   newTerminators = terminators || .EL.COMMA
+
 
   Loop While element \< .ALL.EXPRESSION_TERMINATORS
 
@@ -162,7 +164,7 @@
   Select Case expressions~items
     When 0 Then Return .Expression.List~new(.Nil, begin, end)
     -- Only one expression and no commas? --> A classic expression
-    When 1 Then If \commasFound Then Return expressions[1]
+    When 1 Then If \logical, \commasFound Then Return expressions[1]
     Otherwise Nop
   End
 
@@ -174,39 +176,40 @@
 --------------------------------------------------------------------------------
 
 ::Class Expression.List Public SubClass Rexx.Expression
+::Attribute expressions
 ::Attribute begin
 ::Attribute end
 ::Attribute args
 ::Method arg
-  Expose arguments
+  Expose expressions
   Arg n, option +1
   Select Case Arg()
-    When 0 Then Return arguments~size
-    When 1 Then Return arguments[n]
+    When 0 Then Return expressions~size
+    When 1 Then Return expressions[n]
     Otherwise
       Select Case option
-        When "E" Then Return  arguments~hasIndex(n)
-        When "O" Then Return \arguments~hasIndex(n)
+        When "E" Then Return  expressions~hasIndex(n)
+        When "O" Then Return \expressions~hasIndex(n)
       End
   End
 ::Method isEmpty
   Expose args
   Return args == .Nil
 ::Method init
-  Expose args arguments begin end
+  Expose args expressions begin end
   Use Strict Arg args, begin, end
-  arguments = Array()
+  expressions = Array()
 
   If args \== .Nil Then Do
 
     -- Calculate begin
     begin = args~firstItem~begin
 
-    -- Calculate the number of arguments (for argument lists)
+    -- Calculate the number of expressions (for argument lists)
     argN = 1
     Do i = 1 To args~items
       If args[i]~isA( .Special.Character.Sequence ) Then argN += 1
-      Else arguments[argN] = args[i]
+      Else expressions[argN] = args[i]
     End
 
   End
@@ -418,7 +421,7 @@
 
   If element \< .ALL.OPS.MULTIPLICATIVE Then Leave
 
-    powers~append( element~value )
+    powers~append( element )
     element      = TheElementAfter( element )
 
   End
@@ -882,15 +885,15 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class Compound.Variable.Term Public SubClass Rexx.Term
-::Attribute stem
+::Attribute symbol
 ::Attribute parts
 ::Attribute begin
 ::Attribute end
 ::Method init
-  Expose stem parts begin end
-  Use Strict Arg stem, parts
-  begin = stem
-  end   = TheElementAfter( stem )
+  Expose symbol parts begin end
+  Use Strict Arg symbol, parts
+  begin = symbol
+  end   = TheElementAfter( symbol )
 
 --------------------------------------------------------------------------------
 -- STEM.VARIABLE.TERM                                                         --
@@ -927,6 +930,9 @@ Return
 ::Attribute begin
 ::Attribute end
 ::Attribute stem
+::Method symbol
+  Expose stem
+  Return stem
 ::Method init
   Expose stem begin end
   Use Strict Arg stem

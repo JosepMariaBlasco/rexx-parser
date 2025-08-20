@@ -241,15 +241,23 @@
 
   lastInstruction = doClause
 
+  currentBody = package~currentBody
+
   Loop
     instruction = self~Next.Instruction( ENDClauseIsOK )
     If \instruction~labels~isEmpty Then Signal 47.002
-    Select Case instruction~class
-      When     .End.Clause                Then Signal End.Clause
-      When     .Expose.Instruction        Then Signal 99.907
-      When     .Implicit.Exit.Instruction Then Signal 14.001
-      Otherwise instructions~append( instruction )
+    instrClass = instruction~class
+    Select Case instrClass
+      When .End.Clause                Then Signal End.Clause
+      When .Expose.Instruction        Then Signal 99.907
+      When .Implicit.Exit.Instruction Then Signal 14.001
+      When .Use.Arg.Instruction, .Arg.Instruction
+                                      Then currentBody~signature = .Nil
+      When .Parse.Instruction Then If instruction~variant == "ARG"
+                                      Then currentBody~signature = .Nil
+      Otherwise Nop
     End
+    instructions~append( instruction )
     lastInstruction = instruction
   End
 
@@ -306,9 +314,16 @@ End.Clause:
 
   Call NoLabels thenInstruction
 
+  currentBody = package~currentBody
+
   Select Case thenInstruction~class
     When .Implicit.Exit.Instruction Then Signal 14.003
-    When .Expose.Instruction Then Call 99.907 thenInstruction
+    When .Expose.Instruction        Then Call 99.907 thenInstruction
+    When .Use.Arg.Instruction, .Arg.Instruction
+                                    Then currentBody~signature = .Nil
+    When .Parse.Instruction Then If thenInstruction~variant == "ARG"
+                                    Then currentBody~signature = .Nil
+
     Otherwise Nop
   End
 
@@ -332,6 +347,10 @@ End.Clause:
   Select Case elseInstruction~class
     When .Implicit.Exit.Instruction Then Signal 14.004
     When .Expose.Instruction Then Call 99.907 elseInstruction
+    When .Use.Arg.Instruction, .Arg.Instruction
+                                    Then currentBody~signature = .Nil
+    When .Parse.Instruction Then If thenInstruction~variant == "ARG"
+                                    Then currentBody~signature = .Nil
     Otherwise Nop
   End
 
@@ -378,15 +397,22 @@ NoLabels:
 
   lastInstruction = loopClause
 
+  currentBody = package~currentBody
+
   Loop
     instruction = self~Next.Instruction( ENDClauseIsOK )
-    If \instruction~labels~isEmpty Then Signal 47.002
+    If \instruction~labels~isEmpty    Then Signal 47.002
     Select Case instruction~class
-      When     .End.Clause                Then Signal End.Clause
-      When     .Expose.Instruction        Then Signal 99.907
-      When     .Implicit.Exit.Instruction Then Signal 14.005
-      Otherwise instructions~append( instruction )
+      When .End.Clause                Then Signal End.Clause
+      When .Expose.Instruction        Then Signal 99.907
+      When .Implicit.Exit.Instruction Then Signal 14.005
+      When .Use.Arg.Instruction, .Arg.Instruction
+                                      Then currentBody~signature = .Nil
+      When .Parse.Instruction Then If instruction~variant == "ARG"
+                                      Then currentBody~signature = .Nil
+      Otherwise Nop
     End
+    instructions~append( instruction )
     lastInstruction = instruction
   End
 
@@ -448,6 +474,8 @@ End.Clause:
 
   WHEN = TheElementAfter( whenClause~begin )
 
+  currentBody = package~currentBody
+
   Loop
 
     thenClause = self~next.Instruction.Fragment
@@ -466,6 +494,10 @@ End.Clause:
     Select Case thenInstruction~class
       When .Implicit.Exit.Instruction Then Signal 14.003
       When .Expose.Instruction Then Call 99.907 thenInstruction
+      When .Use.Arg.Instruction, .Arg.Instruction
+                                      Then currentBody~signature = .Nil
+      When .Parse.Instruction Then If thenInstruction~variant == "ARG"
+                                      Then currentBody~signature = .Nil
       Otherwise Nop
     End
 
@@ -503,7 +535,11 @@ Otherwise:
     Select Case next~class
       When .End.Clause Then Signal End
       When .Implicit.Exit.Instruction Then Signal 14.901
-      When .Expose.Instruction Then Call 99.907 next
+      When .Expose.Instruction        Then Call 99.907 next
+      When .Use.Arg.Instruction, .Arg.Instruction
+                                      Then currentBody~signature = .Nil
+      When .Parse.Instruction Then If thenInstruction~variant == "ARG"
+                                      Then currentBody~signature = .Nil
       Otherwise otherwiseSequence~append( next )
     End
     last = next
@@ -775,19 +811,19 @@ Done:
 
   -- The expression has already been prepared by the preparser
 
-  expressionList = Expression.List( package, element, terminators, "logical" )
+  expressions = Expression.List( package, element, terminators, "logical" )
 
-  end = expressionList~end
+  end = expressions~end
 
-  Return .If.Clause~new( package, begin, end, expressionList )
+  Return .If.Clause~new( package, begin, end, expressions )
 
 --------------------------------------------------------------------------------
 
 ::Class If.Clause Public SubClass Rexx.Clause
-::Attribute expressionList
+::Attribute expressions
 ::Method init
-  Expose expressionList
-  Use Strict Arg package, begin, end, expressionList
+  Expose expressions
+  Use Strict Arg package, begin, end, expressions
   self~init:super( package, begin, end )
 
 /******************************************************************************/
@@ -1404,17 +1440,17 @@ Done:
 
   Call PrepareExpression element, "THEN"
 
-  expression = Expression.List(package, element, .EL.END_OF_CLAUSE, "logical")
+  expressions = Expression.List(package, element, .EL.END_OF_CLAUSE, "logical")
 
-  Return .When.Clause~new( package, begin, end, expression )
+  Return .When.Clause~new( package, begin, end, expressions )
 
 --------------------------------------------------------------------------------
 
 ::Class When.Clause Public SubClass Rexx.Clause
-::Attribute expressionList Get
+::Attribute expressions Get
 ::Method init
-  Expose expressionList
-  Use Strict Arg package, begin, end, expressionList
+  Expose expressions
+  Use Strict Arg package, begin, end, expressions
   self~init:super( package, begin, end )
 
 /******************************************************************************/

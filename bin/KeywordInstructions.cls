@@ -212,8 +212,11 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Address.Instruction Public SubClass Rexx.Instruction
+::Attribute begin Get
+::Attribute end   Get
+::Attribute options. Get
 ::Method init
-  Expose options.
+  Expose begin end options.
   Use Strict Arg package, begin, end, options.
   self~init:super(package, begin, end)
 
@@ -246,7 +249,7 @@ Done:
 
   element = TheElementAfter( CALL )
 
-  If element < .ALL.VAR_SYMBOLS, WordPos(element~value, "ON OFF") > 0 Then do
+  If element < .ALL.VAR_SYMBOLS, WordPos(element~value, "ON OFF") > 0 Then Do
     If element~value == "ON"
       Then Return Call.On.Instruction(  package, begin, end, elements )
       Else Return Call.Off.Instruction( package, begin, end, elements )
@@ -329,10 +332,12 @@ Arguments:
 --  A simple call, i.e. call name args                                        --
 
 ::Class Call.Instruction Public SubClass Rexx.Instruction
-::Attribute name
-::Attribute arguments
+::Attribute begin     Get
+::Attribute end       Get
+::Attribute name      Get
+::Attribute arguments Get
 ::Method init
-  Expose name arguments
+  Expose begin end name arguments
   Use Strict Arg package, begin, end, name, arguments
   self~init:super(package, begin, end)
 
@@ -930,6 +935,8 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Leave.Instruction Public SubClass Rexx.Instruction
+::Attribute label
+::Attribute iteration
 ::Method init
   Expose label iteration
   Use Strict Arg package, begin, end, label, iteration
@@ -1104,9 +1111,10 @@ Expression:
 --------------------------------------------------------------------------------
 
 ::Class Options.Instruction Public SubClass Rexx.Instruction
+::Attribute options Get
 ::Method init
-  Expose expression
-  Use Strict Arg package, begin, end, expression
+  Expose options
+  Use Strict Arg package, begin, end, options
   self~init:super( package, begin, end )
 
 /******************************************************************************/
@@ -1248,7 +1256,7 @@ Templates:
   If EXPOSE < .ALL.VAR_SYMBOLS, EXPOSE~value = "EXPOSE" Then Do
     Call SetSubkeyword EXPOSE
     If elements[3] < .ALL.WHITESPACE_LIKE Then elements~delete( 3 )
-    Return Name.List.Instruction(                -
+    Return Name.List.Instruction(                           -
       package, .Procedure.Instruction, begin, end, elements -
     )
   End

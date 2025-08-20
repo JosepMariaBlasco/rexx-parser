@@ -352,7 +352,7 @@ Call "modules/Load.Parser.Module.rex" "BaseClassesAndRoutines"
   element = Clone( IF, stream, context )
 
   element = SkipIgnorable( element, stream, context )
-  element = self~expressionList~process( element, stream, context )
+  element = self~expressions~process( element, stream, context )
   element = SkipIgnorable( element, stream, context )
 
   Return element
@@ -1010,7 +1010,7 @@ Call "modules/Load.Parser.Module.rex" "BaseClassesAndRoutines"
 
   element   = SkipIgnorable( element, stream, context )
 
-  element   = self~expressionList~process( element, stream, context )
+  element   = self~expressions~process( element, stream, context )
 
   endOfClause = SkipIgnorable( element, stream, context )
 

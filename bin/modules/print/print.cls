@@ -134,9 +134,9 @@ Call (loader) "BaseClassesAndRoutines"
 --------------------------------------------------------------------------------
 
 ::Method "If.Clause::String"
-  Expose expressionList
+  Expose expressions
   Use Strict Arg indent = 0
-  Return Copies(" ",indent)PrintLabels(self)"IF" expressionList
+  Return Copies(" ",indent)PrintLabels(self)"IF" expressions
 
 --------------------------------------------------------------------------------
 
@@ -205,9 +205,9 @@ Call (loader) "BaseClassesAndRoutines"
 --------------------------------------------------------------------------------
 
 ::Method "When.Clause::String"
-  Expose expressionList
+  Expose expressions
   Use Strict Arg indent = 0
-  Return Copies(" ",indent)PrintLabels(self)"WHEN" expressionlist
+  Return Copies(" ",indent)PrintLabels(self)"WHEN" expressions
 
 /******************************************************************************/
 /* STRING Methods - Directives                                                */
@@ -815,21 +815,16 @@ Process:
 --------------------------------------------------------------------------------
 
 ::Method "Use.Arg.Instruction::String"
-  Expose strict argList
+  Expose strict arguments
   Use Strict Arg indent = 0
   ret = Copies(" ",indent)PrintLabels(self)"USE"
   If strict Then ret = ret "STRICT"
   ret = ret "ARG "
-  Do i = 1 To argList~items
+  Do i = 1 To arguments~items
     If i > 1 Then ret = ret","
-    Select Case argList[i][1]
-      When "..."     Then ret = ret "..."
-      When "Nil"     Then Nop
-      When "Var"     Then ret = ret argList[i][2]
-      When "Const"   Then
-        ret = ret argList[i][2] "=" argList[i][3]
-      When "SubExpr" Then
-        ret = ret argList[i][2] "=" argList[i][3]
+    Select Case arguments[i]~items
+      When 1         Then ret = ret arguments[i][1]
+      When 2         Then ret = ret arguments[i][1] "=" arguments[i][2]
     End
   End
   Return ret

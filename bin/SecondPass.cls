@@ -128,6 +128,8 @@
           When "FUNCTION" Then subCategory = .BUILTIN.FUNCTION.NAME
           When "CALL"     Then subCategory = .BUILTIN.SUBROUTINE.NAME
         End
+        -- We are using the ARG BIF? --> No signature.
+        If label == "ARG" Then body~signature = .Nil
         If checkBIFs Then Call CheckBIFArgs name, routine[2]
       End
       When routines[ label ] \== .Nil Then Do

@@ -24,6 +24,13 @@ Version history
   <li> Begin extensive refactoring to test and fix the Tree API (20250725).
   <li> Add support for array terms (20250803).
   <li> Add support for length positional patterns (20250808).
+  <li> Add a "signature" attribute to the Code.Body class. This is an aid
+       for compiler and transpiler writers. If a USE ARG instruction is the first
+       instruction in the body (or the second, if this is a method body with
+       an EXPOSE instruction), and additionally 1) the body makes no use of the
+       ARG BIF, and 2) there are no other USE ARG, ARG, or PARSE ARG instructions
+       in the body, then "signature" is that first USE ARG instruction. Otherwise,
+       "signature" is .Nil (20250820).
 <tr><td>20250427<td>0.2c<td>
 <ul>
   <li> **Breaking change**: Continuation chars "-" and "," are

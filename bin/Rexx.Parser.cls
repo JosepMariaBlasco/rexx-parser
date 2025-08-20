@@ -109,9 +109,9 @@
 
   If directive~isA(.Attribute.Directive) Then Do
     -- Logic for attributes w and w/o bodies:
-    -- No GET, no SET -> No body
-    -- GET or SET -> Body is optional
-    -- ABSTRACT -> No body
+    --   No GET, no SET -> No body
+    --   GET or SET     -> Body is optional
+    --   ABSTRACT       -> No body
     options. = directive~options.
     If options.get | options.set Then inAMethodBody = 1
     If options.abstract \== ""   Then inAMethodBody = 1
@@ -130,6 +130,7 @@
 
   NoFinalENDClause = 0
   checkguard       = 0
+  ExposeFound      = 0
 
   If .Parser.Options~hasIndex( earlyCheck ) Then
     checkguard     = .Parser.Options~earlyCheck~hasItem( guard )
@@ -140,6 +141,7 @@
     instruction = package~clauser~Next.Instruction( NoFinalENDClause )
     Select Case instruction~class
       When    .Expose.Instruction Then Call CheckThatExposeIsValid
+      When   .Use.Arg.Instruction Then Call ProcessUseArg
       When .Use.Local.Instruction Then Call CheckThatUseLocalIsValid
       When     .Guard.Instruction Then Call CheckThatGuardIsValid
       Otherwise Nop
@@ -148,6 +150,11 @@
   End
 
   Return body
+
+ProcessUseArg:
+  If n == 1 | (n == 2 & ExposeFound) Then body~signature =  instruction
+  Else                                    body~signature = .Nil
+Return
 
 CheckThatGuardIsValid:
   If \checkGuard Then Return
@@ -158,6 +165,7 @@ CheckThatGuardIsValid:
 99.911: Syntax( 99.911, TheElementAfter(instruction~begin) )
 
 CheckThatExposeIsValid:
+  ExposeFound = 1
   If n == 1 Then Do
     If inAMethodBody Then Return
     Signal 98.992
@@ -199,6 +207,15 @@ CheckThatUseLocalIsValid:
 ::Attribute calledRoutineNames  -- Symbols or strings
 ::Attribute instructions        -- Array of instructions
 
+-- The "signature" attribute is a simple aid for compiler and transpiler
+-- implementors. If the body contains only a single USE ARG instruction,
+-- AND this instruction is the first in the body (or the second after
+-- EXPOSE, in the case of method bodies), AND the body does not have
+-- any ARG or PARSE ARG instruction and it does not use the ARG BIF, then
+-- "signature" contains that USE ARG instruction. Otherwise, "signature"
+-- is Nil.
+::Attribute signature
+
 ::Method "[]"
   Expose instructions
   Use Strict Arg index
@@ -206,7 +223,8 @@ CheckThatUseLocalIsValid:
 
 ::Method init
   Expose instructions labels clauses calledRoutineNames -
-    exposed useLocal classMethod isAMethodBody usesExitInstruction
+    exposed useLocal classMethod isAMethodBody usesExitInstruction -
+    signature
 
   Use Strict Arg package, directive
 
@@ -218,6 +236,7 @@ CheckThatUseLocalIsValid:
   useLocal            = .Nil
   classMethod         = .False
   isAMethodBody       = .False
+  signature           = .Nil
 
   If directive~class == .Method.Directive Then
     classMethod = directive~options.[class]

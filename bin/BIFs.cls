@@ -214,18 +214,19 @@
   End
 
   -- We now construct .Parser.BIF, a set with all the BIF names, and
-  -- .Parser.BIFInfo, a directory indexes by these BIF names.
+  -- .Parser.BIFInfo, a directory indexed by these BIF names.
   -- Every indexed item is also a directory, containing three entries:
   --   minArgs: The minimum number of args
   --   maxArgs: The maximum number of args
   --   argType: An array with maxArgs elements defining the respective
   --     argument types.
+  --   BIFNumber: A sequential number identifying the BIF.
 
   BIF = .Set~new
  .environment~Parser.BIF     = BIF
   BIFInfo = .Directory~new
  .environment~Parser.BIFInfo = BIFInfo
-  Do bifName Over BIFARGS.~allIndexes~sort
+  Do Counter c bifName Over BIFARGS.~allIndexes~sort
     BIF[] = bifName
     BIFInfo[bifName] = .Directory~new
     args  = BIFARGS.bifName
@@ -234,6 +235,7 @@
     If WordPos(bifName, "MAX MIN XRANGE") > 0 Then maxArgs = "*"
     BIFInfo[bifName]~maxArgs = maxArgs
     BIFInfo[bifName]~argType = .Array~new
+    BIFInfo[bifName]~BIFNumber = c
     required      = 0
     foundOptional = 0
     Do word Over args~makeArray(" ")
