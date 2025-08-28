@@ -206,6 +206,7 @@ CheckThatUseLocalIsValid:
 ::Attribute classMethod         -- True when this is a CLASS method
 ::Attribute calledRoutineNames  -- Symbols or strings
 ::Attribute instructions        -- Array of instructions
+::Attribute directive           -- .Nil for the prolog
 
 -- The "signature" attribute is a simple aid for compiler and transpiler
 -- implementors. If the body contains only a single USE ARG instruction,
@@ -224,7 +225,7 @@ CheckThatUseLocalIsValid:
 ::Method init
   Expose instructions labels clauses calledRoutineNames -
     exposed useLocal classMethod isAMethodBody usesExitInstruction -
-    signature
+    signature directive
 
   Use Strict Arg package, directive
 
@@ -324,7 +325,7 @@ CheckThatUseLocalIsValid:
 
   -- The package prolog is the first code body
   prolog = Code.Body( package, .Nil )
-  package~addProlog( .Rexx.Routine~new("", prolog ) )
+  package~addProlog( .Rexx.Routine~new("", prolog, .Nil ) )
 
   Loop
 
@@ -783,7 +784,7 @@ Return
     instructionBegin = TheElementAfter( codeBody~instructions[1]~begin )
     If directive~external \== .Nil Then Signal 99.939
   End
-  routine = .Rexx.Routine~new( name, codeBody )
+  routine = .Rexx.Routine~new( name, codeBody, directive )
   name = Upper( name~value )
   If package~routines~hasIndex(name) Then Signal 99.903
   If directive~private Then package~addRoutine(name, routine)
@@ -791,7 +792,9 @@ Return
 
   directive~body    = codeBody
   directive~routine = routine
+
   package~addDirective( directive )
+
   Return
 
 -- Duplicate ::ROUTINE directive instruction.
@@ -803,11 +806,12 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class Rexx.Routine
-::Attribute body Get
-::Attribute name Get
+::Attribute body      Get
+::Attribute name      Get
+::Attribute directive Get
 ::Method init
-  Expose         name  body
-  Use Strict Arg name, body
+  Expose         name  body  directive
+  Use Strict Arg name, body, directive
 
 --------------------------------------------------------------------------------
 -- Common routine: check that a directive body is empty (i.e., it consists    --

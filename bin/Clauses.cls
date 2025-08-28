@@ -996,7 +996,7 @@ Conditional:
   Signal Conditional
 
 Done:
-  If options.~hasIndex("COUNTER") Then Do
+  If class == .Do.Clause, options.~hasIndex("COUNTER") Then Do
     If options.~items == 1 Then Signal 27.905
     If options.~items == 2, options.~hasIndex("LABEL") Then Signal 27.905
   End
@@ -1185,6 +1185,9 @@ Keyword:
         When HasOption("until") Then Do
           type = "until"
           until = Option("until")
+        End
+        When HasOption("control") Then Do
+          type = "control"
         End
         Otherwise Nop
       End

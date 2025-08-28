@@ -31,6 +31,7 @@ Version history
        ARG BIF, and 2) there are no other USE ARG, ARG, or PARSE ARG instructions
        in the body, then "signature" is that first USE ARG instruction. Otherwise,
        "signature" is .Nil (20250820).
+  <li> Fix https://github.com/JosepMariaBlasco/rexx-parser/issues/14 (20250828).
 <tr><td>20250427<td>0.2c<td>
 <ul>
   <li> **Breaking change**: Continuation chars "-" and "," are
