@@ -30,7 +30,7 @@ Early checking is controlled by the `earlycheck`
 entry of the options passed to the [Rexx.Parser](..) class.
 The value associated with `earlycheck` has to be
 an array of uppercase strings chosen between
-`"BIFS"`, `"GUARD"` and `"SIGNAL"`. The effect of
+`"BIFS"`, `"GUARD"`, `"ITERATE"`, `"LEAVE"` and `"SIGNAL"`. The effect of
 specifiying these options is described below.
 
 ## BIFS
@@ -159,7 +159,32 @@ whenever a `GUARD` instruction is found in a non-method code body.
   Guard On                    -- GUARD can only be issued in an object method invocation
 ```
 
-## Signal
+## ITERATE
+
+When the `earlychecks` array has an item equal to
+`"ITERATE"`, `ITERATE` instructions are checked for validity
+at parse time. Namely,
+
++ If a `ITERATE` instruction without a name appears out of a
+  repetitive loop, a 28.2 syntax error is raised.
++ If a `ITERATE` instruction has a name which does not match the name
+  of a containing repetitive loop or `SELECT` instruction,
+  a 28.4 syntax error is raised.
+
+## LEAVE
+
+When the `earlychecks` array has an item equal to
+`"LEAVE"`, `LEAVE` instructions are checked for validity
+at parse time. Namely,
+
++ If a `LEAVE` instruction without a name appears out of a
+  repetitive loop, a 28.1 syntax error is raised.
++ If a `LEAVE` instruction has a name which does not match the name
+  of a containing repetitive loop or `SELECT` instruction,
+  a 28.3 syntax error is raised.
+
+
+## SIGNAL
 
 When a `SIGNAL` instruction targets a _labelname_ which is not dynamically
 evaluated (i.e., when the label is a string or a symbol taken as a constant),

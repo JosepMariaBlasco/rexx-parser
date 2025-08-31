@@ -197,7 +197,9 @@ End
 
   Parse Arg , major"."minor"."
 
-  Options = .Array~of( (earlyCheck, (signal, guard, bifs) ) )
+  Options = .Array~of( -
+    (earlyCheck, (signal, guard, bifs, leave, iterate ) ) -
+  )
 
 Parser:
   Signal On Syntax Name Syntax1

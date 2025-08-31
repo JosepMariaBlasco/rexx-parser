@@ -26,7 +26,11 @@ Toggles:
 &nbsp;
 `+all`                              Activate all toggles. This is the default.
 `-all`                              Deactivate all toggles.
-`[+|-]signal`                       Toggle detecting SIGNAL to inexistent labels.
+`[+|-]iterate`                      Toggle detecting incorrect ITERATEs, or ITERATEs
+                                    to inexistent targets
+`[+|-]leave`                        Toggle detecting incorrect LEAVEs, or LEAVEs
+                                    to inexistent targets
+`[+|-]signal`                       Toggle detecting SIGNALs to inexistent labels.
 `[+|-]guard`                        Toggle checking that GUARD is in a method body.
 `[+|-]bifs`                         Check BIF arguments.
 &nbsp;

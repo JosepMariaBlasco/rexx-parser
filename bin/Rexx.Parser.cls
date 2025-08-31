@@ -207,6 +207,7 @@ CheckThatUseLocalIsValid:
 ::Attribute calledRoutineNames  -- Symbols or strings
 ::Attribute instructions        -- Array of instructions
 ::Attribute directive           -- .Nil for the prolog
+::Attribute blockID             -- Used to identify DO/LOOP/SELECT blocks
 
 -- The "signature" attribute is a simple aid for compiler and transpiler
 -- implementors. If the body contains only a single USE ARG instruction,
@@ -225,7 +226,7 @@ CheckThatUseLocalIsValid:
 ::Method init
   Expose instructions labels clauses calledRoutineNames -
     exposed useLocal classMethod isAMethodBody usesExitInstruction -
-    signature directive
+    signature directive blockID
 
   Use Strict Arg package, directive
 
@@ -238,6 +239,7 @@ CheckThatUseLocalIsValid:
   classMethod         = .False
   isAMethodBody       = .False
   signature           = .Nil
+  blockID             = 0
 
   If directive~class == .Method.Directive Then
     classMethod = directive~options.[class]

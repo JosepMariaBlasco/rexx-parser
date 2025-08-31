@@ -8,6 +8,10 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20250831<td>0.2e<td>
+<ul>
+  <li> Continue refactoring to refine the Tree API.
+  <li> Add [early check support for LEAVE and ITERATE](../ref/classes/rexx.parser/early-check/).
 <tr><td>20250622<td>0.2d<td>
 <ul>
   <li> **Breaking change**: The character used to separate foreground

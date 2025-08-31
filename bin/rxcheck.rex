@@ -21,6 +21,7 @@
 /*                  Add "[+|-]emptyassignments" option                        */
 /* 20250426         Add ANSI.ErrorText support, -itrace option                */
 /* 20250508         Fix typo (GitHub issue no. 10 - Thanks Geoff!)            */
+/* 20250831    0.2e Add support for LEAVE and INTERPRET checks                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -30,6 +31,8 @@
 
   signal           = 1
   guard            = 1
+  leave            = 1
+  iterate          = 1
   bifs             = 1
   debug            = 0
   itrace           = 0
@@ -40,25 +43,33 @@
     Select Case Lower(option)
       When "-?", "-help", "--help" Then Signal Help
       When "-all" Then Do
-        signal = 0
-        guard  = 0
-        bifs   = 0
+        signal  = 0
+        guard   = 0
+        bifs    = 0
+        leave   = 0
+        iterate = 0
       End
       When "+all" Then Do
-        signal = 1
-        guard  = 1
-        bifs   = 1
+        signal  = 1
+        guard   = 1
+        bifs    = 1
+        leave   = 1
+        iterate = 1
       End
-      When "-signal"  Then signal = 0
-      When "+signal"  Then signal = 1
-      When "-guard"   Then guard  = 0
-      When "+guard"   Then guard  = 0
-      When "-bifs"    Then bifs   = 0
-      When "+bifs"    Then bifs   = 1
-      When "-debug"   Then debug  = 0
-      When "+debug"   Then debug  = 1
-      When "-itrace"  Then itrace = 0
-      When "+itrace"  Then itrace = 1
+      When "-signal"  Then signal  = 0
+      When "+signal"  Then signal  = 1
+      When "-leave"   Then leave   = 0
+      When "+leave"   Then leave   = 1
+      When "-iterate" Then iterate = 0
+      When "+iterate" Then iterate = 1
+      When "-guard"   Then guard   = 0
+      When "+guard"   Then guard   = 0
+      When "-bifs"    Then bifs    = 0
+      When "+bifs"    Then bifs    = 1
+      When "-debug"   Then debug   = 0
+      When "+debug"   Then debug   = 1
+      When "-itrace"  Then itrace  = 0
+      When "+itrace"  Then itrace  = 1
       When "-emptyassignments", "+emptyassignments" Then emptyassignments = 1
       When "-e", "+e" Then Do
         c = file[1]
@@ -109,9 +120,11 @@
 Code:
 
   check = .Array~new
-  If signal Then check~append("SIGNAL")
-  If guard  Then check~append("GUARD")
-  If bifs   Then check~append("BIFS")
+  If signal  Then check~append("SIGNAL")
+  If guard   Then check~append("GUARD")
+  If bifs    Then check~append("BIFS")
+  If leave   Then check~append("LEAVE")
+  If iterate Then check~append("ITERATE")
   Options = .Array~of( (earlyCheck, check ) )
 
   If extraletters \== "" Then Options~append(("EXTRALETTERS", extraletters))

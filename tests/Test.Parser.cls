@@ -126,7 +126,9 @@ PackageCreationTrapped:
 
   -- Now call the Parser
 
-  Options = .Array~of( (earlyCheck, (BIFs, SIGNAL, GUARD) ) )
+  Options = .Array~of( -
+    (earlyCheck, (BIFs, SIGNAL, GUARD, LEAVE, ITERATE) ) -
+  )
 
   Signal On Syntax Name ParserSyntax
 
@@ -237,7 +239,9 @@ PackageCreationTrapped:
 
 
 Parse:
-  Options = .Array~of( (earlyCheck, (BIFs, SIGNAL, GUARD) ) )
+  Options = .Array~of( -
+    (earlyCheck, (BIFs, SIGNAL, GUARD, LEAVE, ITERATE) ) -
+  )
 
   Signal On Syntax
 

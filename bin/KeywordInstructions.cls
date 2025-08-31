@@ -816,8 +816,31 @@ Done:
   blockLabel       = .Nil
   blockInstruction = .Nil
   ignoreBlanks     = .True
+  earlyCheck = .Parser.Options~earlyCheck
+  earlyCheck = earlyCheck~hasItem( "ITERATE" )
 
-  If element < .EL.END_OF_CLAUSE Then Signal Done
+  -- No more elements? Calculate the ITERATE target
+  --
+  -- See RexxRef 2.12, ITERATE: "If name is not specified,
+  --   ITERATE continues with the current repetitive loop"
+  If element < .EL.END_OF_CLAUSE Then Do
+    blockInstructionsStack = package~blockInstructionsStack
+    Do i = blockInstructionsStack~items To 1 By -1
+      instruction = blockInstructionsStack[i]
+      -- A SELECT instruction is not a loop
+      If instruction~isA(.Select.Clause) Then Iterate
+      -- A simple DO loop is not repetitive
+      If instruction~isA(.Simple.Do.Clause) Then Iterate
+      -- That's our target!
+      blockInstruction = instruction
+      Signal Done
+    End
+    -- No target. At execution time, this will produce a 28.2.
+    -- We catch it now if so requested
+    If earlyCheck Then Signal 28.002
+    Signal Done
+  End
+
 
   If element \< .ALL.SYMBOLS Then Signal 20.908
   label = element
@@ -829,19 +852,18 @@ Done:
   blockInstructionsStack = package~blockInstructionsStack
   Do i = blockInstructionsStack~items To 1 By -1
     instruction = blockInstructionsStack[i]
-    blockLabel = instruction~label
-    If blockLabel == "",  \instruction~isA(.Select.Clause) Then
+    blockLabel = instruction~name
+    If blockLabel == .Nil, \instruction~isA(.Select.Clause) Then
       blockLabel = instruction~control
-    If blockLabel~isA(.String) Then theLabel = blockLabel
-    Else theLabel = blockLabel~value
-    If blockLabel \== "", theLabel == label~value Then Do
+    If blockLabel \== .Nil, blockLabel~value == label~value Then Do
       If instruction~class = .Select.Clause Then Signal 28.005
       blockLabel       = label
       blockInstruction = instruction
       Signal Done
     End
   End
-  Signal 28.004
+  -- No match. At execution time, this will produce a 28.4.
+  If earlyCheck Then Signal 28.004
 
 Done:
   Return .Iterate.Instruction~new(            -
@@ -854,6 +876,9 @@ Done:
 -- Data must not follow the ITERATE name; found "&1".
 21.908: Syntax( 21.908, ITERATE, element )
 
+-- ITERATE is valid only within a repetitive loop.
+28.002: Syntax( 28.002, ITERATE )
+
 -- Symbol following ITERATE ("&1") must either match the label
 -- of a current loop or be omitted.
 28.004: Syntax( 28.004, ITERATE, label )
@@ -865,11 +890,11 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Iterate.Instruction Public SubClass Rexx.Instruction
-::Attribute label
+::Attribute name
 ::Attribute iteration
 ::Method init
-  Expose label iteration
-  Use Strict Arg package, begin, end, label, iteration
+  Expose name iteration
+  Use Strict Arg package, begin, end, name, iteration
   self~init:super( package, begin, end )
 
 /******************************************************************************/
@@ -886,9 +911,30 @@ Done:
   blockLabel   = .Nil
   iteration    = .Nil
   ignoreBlanks = .True
+  earlyCheck = .Parser.Options~earlyCheck
+  earlyCheck = earlyCheck~hasItem( "LEAVE" )
 
-  -- No label? We are done.
-  If element < .EL.END_OF_CLAUSE Then Signal Done
+  -- No more elements? Calculate the LEAVE target
+  --
+  -- See RexxRef 2.13, LEAVE: "If name is not specified,
+  --   LEAVE ends the innermost active repetitive loop"
+  If element < .EL.END_OF_CLAUSE Then Do
+    blockInstructionsStack = package~blockInstructionsStack
+    Do i = blockInstructionsStack~items To 1 By -1
+      instruction = blockInstructionsStack[i]
+      -- A SELECT instruction is not a loop
+      If instruction~isA(.Select.Clause) Then Iterate
+      -- A simple DO loop is not repetitive
+      If instruction~isA(.Simple.Do.Clause) Then Iterate
+      -- That's our target!
+      iteration = instruction
+      Signal Done
+    End
+    -- No target. At execution time, this will produce a 28.1.
+    -- We catch it now if so requested
+    If earlyCheck Then Signal 28.001
+    Signal Done
+  End
 
   -- Label should be a symbol.
   If element \< .ALL.SYMBOLS Then Signal 20.907
@@ -906,18 +952,17 @@ Done:
   blockInstructionsStack = package~blockInstructionsStack
   Do i = blockInstructionsStack~items To 1 By -1
     instruction = blockInstructionsStack[i]
-    blockLabel = instruction~label
-    If blockLabel == "",  \instruction~isA(.Select.Clause) Then
+    blockLabel = instruction~name
+    If blockLabel == .Nil, \instruction~isA(.Select.Clause) Then
       blockLabel = instruction~control
-    If blockLabel~isA(.String) Then theLabel = blockLabel
-    Else theLabel = blockLabel~value
-    If blockLabel \ == "", theLabel == label~value Then Do
+    If blockLabel \== .Nil, blockLabel~value == label~value Then Do
       blockLabel     = label
       iteration = instruction
       Signal Done
     End
   End
-  Signal 28.003
+  -- No match. At execution time, this will produce a 28.3.
+  If earlyCheck Then Signal 28.003
 
 Done:
   Return .Leave.Instruction~new( package, begin, end, blockLabel, iteration )
@@ -927,6 +972,9 @@ Done:
 
 -- Data must not follow the LEAVE name; found "&1".
 21.907: Syntax( 21.907, LEAVE, element )
+
+-- LEAVE is valid only within a repetitive loop or labeled block instruction.
+28.001: Syntax( 28.001, LEAVE )
 
 -- Symbol following LEAVE ("&1") must either match the label
 -- of a current loop or block instruction.

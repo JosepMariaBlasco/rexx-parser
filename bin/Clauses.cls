@@ -25,11 +25,27 @@
  .environment~                  End.Of.Source =                  .End.Of.Source
 
  .environment~                      Do.Clause =                      .Do.Clause
+ .environment~                 Do.Over.Clause =                 .Do.Over.Clause
+ .environment~                 Do.With.Clause =                 .Do.With.Clause
+ .environment~                Do.While.Clause =                .Do.While.Clause
+ .environment~                Do.Until.Clause =                .Do.Until.Clause
+ .environment~              Do.Forever.Clause =              .Do.Forever.Clause
+ .environment~            Do.Repetitor.Clause =            .Do.Repetitor.Clause
+ .environment~           Do.Controlled.Clause =           .Do.Controlled.Clause
+ .environment~               Simple.Do.Clause =               .Simple.Do.Clause
  .environment~                     End.Clause =                     .End.Clause
  .environment~                    Else.Clause =                    .Else.Clause
  .environment~                      If.Clause =                      .If.Clause
  .environment~                   Label.Clause =                   .Label.Clause
  .environment~                    Loop.Clause =                    .Loop.Clause
+ .environment~               Loop.Over.Clause =               .Loop.Over.Clause
+ .environment~               Loop.With.Clause =               .Loop.With.Clause
+ .environment~              Loop.While.Clause =              .Loop.While.Clause
+ .environment~              Loop.Until.Clause =              .Loop.Until.Clause
+ .environment~            Loop.Forever.Clause =            .Loop.Forever.Clause
+ .environment~          Loop.Repetitor.Clause =          .Loop.Repetitor.Clause
+ .environment~         Loop.Controlled.Clause =         .Loop.Controlled.Clause
+ .environment~             Simple.Loop.Clause =             .Simple.Loop.Clause
  .environment~                    Null.Clause =                    .Null.Clause
  .environment~               Iterative.Clause =               .Iterative.Clause
  .environment~               Otherwise.Clause =               .Otherwise.Clause
@@ -194,18 +210,34 @@
 
   Select Case clause~class
 
-    When        .Do.Clause Then Return self~Do.instruction(     clause )
-    When        .If.Clause Then Return self~If.instruction(     clause )
-    When      .Loop.Clause Then Return self~Loop.instruction(   clause )
-    When    .Select.Clause Then Return self~Select.instruction( clause )
+    When          .If.Clause Then Return self~If.instruction(     clause )
+    When          .Do.Clause, -
+            .Do.While.Clause, -
+            .Do.Until.Clause, -
+             .Do.Over.Clause, -
+             .Do.With.Clause, -
+       .Do.Controlled.Clause, -
+          .Do.Forever.Clause, -
+        .Do.Repetitor.Clause, -
+           .Simple.Do.Clause Then Return self~Do.instruction(     clause )
+    When        .Loop.Clause, -
+          .Loop.While.Clause, -
+          .Loop.Until.Clause, -
+           .Loop.Over.Clause, -
+           .Loop.With.Clause, -
+     .Loop.Controlled.Clause, -
+        .Loop.Forever.Clause, -
+      .Loop.Repetitor.Clause, -
+         .Simple.Loop.Clause Then Return self~Loop.instruction(   clause )
+    When      .Select.Clause Then Return self~Select.instruction( clause )
 
-    When      .Then.Clause Then Signal 8.001
-    When      .Else.Clause Then Signal 8.002
-    When      .When.Clause Then Signal 9.001
-    When .Otherwise.Clause Then Signal 9.002
-    When       .End.Clause Then
-      If ENDClauseIsOK     Then Return clause
-      Else                      Signal 10.001
+    When        .Then.Clause Then Signal 8.001
+    When        .Else.Clause Then Signal 8.002
+    When        .When.Clause Then Signal 9.001
+    When   .Otherwise.Clause Then Signal 9.002
+    When         .End.Clause Then
+      If ENDClauseIsOK       Then Return clause
+      Else                        Signal 10.001
   End
 
 -- THEN has no corresponding IF or WHEN clause.
@@ -265,12 +297,12 @@ End.Clause:
   END = TheElementAfter( instruction~begin )
   name = instruction~name
   If name \== "" Then Do
-    doLabel = doClause~label
-    If doLabel == ""        Then Do
+    doLabel = doClause~name
+    If doLabel == .Nil        Then Do
       doLabel = doClause~control
-      If doLabel == "" Then Signal 10.003
+      If doLabel == .Nil Then Signal 10.003
     End
-    If name \== doLabel   Then Signal 10.002
+    If name \== doLabel  Then Signal 10.002
   End
   Return .Do.Instruction~new( package, doClause, instructions, instruction )
 
@@ -420,12 +452,12 @@ End.Clause:
   END = TheElementAfter(instruction~begin)
   name = instruction~name
   If name \== "" Then Do
-    loopLabel = loopClause~label
-    If loopLabel == ""        Then Do
+    loopLabel = loopClause~name
+    If loopLabel == .Nil   Then Do
       loopLabel = loopClause~control
-      If loopLabel == "" Then Signal 10.003
+      If loopLabel == .Nil Then Signal 10.003
     End
-    If name \== loopLabel   Then Signal 10.002
+    If name \== loopLabel  Then Signal 10.002
   End
   Return .Loop.Instruction~new( package, loopClause, instructions, instruction )
 
@@ -549,8 +581,8 @@ End:
   END = TheElementAfter( next~begin )
   name = next~name
   If name \== "" Then Do
-    selectLabel = selectClause~label
-    If selectLabel == ""    Then Signal 10.007
+    selectLabel = selectClause~name
+    If selectLabel == .Nil  Then Signal 10.007
     If name \== selectLabel Then Signal 10.004
   End
 
@@ -717,6 +749,17 @@ NoLabels:
 ::Class Do.Clause Public SubClass Iterative.Clause
 ::Constant InstructionName "DO"
 
+--------------------------------------------------------------------------------
+
+::Class    Do.Forever.Clause Public SubClass Do.Clause
+::Class  Do.Repetitor.Clause Public SubClass Do.Clause
+::Class       Do.Over.Clause Public SubClass Do.Clause
+::Class       Do.With.Clause Public SubClass Do.Clause
+::Class      Do.While.Clause Public SubClass Do.Clause
+::Class      Do.Until.Clause Public SubClass Do.Clause
+::Class Do.Controlled.Clause Public SubClass Do.Clause
+::Class     Simple.Do.Clause Public SubClass Do.Clause
+
 /******************************************************************************/
 /* ELSE CLAUSE                                                                */
 /******************************************************************************/
@@ -850,9 +893,15 @@ Done:
 
   keyword = elements[1]
 
-  ignoreBlanks = .True
-  options.     = .False
-  conditional  = 0
+  ignoreBlanks  = .True
+  options.      = .False
+  conditional   = 0
+  options.order = ""  -- Of TO, BY and FOR
+
+  body          = package~currentBody
+  blockID       = body~blockID + 1
+  body~blockID  = blockID
+  options.id    = blockID
 
   element   = TheElementAfter( keyword )
   If element < .EL.END_OF_CLAUSE Then Signal Done
@@ -906,6 +955,7 @@ Continue:
       Otherwise Do
         If seen.tValue Then Call 27.902 tValue
         seen.tValue = 1
+        options.order ||= " "tValue
         Call SetSubkeyword element
         element = TheElementAfter( element )
         Call PrepareExpression element, "TO BY FOR WHILE UNTIL"
@@ -955,7 +1005,7 @@ Continue:
 "Simple Repetitive Do/Loop":
   Call PrepareExpression element, "WHILE UNTIL"
   expression = Expression.List( package, element )
-  options.simple = expression
+  options.repetitor = expression
   element = expression~end
   Signal Conditional
 
@@ -997,8 +1047,31 @@ Conditional:
 
 Done:
   If class == .Do.Clause, options.~hasIndex("COUNTER") Then Do
-    If options.~items == 1 Then Signal 27.905
-    If options.~items == 2, options.~hasIndex("LABEL") Then Signal 27.905
+    -- "ORDER" and "ID" are always there; "COUNTER", we just checked
+    If options.~items == 3 Then Signal 27.905
+    If options.~items == 4, options.~hasIndex("LABEL") Then Signal 27.905
+  End
+  If class == .Do.Clause Then Do
+    If      options.~hasIndex("OVER")      Then class = .Do.Over.Clause
+    Else If options.~hasIndex("CONTROL")   Then class = .Do.Controlled.Clause
+    Else If options.~hasIndex("ITEM") | options.~hasIndex("INDEX") Then
+      class = .Do.With.Clause
+    Else If options.~hasIndex("FOREVER")   Then class = .Do.Forever.Clause
+    Else If options.~hasIndex("REPETITOR") Then class = .Do.Repetitor.Clause
+    Else If options.~hasIndex("WHILE")     Then class = .Do.While.Clause
+    Else If options.~hasIndex("UNTIL")     Then class = .Do.Until.Clause
+    Else class = .Simple.Do.Clause
+  End
+  Else Do
+    If      options.~hasIndex("OVER")     Then class = .Loop.Over.Clause
+    Else If options.~hasIndex("CONTROL")  Then class = .Loop.Controlled.Clause
+    Else If options.~hasIndex("ITEM") | options.~hasIndex("INDEX") Then
+      class = .Loop.With.Clause
+    Else If options.~hasIndex("FOREVER")   Then class = .Loop.Forever.Clause
+    Else If options.~hasIndex("REPETITOR") Then class = .Loop.Repetitor.Clause
+    Else If options.~hasIndex("WHILE")     Then class = .Loop.While.Clause
+    Else If options.~hasIndex("UNTIL")     Then class = .Loop.Until.Clause
+    Else class = .Simple.Loop.Clause
   End
   iteration = class~new( package, begin, element, options. )
   package~blockInstructionsStack~append( iteration )
@@ -1016,7 +1089,7 @@ Keyword:
   labelName = next
   If labelName \< .ALL.SYMBOLS Then Signal 20.918
   Call SetConstantName labelName, .BLOCK.INSTRUCTION.NAME
-  options.["LABEL"] = labelName~value
+  options.["LABEL"] = labelName
   element = TheElementAfter( labelName, ignoreBlanks )
   If element < .EL.END_OF_CLAUSE Then Signal Continue
   next  = TheElementAfter( element    , ignoreBlanks )
@@ -1143,56 +1216,61 @@ Keyword:
 --------------------------------------------------------------------------------
 
 ::Class Iterative.Clause Public SubClass Rexx.Clause
-::Attribute label   Get
-::Attribute counter Get
-::Attribute control Get
-::Attribute while   Get
-::Attribute until   Get
-::Attribute type    Get
+::Attribute name      Get
+::Attribute ctr       Get
+::Attribute repetitor Get
+::Attribute control   Get
+::Attribute forever   Get
+::Attribute exprw     Get
+::Attribute expru     Get
+::Attribute over      Get
+::Attribute index     Get
+::Attribute item      Get
+::Attribute expri     Get
+::Attribute exprt     Get
+::Attribute exprb     Get
+::Attribute exprf     Get
+::Attribute order     Get -- Of TO, BY and FOR
+::Attribute id        Get
 ::Method init
-  Expose label counter control while until type options.
+  Expose name ctr expri exprt exprb exprf repetitor order control forever -
+    exprw expru type over item index id
   Use Strict Arg package, begin, end, options.
-  label   = ""
-  counter = ""
-  control = ""
-  until   = .Nil
-  while   = .Nil
-  count   = 0
-  type    = ""
 
-  -- Count LABEL and COUNTER
-  If HasOption("label")   Then Do
-    count  += 1
-    label   = Option("label")
-  End
-  If HasOption("counter") Then Do
-    count  += 1
-    counter = Option("counter")
-  End
+  -- ID and ORDER are always calculated
+  id        = options.id
+  order     = Strip(options.order)
 
-  -- Control variable
-  If HasOption("control") Then control = Option("control")
+  name      = .Nil                      -- LABEL name
+  ctr       = .Nil                      -- COUNTER ctr
+  control   = .Nil
+  expri     = .Nil                      -- expression after "="
+  exprt     = .Nil                      -- expression after "TO"
+  exprb     = .Nil                      -- expression after "BY"
+  exprf     = .Nil                      -- expression after "FOR"
+  exprw     = .Nil                      -- expression after "WHILE"
+  expru     = .Nil                      -- expression after "UNTIL"
+  over      = .Nil
+  item      = .Nil
+  index     = .Nil
+  repetitor = .Nil
+  forever   = 0
 
-  -- Compute the loop type
-  Select Case options.~items - count
-    When 0 Then type = "simple"
-    When 1 Then
-      Select
-        When HasOption("while") Then Do
-          type = "while"
-          while = Option("while")
-        End
-        When HasOption("until") Then Do
-          type = "until"
-          until = Option("until")
-        End
-        When HasOption("control") Then Do
-          type = "control"
-        End
-        Otherwise Nop
-      End
-    Otherwise Nop
-  End
+  If HasOption("label")     Then name      = Option("label")
+  If HasOption("counter")   Then ctr       = Option("counter")
+  If HasOption("control")   Then control   = Option("control")
+  If HasOption("=")         Then expri     = Option("=")
+  If HasOption("to")        Then exprt     = Option("to")
+  If HasOption("by")        Then exprb     = Option("by")
+  If HasOption("for")       Then exprf     = Option("for")
+  If HasOption("while")     Then exprw     = Option("while")
+  If HasOption("until")     Then expru     = Option("until")
+  If HasOption("repetitor") Then repetitor = Option("repetitor")
+  If HasOption("over")      Then over      = Option("over")
+  If HasOption("index")     Then index     = Option("index")
+  If HasOption("item")      Then item      = Option("item")
+  If HasOption("forever")   Then forever   = 1
+
   self~init:super( package, begin, end )
   Return
 
@@ -1239,6 +1317,17 @@ Option:    Return options.[         Upper(Arg(1))]
 
 ::Class Loop.Clause Public SubClass Iterative.Clause
 ::Constant InstructionName "LOOP"
+
+--------------------------------------------------------------------------------
+
+::Class    Loop.Forever.Clause Public SubClass Loop.Clause
+::Class  Loop.Repetitor.Clause Public SubClass Loop.Clause
+::Class       Loop.Over.Clause Public SubClass Loop.Clause
+::Class       Loop.With.Clause Public SubClass Loop.Clause
+::Class     Simple.Loop.Clause Public SubClass Loop.Clause
+::Class      Loop.While.Clause Public SubClass Loop.Clause
+::Class      Loop.Until.Clause Public SubClass Loop.Clause
+::Class Loop.Controlled.Clause Public SubClass Loop.Clause
 
 /******************************************************************************/
 /* MESSAGE                                                                    */
@@ -1364,6 +1453,11 @@ Message.Instruction:
   ignoreBlanks = .True
   options.     = .False
 
+  body          = package~currentBody
+  blockID       = body~blockID + 1
+  body~blockID  = blockID
+  options.id    = blockID
+
   element = TheElementAfter( SELECT )
 
   If element  < .EL.END_OF_CLAUSE   Then Signal Done
@@ -1379,7 +1473,7 @@ Message.Instruction:
     element = TheElementAfter( element )
     If element \< .ALL.SYMBOLS Then Signal 20.918
     Call SetConstantName element, .BLOCK.INSTRUCTION.NAME
-    options.label = element~value
+    options.name = element
     element = TheElementAfter( element, ignoreBlanks )
   End
 
@@ -1415,16 +1509,20 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Select.Clause Public SubClass Rexx.Clause
-::Attribute label Get
-::Attribute case  Get
+::Attribute name Get
+::Attribute case Get
+::Attribute id   Get
 ::Method init
-  Expose label case options.
+  Expose name case id
   Use Strict Arg package, begin, end, options.
-  label = ""
-  case  = .Nil
 
-  If options.~hasIndex("LABEL") Then label = options.["LABEL"]
-  If options.~hasIndex("CASE")  Then case  = options.["CASE"]
+  id   = options.id
+
+  name = .Nil
+  case = .Nil
+
+  If options.~hasIndex("NAME") Then name = options.["NAME"]
+  If options.~hasIndex("CASE") Then case = options.["CASE"]
 
   self~init:super( package, begin, end )
 
