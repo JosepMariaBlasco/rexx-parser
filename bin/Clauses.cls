@@ -30,7 +30,7 @@
  .environment~                Do.While.Clause =                .Do.While.Clause
  .environment~                Do.Until.Clause =                .Do.Until.Clause
  .environment~              Do.Forever.Clause =              .Do.Forever.Clause
- .environment~            Do.Repetitor.Clause =            .Do.Repetitor.Clause
+ .environment~    Simple.Repetitive.Do.Clause =    .Simple.Repetitive.Do.Clause
  .environment~           Do.Controlled.Clause =           .Do.Controlled.Clause
  .environment~               Simple.Do.Clause =               .Simple.Do.Clause
  .environment~                     End.Clause =                     .End.Clause
@@ -43,7 +43,7 @@
  .environment~              Loop.While.Clause =              .Loop.While.Clause
  .environment~              Loop.Until.Clause =              .Loop.Until.Clause
  .environment~            Loop.Forever.Clause =            .Loop.Forever.Clause
- .environment~          Loop.Repetitor.Clause =          .Loop.Repetitor.Clause
+ .environment~  Simple.Repetitive.Loop.Clause =  .Simple.Repetitive.Loop.Clause
  .environment~         Loop.Controlled.Clause =         .Loop.Controlled.Clause
  .environment~             Simple.Loop.Clause =             .Simple.Loop.Clause
  .environment~                    Null.Clause =                    .Null.Clause
@@ -210,34 +210,34 @@
 
   Select Case clause~class
 
-    When          .If.Clause Then Return self~If.instruction(     clause )
-    When          .Do.Clause, -
-            .Do.While.Clause, -
-            .Do.Until.Clause, -
-             .Do.Over.Clause, -
-             .Do.With.Clause, -
-       .Do.Controlled.Clause, -
-          .Do.Forever.Clause, -
-        .Do.Repetitor.Clause, -
-           .Simple.Do.Clause Then Return self~Do.instruction(     clause )
-    When        .Loop.Clause, -
-          .Loop.While.Clause, -
-          .Loop.Until.Clause, -
-           .Loop.Over.Clause, -
-           .Loop.With.Clause, -
-     .Loop.Controlled.Clause, -
-        .Loop.Forever.Clause, -
-      .Loop.Repetitor.Clause, -
-         .Simple.Loop.Clause Then Return self~Loop.instruction(   clause )
-    When      .Select.Clause Then Return self~Select.instruction( clause )
+    When            .If.Clause Then Return self~If.instruction(     clause )
+    When            .Do.Clause, -
+              .Do.While.Clause, -
+              .Do.Until.Clause, -
+               .Do.Over.Clause, -
+               .Do.With.Clause, -
+         .Do.Controlled.Clause, -
+            .Do.Forever.Clause, -
+  .Simple.Repetitive.Do.Clause, -
+             .Simple.Do.Clause Then Return self~Do.instruction(     clause )
+    When          .Loop.Clause, -
+            .Loop.While.Clause, -
+            .Loop.Until.Clause, -
+             .Loop.Over.Clause, -
+             .Loop.With.Clause, -
+       .Loop.Controlled.Clause, -
+          .Loop.Forever.Clause, -
+.Simple.Repetitive.Loop.Clause, -
+           .Simple.Loop.Clause Then Return self~Loop.instruction(   clause )
+    When        .Select.Clause Then Return self~Select.instruction( clause )
 
-    When        .Then.Clause Then Signal 8.001
-    When        .Else.Clause Then Signal 8.002
-    When        .When.Clause Then Signal 9.001
-    When   .Otherwise.Clause Then Signal 9.002
-    When         .End.Clause Then
-      If ENDClauseIsOK       Then Return clause
-      Else                        Signal 10.001
+    When          .Then.Clause Then Signal 8.001
+    When          .Else.Clause Then Signal 8.002
+    When          .When.Clause Then Signal 9.001
+    When     .Otherwise.Clause Then Signal 9.002
+    When           .End.Clause Then
+      If ENDClauseIsOK         Then Return clause
+      Else                          Signal 10.001
   End
 
 -- THEN has no corresponding IF or WHEN clause.
@@ -751,14 +751,14 @@ NoLabels:
 
 --------------------------------------------------------------------------------
 
-::Class    Do.Forever.Clause Public SubClass Do.Clause
-::Class  Do.Repetitor.Clause Public SubClass Do.Clause
-::Class       Do.Over.Clause Public SubClass Do.Clause
-::Class       Do.With.Clause Public SubClass Do.Clause
-::Class      Do.While.Clause Public SubClass Do.Clause
-::Class      Do.Until.Clause Public SubClass Do.Clause
-::Class Do.Controlled.Clause Public SubClass Do.Clause
-::Class     Simple.Do.Clause Public SubClass Do.Clause
+::Class           Do.Forever.Clause Public SubClass Do.Clause
+::Class Simple.Repetitive.Do.Clause Public SubClass Do.Clause
+::Class              Do.Over.Clause Public SubClass Do.Clause
+::Class              Do.With.Clause Public SubClass Do.Clause
+::Class             Do.While.Clause Public SubClass Do.Clause
+::Class             Do.Until.Clause Public SubClass Do.Clause
+::Class        Do.Controlled.Clause Public SubClass Do.Clause
+::Class            Simple.Do.Clause Public SubClass Do.Clause
 
 /******************************************************************************/
 /* ELSE CLAUSE                                                                */
@@ -1005,7 +1005,7 @@ Continue:
 "Simple Repetitive Do/Loop":
   Call PrepareExpression element, "WHILE UNTIL"
   expression = Expression.List( package, element )
-  options.repetitor = expression
+  options.exprr = expression
   element = expression~end
   Signal Conditional
 
@@ -1056,19 +1056,29 @@ Done:
     Else If options.~hasIndex("CONTROL")   Then class = .Do.Controlled.Clause
     Else If options.~hasIndex("ITEM") | options.~hasIndex("INDEX") Then
       class = .Do.With.Clause
-    Else If options.~hasIndex("FOREVER")   Then class = .Do.Forever.Clause
-    Else If options.~hasIndex("REPETITOR") Then class = .Do.Repetitor.Clause
+    Else If options.~hasIndex("FOREVER")   Then Do
+      If options.~hasIndex("WHILE")        Then class = .Do.While.Clause
+      Else If options.~hasIndex("UNTIL")   Then class = .Do.Until.Clause
+      Else                                      class = .Do.Forever.Clause
+    End
+    Else If options.~hasIndex("EXPRR") Then
+      class = .Simple.Repetitive.Do.Clause
     Else If options.~hasIndex("WHILE")     Then class = .Do.While.Clause
     Else If options.~hasIndex("UNTIL")     Then class = .Do.Until.Clause
     Else class = .Simple.Do.Clause
   End
   Else Do
-    If      options.~hasIndex("OVER")     Then class = .Loop.Over.Clause
-    Else If options.~hasIndex("CONTROL")  Then class = .Loop.Controlled.Clause
+    If      options.~hasIndex("OVER")      Then class = .Loop.Over.Clause
+    Else If options.~hasIndex("CONTROL")   Then class = .Loop.Controlled.Clause
     Else If options.~hasIndex("ITEM") | options.~hasIndex("INDEX") Then
       class = .Loop.With.Clause
-    Else If options.~hasIndex("FOREVER")   Then class = .Loop.Forever.Clause
-    Else If options.~hasIndex("REPETITOR") Then class = .Loop.Repetitor.Clause
+    Else If options.~hasIndex("FOREVER")   Then Do
+      If options.~hasIndex("WHILE")        Then class = .Loop.While.Clause
+      Else If options.~hasIndex("UNTIL")   Then class = .Loop.Until.Clause
+      Else                                      class = .Loop.Forever.Clause
+    End
+    Else If options.~hasIndex("EXPRR") Then
+      class = .Simple.Repetitive.Loop.Clause
     Else If options.~hasIndex("WHILE")     Then class = .Loop.While.Clause
     Else If options.~hasIndex("UNTIL")     Then class = .Loop.Until.Clause
     Else class = .Simple.Loop.Clause
@@ -1218,7 +1228,7 @@ Keyword:
 ::Class Iterative.Clause Public SubClass Rexx.Clause
 ::Attribute name      Get
 ::Attribute ctr       Get
-::Attribute repetitor Get
+::Attribute exprr     Get
 ::Attribute control   Get
 ::Attribute forever   Get
 ::Attribute exprw     Get
@@ -1233,7 +1243,7 @@ Keyword:
 ::Attribute order     Get -- Of TO, BY and FOR
 ::Attribute id        Get
 ::Method init
-  Expose name ctr expri exprt exprb exprf repetitor order control forever -
+  Expose name ctr expri exprt exprb exprf exprr order control forever -
     exprw expru type over item index id
   Use Strict Arg package, begin, end, options.
 
@@ -1253,7 +1263,7 @@ Keyword:
   over      = .Nil
   item      = .Nil
   index     = .Nil
-  repetitor = .Nil
+  exprr     = .Nil
   forever   = 0
 
   If HasOption("label")     Then name      = Option("label")
@@ -1265,7 +1275,7 @@ Keyword:
   If HasOption("for")       Then exprf     = Option("for")
   If HasOption("while")     Then exprw     = Option("while")
   If HasOption("until")     Then expru     = Option("until")
-  If HasOption("repetitor") Then repetitor = Option("repetitor")
+  If HasOption("exprr")     Then exprr     = Option("exprr")
   If HasOption("over")      Then over      = Option("over")
   If HasOption("index")     Then index     = Option("index")
   If HasOption("item")      Then item      = Option("item")
@@ -1320,14 +1330,14 @@ Option:    Return options.[         Upper(Arg(1))]
 
 --------------------------------------------------------------------------------
 
-::Class    Loop.Forever.Clause Public SubClass Loop.Clause
-::Class  Loop.Repetitor.Clause Public SubClass Loop.Clause
-::Class       Loop.Over.Clause Public SubClass Loop.Clause
-::Class       Loop.With.Clause Public SubClass Loop.Clause
-::Class     Simple.Loop.Clause Public SubClass Loop.Clause
-::Class      Loop.While.Clause Public SubClass Loop.Clause
-::Class      Loop.Until.Clause Public SubClass Loop.Clause
-::Class Loop.Controlled.Clause Public SubClass Loop.Clause
+::Class           Loop.Forever.Clause Public SubClass Loop.Clause
+::Class Simple.Repetitive.Loop.Clause Public SubClass Loop.Clause
+::Class              Loop.Over.Clause Public SubClass Loop.Clause
+::Class              Loop.With.Clause Public SubClass Loop.Clause
+::Class            Simple.Loop.Clause Public SubClass Loop.Clause
+::Class             Loop.While.Clause Public SubClass Loop.Clause
+::Class             Loop.Until.Clause Public SubClass Loop.Clause
+::Class        Loop.Controlled.Clause Public SubClass Loop.Clause
 
 /******************************************************************************/
 /* MESSAGE                                                                    */

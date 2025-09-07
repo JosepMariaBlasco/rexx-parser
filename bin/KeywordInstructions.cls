@@ -856,7 +856,8 @@ Done:
     If blockLabel == .Nil, \instruction~isA(.Select.Clause) Then
       blockLabel = instruction~control
     If blockLabel \== .Nil, blockLabel~value == label~value Then Do
-      If instruction~class = .Select.Clause Then Signal 28.005
+      If instruction~class = .Select.Clause         Then Signal 28.005
+      Else If instruction~class = .Simple.Do.Clause Then Signal 28.005
       blockLabel       = label
       blockInstruction = instruction
       Signal Done
@@ -864,6 +865,8 @@ Done:
   End
   -- No match. At execution time, this will produce a 28.4.
   If earlyCheck Then Signal 28.004
+  -- Restore label, for diagnostic purposes
+  blockLabel = label
 
 Done:
   Return .Iterate.Instruction~new(            -
@@ -963,6 +966,8 @@ Done:
   End
   -- No match. At execution time, this will produce a 28.3.
   If earlyCheck Then Signal 28.003
+  -- Restore label, for diagnostic purposes
+  blockLabel = label
 
 Done:
   Return .Leave.Instruction~new( package, begin, end, blockLabel, iteration )
@@ -983,11 +988,11 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Leave.Instruction Public SubClass Rexx.Instruction
-::Attribute label
+::Attribute name
 ::Attribute iteration
 ::Method init
-  Expose label iteration
-  Use Strict Arg package, begin, end, label, iteration
+  Expose name iteration
+  Use Strict Arg package, begin, end, name, iteration
   self~init:super( package, begin, end )
 
 /******************************************************************************/

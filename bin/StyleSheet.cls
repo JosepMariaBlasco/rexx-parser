@@ -148,7 +148,12 @@
     file = style
     style = Reverse(elyts)
   End
-  Else file = "../css/rexx-"style".css"
+  Else Do
+     parse source . . thisPgm
+     pgmDir = filespec(location,thisPgm)
+     file = pgmDir"../css/rexx-"style".css"
+  End
+
   exists = Stream( file, "C", "Q Exists")
   If exists = "" Then Call Halt "File '"file"' does not exist."
 

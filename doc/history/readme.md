@@ -12,6 +12,7 @@ Version history
 <ul>
   <li> Continue refactoring to refine the Tree API.
   <li> Add [early check support for LEAVE and ITERATE](../ref/classes/rexx.parser/early-check/).
+  <li> Fix bug in stylesheet.cls (thanks, Rony!) (20250907).
 <tr><td>20250622<td>0.2d<td>
 <ul>
   <li> **Breaking change**: The character used to separate foreground
