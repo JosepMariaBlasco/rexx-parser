@@ -23,6 +23,7 @@
 /*                  Move "modules" directory inside "bin"                     */
 /* 20250426    0.2b Fix compound count, simplify REQUIRES                     */
 /* 20250606    0.2c Add --from and --to options                               */
+/* 20250928    0.2e Fix crash when no args, add .rex to file when needed      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -47,6 +48,11 @@
   opTo    = "*"
 
   Parse Arg file
+
+  If file = "" Then Do
+    Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
+    Exit 1
+  End
 
 ProcessOptions:
   Parse Var file option file
@@ -80,8 +86,13 @@ ProcessOptions:
 
   -- Check that our file exists
   If Stream(file,'c','q exists') == "" Then Do
-    Say "File '"file"' not found."
-    Exit 1
+    -- Try again with ".rex"
+    If Stream(file".rex",'c','q exists') \== "" Then
+      file = file".rex"
+    Else Do
+      Say "File '"file"' not found."
+      Exit 1
+    End
   End
 
   -- We need to compute the source separately to properly handle syntax errors

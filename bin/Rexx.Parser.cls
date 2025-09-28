@@ -202,6 +202,8 @@ CheckThatUseLocalIsValid:
 ::Attribute clauses             -- All clauses
 ::Attribute exposed             -- Explicitly EXPOSEd variables
 ::Attribute uselocal            -- USE LOCAL variables (.Nil -> no USE LOCAL)
+::Attribute locals              -- All local variables
+::Attribute local               -- The body local directory
 ::Attribute isAMethodBody       -- This is a METHOD body
 ::Attribute classMethod         -- True when this is a CLASS method
 ::Attribute calledRoutineNames  -- Symbols or strings
@@ -213,9 +215,8 @@ CheckThatUseLocalIsValid:
 -- implementors. If the body contains only a single USE ARG instruction,
 -- AND this instruction is the first in the body (or the second after
 -- EXPOSE, in the case of method bodies), AND the body does not have
--- any ARG or PARSE ARG instruction and it does not use the ARG BIF, then
--- "signature" contains that USE ARG instruction. Otherwise, "signature"
--- is Nil.
+-- any ARG or PARSE ARG instruction, then "signature" contains that
+-- USE ARG instruction. Otherwise, "signature" is Nil.
 ::Attribute signature
 
 ::Method "[]"
@@ -226,7 +227,7 @@ CheckThatUseLocalIsValid:
 ::Method init
   Expose instructions labels clauses calledRoutineNames -
     exposed useLocal classMethod isAMethodBody usesExitInstruction -
-    signature directive blockID
+    signature directive blockID locals local
 
   Use Strict Arg package, directive
 
@@ -240,6 +241,8 @@ CheckThatUseLocalIsValid:
   isAMethodBody       = .False
   signature           = .Nil
   blockID             = 0
+  locals              = .StringTable~new
+  local               = .Directory~new
 
   If directive~class == .Method.Directive Then
     classMethod = directive~options.[class]
@@ -361,6 +364,7 @@ CheckThatUseLocalIsValid:
 
 ::Class Rexx.Package Public
 
+::Attribute options                 -- Global options, when NetRexxOptions = 1
 ::Attribute Clauser                 -- The clauser
 ::Attribute preClauser              -- The preClauser
 ::Attribute tokenizer               -- The tokenizer
@@ -387,6 +391,7 @@ CheckThatUseLocalIsValid:
 
 ::Method init
   Expose name source -
+    options          -
     Clauser          -
     preclauser       -
     tokenizer        -
@@ -417,6 +422,7 @@ CheckThatUseLocalIsValid:
   currentBody            = .Nil
   directives             =  Array()
   blockInstructionsStack = .Nil
+  options                = .Set~new
 
 ::Method addClass -- [As in in the ooRexx Package class]
   Expose privateClasses

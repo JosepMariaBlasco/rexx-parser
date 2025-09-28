@@ -1152,11 +1152,29 @@ Expression:
 
   If elements~items == 1 Then Signal 35.913
 
+  If Global.Option("NetRexxOptions") == 1 Then Do
+    SkipIgnorables = .True
+    -- TODO Check that OPTIONS appears at the beginning of the file.
+    element = TheElementAfter( OPTIONS, SkipIgnorables )
+    If element \< .ALL.SYMBOLS Then Signal 20.900
+    Loop Until element \< .ALL.SYMBOLS
+      package~options[] = element~value
+      element = TheElementAfter( element, SkipIgnorables )
+    End
+    If element \< .EL.END_OF_CLAUSE Then Signal 20.900
+    Return .Options.Instruction~new( package, begin, end, .Nil )
+  End
+
   element = elements[2]
+
+  Call PrepareExpression element
 
   expression = Expression.List( package, element, .EL.END_OF_CLAUSE )
 
   Return .Options.Instruction~new( package, begin, end, expression )
+
+20.900: Syntax( 20.900, OPTIONS, "OPTIONS must be followed by one or more" -
+  "symbols, found '"element~value"'.")
 
 -- Missing expression following OPTIONS keyword.
 35.913: Syntax( 35.913, OPTIONS )
@@ -1612,9 +1630,9 @@ Expression:
 
   ignoreBlanks = .True
 
-  element            = TheElementAfter( SIGNAL )
+  element = TheElementAfter( SIGNAL )
 
-  value            = .False -- VALUE keyword found
+  value   = .False -- VALUE keyword found
 
   If element \< .ALL.SYMBOLS_AND_STRINGS Then Signal Expression
 
@@ -1987,7 +2005,7 @@ Done:
         -- Mark the element as assigned
         element~setAssigned
         -- Build a symbol term
-        term = Symbol.Term( package, element, continue )
+        term = Symbol.Term( package, element )
         -- Now collect "[args]" and "~[~]method(args)" sequences
         term = Simple.Message.Term( package, term )
         If term~isA(.Symbol.Term), Left(term~symbol~value,1) == "." Then
@@ -2118,6 +2136,7 @@ NextElement:
   body          = package~currentBody
   UseLocal      = Set()
   body~UseLocal = UseLocal
+  locals        = body~locals
 
   Loop
     Select
@@ -2126,7 +2145,8 @@ NextElement:
         If name < .EL.COMPOUND_VARIABLE Then Signal 99.948
         name~setAssigned
         list~append( name )
-        UseLocal[] = name~value
+        UseLocal[]         = name~value
+        locals[name~value] = name~source
       End
       Otherwise Signal 20.927
     End
@@ -2183,7 +2203,6 @@ NextElement:
       pName = Symbol.Term( -
         package,           -
         element,           -
-       .ALL.WHITESPACE_LIKE || .EL.RIGHT_PARENTHESIS || .EL.LEFT_PARENTHESIS, -
         inExpose           -
       )
       element = TheElementAfter( element, ignoreBlanks )
@@ -2196,7 +2215,6 @@ NextElement:
       nameList~append( Symbol.Term(                  -
         package,                                     -
         element,                                     -
-       .ALL.WHITESPACE_LIKE || .EL.LEFT_PARENTHESIS, -
         inExpose                                     -
       ) )
       If class == .Expose.Instruction Then
@@ -2359,7 +2377,7 @@ GetASymbol:
         element~setAssigned
 
         -- Build a symbol term
-        term = Symbol.Term( package, element, terminators )
+        term = Symbol.Term( package, element )
 
         -- Now collect "[args]" and "~[~]method(args)" sequences
         term = Simple.Message.Term( package, term )

@@ -485,6 +485,8 @@ SignedNumber:
     "ABSTRACT", "DELEGATE", "EXTERNAL"                     -
   )
 
+  options.containingClass = package~currentClass
+
   Loop While keyword \< .EL.END_OF_CLAUSE
 
     If \allOptions~hasItem( keyword~value ) Then Signal 25.902

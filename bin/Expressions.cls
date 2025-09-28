@@ -537,7 +537,7 @@
 ::Constant isEmpty 0
 
 --------------------------------------------------------------------------------
--- Term                                                                  --
+-- Term                                                                       --
 --   A term may be:                                                           --
 --    1) A function call                                                      --
 --    2) A message term                                                       --
@@ -580,6 +580,10 @@
     When begin < .EL.LEFT_PARENTHESIS Then Return SubExpression( package, begin, terminators )
     When begin < .ALL.SYMBOLS Then Do
       symbol = begin
+
+      If Global.Option(Closures) \== "", symbol~value == "PROCEDURE" Then
+        Exit Closure(package, symbol)
+
       element = TheElementAfter( symbol )
       Select Case element~category
         -- Followed by ":"? This is a namespace-qualified symbol
@@ -589,11 +593,19 @@
         When .EL.LEFT_PARENTHESIS Then
           Exit Function.Call.Term( package, symbol, element, terminators )
         Otherwise
-          Exit Symbol.Term( package, begin, terminators )
+          Exit Symbol.Term( package, begin )
       End
     End
-    When begin < .ALL.STRINGS Then
-      Return Literal.String.Term( package, begin, terminators )
+    When begin < .ALL.STRINGS Then Do
+      name    = begin
+      element = TheElementAfter( name )
+      If element \< .EL.LEFT_PARENTHESIS Then  -- Not a function call?
+        Exit .Literal.String.Term~new( name )  -- That's a string literal
+      -- "name"([args])
+      Return Literal.String.Function.Call(   -
+        package, name, element, terminators  -
+      )
+    End
     When begin < .ALL.OPS.REFERENCE Then
       Return Variable.Reference.Term( package, begin )
    Otherwise
@@ -610,6 +622,14 @@
 
 -- Incorrect expression detected at "&1".
 35.001: Syntax( 35.001, begin, Arg(1) )
+
+--------------------------------------------------------------------------------
+-- CLOSURE                                                                    --
+--------------------------------------------------------------------------------
+
+::Routine Closure
+
+  Use Strict Arg package, keyword -- keyword is "PROCEDURE"
 
 --------------------------------------------------------------------------------
 -- ARRAY.TERM                                                        --
@@ -632,21 +652,13 @@
   Forward To (self~expression_list)
 
 --------------------------------------------------------------------------------
--- LITERAL.STRING.TERM                                                        --
+-- LITERAL.STRING.FUNCTION.CALL                                               --
 --------------------------------------------------------------------------------
-::Routine Literal.String.Term
 
-  Use Strict Arg package, name, terminators
+::Routine Literal.String.Function.Call
 
-  element = TheElementAfter( name )
+  Use Strict Arg package, name, lParen, terminators
 
-  If element < .EL.LEFT_PARENTHESIS Then Signal FunctionCall
-
-  -- Simple case (not a function call)
-  Exit .Literal.String.Term~new( name )
-
-FunctionCall:
-  lParen        = element
   next          = TheElementAfter( lParen )  -- Where to start parsing
   terminators   = .EL.RIGHT_PARENTHESIS      -- Terminator is ")"
 
@@ -690,7 +702,7 @@ FunctionCall:
     .EL.RIGHT_PARENTHESIS            - -- Clear terminators: only ")"
   )
 
-  subExpression~begin = lParen
+  -- subExpression~begin = lParen
   rParen = subExpression~end
 
   -- In this context, an expression list is an array term.
@@ -699,7 +711,7 @@ FunctionCall:
 
   Call ExpectParenPair lParen, rParen
 
-  Return .SubExpression~new( subExpression )
+  Return .SubExpression~new( lParen, subExpression, rParen )
 
 --------------------------------------------------------------------------------
 
@@ -709,9 +721,8 @@ FunctionCall:
 ::Attribute subExpression Get
 ::Method init
   Expose subExpression begin end
-  Use Strict Arg subExpression
-  begin = subexpression~begin
-  end   = TheElementAfter( subExpression~end )
+  Use Strict Arg begin, subExpression, rParen
+  end = TheElementAfter( rParen )
 
 --------------------------------------------------------------------------------
 -- Simple.Message.Term                                                        --
@@ -740,7 +751,7 @@ FunctionCall:
 
 ::Routine Symbol.Term Public
 
-  Use Strict Arg package, symbol, terminators, inExpose = .False
+  Use Strict Arg package, symbol, inExpose = .False
 
   If symbol < .ALL.COMPOUND_VARIABLES Then
     Exit Compound.Variable.Term( package, symbol, inExpose )
@@ -748,29 +759,32 @@ FunctionCall:
   If symbol < .ALL.STEM_VARIABLES     Then
     Exit     Stem.Variable.Term( package, symbol, inExpose )
 
+  varName       = symbol~value        -- Uppercased symbol
+  varSource     = symbol~source       -- As written
+  thisBody      = package~currentBody
+
   -- Change the element category of variable symbols to reflect whether
   -- they are local or instance variables.
   If symbol < .EL.SIMPLE_VARIABLE Then Do
-    varName       = symbol~value
-    thisBody      = package~currentBody
+    locals        = thisBody~locals
+    If \locals~hasIndex( varName ) Then locals[ varName ] = varSource
     exposed       = thisBody~exposed
     useLocal      = thisBody~useLocal
-    If inExpose Then Call Exposed .False
-    Else If \exposed~isEmpty   Then Do  -- This body starts with EXPOSE
-      If  exposed ~hasItem( varName ) Then Call Exposed .False
+    If inExpose Then Call Exposed
+    Else If \exposed~isEmpty Then Do  -- This body starts with EXPOSE
+      If  exposed~hasItem( varName ) Then Call Exposed
     End
-    Else If useLocal \ == .Nil Then Do  -- This body starts with USE LOCAL
-      If \useLocal~hasitem( varName ) Then Call Exposed .True
+    Else If useLocal \== .Nil Then Do  -- This body starts with USE LOCAL
+      -- "Note that USE LOCAL will always keep Rexx special variables RC, RESULT,
+      --  SIGL, SELF, and SUPER as local variables" (rexxref).
+      If WordPos(varName, "RC RESULT SIGL SELF SUPER") == 0, -
+        \useLocal~hasitem( varName ) Then Call Exposed
     End
   End
 
   Exit .Symbol.Term~new( package, symbol )
 
 Exposed:
-  -- "Note that USE LOCAL will always keep Rexx special variables RC, RESULT,
-  --  SIGL, SELF, and SUPER as local variables" (rexxref).
-  If Arg(1) Then -- That's USE LOCAL
-    If WordPos(symbol~value, "RC RESULT SIGL SELF SUPER") > 0 Then Return
   Call SetCategory symbol, .EL.EXPOSED_SIMPLE_VARIABLE
 Return
 
@@ -801,15 +815,24 @@ Return
   thisBody      = package~currentBody
   exposed       = thisBody~exposed
   useLocal      = thisBody~useLocal
+  locals        = thisBody~locals
 
   Parse Value variable~from With line col
   sourceLine    = package~source[line]
 
-  Parse Value variable~value With stemName"."tail
+  Parse Value variable~value  With stemName"."tail
+  Parse Value variable~source With stemSource"."tailSource
   stemName = stemName"."
+  stemSource = stemSource"."
   offset = Length(stemName)
 
   stemClass = StemClass()
+
+  If stemClass == .EL.STEM_VARIABLE Then Do
+    Parse Value variable~source With stemSource"."
+    If \locals~hasIndex( stemName ) Then
+      locals[ stemName ] = stemSource"."
+  End
 
   Select Case stemClass
     When .EL.STEM_VARIABLE         Then variableClass =         .EL.COMPOUND_VARIABLE
@@ -826,11 +849,13 @@ Return
 
   col += offset
   Do While tail~contains(".")
-    Parse Var tail fragment"."tail
+    Parse Var tail       fragment"."tail
+    Parse Var tailSource fragmentSource"."tailSource
     If fragment \== "" Then Call AddFragment
     Call AddDot
   End
-  fragment = tail
+  fragment       = tail
+  fragmentSource = tailSource
   Call AddFragment
 
   term = .Compound.Variable.Term~new( variable, parts )
@@ -860,6 +885,8 @@ AddFragment:
   If fragment == "" Then Return
   Select
     When DataType(fragment, "Variable") Then Do
+      If \locals~hasIndex( fragment ) Then
+        locals[ fragment ] = fragmentSource
       partClass = .EL.SIMPLE_VARIABLE
       Select
         When exposed~hasItem( Upper(fragment) ) Then
@@ -996,10 +1023,10 @@ Return
 
   -- Ensure that this is an expression list.
   If \arguments~isA(.Expression.List) Then Do
-    arguments = .Expression.List~new(  -
-      Array(arguments),                -
-      arguments~begin,                 -
-      arguments~end                    -
+    arguments = .Expression.List~new(    -
+      Array(arguments),                  -
+      arguments~begin,                   -
+      arguments~end                      -
     )
   End
 

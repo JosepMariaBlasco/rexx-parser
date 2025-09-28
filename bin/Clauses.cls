@@ -672,7 +672,16 @@ NoLabels:
 
   variable~setAssigned
 
-  symbol = Symbol.Term( package, variable, .ALL.ASSIGNMENTS )
+  thisBody          = package~currentBody
+  locals            = thisBody~locals
+
+  varName           = variable~value
+  p                 = Pos(".",varName)
+  If p == 0 | p == Length(varName) Then
+    If \locals~hasIndex( varName ) Then
+      locals[varName] = variable~source
+
+  symbol = Symbol.Term( package, variable )
 
   operator = elements[2]
 
@@ -691,6 +700,10 @@ NoLabels:
     If Global.Option("emptyassignments") == 1 Then Nop
     Else Signal 35.918
   End
+
+  -- In this context, an expression list is an array term.
+  If expression~isA(.Expression.List) Then
+    expression = .Array.Term~new( expression )
 
   Return .Assignment.Instruction~new(                 -
     package, begin, end, symbol, operator, expression -
@@ -849,8 +862,8 @@ Done:
 
   IF = elements[1]
 
-  element = TheElementAfter( IF )  -- Start parsing here...
-  terminators  = .EL.END_OF_CLAUSE       -- ";" terminates parsing
+  element = TheElementAfter( IF )       -- Start parsing here...
+  terminators  = .EL.END_OF_CLAUSE      -- ";" terminates parsing
 
   -- The expression has already been prepared by the preparser
 
@@ -1375,7 +1388,7 @@ MessageAssignment:
   If element < .EL.END_OF_CLAUSE Then Signal 35.001
   rhs = Expression.List( package, element )
   -- In this context, an expression list is an array term.
-  If rhs~isA(.Expression.List) then rhs = .Array.Term~new( rhs )
+  If rhs~isA(.Expression.List) Then rhs = .Array.Term~new( rhs )
   Return .Message.Assignment.Instruction~new( -
     package, begin, end, lhs, operator, rhs   -
   )

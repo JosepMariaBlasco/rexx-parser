@@ -78,7 +78,7 @@ and these ofted tend to be unmanageable
 For example,
 
 * `::Method M; L: Expose m` complains that `EXPOSE` should be the first instruction
-  in a method, not that `X` is not allowed in such a place (the same happens
+  in a method, not that `L` is not allowed in such a place (the same happens
   with `USE LOCAL`; see <https://sourceforge.net/p/oorexx/bugs/1945/#e174>).
 * `If 1 Then Nop; X: Else Nop` complains that the label `ELSE` is not allowed (should be `X`).
 * `If 1; X: Then; Nop` complains that there is no `THEN` clause, when there is one;
@@ -107,7 +107,7 @@ For example,
 
 * <https://sourceforge.net/p/oorexx/bugs/2006/> (Errors 93.903 wrong for `MIN` and `MAX`, incoherent behaviour with respect to 40.5).
 * <https://sourceforge.net/p/oorexx/bugs/2007/> (Wrong second arg to `DATATYPE` BIF raises 93.915 instead of 40.904).
-* <https://sourceforge.net/p/oorexx/bugs/2008/> (`Arg(-n)` returns `""` instead of crashing).
+* <s><https://sourceforge.net/p/oorexx/bugs/2008/> (`Arg(-n)` returns `""` instead of crashing)</s> (fixed: 2025-06-26).
 * <https://sourceforge.net/p/oorexx/bugs/2009/> (Wrong message for `CALL BEEP "*"`).
 * <https://sourceforge.net/p/oorexx/bugs/2010/> (`CHANGESTR`, `CHARIN`, `OPEN`, `TRUNC` wrong message when arg negative)..
 * <https://sourceforge.net/p/oorexx/bugs/2011/> (`Call CharIn ,,-1` produces wrong 88.907 with wrong arg number).

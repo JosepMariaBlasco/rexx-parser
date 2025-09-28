@@ -32,8 +32,10 @@
 --
 -- Dependencies: A list of package names (without the .cls extension),
 --   separated by blanks
+--
 -- Override: true when existing methods can be redefined by this execution
 --   of the loader.
+--
 Use Strict Arg dependencies = "", override = 0
 
 -- We were called by a prolog routine, located in a certain package.
