@@ -22,6 +22,7 @@
 /* 20250426         Add ANSI.ErrorText support, -itrace option                */
 /* 20250508         Fix typo (GitHub issue no. 10 - Thanks Geoff!)            */
 /* 20250831    0.2e Add support for LEAVE and INTERPRET checks                */
+/* 20250929         Add ".rex" to filename when appropriate                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -107,9 +108,9 @@
 
   file = Strip(file)
 
-  fullPath = Stream(file, 'c', 'query exists')
+  fullPath = .context~package~findProgram(file)
 
-  If fullPath == "" Then Do
+  If fullPath == .Nil Then Do
     Say "File '"file"' does not exist."
     Exit 1
   End

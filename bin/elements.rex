@@ -84,20 +84,16 @@ ProcessOptions:
     If file~contains(c)  Then Signal BadArgument
   End
 
-  -- Check that our file exists
-  If Stream(file,'c','q exists') == "" Then Do
-    -- Try again with ".rex"
-    If Stream(file".rex",'c','q exists') \== "" Then
-      file = file".rex"
-    Else Do
-      Say "File '"file"' not found."
-      Exit 1
-    End
+  fullPath = .context~package~findProgram(file)
+
+  If fullPath == .Nil Then Do
+    Say "File '"file"' does not exist."
+    Exit 1
   End
 
   -- We need to compute the source separately to properly handle syntax errors
-  source = CharIn(file,1,Chars(file))~makeArray
-  Call CharOut file
+  source = CharIn(fullPath,1,Chars(fullPath))~makeArray
+  Call CharOut fullPath
 
   -- Adjust "opTo" if necessary
 

@@ -16,6 +16,7 @@ Version history
   <li> An expression list as the rhs of an assignment is an array term (20250909).
   <li> Collect all local variables in the 'locals' attribute of code bodies (20250916).
   <li> "elements.rex" now automatically adds ".rex" to the filename when needed (20250928).
+  <li> "rxcheck.rex" now automatically adds ".rex" to the filename when needed (20250929).
 <tr><td>20250622<td>0.2d<td>
 <ul>
   <li> **Breaking change**: The character used to separate foreground
