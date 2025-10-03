@@ -828,11 +828,8 @@ Return
 
   stemClass = StemClass()
 
-  If stemClass == .EL.STEM_VARIABLE Then Do
-    Parse Value variable~source With stemSource"."
-    If \locals~hasIndex( stemName ) Then
-      locals[ stemName ] = stemSource"."
-  End
+  Parse Value variable~source With stemSource"."
+  If \locals~hasIndex( stemName ) Then locals[ stemName ] = stemSource"."
 
   Select Case stemClass
     When .EL.STEM_VARIABLE         Then variableClass =         .EL.COMPOUND_VARIABLE
@@ -885,8 +882,7 @@ AddFragment:
   If fragment == "" Then Return
   Select
     When DataType(fragment, "Variable") Then Do
-      If \locals~hasIndex( fragment ) Then
-        locals[ fragment ] = fragmentSource
+      If \locals~hasIndex( fragment ) Then locals[ fragment ] = fragmentSource
       partClass = .EL.SIMPLE_VARIABLE
       Select
         When exposed~hasItem( Upper(fragment) ) Then
@@ -930,14 +926,15 @@ Return
 
   Use Strict Arg package, stem, inExpose
 
-  thisBody        = package~currentBody
-  newClass = .EL.EXPOSED_STEM_VARIABLE
+  thisBody   = package~currentBody
+  newClass   = .EL.EXPOSED_STEM_VARIABLE
+
+  stemName   = stem~value
+  stemSource = stem~source
 
   -- Special handling for EXPOSE instructions
   If inExpose Then Call SetCategory stem, newClass
   Else Do -- Not an EXPOSE instruction
-    stemName      = stem    ~value
-    thisBody      = package ~currentBody
     exposed       = thisBody~exposed
     useLocal      = thisBody~useLocal
     If \exposed~isEmpty        Then Do  -- This body starts with EXPOSE
@@ -947,6 +944,9 @@ Return
       If \useLocal~hasitem( stemName ) Then Call SetCategory stem, newClass
     End
   End
+
+  locals        = thisBody~locals
+  If \locals~hasIndex( stemName ) Then locals[ stemName ] = stemSource
 
   Exit .Stem.Variable.Term~new( stem )
 
@@ -1217,10 +1217,12 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class Variable.Reference.Term Public SubClass Rexx.Term
+::Attribute begin
 ::Attribute end
 ::Method init
-  Expose operator variable end
+  Expose operator variable begin end
   Use Strict Arg operator, variable
+  begin = operator
   end = TheElementAfter( variable )
 
 --------------------------------------------------------------------------------

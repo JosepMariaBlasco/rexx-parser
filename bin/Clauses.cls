@@ -381,7 +381,7 @@ End.Clause:
     When .Expose.Instruction Then Call 99.907 elseInstruction
     When .Use.Arg.Instruction, .Arg.Instruction
                                     Then currentBody~signature = .Nil
-    When .Parse.Instruction Then If thenInstruction~variant == "ARG"
+    When .Parse.Instruction Then If elseInstruction~variant == "ARG"
                                     Then currentBody~signature = .Nil
     Otherwise Nop
   End
@@ -570,7 +570,7 @@ Otherwise:
       When .Expose.Instruction        Then Call 99.907 next
       When .Use.Arg.Instruction, .Arg.Instruction
                                       Then currentBody~signature = .Nil
-      When .Parse.Instruction Then If thenInstruction~variant == "ARG"
+      When .Parse.Instruction Then If next~variant == "ARG"
                                       Then currentBody~signature = .Nil
       Otherwise otherwiseSequence~append( next )
     End
@@ -1065,10 +1065,10 @@ Done:
     If options.~items == 4, options.~hasIndex("LABEL") Then Signal 27.905
   End
   If class == .Do.Clause Then Do
-    If      options.~hasIndex("OVER")      Then class = .Do.Over.Clause
-    Else If options.~hasIndex("CONTROL")   Then class = .Do.Controlled.Clause
-    Else If options.~hasIndex("ITEM") | options.~hasIndex("INDEX") Then
+    If      options.~hasIndex("ITEM") | options.~hasIndex("INDEX") Then
       class = .Do.With.Clause
+    Else If options.~hasIndex("OVER")      Then class = .Do.Over.Clause
+    Else If options.~hasIndex("CONTROL")   Then class = .Do.Controlled.Clause
     Else If options.~hasIndex("FOREVER")   Then Do
       If options.~hasIndex("WHILE")        Then class = .Do.While.Clause
       Else If options.~hasIndex("UNTIL")   Then class = .Do.Until.Clause
@@ -1081,10 +1081,10 @@ Done:
     Else class = .Simple.Do.Clause
   End
   Else Do
-    If      options.~hasIndex("OVER")      Then class = .Loop.Over.Clause
-    Else If options.~hasIndex("CONTROL")   Then class = .Loop.Controlled.Clause
-    Else If options.~hasIndex("ITEM") | options.~hasIndex("INDEX") Then
+    If      options.~hasIndex("ITEM") | options.~hasIndex("INDEX") Then
       class = .Loop.With.Clause
+    Else If options.~hasIndex("OVER")      Then class = .Loop.Over.Clause
+    Else If options.~hasIndex("CONTROL")   Then class = .Loop.Controlled.Clause
     Else If options.~hasIndex("FOREVER")   Then Do
       If options.~hasIndex("WHILE")        Then class = .Loop.While.Clause
       Else If options.~hasIndex("UNTIL")   Then class = .Loop.Until.Clause
