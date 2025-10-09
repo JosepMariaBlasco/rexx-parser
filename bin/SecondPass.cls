@@ -65,8 +65,6 @@
   If .Parser.Options~hasIndex( earlyCheck ) Then
     checkSignal = .Parser.Options~earlyCheck~hasItem( signal )
 
-  -- TODO: This should be recursive, not iterative
-
   Do clause Over body~clauses
     Select Case clause~class
       When .Signal.Instruction, .Signal.On.Instruction Then
@@ -88,7 +86,7 @@
     label = clause~condition
     If label~value == "USER" Then label = clause~userCondition
   End
-  If \bodyLabels~hasItem( label~value ) Then Signal 16.001
+  If \bodyLabels~hasIndex( label~value ) Then Signal 16.001
 
   Return
 
@@ -122,6 +120,7 @@
           When "FUNCTION" Then subCategory = .INTERNAL.FUNCTION.NAME
           When "CALL"     Then subCategory = .INTERNAL.SUBROUTINE.NAME
         End
+        name~labelFor = bodyLabels[label]~labelFor
       End
       When .Parser.BIF[ label ] \== .Nil     Then Do
         Select Case type

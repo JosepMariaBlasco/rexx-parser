@@ -182,7 +182,8 @@
   clause~nullClauses = nullClauses
 
   Do i = 1 To labels~items
-    labels[i]~labelFor = clause
+    labels[i]~labelFor       = clause
+    labels[i]~label~labelFor = clause
   End
 
   Return clause

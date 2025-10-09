@@ -256,6 +256,7 @@ CheckThatUseLocalIsValid:
   Use Strict Arg instruction
 
   -- This is directly called only for top-level instructions.
+  --
   -- We update the body labels stringtable with all the non-trace-only
   -- top-level labels.
 
