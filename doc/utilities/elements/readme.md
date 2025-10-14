@@ -18,6 +18,8 @@ Options
 
 ----------------------------- ------------------------------
 `--from [LINE]`               Show elements starting at line LINE
+`--help`                      Display this information
+`--lua`                       Enable OPTIONS LUA (also `-lua`)
 `--to   [LINE]`               Stop showing elements after line LINE
 `--tutor`                     Enable TUTOR-flavored Unicode
 `-u`, `--unicode`&nbsp;&nbsp; Enable TUTOR-flavored Unicode

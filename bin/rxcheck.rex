@@ -37,6 +37,7 @@
   bifs             = 1
   debug            = 0
   itrace           = 0
+  lua              = 0
   extraletters     = ""
   emptyassignments = 0
   Do While "+-"~contains(Left(file,1))
@@ -67,6 +68,8 @@
       When "+guard"   Then guard   = 0
       When "-bifs"    Then bifs    = 0
       When "+bifs"    Then bifs    = 1
+      When "-lua"     Then lua     = 0
+      When "+lua"     Then lua     = 1
       When "-debug"   Then debug   = 0
       When "+debug"   Then debug   = 1
       When "-itrace"  Then itrace  = 0
@@ -130,6 +133,7 @@ Code:
 
   If extraletters \== "" Then Options~append(("EXTRALETTERS", extraletters))
   If emptyassignments    Then Options~append(("EMPTYASSIGNMENTS", emptyassignments))
+  If Lua                 Then Options~append(("LUA", 1))
 
   Signal On Syntax
 
@@ -214,6 +218,7 @@ Other options (all can be prefixed with "+" or "-"):
   -emptyassignments  Allow assignments like "var =".
   -extraletters "extra"  Allow all the characters in "extra"
                to function as letters.
+  -lua         Enable Lua support
 
 Executing short code fragments:
 

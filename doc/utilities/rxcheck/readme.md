@@ -41,6 +41,7 @@ Other options (all can be prefixed with "+" or "-"):
 &nbsp;
 `-emptyassignments`                 Allow assignments like "var =".
 `-extraletters "extra"`             Allow all the characters in "extra" to function as letters.
+`-lua`                              Enable Lua support
 &nbsp;
 Executing short code fragments:
 &nbsp;

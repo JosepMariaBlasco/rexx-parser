@@ -19,6 +19,8 @@
 /* 20250103    0.1f Add unicode option                                        */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250419    0.2a Fix bug no. 4                                             */
+/* 20250419    0.2a Fix bug no. 4                                             */
+/* 20251014    0.2e Add support for Lua options                               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -61,7 +63,7 @@
 
   -- .Directory~of() crashes the interpreter
  .environment~Parser.Options = .Directory~new
-
+ .environment~Options.Lua = 0
   If Arg(3,'E') Then Do
     .Validate~classType("options",options,.Array)
     If \ options~isEmpty Then Do
@@ -70,6 +72,8 @@
         option[1] = Upper(option[1])
       End
      .environment~Parser.Options = .Directory~sendWith("of", options)
+      If .Parser.Options~hasIndex("LUA") Then
+        .environment~Options.Lua = 1
     End
   End
 

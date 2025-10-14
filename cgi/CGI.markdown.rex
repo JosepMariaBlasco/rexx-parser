@@ -139,7 +139,7 @@ Exit
   End
 
   ------------------------------------------------------------------------------
-  -- We are using "readme.md", "slides.md" and "article.md" as  index pages,  --
+  -- We are using "readme.md", "slides.md" and "article.md" as index pages,   --
   -- using the Apache DirectoryIndex directive.                               --
   ------------------------------------------------------------------------------
 

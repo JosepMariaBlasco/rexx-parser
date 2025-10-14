@@ -19,6 +19,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250421    0.2b Modify InternalError to raise a HALT condition            */
 /* 20250722    0.2d Add Set.Directive.SubKeyword                              */
+/* 20251014    0.2e Add support for Lua constants and Lua table constructors  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -341,7 +342,8 @@
 -- PREPAREEXPRESSION                                                          --
 --   Performs a quick scan and sanitizing of an expression list.              --
 --   It identifies and reports unbalanced parentheses and brackets            --
---   It produces syntax errors for opening brackets preceded by whitespace    --
+--   It produces syntax errors for opening brackets preceded by whitespace,   --
+--     except when Options Lua is in effect.                                  --
 --   It stops prescanning if one the provided keywords is found, and in this  --
 --     case, it marks the keyword as such, which automatically marks          --
 --     whitespace before and after the keyword, if any, as ignorable.         --
@@ -361,6 +363,7 @@
 --     No check is done to verify that a simple or stem variable name appears --
 --     to the right of the operator, since this can produce different errors  --
 --     depending on the context (e.g., 20.930 or 20.931).                     --
+--                                                                            --
 --------------------------------------------------------------------------------
 
 ::Routine PrepareExpression Public
@@ -380,23 +383,21 @@
   Loop
     Select Case element~category
       When .EL.END_OF_CLAUSE Then Leave
-      When .EL.SIMPLE_VARIABLE    Then Do
-        If nesting~isEmpty, IsAKeyword( element ) Then Do
-          -- If we generated a spurious blank operator, we fix it now
-          If \predecessor~isNil, predecessor < .EL.OP.BLANK Then Do
-            c = predecessor~source
-            If c == "," | c == "-" Then
-              Call SetCategory predecessor, .EL.CONTINUATION
-            Else
-              Call SetCategory predecessor, .EL.WHITESPACE
+      When .EL.SIMPLE_VARIABLE, -
+           .EL.LUA.FAIL, .EL.LUA.FALSE, .EL.LUA.NIL, .EL.LUA.TRUE Then Do
+        Select
+          When nesting~isEmpty, IsAKeyword( element ) Then Do
+            -- If we generated a spurious blank operator, we fix it now
+            Call FixSpuriousBlanks
+            Call SetSubkeyword element
+            If element~value == "THEN" Then Do
+              Call InsertSemicolonBefore element
+            End
+            Leave
           End
-          Call SetSubkeyword element
-          If element~value == "THEN" Then Do
-            Call InsertSemicolonBefore element
-          End
-          Leave
+          Otherwise
+            Call CheckAbuttal
         End
-        Call CheckAbuttal
       End
       When .EL.OP.GREATER_THAN, .EL.OP.LOWER_THAN Then Do
         switch = 1
@@ -413,8 +414,12 @@
         nesting~append( element )
         Call CheckAbuttal
       End
+      -- A left bracket can be found alone when Options Lua is
+      -- in effect, as this will start a table constructor (about
+      -- modified form of an "initializer", in Dallas draft parlance).
       When .EL.LEFT_BRACKET Then Do
-        If \predecessor~isNil, predecessor < .ALL.WHITESPACE_LIKE Then
+        If \.Options.Lua, \predecessor~isNil, -
+          predecessor < .ALL.WHITESPACE_LIKE Then
           Signal 35.001
         nesting~append( element )
       End
@@ -448,6 +453,16 @@
     When "[" Then Signal 36.902
   End
 
+FixSpuriousBlanks:
+  If \predecessor~isNil, predecessor < .EL.OP.BLANK Then Do
+    c = predecessor~source
+    If c == "," | c == "-" Then
+      Call SetCategory predecessor, .EL.CONTINUATION
+    Else
+      Call SetCategory predecessor, .EL.WHITESPACE
+  End
+  Return
+
 SwitchToReference:
   Select Case element~category
     When .EL.OP.LOWER_THAN Then
@@ -456,11 +471,12 @@ SwitchToReference:
       Call SetCategory element, .EL.OP.REFERENCE.GREATER_THAN
   End
   next = TheElementAfter( element )
-  If next < .ALL.SYMBOLS_AND_STRINGS Then Do
+  -- Insert abuttals around symbols, strings, and Lua constants
+  If next < (.ALL.SYMBOLS_AND_STRINGS || .ALL.LUA_CONSTANTS) Then Do
     next2next = TheElementAfter( next )
     If next2next < (.EL.LEFT_PARENTHESIS || .ALL.STRINGS) Then
       Call InsertAfter next, .EL.OP.ABUTTAL
-    Else If next2next < .ALL.SYMBOLS Then Do
+    Else If next2next < (.ALL.SYMBOLS || .ALL.LUA_CONSTANTS) Then Do
       If nesting == "", IsAKeyword(next2next) Then Return
       Call InsertAfter next, .EL.OP.ABUTTAL
     End
@@ -472,9 +488,10 @@ CheckAbuttal:
   Select
     When element < .EL.LEFT_PARENTHESIS Then
       If predecessor < .ALL.RIGHT_BRACES Then Call InsertAbuttal
-    When element < .ALL.SYMBOLS_AND_STRINGS Then Do
+    When element < (.ALL.SYMBOLS_AND_STRINGS || .ALL.LUA_CONSTANTS ) Then Do
       Select
-        When predecessor < .ALL.SYMBOLS_AND_STRINGS Then Call InsertAbuttal .True
+        When predecessor < ( .ALL.SYMBOLS_AND_STRINGS || .ALL.LUA_CONSTANTS )
+          Then Call InsertAbuttal .True
         When predecessor < .ALL.RIGHT_BRACES        Then Call InsertAbuttal .True
         Otherwise Nop
       End

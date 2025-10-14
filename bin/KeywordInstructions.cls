@@ -1152,18 +1152,16 @@ Expression:
 
   If elements~items == 1 Then Signal 35.913
 
-  If Global.Option("NetRexxOptions") == 1 Then Do
-    SkipIgnorables = .True
-    -- TODO Check that OPTIONS appears at the beginning of the file.
-    element = TheElementAfter( OPTIONS, SkipIgnorables )
-    If element \< .ALL.SYMBOLS Then Signal 20.900
-    Loop Until element \< .ALL.SYMBOLS
-      package~options[] = element~value
-      element = TheElementAfter( element, SkipIgnorables )
-    End
-    If element \< .EL.END_OF_CLAUSE Then Signal 20.900
-    Return .Options.Instruction~new( package, begin, end, .Nil )
+  SkipIgnorables = .True
+  element = TheElementAfter( OPTIONS, SkipIgnorables )
+  If element \< .ALL.SYMBOLS Then Signal 20.900
+  Loop Until element \< .ALL.SYMBOLS
+    value = element~value
+    If value == "LUA" Then .environment~Options.Lua = 1
+    package~options[] = value
+    element = TheElementAfter( element, SkipIgnorables )
   End
+  If element \< .EL.END_OF_CLAUSE Then Signal 20.900
 
   element = elements[2]
 

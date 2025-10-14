@@ -24,6 +24,7 @@
 /* 20250426    0.2b Fix compound count, simplify REQUIRES                     */
 /* 20250606    0.2c Add --from and --to options                               */
 /* 20250928    0.2e Fix crash when no args, add .rex to file when needed      */
+/* 20251014         Add -lua, --lua options                                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -44,6 +45,7 @@
 --------------------------------------------------------------------------------
 
   unicode = 0
+  lua     = 1
   opFrom  = 1
   opTo    = "*"
 
@@ -60,6 +62,7 @@ ProcessOptions:
   If option[1] == "-" Then Do
     Select Case Lower(option)
       When "-u", "--tutor", "--unicode" Then unicode = 1
+      When "-lua", "--lua" Then lua = 1
       When "--help" Then Do
         Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
         Exit 1
@@ -114,10 +117,10 @@ ProcessOptions:
   Say " --------- ---------  --- ---------------------------"
 
   -- Parse our program, and get the first element
-  If Unicode Then
-    parser = .Rexx.Parser~new(file, source, Array(("UNICODE", 1)) )
-  Else
-    parser = .Rexx.Parser~new(file, source)
+  Options = .Array~new
+  If Unicode Then Options~append(("UNICODE", 1))
+  If Lua     Then Options~append(("LUA", 1))
+  parser = .Rexx.Parser~new(file, source, Options)
 
   element  = parser~firstElement
 
@@ -248,6 +251,7 @@ Transform FILE into a list of elements and list them.
 Options:
      --from [LINE] Show elements starting at line LINE
      --help        Display this information
+     --lua         Enable Lua support (also -lua)
      --to   [LINE] Stop showing elements after line LINE
      --tutor       Enable TUTOR-flavored Unicode
  -u, --unicode     Enable TUTOR-flavored Unicode

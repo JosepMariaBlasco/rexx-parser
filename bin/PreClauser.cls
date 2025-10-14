@@ -18,6 +18,7 @@
 /* 20241208    0.1a Accept options arg, pass it to tokenizer                  */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250531    0.2c Fix issue no. 13                                          */
+/* 20251014    0.2e (Lua only) Check that Lua constants are not assigned to   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -131,9 +132,15 @@
   If t2 < .EL.COLON , t1 < .ALL.SYMBOLS_AND_STRINGS Then Exit self~Label.Clause
 
   -- Case 6: Symbol + assignment operator? --> An assignment
-  If t1 < .ALL.SYMBOLS THEN Do
+  If t1 < .ALL.SYMBOLS Then Do
     If t2 < .EL.OP.STRICT.EQUAL Then Signal 35.001 -- Special case
     If t2 < .ALL.ASSIGNMENTS Then Exit self~Assignment.Instruction
+  End
+
+  -- Case 6b: (Lua only) Lua constant + assignment operator? --> Error
+  If .Options.Lua, t1 < .ALL.LUA_CONSTANTS Then Do
+    If t2 < .EL.OP.STRICT.EQUAL Then Signal 35.001 -- Special case
+    If t2 < .ALL.ASSIGNMENTS Then Signal 31.900
   End
 
   -- Case 4 (bis): Symbol + "[", "~" or "~~" -> Message instruction
@@ -146,6 +153,8 @@
 
   -- Case 4 (ter): Command or message instruction
   Exit self~Command.Or.Message.Instruction
+
+31.900: Syntax( 31.900, t1, "Lua fail, false, nil and true cannot be assigned to")
 
 -- Incorrect expression detected at "&1".
 35.001: Syntax( 35.001, t1, "==" )

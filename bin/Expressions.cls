@@ -21,11 +21,14 @@
 /* 20250419         Fix NAry.Expression crashing on SecondPass.               */
 /* 20250421    0.2b Argument lists in function calls not working properly.    */
 /* 20250803    0.2d Add support for array terms                               */
+/* 20251014    0.2e Add optional support for Lua "and", "not" and "or", and   */
+/*                  for Lua constants "fail", "false", "nil" and "true".      */
 /*                                                                            */
 /******************************************************************************/
 
  .environment ~ Concatenation.Expression   = .Concatenation.Expression
  .environment ~ Expression.List            = .Expression.List
+ .environment ~ Field.List                 = .Field.List
  .environment ~ And.Expression             = .And.Expression
  .environment ~ NAry.Expression            = .NAry.Expression
  .environment ~ Addition.Expression        = .Addition.Expression
@@ -51,6 +54,7 @@
  .environment ~            Message.Term  =            .Message.Term
  .environment ~      Stem.Variable.Term  =      .Stem.Variable.Term
  .environment ~             Symbol.Term  =             .Symbol.Term
+ .environment ~       Lua.Constant.Term  =       .Lua.Constant.Term
  .environment ~ Variable.Reference.Term  = .Variable.Reference.Term
 
 ::Requires "BaseClassesAndRoutines.cls"
@@ -264,7 +268,7 @@
 
   comparisons    = Array()
   element          = begin
-  newTerminators = terminators || .EL.OP.AND
+  newTerminators = terminators || .ALL.OPS.CONJUNCTIVE
 
   Loop
 
@@ -272,7 +276,7 @@
     element = newComparison~end
     comparisons~append( newComparison )
 
-  If element \< .EL.OP.AND Then Leave
+  If element \< .ALL.OPS.CONJUNCTIVE Then Leave
 
     comparisons~append( element )
     element = TheElementAfter( element )
@@ -483,12 +487,12 @@
   prefixes = Array()
   element  = begin
 
-  Do While element < .PREFIX_OPERATORS
+  Loop While element < .PREFIX_OPERATORS
     -- Assign prefix operators when appropriate
     Select Case element~category
-      When .EL.OP.PLUS  Then Call SetCategory element, .EL.OP.PREFIX.PLUS
-      When .EL.OP.MINUS Then Call SetCategory element, .EL.OP.PREFIX.MINUS
-      Otherwise Nop -- "\" is always a prefix operator
+      When .EL.OP.PLUS     Then Call SetCategory element, .EL.OP.PREFIX.PLUS
+      When .EL.OP.MINUS    Then Call SetCategory element, .EL.OP.PREFIX.MINUS
+      Otherwise Nop -- "\" and "not" are always prefix operators
     End
     prefixes~append( element )
     element =  TheElementAfter( element )
@@ -546,13 +550,14 @@
 --    5) A symbol                                                             --
 --    6) A literal string                                                     --
 --    Case 7), an array term, is handled elsewhere in the parser.             --
+--    8) When Lua is active, a Lua constant, like                             --
+--       "fail", "false", "nil" or "true"                                     --
 --  See rexxref 5.1.0 1.11.1. Terms and Expressions                           --
 --------------------------------------------------------------------------------
 
 ::Routine Term
   Use Strict Arg package, begin, terminators
 
-  termArray      = Array()
   element        = begin
   newTerminators = terminators || .ALL.OPS.MESSAGE_SEND
 
@@ -569,6 +574,8 @@
 --    4) A subexpression                                                      --
 --    5) A symbol                                                             --
 --    6) A literal string                                                     --
+--    7) A Lua constant term ("fail", "false", "nil" or "true"), when         --
+--       Lua is active.                                                       --
 --  See rexxref 5.1.0 1.11.1. Terms and Expressions                           --
 --------------------------------------------------------------------------------
 
@@ -577,7 +584,12 @@
   Use Strict Arg package, begin, terminators
 
   Select
-    When begin < .EL.LEFT_PARENTHESIS Then Return SubExpression( package, begin, terminators )
+    When begin < .EL.LEFT_PARENTHESIS Then
+      Exit SubExpression( package, begin, terminators )
+    When .Options.Lua, begin < .EL.LEFT_BRACKET Then
+      Exit Initializer( package, begin, terminators )
+    When begin < .ALL.LUA_CONSTANTS   Then
+      Exit Lua.Constant.Term(package, begin)
     When begin < .ALL.SYMBOLS Then Do
       symbol = begin
 
@@ -622,6 +634,146 @@
 
 -- Incorrect expression detected at "&1".
 35.001: Syntax( 35.001, begin, Arg(1) )
+
+--------------------------------------------------------------------------------
+-- INITIALIZER                                                                --
+--------------------------------------------------------------------------------
+
+::Routine Initializer
+
+  Use Strict Arg package, begin, terminators
+
+  Call SetCategory begin, .EL.LUA.TABLE.LEFT_BRACKET
+
+  fieldList = Field.List(     -
+    package,                  -
+    begin,                    - -- Where to begin parsing
+    .EL.RIGHT_BRACKET         - -- Clear terminators: only "]"
+  )
+
+  Return fieldList
+
+/******************************************************************************/
+/*                                                                            */
+/* FIELD LIST                                                                 */
+/*                                                                            */
+/*   Parsing of extended initializers with Lua features.                      */
+/*                                                                            */
+/*   An "initializer" is an array expression in the Dallas report:            */
+/*     initializer := '['expression_list (']' | Msg36.n)                      */
+/*   The syntax is probably taken from NetRexx.                               */
+/*                                                                            */
+/*   We combine that with the following productions, taken from the syntax    */
+/*   of Lua 5.5 beta:                                                         */
+/*     tableconstructor ::= '{' [fieldlist] '}'                               */
+/*     fieldlist        ::= field {fieldsep field} [fieldsep]                 */
+/*     field            ::= '[' exp ']' '=' exp | Name '=' exp | exp          */
+/*     fieldsep         ::= ',' | ';'                                         */
+/*                                                                            */
+/*   In our case, the outer brackets will be "[" and "]", left-hand side      */
+/*   bracketed expressions will use parentheses,                              */
+/*     '(' exp ')' '=' exp                                                    */
+/*   and the field separator has to be a comma ",", with no optional          */
+/*   trailing separator.                                                      */
+/*                                                                            */
+/******************************************************************************/
+
+::Routine Field.List Public
+
+  Use Strict Arg package, begin, terminators = ""
+
+  fieldList      = Array()
+  element        = TheElementAfter(begin)
+  If element < .EL.RIGHT_BRACKET Then Signal Done
+  stopParsing    = .EL.KEYWORD || .EL.END_OF_CLAUSE
+  terminators  ||= stopParsing
+  commasFound    = 0
+
+  newTerminators = terminators || .EL.COMMA
+
+  Loop While element \< terminators
+
+    lhs = .Nil
+    If element < .ALL.VAR_SYMBOLS Then Do
+      next = TheElementAfter(element)
+      If next < .EL.OP.EQUAL Then Do
+        Call SetCategory next, .EL.LUA.TABLE.EQUALS
+        lhs     = element
+        Call SetCategory lhs, .EL.LUA.TABLE.FIELD.NAME
+        element = TheElementAfter( next )
+      End
+    End
+    Else If element < .EL.LEFT_PARENTHESIS Then Do
+      -- Prepareexpression has ensured that parentheses
+      -- and brackets are balanced.
+      Stack = .Array~of("(")
+      next = TheElementAfter( element )
+      Loop
+        If next < (.EL.LEFT_PARENTHESIS || .EL.LEFT_BRACKET) Then
+          Stack~append(next~value)
+        Else If next < (.EL.RIGHT_PARENTHESIS || .EL.RIGHT_BRACKET) Then
+          Stack~delete(Stack~items)
+        next = TheElementAfter( next )
+        If Stack~items > 0 Then Iterate
+        If next < .EL.OP.EQUAL Then Do
+          Call SetCategory next, .EL.LUA.TABLE.EQUALS
+          next1 = TheElementAfter( element )
+          lhs = Or.Expression(package, next1, .EL.RIGHT_PARENTHESIS)
+          element = TheElementAfter( next )
+        End
+        Leave
+      End
+    End
+
+    field = Or.Expression(package, element, newTerminators)
+    element = field~end
+    fieldList~append( (lhs, field) )
+
+  If element \< .EL.COMMA Then Leave
+
+    element = TheElementAfter( element )
+
+  End
+
+  If element \< .EL.RIGHT_BRACKET Then Do
+    Parse Value element~from With line Pos
+    Signal 36.902
+  End
+
+Done:
+  Call SetCategory element, .EL.LUA.TABLE.RIGHT_BRACKET
+  Return .Field.List~new( fieldList, begin, element )
+
+-- Square bracket "[" in position &1 on line &2 requires
+-- a corresponding right square bracket
+36.902: Syntax( 36.902, element, pos, line)
+
+--------------------------------------------------------------------------------
+
+::Class Field.List Public SubClass Rexx.Expression
+::Attribute fields
+::Attribute begin
+::Attribute end
+::Attribute args
+::Method arg
+  Expose fields
+  Arg n, option +1
+  Select Case Arg()
+    When 0 Then Return fields~size
+    When 1 Then Return fields[n]
+    Otherwise
+      Select Case option
+        When "E" Then Return  fields~hasIndex(n)
+        When "O" Then Return \fields~hasIndex(n)
+      End
+  End
+::Method isEmpty
+  Expose args
+  Return args == .Nil
+::Method init
+  Expose args fields begin end
+  Use Strict Arg args, begin, end
+  fields = args
 
 --------------------------------------------------------------------------------
 -- CLOSURE                                                                    --
@@ -744,6 +896,33 @@
       Else term = Message.Term( package, term, element, "" )   -- "~", "~~"
 
   End
+
+--------------------------------------------------------------------------------
+-- LUA.CONSTANT.TERM                                                          --
+--------------------------------------------------------------------------------
+
+::Routine Lua.Constant.Term Public
+
+  Use Strict Arg package, symbol
+
+  Exit .Lua.Constant.Term~new( package, symbol )
+
+--------------------------------------------------------------------------------
+
+::Class Lua.Constant.Term Public SubClass Rexx.Term
+::Attribute symbol
+::Attribute begin
+::Attribute end
+::Method value
+  Return self~symbol
+::Method init
+  Expose symbol begin end
+
+  Use Strict Arg package, symbol
+
+  begin = symbol
+  end   = TheElementAfter( symbol )
+
 
 --------------------------------------------------------------------------------
 -- SYMBOL.TERM                                                                --
@@ -1226,7 +1405,7 @@ Return
   end = TheElementAfter( variable )
 
 --------------------------------------------------------------------------------
--- ExpectParenPair                                                        --
+-- ExpectParenPair                                                            --
 --------------------------------------------------------------------------------
 
 ::Routine ExpectParenPair Public
@@ -1237,3 +1416,4 @@ Return
 -- Left parenthesis "(" in position &1 on line &2 requires
 -- a corresponding right parenthesis ")".
 36.901: Syntax( 36.901, lParen, pos, line)
+

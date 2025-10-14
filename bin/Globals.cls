@@ -29,6 +29,7 @@
 /* 20250722    0.2d Add .EL.DIRECTIVE_SUBKEYWORD and .ALL.DIRECTIVE_KEYWORDS  */
 /* 20250729         Add .ALL.EXPOSED_VARIABLES                                */
 /* 20250808         Add support for length positional patterns                */
+/* 20251014         Add support for Lua keywords and values                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -453,6 +454,33 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewSet ALL.REFERENCED_SYMBOLS, .EL.SIMPLE_VARIABLE, .EL.STEM_VARIABLE
 
   ------------------------------------------------------------------------------
+  -- Lua operators and values                                                 --
+  ------------------------------------------------------------------------------
+
+  Call NewElement EL.LUA.AND              -- and
+  Call NewElement EL.LUA.FAIL             -- fail
+  Call NewElement EL.LUA.FALSE            -- false
+  Call NewElement EL.LUA.NIL              -- nil
+  Call NewElement EL.LUA.NOT              -- not
+  Call NewElement EL.LUA.OR               -- or
+  Call NewElement EL.LUA.TRUE             -- true
+  Call NewElement EL.LUA.TABLE.FIELD.NAME -- The name of a table field
+  Call NewElement EL.LUA.TABLE.LEFT_BRACKET  -- "["
+  Call NewElement EL.LUA.TABLE.RIGHT_BRACKET -- "]"
+  Call NewElement EL.LUA.TABLE.EQUALS        -- "="
+
+  Call NewSet ALL.LUA_LOGICAL_OPERATORS,-
+    .EL.LUA.AND,                        - -- and
+    .EL.LUA.NOT,                        - -- not
+    .EL.LUA.OR                            -- or
+
+  Call NewSet ALL.LUA_CONSTANTS,        -
+    .EL.LUA.FAIL,                       -  -- fail
+    .EL.LUA.FALSE,                      -  -- false
+    .EL.LUA.NIL,                        -  -- nil
+    .EL.LUA.TRUE                           -- true
+
+  ------------------------------------------------------------------------------
   -- Keywords                                                                 --
   ------------------------------------------------------------------------------
   --
@@ -782,18 +810,25 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   -- .EL.OP.PREFIX.PLUS and .EL.OP.PREFIX.MINUS by the expression
   -- parser.
   Call NewSet PREFIX_OPERATORS,         -
-   .EL.OP.PLUS, .EL.OP.MINUS, .EL.OP.NEGATION
+   .EL.OP.PLUS, .EL.OP.MINUS, .EL.OP.NEGATION, .EL.LUA.NOT
 
   -- The set of all concatenation operators ("||", " " and "")
   Call NewSet ALL.OPS.CONCATENATION,    -
     .EL.OP.CONCATENATION, .EL.OP.BLANK, .EL.OP.ABUTTAL
 
-  -- The set of all logical alternative operators (or and xor).
-  Call NewSet ALL.OPS.ALTERNATIVE, .EL.OP.OR, .EL.OP.XOR
+  -- The set of all logical alternative operators ("|" and "&&", and "or"
+  -- when Lua is active).
+  Call NewSet ALL.OPS.ALTERNATIVE, .EL.OP.OR, .EL.OP.XOR, .EL.LUA.OR
 
-  -- The set of all logical operators (or, xor, and and not).
+  -- The set of all logical conjunctive operators ("&", and "and"
+  -- when Lua is active).
+  Call NewSet ALL.OPS.CONJUNCTIVE, .EL.OP.AND, .EL.LUA.AND
+
+  -- The set of all logical operators (|, &&, & and \),
+  -- plus "and", "or" and "not" when Lua mode is active.
   Call NewSet ALL.OPS.LOGICAL, -
-   .ALL.OPS.ALTERNATIVE, .EL.OP.AND, .EL.OP.NEGATION
+   .ALL.OPS.ALTERNATIVE, .EL.OP.AND, .EL.OP.NEGATION, -
+   .ALL.LUA_LOGICAL_OPERATORS
 
   -- The set of all comparison operators
   Call NewSet ALL.OPS.COMPARISON,       -
@@ -934,6 +969,7 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   --
   Call NewSet IGNORE_WHITESPACE_AFTER,  -
     .ALL.OPERATORS,                     - -- An operator (compound or not)
+    .ALL.LUA_LOGICAL_OPERATORS,         - -- When Lua is active: and, or, not
     .ALL.ASSIGNMENTS,                   - -- An (extended) assignment
     .ALL.WHITESPACE_LIKE,               - -- Previous whitespace & continuations
     .EL.END_OF_CLAUSE,                  - -- At the beginning of a clause

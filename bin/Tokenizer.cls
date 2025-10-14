@@ -26,12 +26,15 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional number to decimal                       */
 /* 20250531    0.2c Implement more flexible rules for doc-comments            */
+/* 20251014    0.2e Add optional support for Lua and, not, or                 */
 /*                                                                            */
 /******************************************************************************/
 
  .environment ~                     Element =                     .Element
  .environment ~            Inserted.Element =            .Inserted.Element
  .environment ~          Inserted.Semicolon =          .Inserted.Semicolon
+ .environment ~                Lua.Constant =                .Lua.Constant
+ .environment ~                Lua.Operator =                .Lua.Operator
  .environment ~                Line.Comment =                .Line.Comment
  .environment ~ Operator.Character.Sequence = .Operator.Character.Sequence
  .environment ~               Resource.Data =               .Resource.Data
@@ -1010,9 +1013,45 @@ Return
   p = currentLine~verify( var_symbol_char,,col+1)
   If p == 0 Then p = len + 1
   symbol = currentLine[col, p - col]
+  If .Options.Lua Then Call TestLuaOperatorOrValue
   Return self~InsertNewElement(                                           -
     .StringOrSymbol.Element~new(SymbolKind(), line, col, p, source[line]) -
   )
+
+--
+-- We recognize "and", "fail", "false", "nil", "not", "or" and "true"
+-- as Lua constants and keywords only when they are spelled in lowercase.
+-- This means that, for example, you can have variables called "Or" or
+-- "NIL", and function calls like "Not(args)", while "not(args)" is a-f
+-- logical expression, i.e., the use of the Lua "not" prefix operator
+-- before the expression "(args)".
+--
+-- Although this is not completely Rexx-like, this seems to be the best
+-- possible compromise if we want to be able to use Lua operators and
+-- constants in Rexx code: since these will appear for sure, by their
+-- very nature, inside expressions, there seems to be no other way,
+-- besides using baroque notations like .Lua.False, which is undesirable.
+--
+TestLuaOperatorOrValue:
+  -- Quick checks
+  If \IsAVariable(symbol) Then Return
+  If  HasADot(symbol)     Then Return
+  Select Case symbol
+    When "and", "not", "or" Then Do
+      element = self~InsertNewElement(                                 -
+        .Lua.Operator~new(Lua.2Cat(symbol),line, col, p, source[line]) -
+      )
+      predecessor = TheElementBefore( element )
+      If predecessor < .ALL.WHITESPACE_LIKE Then
+        predecessor~makeIgnorable
+      Exit element
+    End
+    When "fail", "false", "nil", "true" Then
+      Exit self~InsertNewElement(                                    -
+        .Lua.Constant~new(Lua.2Cat(symbol),line, col, p, source[line]) -
+      )
+    Otherwise Return
+  End
 
 -- Determine the kind of symbol we are dealing with
 -- This gets complex for exponential numbers with a signed exponent
@@ -1041,8 +1080,20 @@ SymbolKind:
     End
   End
 
+Lua.2Cat:
+  Select Case Arg(1)
+    When "and"   Then Return .EL.LUA.AND
+    When "fail"  Then Return .EL.LUA.FAIL
+    When "false" Then Return .EL.LUA.FALSE
+    When "nil"   Then Return .EL.LUA.NIL
+    When "not"   Then Return .EL.LUA.NOT
+    When "or"    Then Return .EL.LUA.OR
+    When "true"  Then Return .EL.LUA.TRUE
+  End
+
 Number:
   Return DataType(Arg(1)) == "NUM"
+
 IsAVariable:
   Return DataType( -
     Arg(1)~translate(Copies("X",Length(extra_letter)),extra_letter), -
@@ -1539,6 +1590,46 @@ EndDelimiterFound:
 ::Method to
   Expose line col
   Return line (col+1)
+
+--------------------------------------------------------------------------------
+
+::Class Lua.Operator Public Subclass Element
+::Attribute category
+::Method source
+  Expose sourceLine start end
+  Return sourceLine[ start, end-start ]
+::Method value
+  Return self~source
+::Method init
+  Expose         category  line  start  end  sourceLine
+  Use Strict Arg category, line, start, end, sourceLine
+  self~init:super
+::Method from
+  Expose line start
+  Return line start
+::Method to
+  Expose line end
+  Return line end
+
+--------------------------------------------------------------------------------
+
+::Class Lua.Constant Public Subclass Element
+::Attribute category
+::Method source
+  Expose sourceLine start end
+  Return sourceLine[ start, end-start ]
+::Method value
+  Return self~source
+::Method init
+  Expose         category  line  start  end  sourceLine
+  Use Strict Arg category, line, start, end, sourceLine
+  self~init:super
+::Method from
+  Expose line start
+  Return line start
+::Method to
+  Expose line end
+  Return line end
 
 --------------------------------------------------------------------------------
 
