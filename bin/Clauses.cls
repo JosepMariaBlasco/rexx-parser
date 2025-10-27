@@ -304,7 +304,7 @@ End.Clause:
       doLabel = doClause~control
       If doLabel == .Nil Then Signal 10.003
     End
-    If name \== doLabel  Then Signal 10.002
+    If name \== doLabel~value  Then Signal 10.002
   End
   Return .Do.Instruction~new( package, doClause, instructions, instruction )
 
@@ -459,7 +459,7 @@ End.Clause:
       loopLabel = loopClause~control
       If loopLabel == .Nil Then Signal 10.003
     End
-    If name \== loopLabel  Then Signal 10.002
+    If name \== loopLabel~value  Then Signal 10.002
   End
   Return .Loop.Instruction~new( package, loopClause, instructions, instruction )
 

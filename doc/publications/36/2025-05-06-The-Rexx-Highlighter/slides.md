@@ -672,20 +672,20 @@ A simple patch:
 
 ~~~
 -- Patch simple variable elements to display as bold black over 75% yellow
-element EL.SIMPLE_VARIABLE #000/#cc0 bold
+element EL.SIMPLE_VARIABLE #000:#cc0 bold
 -- Patch method names to display as black over 75% magenta
-name    METHOD.NAME        #000/#c0c
+name    METHOD.NAME        #000:#c0c
 ~~~
 
 The same patch, abbreviated:
 
 ~~~
-E SIMPLE_VARIABLE #000/#cc0 bold; N METHOD #000/#c0c
+E SIMPLE_VARIABLE #000:#cc0 bold; N METHOD #000:#c0c
 ~~~
 
 The patch in action:
 
-~~~rexx {patch="E SIMPLE_VARIABLE #000/#cc0 bold; N METHOD #000:#c0c"}
+~~~rexx {patch="E SIMPLE_VARIABLE #000:#cc0 bold; N METHOD #000:#c0c"}
 ::Method methodName
   len = Length("String")
   n   = Pos("x", value)

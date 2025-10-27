@@ -348,7 +348,7 @@ SkipOverAssignment:
 Lua:
   Select Case Options.lua
     When "group"  Then Call Assign Arg(1), "lua"
-    When "full"   Then Call Assign Arg(1), "lua" Arg(2)
+    When 0,1,"full"   Then Call Assign Arg(1), "lua" Arg(2)
     When "detail" Then Call Assign Arg(1), Arg(2)
   End
 Return
