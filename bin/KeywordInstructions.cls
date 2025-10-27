@@ -100,7 +100,7 @@
   If element < .EL.END_OF_CLAUSE Then Signal Done
   If element < .ALL.SYMBOLS, element~value == "WITH" Then Signal With
 
-  Call PrepareExpression element, "WITH"
+  Call PrepareExpression package, element, "WITH"
   expression = Expression.List( package, element )
   options.command = expression
   element = expression~end
@@ -111,7 +111,7 @@ Value:
   Call SetSubkeyword element
   element = TheElementAfter( element )
 AfterValue:
-  Call PrepareExpression element, "WITH"
+  Call PrepareExpression package, element, "WITH"
   options.value = Expression.List( package, element )
   element = options.value~end
   If element < .EL.END_OF_CLAUSE Then Signal Done
@@ -164,7 +164,7 @@ With:
           options.tValue.stream = element
         Else Do
           If element \< .EL.LEFT_PARENTHESIS Then Signal 35.001
-          Call prepareExpression element, "INPUT OUTPUT ERROR"
+          Call prepareExpression package, element, "INPUT OUTPUT ERROR"
           subExpression = SubExpression( package, element )
           options.tValue.stream = subExpression
           element = subExpression~end
@@ -275,7 +275,7 @@ Done:
 
 GetExpression:
   Parse Value element~from With line col
-  Call PrepareExpression element, ""
+  Call PrepareExpression package, element, ""
   element = TheElementAfter( element, ignoreBlanks )
   expression = Or.Expression( package, element, .EL.RIGHT_PARENTHESIS )
   rParen = expression~end
@@ -295,13 +295,13 @@ GetExpression:
   Signal Arguments
 
 Arguments:
-  Call PrepareExpression element, ""
+  Call PrepareExpression package, element, ""
   arguments = Expression.List( package, element, "", "arguments" )
   element = arguments~end
   If expression~isNil Then Do
     If nameSpace == .Nil Then Do
       name~invocationType = "CALL"
-      package~currentBody~calledRoutineNames~append( (name, arguments) )
+      package~currentBodies~top~calledRoutineNames~append( (name, arguments) )
       -- We don't need to assign a subcategory here, because we
       -- will assign a finer subcategory in the second pass.
       Return .Call.Instruction~new( package, begin, element, name, arguments )
@@ -485,7 +485,7 @@ Arguments:
 
   trapName~invocationType = "CALL"
 
-  package~currentBody~calledRoutineNames~append( -
+  package~currentBodies~top~calledRoutineNames~append( -
     (trapName, .Trap.Arguments~new)              -
   )
 
@@ -637,14 +637,14 @@ Arguments:
 
     Select Case tValue
       When "ARGUMENTS" Then Do
-        Call PrepareExpression element, keywords
+        Call PrepareExpression package, element, keywords
         expression = Expression.List( package, element )
         element = expression~end
         options.tValue = expression
       End
       When "ARRAY" Then Do
         If element \< .EL.LEFT_PARENTHESIS Then Signal 35.924
-        Call PrepareExpression element, keywords
+        Call PrepareExpression package, element, keywords
         expression = SubExpression( package, element )
         element = expression~end
         options.tValue = expression
@@ -656,7 +656,7 @@ Arguments:
         End
         Else Do
           If element \< .EL.LEFT_PARENTHESIS Then Signal 35.001
-          Call PrepareExpression element, keywords
+          Call PrepareExpression package, element, keywords
           subExpression = SubExpression( package, element )
           options.tValue = subExpression
           element = subExpression~end
@@ -745,7 +745,7 @@ Done:
 
   -- TODO [LATER] Implement 99.913 (see message text below)
 
-  Call PrepareExpression element
+  Call PrepareExpression package, element
   expression = Expression.List( package, element, , "logical")
 
   end = expression~end
@@ -783,7 +783,7 @@ Done:
 
   element = elements[2]
 
-  Call PrepareExpression element
+  Call PrepareExpression package, element
 
   expression = Expression.List( package, element, .EL.END_OF_CLAUSE )
 
@@ -824,7 +824,7 @@ Done:
   -- See RexxRef 2.12, ITERATE: "If name is not specified,
   --   ITERATE continues with the current repetitive loop"
   If element < .EL.END_OF_CLAUSE Then Do
-    blockInstructionsStack = package~blockInstructionsStack
+    blockInstructionsStack = package~blockInstructionsStacks~top
     Do i = blockInstructionsStack~items To 1 By -1
       instruction = blockInstructionsStack[i]
       -- A SELECT instruction is not a loop
@@ -849,7 +849,7 @@ Done:
   element = TheElementAfter( element, ignoreBlanks )
   If element \< .EL.END_OF_CLAUSE Then Signal 21.908
 
-  blockInstructionsStack = package~blockInstructionsStack
+  blockInstructionsStack = package~blockInstructionsStacks~top
   Do i = blockInstructionsStack~items To 1 By -1
     instruction = blockInstructionsStack[i]
     blockLabel = instruction~name
@@ -922,7 +922,7 @@ Done:
   -- See RexxRef 2.13, LEAVE: "If name is not specified,
   --   LEAVE ends the innermost active repetitive loop"
   If element < .EL.END_OF_CLAUSE Then Do
-    blockInstructionsStack = package~blockInstructionsStack
+    blockInstructionsStack = package~blockInstructionsStacks~top
     Do i = blockInstructionsStack~items To 1 By -1
       instruction = blockInstructionsStack[i]
       -- A SELECT instruction is not a loop
@@ -952,7 +952,7 @@ Done:
 
   -- Now the label can refer to any label or control variable in
   -- the block instruction stack.
-  blockInstructionsStack = package~blockInstructionsStack
+  blockInstructionsStack = package~blockInstructionsStacks~top
   Do i = blockInstructionsStack~items To 1 By -1
     instruction = blockInstructionsStack[i]
     blockLabel = instruction~name
@@ -1073,7 +1073,7 @@ Form:
 Expression:
   If element < .EL.END_OF_CLAUSE Then expression = .Nil
   Else Do
-    Call PrepareExpression element
+    Call PrepareExpression package, element
     expression = Expression.List( package, element )
   End
 
@@ -1123,7 +1123,7 @@ Expression:
   If elements~items == 1 Then expression = .Nil
   Else Do
     element = elements[2]
-    Call PrepareExpression element
+    Call PrepareExpression package, element
     expression = Expression.List( package, element, .EL.END_OF_CLAUSE )
     -- In this context, an expression list is an array term
     If expression~isA(.Expression.List) Then
@@ -1165,7 +1165,7 @@ Expression:
 
   element = elements[2]
 
-  Call PrepareExpression element
+  Call PrepareExpression package, element
 
   expression = Expression.List( package, element, .EL.END_OF_CLAUSE )
 
@@ -1238,7 +1238,7 @@ Value:
   Call SetSubkeyword keyword
   element = TheElementAfter( keyword )
   If element < .EL.END_OF_CLAUSE Then Signal 38.003
-  Call PrepareExpression element, "WITH"
+  Call PrepareExpression package, element, "WITH"
   options.variant = "VALUE"
   expression = Expression.List( package, element )
   options.["EXPRESSION"] = expression
@@ -1512,7 +1512,7 @@ Expression:
   End
   Else If element \< .EL.LEFT_PARENTHESIS Then Signal 35.001
   Else Do
-    Call PrepareExpression element, options~makeArray~makeString("L"," ")
+    Call PrepareExpression package, element, options~makeArray~makeString("L"," ")
     Call NextElement -- Consume the "("
     expression = Expression.List( package, element, .EL.RIGHT_PARENTHESIS )
     element = expression~end
@@ -1661,7 +1661,7 @@ Expression:
   Return .Signal.Instruction~new( package, begin, end, labelName )
 
 Expression:
-  Call PrepareExpression element
+  Call PrepareExpression package, element
   expression = Expression.List( package, element )
   element = expression~end
 
@@ -1889,7 +1889,7 @@ Expression:
   End
 
   If element < .EL.LEFT_PARENTHESIS Then Do
-    Call PrepareExpression element, ")"
+    Call PrepareExpression package, element, ")"
     expression = Expression.List( package, element )
     options.value = expression
     element = expression~end
@@ -1900,7 +1900,7 @@ Value:
   Call SetSubkeyword element
   element = TheElementAfter( element, ignoreBlanks )
   If element < .EL.END_OF_CLAUSE Then Signal 35.916
-  Call PrepareExpression element
+  Call PrepareExpression package, element
   expression = Expression.List( package, element )
   options.value = expression
   Signal Done
@@ -1983,7 +1983,7 @@ Done:
   element           = keyword
 
   Call NextElement
-  Call PrepareExpression element
+  Call PrepareExpression package, element
 
   N = 0
 
@@ -2131,7 +2131,7 @@ NextElement:
   name          = TheElementAfter( LOCAL )
   ignoreBlanks  = .True
 
-  body          = package~currentBody
+  body          = package~currentBodies~top
   UseLocal      = Set()
   body~UseLocal = UseLocal
   locals        = body~locals
@@ -2206,7 +2206,7 @@ NextElement:
       element = TheElementAfter( element, ignoreBlanks )
       If element \< .EL.RIGHT_PARENTHESIS Then Signal 46.901
       nameList~append( Array( pName ) )
-      package~currentBody~exposed[] = element~value
+      package~currentBodies~top~exposed[] = element~value
     End
     Else Do
       Call GetASymbol 0
@@ -2216,7 +2216,7 @@ NextElement:
         inExpose                                     -
       ) )
       If class == .Expose.Instruction Then
-        package~currentBody~exposed[] = element~value
+        package~currentBodies~top~exposed[] = element~value
     End
     element = TheElementAfter( element, ignoreBlanks )
   End
@@ -2517,7 +2517,7 @@ GetASymbol:
 
   Use Strict Arg package, lParen
 
-  Call PrepareExpression lParen, ")"
+  Call PrepareExpression package, lParen, ")"
 
   subExpression = SubExpression( package, lParen )
 

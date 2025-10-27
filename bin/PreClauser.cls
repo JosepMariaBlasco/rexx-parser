@@ -186,7 +186,7 @@
 /******************************************************************************/
 
 ::Method init
-  Expose tokenizer begin lastClauseWas          -
+  Expose tokenizer begin lastClauseWas package  -
     instructions clauses directives assignments
 
   Use Strict Arg package
@@ -332,7 +332,7 @@
 /******************************************************************************/
 
 ::Method Keyword.Clause
-  Expose begin end elements clauses
+  Expose package begin end elements clauses
 
   keyword = elements[1]
 
@@ -360,7 +360,7 @@ THEN: ELSE: OTHERWISE:
 
 IF: WHEN:
   If elements~items == 1 Then Signal Done
-  Call PrepareExpression elements[2], "THEN"
+  Call PrepareExpression package, elements[2], "THEN"
 
   elements = Array()
   element = TheElementAfter( begin )
@@ -382,7 +382,7 @@ IF: WHEN:
 
   element = elements[1]
 
-  Call PrepareExpression element
+  Call PrepareExpression package, element
 
   messageInstruction = IsAMessageInstruction( element )
 

@@ -18,7 +18,9 @@ Version history
   <li> "elements.rex" now automatically adds ".rex" to the filename when needed (20250928).
   <li> "rxcheck.rex" now automatically adds ".rex" to the filename when needed (20250929).
   <li> Bug fix: option EARLYCHECK SIGNAL not working (<https://github.com/JosepMariaBlasco/rexx-parser/issues/18>, 20251009).
-  <li> Add experimental Lua support (See </rexx-parser/Lua/>, 20251014).
+  <li> Add experimental [Lua support](/rexx-parser/Lua/) (20251014).
+  <li> Add experimental [Lambda support](/rexx-parser/Lua/) for Lua variants (20251017).
+  <li> Add support for `::OPTIONS NUMERIC [NO]INHERIT` (20251027).
 <tr><td>20250622<td>0.2d<td>
 <ul>
   <li> **Breaking change**: The character used to separate foreground

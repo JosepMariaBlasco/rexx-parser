@@ -23,6 +23,7 @@
 /* 20250803    0.2d Add support for array terms                               */
 /* 20251014    0.2e Add optional support for Lua "and", "not" and "or", and   */
 /*                  for Lua constants "fail", "false", "nil" and "true".      */
+/* 20251017         Add support for Lua "#" and Lambdas                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -35,6 +36,7 @@
  .environment ~ Comparison.Expression      = .Comparison.Expression
  .environment ~ Multiplication.Expression  = .Multiplication.Expression
  .environment ~ Or.Expression              = .Or.Expression
+ .environment ~ Lambda.Expression          = .Lambda.Expression
  .environment ~ Prefix.Expression          = .Prefix.Expression
  .environment ~ Power.Expression           = .Power.Expression
  .environment ~ SubExpression              = .SubExpression
@@ -48,7 +50,7 @@
 
  .environment ~              Array.Term  =              .Array.Term
  .environment ~  Compound.Variable.Term  =  .Compound.Variable.Term
- .environment ~            Indexed.Term  =            .Indexed.Term
+ .environment ~ Indexed.or.Invoked.Term  = .Indexed.Or.Invoked.Term
  .environment ~      Function.Call.Term  =      .Function.Call.Term
  .environment ~     Literal.String.Term  =     .Literal.String.Term
  .environment ~            Message.Term  =            .Message.Term
@@ -93,9 +95,16 @@
 
 /******************************************************************************/
 /* EXPRESSION LIST                                                            */
+/*                                                                            */
 /*   One of:                                                                  */
+/*                                                                            */
 /*     expression                           -- A classic expression, or...    */
-/*     [expression] ("," [expression]) *    -- ...an array term (trail        */
+/*     [expression] ("," [expression]) *    -- ...an array term.              */
+/*     arg1 -> expression                   -- Lambda (Lua only)              */
+/*     (arg1,...,argn) -> expression        -- Lambda (Lua only, n>= 0)       */
+/*     arg1 -> DO; instructions; END        -- Lambda (Lua only)              */
+/*     (arg1,...,argn) -> DO; instructions; END -- Lambda (Lua only, n>= 0)   */
+/*                                                                            */
 /*   A classic expression, or an array term (where trailing commas are        */
 /*   meaningful), or an argument list (where trailing commas are discarded).  */
 /******************************************************************************/
@@ -103,6 +112,9 @@
 ::Routine Expression.List Public
 
   Use Strict Arg package, begin, terminators = "", options = ""
+
+  If begin < (.EL.LUA.LAMBDA.LEFT_PARENTHESIS || .EL.LUA.LAMBDA.PARAMETER_NAME )
+    Then Exit Lambda.Expression( package, begin, terminators )
 
   -- Logical expression lists can not have omitted expressions
   logical        = options~caselessContainsWord( "logical" )
@@ -217,6 +229,78 @@
     End
 
   End
+
+/******************************************************************************/
+/* LAMBDA.EXPRESSION                                                          */
+/*   lambda_expression := argument_list "->"                                  */
+/*                        lambda_expression | expression | block              */
+/*   block             := "DO;" instructions "END"                            */
+/*   argument_list     := single_argument | "(" arguments ")"                 */
+/******************************************************************************/
+
+::Routine Lambda.Expression Public
+
+  Use Strict Arg package, begin, terminators = ""
+
+  argumentList = .Array~new() -- Array of Arrays (name, type, default_value)
+
+  -- TODO implement type and default value
+  If begin < .EL.LUA.LAMBDA.PARAMETER_NAME Then Do
+    argumentList~append( .Array~of( begin ) )
+    element = TheElementAfter(begin)
+  End
+  Else Do -- "(" -- TODO Implement types and default values
+    element = TheElementAfter(begin)
+    -- Allow "()"
+    If element < .EL.LUA.LAMBDA.RIGHT_PARENTHESIS Then Nop
+    Else Loop
+      If element \< .ALL.SIMPLE_VARIABLES Then Signal 20.900a
+      p = Verify(element~value,XRange("ALNUM")"_")
+      If p \== 0 Then Signal 20.900b
+      argumentList~append( .Array~of( element ) )
+      element = TheElementAfter(element)
+    If element < .EL.LUA.LAMBDA.RIGHT_PARENTHESIS Then Leave
+      If element \< .EL.COMMA Then Signal 35.001
+      element = TheElementAfter(element)
+    End
+    -- Skip ")"
+    element = TheElementAfter(element)
+  End
+
+  -- Now element is "->". Skip it ignoring blanks
+  element = TheElementAfter(element, .True)
+
+  If element < .EL.KEYWORD, element~value == "DO" Then Do
+    doBlock = element~Lambda.Do.Block
+    end     = doBlock~end
+    Return .Lambda.Expression~new( argumentList, doBlock, begin, end)
+  End
+
+  expression = Expression.List( package, element, terminators )
+
+  end = expression~end
+
+  Return .Lambda.Expression~new( argumentList, expression, begin, end)
+
+20.900a: Syntax( 20.900, begin, "Simple variable expected as name",
+ "of lambda argument, found '"element~value"'.")
+
+20.900b: Syntax( 20.900, begin, "Lambda argument name can only contain",
+ "alphanumeric characters or '_', found '"element~value[1]"'.")
+
+-- Incorrect expression detected at "&1".
+35.001: Syntax( 35.001, begin, element~source )
+
+--------------------------------------------------------------------------------
+
+::Class Lambda.Expression Public SubClass Rexx.Expression
+::Attribute arguments
+::Attribute expression
+::Attribute begin
+::Attribute end
+::Method init
+  Expose args    arguments  expression  begin  end
+  Use Strict Arg arguments, expression, begin, end
 
 /******************************************************************************/
 /* OR.EXPRESSION                                                              */
@@ -492,7 +576,7 @@
     Select Case element~category
       When .EL.OP.PLUS     Then Call SetCategory element, .EL.OP.PREFIX.PLUS
       When .EL.OP.MINUS    Then Call SetCategory element, .EL.OP.PREFIX.MINUS
-      Otherwise Nop -- "\" and "not" are always prefix operators
+      Otherwise Nop -- "\", "not" and "#" are always prefix operators
     End
     prefixes~append( element )
     element =  TheElementAfter( element )
@@ -745,7 +829,7 @@ Done:
   Return .Field.List~new( fieldList, begin, element )
 
 -- Square bracket "[" in position &1 on line &2 requires
--- a corresponding right square bracket
+-- a corresponding right square bracket "]".
 36.902: Syntax( 36.902, element, pos, line)
 
 --------------------------------------------------------------------------------
@@ -820,7 +904,7 @@ Done:
 
   name~invocationType = Function
 
-  package~currentBody~calledRoutineNames~append( (name, arguments) )
+  package~currentBodies~top~calledRoutineNames~append( (name, arguments) )
 
   Exit .Function.Call.Term~new(name, arguments )
 
@@ -889,11 +973,15 @@ Done:
 
     element = term~end
 
-  If element \< .ALL.OPS.MESSAGE_SEND Then Return term
+  If (element \< .ALL.OPS.MESSAGE_SEND) Then
+    If \.Options.Lua Then Return term
+    Else If element \< .EL.LEFT_PARENTHESIS  Then Return term
 
-    If element < .EL.LEFT_BRACKET
-      Then term = Indexed.Term( package, term, element, "" )   -- "["
-      Else term = Message.Term( package, term, element, "" )   -- "~", "~~"
+    Select Case element~category
+      When .EL.LEFT_BRACKET, .EL.LEFT_PARENTHESIS Then   -- "[" (or "(" when Lua)
+        term = Indexed.Or.Invoked.Term( package, term, element, "" )
+      Otherwise term = Message.Term( package, term, element, "" )   -- "~", "~~"
+    End
 
   End
 
@@ -940,7 +1028,7 @@ Done:
 
   varName       = symbol~value        -- Uppercased symbol
   varSource     = symbol~source       -- As written
-  thisBody      = package~currentBody
+  thisBody      = package~currentBodies~top
 
   -- Change the element category of variable symbols to reflect whether
   -- they are local or instance variables.
@@ -991,7 +1079,7 @@ Return
 
   Use Strict Arg package, variable, inExpose
 
-  thisBody      = package~currentBody
+  thisBody      = package~currentBodies~top
   exposed       = thisBody~exposed
   useLocal      = thisBody~useLocal
   locals        = thisBody~locals
@@ -1105,7 +1193,7 @@ Return
 
   Use Strict Arg package, stem, inExpose
 
-  thisBody   = package~currentBody
+  thisBody   = package~currentBodies~top
   newClass   = .EL.EXPOSED_STEM_VARIABLE
 
   stemName   = stem~value
@@ -1213,7 +1301,7 @@ Return
 
   name~invocationType = Function
 
-  package~currentBody~calledRoutineNames~append( (name, arguments) )
+  package~currentBodies~top~calledRoutineNames~append( (name, arguments) )
 
   Exit .Function.Call.Term~new( name, arguments )
 
@@ -1251,33 +1339,48 @@ Return
   end = TheElementAfter( className )
 
 --------------------------------------------------------------------------------
--- Indexed.Term                                                               --
+-- Indexed.Or.Invoked.                                                        --
 --                                                                            --
 -- Cfr. Dallas report                                                         --
 --   message_term := term '['[ expression_list ] (']' | Msg36.2)              --
 -- See also rexxref 5.1.0, 1.11.4. Message Terms                              --
 --   message_term := receiver '[' [[expression] ,]* ']'                       --
 --                                                                            --
+-- When Lua is active, also                                                   --
+--   message_term := callable '(' [[expression] ,]* ')'                       --
+--                                                                            --
 --------------------------------------------------------------------------------
 
-::Routine Indexed.Term Public
+::Routine Indexed.Or.Invoked.Term Public
 
   Use Strict Arg package, receiver, lBracket, terminators
 
   -- Store parenthesis location information
   Parse Value lBracket~from With line pos
 
+  If lBracket < .EL.LEFT_BRACKET Then expect = .EL.RIGHT_BRACKET
+  Else expect = .EL.RIGHT_PARENTHESIS
+
   arguments = Expression.List(        -
     package,                          -
     TheElementAfter( lBracket ),      - -- Where to start parsing
-    terminators || .EL.RIGHT_BRACKET, - -- Add "]" to terminators
+    terminators || expect,            - -- Add "]" or ")" to terminators
    "arguments"                        -
   )
 
   -- Expecting a closing bracket now
-  If arguments~end \< .EL.RIGHT_BRACKET Then Signal 36.902
+  If lBracket < .EL.LEFT_BRACKET Then Do
+    If arguments~end \< expect Then Signal 36.902
+  End
+  Else Do
+    If arguments~end \< expect Then Signal 36.901
+  End
 
-  Return .Indexed.Term~new( receiver, arguments )
+  Return .Indexed.Or.Invoked.Term~new( lBracket, receiver, arguments )
+
+-- Left parenthesis "(" in position &1 on line &2 requires
+-- a corresponding right parenthesis ")".
+36.901: Syntax( 36.901, lBracket, pos, line)
 
 -- Square bracket "[" in position &1 on line &2 requires
 -- a corresponding right square bracket "]".
@@ -1285,14 +1388,15 @@ Return
 
 --------------------------------------------------------------------------------
 
-::Class Indexed.Term Public SubClass Rexx.Term
+::Class Indexed.Or.Invoked.Term Public SubClass Rexx.Term
+::Attribute bracket
 ::Attribute begin
 ::Attribute end
 ::Attribute term      Get
 ::Attribute arguments Get
 ::Method init
-  Expose term arguments begin end
-  Use Strict Arg term, arguments
+  Expose term arguments bracket begin end
+  Use Strict Arg bracket, term, arguments
   rBracket = arguments~end
   begin    = term~begin
   end      = TheElementAfter( rBracket )

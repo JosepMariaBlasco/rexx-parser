@@ -391,7 +391,7 @@ Return
   End
 
   If next < .EL.LEFT_PARENTHESIS Then Do
-    Call PrepareExpression next, ")"
+    Call PrepareExpression package, next, ")"
     expression = SubExpression( package, next, "" )
     element = expression~end
     Call NoMoreDataAfter element
@@ -585,7 +585,7 @@ Done:
   If element < .EL.END_OF_CLAUSE Then Signal Done
 
   conditions = "ALL ERROR FAILURE LOSTDIGITS NOSTRING NOTREADY NOVALUE"
-  numeric    = "DIGITS FORM FUZZ"
+  numeric    = "DIGITS FORM FUZZ NUMERIC"
   allOptions = numeric conditions "PROLOG NOPROLOG TRACE"
 
   Loop While element \< .EL.END_OF_CLAUSE
@@ -626,6 +626,13 @@ Done:
         End
         element = TheElementAfter( element, ignoreBlanks )
       End
+      When tValue == "NUMERIC" Then Do
+        If element \< .ALL.SYMBOLS Then Signal 20.935
+        If WordPos( element~value, "INHERIT NOINHERIT") == 0 Then Signal 25.935
+        options.["NUMERIC"] = element~value
+        Call Set.Directive.SubKeyword element
+        element = TheElementAfter( element )
+      End
       Otherwise Do -- DIGITS, FUZZ
         If element \< .ALL.SYMBOLS_AND_STRINGS Then
           If tValue == "FUZZ" Then Signal 19.918; Else Signal 19.917
@@ -658,6 +665,9 @@ Done:
 -- Symbol expected after &1 keyword.
 20.929: Syntax( 20.929, OPTIONS, theCondition )
 
+-- Symbol expected after the NUMERIC subdirective keyword.
+20.935: Syntax( 20.935, OPTIONS )
+
 -- TRACE request letter must be one of "ACEFILNOR"; found "&1".
 24.001: Syntax( 24.001, OPTIONS, c )
 
@@ -670,6 +680,10 @@ Done:
 
 -- Unknown keyword following "&1"; found "&2".
 25.927: Syntax( 25.927, OPTIONS, condition, element )
+
+-- Subdirective NUMERIC must be followed by one of the keywords
+-- INHERIT or NOINHERIT; found "&1".
+25.935: Syntax( 25.935, OPTIONS, element )
 
 -- DIGITS value must be a positive whole number; found "&1".
 26.005: Syntax( 26.005, OPTIONS, element )

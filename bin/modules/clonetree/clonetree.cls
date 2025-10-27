@@ -374,7 +374,7 @@ Call "modules/Load.Parser.Module.rex" "BaseClassesAndRoutines"
 
   Return element
 
-::Method "Indexed.Term::process"
+::Method "Indexed.Or.Invoked.Term::process"
   Use Strict Arg element, stream, context
 
   element  = SkipIgnorable( element, stream, context )

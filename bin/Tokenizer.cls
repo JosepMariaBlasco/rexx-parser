@@ -27,6 +27,7 @@
 /* 20250406         Rename fractional number to decimal                       */
 /* 20250531    0.2c Implement more flexible rules for doc-comments            */
 /* 20251014    0.2e Add optional support for Lua and, not, or                 */
+/* 20251016         Add support for Lua "#" and Lambdas                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -142,7 +143,8 @@ Special.Char        : Return self~Special.Character.Sequence(ch)
 Operator.Char       : Return self~Operator.Character.Sequence(ch)
 String.Element      : Return self~String.Element(ch)
 
-Invalid.Character   : Signal 13.001
+Invalid.Character   : If .Options.Lua, ch == "#" Then Return self~Lua.Length
+                      Signal 13.001
 
 -- Incorrect character in program "&1" ('&2'X).
 13.001: Syntax( 13.001, tail, ch, c2x(ch) )
@@ -889,6 +891,15 @@ Done:
 
   -- Check if this is a compound operator or an extended assignment
   sequence = predecessor~value || element~value
+
+  -- Special case: handle the "mapsto" operator "->", taken from
+  -- extended Lua (Pluto)
+  If .Options.Lua, sequence == "->" Then Do
+    category             = .EL.LUA.MAPS.TO
+    predecessor~category = category
+    Signal CompoundOperatorOrExtendedAssignment
+  End
+
   category = CompoundOperator[sequence]
   If category == .Nil Then Do
     If \assignmentSequence~hasItem(sequence) Then Return element
@@ -971,6 +982,21 @@ Return
   End
 
   Return element
+
+/******************************************************************************/
+/* LUA.LENGTH                                                                 */
+/******************************************************************************/
+
+::Method Lua.Length
+  Expose source line col len
+
+  element = self~InsertNewElement(                                 -
+    .Lua.Operator~new(.EL.LUA.LENGTH,line, col, col+1, source[line]) -
+  )
+  predecessor = TheElementBefore( element )
+  If predecessor < .ALL.WHITESPACE_LIKE Then predecessor~makeIgnorable
+
+  Exit element
 
 /******************************************************************************/
 /* WHITESPACE                                                                 */

@@ -29,7 +29,8 @@
 /* 20250722    0.2d Add .EL.DIRECTIVE_SUBKEYWORD and .ALL.DIRECTIVE_KEYWORDS  */
 /* 20250729         Add .ALL.EXPOSED_VARIABLES                                */
 /* 20250808         Add support for length positional patterns                */
-/* 20251014         Add support for Lua keywords and values                   */
+/* 20251014    0.2e Add support for Lua keywords, values and tables           */
+/* 20251017         Add support for Lua "#" and lambdas                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -442,6 +443,10 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     .EL.EXPOSED_SIMPLE_VARIABLE,        -
     .EL.EXPOSED_COMPOUND_VARIABLE,      -
     .EL.EXPOSED_STEM_VARIABLE
+  -- A simple variable, irrespective of whether it is exposed or not
+  Call NewSet ALL.SIMPLE_VARIABLES,     -
+   .EL.SIMPLE_VARIABLE,                 -
+   .EL.EXPOSED_SIMPLE_VARIABLE
   -- A stem variable, irrespective of whether it is exposed or not
   Call NewSet ALL.STEM_VARIABLES,       -
    .EL.STEM_VARIABLE,                   -
@@ -464,10 +469,15 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewElement EL.LUA.NOT              -- not
   Call NewElement EL.LUA.OR               -- or
   Call NewElement EL.LUA.TRUE             -- true
+  Call NewElement EL.LUA.LENGTH           -- prefix "#"
   Call NewElement EL.LUA.TABLE.FIELD.NAME -- The name of a table field
-  Call NewElement EL.LUA.TABLE.LEFT_BRACKET  -- "["
-  Call NewElement EL.LUA.TABLE.RIGHT_BRACKET -- "]"
-  Call NewElement EL.LUA.TABLE.EQUALS        -- "="
+  Call NewElement EL.LUA.TABLE.LEFT_BRACKET       -- "["
+  Call NewElement EL.LUA.TABLE.RIGHT_BRACKET      -- "]"
+  Call NewElement EL.LUA.TABLE.EQUALS             -- "="
+  Call NewElement EL.LUA.MAPS.TO                  -- "->"
+  Call NewElement EL.LUA.LAMBDA.LEFT_PARENTHESIS  -- "("
+  Call NewElement EL.LUA.LAMBDA.RIGHT_PARENTHESIS -- ")"
+  Call NewElement EL.LUA.LAMBDA.PARAMETER_NAME    --
 
   Call NewSet ALL.LUA_LOGICAL_OPERATORS,-
     .EL.LUA.AND,                        - -- and
@@ -810,7 +820,7 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   -- .EL.OP.PREFIX.PLUS and .EL.OP.PREFIX.MINUS by the expression
   -- parser.
   Call NewSet PREFIX_OPERATORS,         -
-   .EL.OP.PLUS, .EL.OP.MINUS, .EL.OP.NEGATION, .EL.LUA.NOT
+   .EL.OP.PLUS, .EL.OP.MINUS, .EL.OP.NEGATION, .EL.LUA.NOT, .EL.LUA.LENGTH
 
   -- The set of all concatenation operators ("||", " " and "")
   Call NewSet ALL.OPS.CONCATENATION,    -
@@ -970,6 +980,8 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewSet IGNORE_WHITESPACE_AFTER,  -
     .ALL.OPERATORS,                     - -- An operator (compound or not)
     .ALL.LUA_LOGICAL_OPERATORS,         - -- When Lua is active: and, or, not
+    .EL.LUA.LENGTH,                     - -- When Lua is active: "#"
+    .EL.LUA.MAPS.TO,                    - -- When Lua is active: "->"
     .ALL.ASSIGNMENTS,                   - -- An (extended) assignment
     .ALL.WHITESPACE_LIKE,               - -- Previous whitespace & continuations
     .EL.END_OF_CLAUSE,                  - -- At the beginning of a clause

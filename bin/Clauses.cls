@@ -19,6 +19,7 @@
 /* 20250116    0.1f Add "assigned" attribute to variable assignment targets   */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250421    0.2b Allow optional empty assignments                          */
+/* 20251017    0.2e Add support for Lambdas                                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -274,7 +275,7 @@
 
   lastInstruction = doClause
 
-  currentBody = package~currentBody
+  currentBody = package~currentBodies~top
 
   Loop
     instruction = self~Next.Instruction( ENDClauseIsOK )
@@ -347,7 +348,7 @@ End.Clause:
 
   Call NoLabels thenInstruction
 
-  currentBody = package~currentBody
+  currentBody = package~currentBodies~top
 
   Select Case thenInstruction~class
     When .Implicit.Exit.Instruction Then Signal 14.003
@@ -430,7 +431,7 @@ NoLabels:
 
   lastInstruction = loopClause
 
-  currentBody = package~currentBody
+  currentBody = package~currentBodies~top
 
   Loop
     instruction = self~Next.Instruction( ENDClauseIsOK )
@@ -507,7 +508,7 @@ End.Clause:
 
   WHEN = TheElementAfter( whenClause~begin )
 
-  currentBody = package~currentBody
+  currentBody = package~currentBodies~top
 
   Loop
 
@@ -673,7 +674,7 @@ NoLabels:
 
   variable~setAssigned
 
-  thisBody          = package~currentBody
+  thisBody          = package~currentBodies~top
   locals            = thisBody~locals
 
   varName           = variable~value
@@ -691,7 +692,7 @@ NoLabels:
 
   element = TheElementAfter( operator ) -- Start parsing here...
 
-  Call PrepareExpression element
+  Call PrepareExpression package, element
 
   expression = Expression.List( package, element, .EL.END_OF_CLAUSE )
 
@@ -815,9 +816,9 @@ NoLabels:
   If element \< .EL.END_OF_CLAUSE Then Signal 21.909
 
 Done:
-  blockInstructionsStack = package~blockInstructionsStack
+  blockInstructionsStack = package~blockInstructionsStacks~top
   If blockInstructionsStack~items == 0 Then Signal 10.001
-  blockInstructionsStack~delete( blockInstructionsStack~last )
+  blockInstructionsStack~pop
   Return .End.Clause~new( package, begin, end, options. )
 
 -- END has no corresponding DO, LOOP, or SELECT.
@@ -912,7 +913,7 @@ Done:
   conditional   = 0
   options.order = ""  -- Of TO, BY and FOR
 
-  body          = package~currentBody
+  body          = package~currentBodies~top
   blockID       = body~blockID + 1
   body~blockID  = blockID
   options.id    = blockID
@@ -954,7 +955,7 @@ Continue:
   Call ControlVariable
   Call SetCategory next, .EL.ASG.EQUAL
   element = TheElementAfter( next, ignoreBlanks ) -- Consume "="
-  Call PrepareExpression element, "TO BY FOR WHILE UNTIL"
+  Call PrepareExpression package, element, "TO BY FOR WHILE UNTIL"
   expression = Expression.List( package, element )
   If expression~isEmpty Then Signal 35.904
   options.["="] = expression
@@ -972,7 +973,7 @@ Continue:
         options.order ||= " "tValue
         Call SetSubkeyword element
         element = TheElementAfter( element )
-        Call PrepareExpression element, "TO BY FOR WHILE UNTIL"
+        Call PrepareExpression package, element, "TO BY FOR WHILE UNTIL"
         expression = Expression.List( package, element )
         element = expression~end
         If expression~isEmpty Then Select Case tValue
@@ -990,7 +991,7 @@ Continue:
   Call SetSubkeyword next
   Call ControlVariable
   element = TheElementAfter( next, ignoreBlanks ) -- Consume "OVER"
-  Call PrepareExpression element, "FOR WHILE UNTIL"
+  Call PrepareExpression package, element, "FOR WHILE UNTIL"
   expression = Expression.List( package, element )
   If expression~isEmpty Then Signal 35.911
   options.over = expression
@@ -1007,7 +1008,7 @@ Continue:
         for = 1
         Call SetSubkeyword element
         element = TheElementAfter( element )
-        Call PrepareExpression element, "FOR WHILE UNTIL"
+        Call PrepareExpression package, element, "FOR WHILE UNTIL"
         expression = Expression.List( package, element )
         element = expression~end
         If expression~isEmpty Then Signal 35.907
@@ -1017,7 +1018,7 @@ Continue:
   End
 
 "Simple Repetitive Do/Loop":
-  Call PrepareExpression element, "WHILE UNTIL"
+  Call PrepareExpression package, element, "WHILE UNTIL"
   expression = Expression.List( package, element )
   options.exprr = expression
   element = expression~end
@@ -1041,7 +1042,7 @@ Conditional:
   If conditional Then Signal 27.001
   Call SetSubkeyword element
   element = TheElementAfter( element )
-  Call PrepareExpression element, "WHILE UNTIL"
+  Call PrepareExpression package, element, "WHILE UNTIL"
   expression = Expression.List( package, element, "", "logical" )
   options.while = expression
   element = expression~end
@@ -1052,7 +1053,7 @@ Conditional:
   If conditional Then Signal 27.001
   Call SetSubkeyword element
   element = TheElementAfter( element )
-  Call PrepareExpression element, "WHILE UNTIL"
+  Call PrepareExpression package, element, "WHILE UNTIL"
   expression = Expression.List( package, element, "", "logical" )
   options.until = expression
   element = expression~end
@@ -1098,7 +1099,7 @@ Done:
     Else class = .Simple.Loop.Clause
   End
   iteration = class~new( package, begin, element, options. )
-  package~blockInstructionsStack~append( iteration )
+  package~blockInstructionsStacks~top~push( iteration )
   Return iteration
 
 Keyword:
@@ -1174,7 +1175,7 @@ Keyword:
     element = TheElementAfter( element, ignoreBlanks )
   End
   element = TheElementAfter( element )
-  Call PrepareExpression element, "FOR WHILE UNTIL"
+  Call PrepareExpression package, element, "FOR WHILE UNTIL"
   expression = Expression.List( package, element )
   If expression~isEmpty Then Signal 35.911
   options.over = expression
@@ -1182,7 +1183,7 @@ Keyword:
   If element < .ALL.SYMBOLS_AND_KEYWORDS, element~value == "FOR" Then Do
     Call SetSubkeyword element
     element = TheElementAfter( element )
-    Call PrepareExpression element, "FOR WHILE UNTIL"
+    Call PrepareExpression package, element, "FOR WHILE UNTIL"
     expression = Expression.List( package, element )
     If expression~isEmpty Then Signal 35.907
     options.["FOR"] = expression
@@ -1477,7 +1478,7 @@ Message.Instruction:
   ignoreBlanks = .True
   options.     = .False
 
-  body          = package~currentBody
+  body          = package~currentBodies~top
   blockID       = body~blockID + 1
   body~blockID  = blockID
   options.id    = blockID
@@ -1513,12 +1514,12 @@ Message.Instruction:
 
   If element < .EL.END_OF_CLAUSE Then Signal 35.933
 
-  Call PrepareExpression element
+  Call PrepareExpression package, element
   options.case = Expression.List( package, element )
 
 Done:
   selectClause = .Select.Clause~new( package, begin, element, options. )
-  package~blockInstructionsStack~append( selectClause )
+  package~blockInstructionsStacks~top~push( selectClause )
   Return selectClause
 
 -- Symbol expected after LABEL keyword.
@@ -1563,7 +1564,7 @@ Done:
 
   element = TheElementAfter( WHEN )
 
-  Call PrepareExpression element, "THEN"
+  Call PrepareExpression package, element, "THEN"
 
   expressions = Expression.List(package, element, .EL.END_OF_CLAUSE, "logical")
 
@@ -1606,8 +1607,8 @@ Done:
 ::Attribute instructions
 ::Attribute endClause
 ::Method init
-  Expose doClause  instructions  endClause
-  Use Strict Arg package, doClause, instructions, endClause
+  Expose                   doClause  instructions  endClause
+  Use Strict Arg  package, doClause, instructions, endClause
   self~init:super(package, doClause~begin, endClause~end)
 ::Method labels
   Expose doClause

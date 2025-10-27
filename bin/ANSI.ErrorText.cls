@@ -133,6 +133,7 @@
   Secondary["20.932"] = "Stem symbol expected after STEM keyword."
   Secondary["20.933"] = "Symbol expected after WITH keyword."
   Secondary["20.934"] = "Symbol expected after COUNTER keyword."
+  Secondary["20.935"] = "Symbol expected after the NUMERIC subdirective keyword."
   Secondary["21.900"] = "<1:message>."
   Secondary["21.901"] = "Data must not follow the NOP keyword; found ""<1:data>""."
   Secondary["21.902"] = "Data must not follow the SELECT keyword; found ""<1:data>""."
@@ -195,6 +196,7 @@
   Secondary["25.932"] = "Duplicate ERROR keyword found."
   Secondary["25.933"] = "Acceptable ADDRESS WITH I/O types are NORMAL, STEM, STREAM, and USING; found ""<1:word>""."
   Secondary["25.934"] = "WITH must be followed by one of the keywords INPUT, OUTPUT, or ERROR; found ""<1:word>""."
+  Secondary["25.935"] = "Subdirective NUMERIC must be followed by one of the keywords INHERIT or NOINHERIT; found ""<1:symbol>""."
   Secondary["26.002"] = "Value of repetition count expression in DO or LOOP instruction must be zero or a positive whole number; found ""<1:value>""."
   Secondary["26.003"] = "Value of FOR expression in DO or LOOP instruction must be zero or a positive whole number; found ""<1:value>""."
   Secondary["26.004"] = "Positional pattern of PARSE template must be a whole number; found ""<1:value>""."
@@ -625,7 +627,7 @@
   Secondary["99.949"] = """<1:classname>"" is not a valid class."
   Secondary["99.950"] = "A USE ARG default value is not allowed for variable references."
 
- .environment~ANSI.ErrorText.Secondary = Secondary -- Messages processed: 604
+ .environment~ANSI.ErrorText.Secondary = Secondary -- Messages processed: 606
 
 ::Routine ANSI.ErrorText Public
   Use Arg code
@@ -650,7 +652,7 @@
   Return message
 
 
--- 604 secondary messages processed.
+-- 606 secondary messages processed.
 --
 -- Use the following instruction to regenerate secondary message support:
 --

@@ -20,12 +20,15 @@
 /* 20250421    0.2b Modify InternalError to raise a HALT condition            */
 /* 20250722    0.2d Add Set.Directive.SubKeyword                              */
 /* 20251014    0.2e Add support for Lua constants and Lua table constructors  */
+/* 20251014         Add support for lambda expressions                        */
 /*                                                                            */
 /******************************************************************************/
 
 /******************************************************************************/
 /* A Rexx Clause                                                              */
 /******************************************************************************/
+
+ .environment~Lambda.Do.Block = .Lambda.Do.Block
 
 ::Class Rexx.Clause Public
 
@@ -45,7 +48,7 @@
   nullClauses = Array()
   docComment  = .Nil
 
-  body = package~currentBody
+  body = package~currentBodies~top
 
   -- body may be .Nil at the start of a body scan
   If \self~isA(.Block.Instruction) Then
@@ -350,9 +353,11 @@
 --   It inserts an implied semicolon before the "THEN" keyword.               --
 --   It changes whitespace into blank concatenation operators                 --
 --   It inserts abuttal concatenation operators in the following contexts:    --
---     a string or symbol immediately followed by another string or symbol    --
---     ")" immediately followed by "(" or a string or a symbol                --
---     "]" immediately followed by "(" or a string or a symbol                --
+--     + a string or symbol immediately followed by another string or symbol  --
+--     (when Options Lua is not in effect:)                                   --
+--     + ")" immediately followed by "(" or a string or a symbol              --
+--     + "]" immediately followed by "(" or a string or a symbol              --
+--     When Options Lua is in effect, the above are function calls            --
 --   It scans for variable reference terms, in the form ">var" or "<var",     --
 --     and substitutes the comparison operators for the corresponding         --
 --     reference operators.                                                   --
@@ -368,7 +373,7 @@
 
 ::Routine PrepareExpression Public
 
-  Use Strict Arg begin, keywords = ""
+  Use Strict Arg package, begin, keywords = ""
 
   subExpression = 0
   If keywords == ")" Then Do
@@ -410,22 +415,39 @@
         End
         If switch Then Call SwitchToReference
       End
+      -- A left parenthesis will force an abuttal check only when Options Lua
+      -- is not in effect: in Lua, they are a function call.
       When .EL.LEFT_PARENTHESIS   Then Do
         nesting~append( element )
-        Call CheckAbuttal
+        If \.Options.Lua Then Call CheckAbuttal
       End
-      -- A left bracket can be found alone when Options Lua is
-      -- in effect, as this will start a table constructor (about
-      -- modified form of an "initializer", in Dallas draft parlance).
+      -- A left bracket can be found alone when Options Lua is in effect,
+      -- as this will start a table constructor (a modified form of
+      -- an "initializer", in Dallas draft parlance, or "array
+      -- initializers" in NetRexx).
       When .EL.LEFT_BRACKET Then Do
         If \.Options.Lua, \predecessor~isNil, -
           predecessor < .ALL.WHITESPACE_LIKE Then
           Signal 35.001
         nesting~append( element )
       End
+      When .EL.LUA.MAPS.TO Then Do
+        If \predecessor~isNil, predecessor < .ALL.SIMPLE_VARIABLES Then
+          Call SetCategory predecessor, .EL.LUA.LAMBDA.PARAMETER_NAME
+        next = TheElementAfter(element)
+        If next < .ALL.SIMPLE_VARIABLES, next~value == "DO" Then
+          element = Lambda.Do.Block(package, next)~end
+      End
       When .EL.RIGHT_PARENTHESIS Then Do
         If nesting~isEmpty Then Signal 37.002
         If nesting~lastItem~value \== "(" Then Signal 37.002
+        If .Options.Lua Then Do
+          next = TheElementAfter(element)
+          If next < .EL.LUA.MAPS.TO Then Do
+            Call SetCategory element,          .EL.LUA.LAMBDA.RIGHT_PARENTHESIS
+            Call SetCategory nesting~lastItem, .EL.LUA.LAMBDA.LEFT_PARENTHESIS
+          End
+        End
         nesting~delete( nesting~last )
         If subExpression, nesting~isEmpty Then Return
       End
@@ -528,6 +550,79 @@ IsAKeyword:
 
 -- Unexpected "]".
 37.901: Syntax( 37.901, element )
+
+--------------------------------------------------------------------------------
+-- Lambda.Do.Block                                                             --
+--------------------------------------------------------------------------------
+
+::Routine Lambda.Do.Block Public
+
+  Use Arg package, DO
+
+  Call SetCategory DO, .EL.KEYWORD
+
+  element = TheElementAfter(DO)
+
+  If element \< .EL.END_OF_CLAUSE Then Signal 21.900
+
+  instructions = Array()
+
+  ENDClauseIsOK = 1
+
+  lastInstruction = .Nil
+
+  package~blockInstructionsStacks~push(.Stack~new())
+  package~blockInstructionsStacks~top~push(DO)
+
+  Loop
+    instruction = package~clauser~Next.Instruction( ENDClauseIsOK )
+    If \instruction~labels~isEmpty Then Signal 47.002
+    instrClass = instruction~class
+    Select Case instrClass
+      When .End.Clause                Then Signal End.Clause
+      When .Expose.Instruction        Then Signal 99.907
+      When .Implicit.Exit.Instruction Then Signal 14.001
+      Otherwise Nop
+    End
+    instructions~append( instruction )
+    lastInstruction = instruction
+  End
+
+End.Clause:
+  END = TheElementAfter( instruction~begin )
+
+  package~blockInstructionsStacks~pop
+
+  Lambda.Do.Block = .Lambda.Do.Block~new( DO, END, instructions )
+
+  DO~Lambda.Do.Block = Lambda.Do.Block
+
+  Return Lambda.Do.Block
+
+
+-- DO instruction on line &1 requires matching END.
+14.001: Syntax( 14.001, instruction~end, doLine )
+
+
+21.900: Syntax( 21.900, DO, "Data must not follow the DO keyword;",
+   "found "element~source".")
+
+-- Labels are not allowed within a DO/LOOP block; found "&1".
+47.002: Syntax( 47.002, instruction~end, instruction~labels[1]~label )
+
+-- EXPOSE must be the first instruction executed after a method invocation.
+99.907: Syntax( 99.907, DO )
+
+--------------------------------------------------------------------------------
+
+::Class Lambda.Do.Block Public
+::Attribute DO
+::Attribute END
+::Method begin; Return self~DO
+::Attribute instructions
+::Method Init
+  Expose  DO  END  instructions
+  Use Arg DO, END, instructions
 
 --------------------------------------------------------------------------------
 -- InsertSemicolonBefore                                                      --

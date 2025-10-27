@@ -1354,6 +1354,15 @@ editbin rexx.exe /stack:100000000
         <SymbolicName>Error_Symbol_expected_counter</SymbolicName>
         <Text>Symbol expected after COUNTER keyword.</Text>
       </SubMessage>
+      <SubMessage>
+        <Code>20</Code>
+        <Subcode>935</Subcode>
+        <MessageNumber>839</MessageNumber>
+        <Component>Rexx</Component>
+        <Severity>Warning</Severity>
+        <SymbolicName>Error_Symbol_expected_numeric_subdirective</SymbolicName>
+        <Text>Symbol expected after the NUMERIC subdirective keyword.</Text>
+      </SubMessage>
     </Subcodes>
   </Message>
   <Message>
@@ -1978,6 +1987,15 @@ editbin rexx.exe /stack:100000000
         <Severity>Warning</Severity>
         <SymbolicName>Error_Invalid_subkeyword_address_with_option</SymbolicName>
         <Text>WITH must be followed by one of the keywords INPUT, OUTPUT, or ERROR; found <q><Sub position="1" name="word"/></q>.</Text>
+      </SubMessage>
+      <SubMessage>
+        <Code>25</Code>
+        <Subcode>935</Subcode>
+        <MessageNumber>840</MessageNumber>
+        <Component>Rexx</Component>
+        <Severity>Warning</Severity>
+        <SymbolicName>Error_Invalid_subkeyword_numeric_subdirective</SymbolicName>
+        <Text>Subdirective NUMERIC must be followed by one of the keywords INHERIT or NOINHERIT; found <q><Sub position="1" name="symbol"/></q>.</Text>
       </SubMessage>
     </Subcodes>
   </Message>

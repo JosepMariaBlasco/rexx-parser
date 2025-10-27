@@ -433,7 +433,7 @@ Call (loader) "BaseClassesAndRoutines"
 
 --------------------------------------------------------------------------------
 
-::Method "Indexed.Term::String"
+::Method "Indexed.Or.Invoked.Term::String"
   Expose term arguments
   Return ""term"["arguments"]"
 

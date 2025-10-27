@@ -29,6 +29,8 @@
  .environment~Rexx.Package = .Rexx.Package
  .environment~Rexx.Routine = .Rexx.Routine
 
+ .environment~Stack        = .Stack
+
 ::Requires "HTMLColors.cls"
 ::Requires "StyleSheet.cls"
 ::Requires "DebugSettings.cls"
@@ -124,8 +126,8 @@
   body = .Code.Body~new( package, directive )
   If inAMethodBody Then
     body~isAMethodBody = .True
-  package~currentBody            = body
-  package~blockInstructionsStack = Array()
+  package~currentBodies~push(body)
+  package~blockInstructionsStacks~push(.Stack~new())
 
   -- The following loop will always end, because lower levels of the parser
   -- have taken care that all clause sequences are ended by an implicit exit
@@ -152,6 +154,9 @@
     End
     body~addInstruction( instruction )
   End
+
+  package~currentBodies~pop
+  package~blockInstructionsStacks~pop
 
   Return body
 
@@ -374,7 +379,7 @@ CheckThatUseLocalIsValid:
 ::Attribute preClauser              -- The preClauser
 ::Attribute tokenizer               -- The tokenizer
 ::Attribute currentClass            -- Current class (.Nil --> prolog)
-::Attribute currentBody             -- Body being currently parsed
+::Attribute currentBodies           -- Stack of bodies being currently parsed
 ::Attribute directives              -- Sequential list of directives
 ::Attribute source                  -- [Similar to the ooRexx Package class]
 ::Attribute prolog                  -- [Similar to the ooRexx Package class]
@@ -385,7 +390,7 @@ CheckThatUseLocalIsValid:
 ::Attribute publicRoutines          -- [Similar to the ooRexx Package class]
 ::Attribute privateRoutines
 ::Attribute definedMethods          -- [Similar to the ooRexx Package class]
-::Attribute blockInstructionsStack  -- Stack of active block instructions
+::Attribute blockInstructionsStacks -- Stack of stacks of active block instructions
 
 ::Method firstElement -- Convenient shortcut
   Return self~prolog~body~begin
@@ -395,39 +400,40 @@ CheckThatUseLocalIsValid:
   Return currentClass == .Nil
 
 ::Method init
-  Expose name source -
-    options          -
-    Clauser          -
-    preclauser       -
-    tokenizer        -
-    privateClasses   -
-    publicClasses    -
-    privateRoutines  -
-    publicRoutines   -
-    definedMethods   -
-    currentClass     -
-    currentBody      -
-    directives       -
+  Expose name source        -
+    options                 -
+    Clauser                 -
+    preclauser              -
+    tokenizer               -
+    privateClasses          -
+    publicClasses           -
+    privateRoutines         -
+    publicRoutines          -
+    definedMethods          -
+    currentClass            -
+    currentBodies           -
+    directives              -
+    blockInstructionsStacks -
     resources
 
   Use Strict Arg name, source
 
   self~init:super
 
-  Clauser                = .Clauser~new( self )
-  preClauser             =  Clauser~preClauser
-  tokenizer              =  Clauser~tokenizer
-  definedMethods         = .StringTable~new
-  privateClasses         = .StringTable~new
-  publicClasses          = .StringTable~new
-  privateRoutines        = .StringTable~new
-  publicRoutines         = .StringTable~new
-  resources              = .StringTable~new
-  currentClass           = .Nil
-  currentBody            = .Nil
-  directives             =  Array()
-  blockInstructionsStack = .Nil
-  options                = .Set~new
+  Clauser                 = .Clauser~new( self )
+  preClauser              =  Clauser~preClauser
+  tokenizer               =  Clauser~tokenizer
+  definedMethods          = .StringTable~new
+  privateClasses          = .StringTable~new
+  publicClasses           = .StringTable~new
+  privateRoutines         = .StringTable~new
+  publicRoutines          = .StringTable~new
+  resources               = .StringTable~new
+  currentClass            = .Nil
+  currentBodies           = .Stack~new
+  directives              =  Array()
+  blockInstructionsStacks = .Stack~new
+  options                 = .Set~new
 
 ::Method addClass -- [As in in the ooRexx Package class]
   Expose privateClasses
@@ -843,3 +849,17 @@ Return
 
 -- Unrecognized directive instruction.
 99.916: Syntax( 99.916, Arg(1) )
+
+/******************************************************************************/
+/* STACK (Utility class)                                                      */
+/******************************************************************************/
+
+::Class Stack SubClass Array Public
+::Method top
+  Return self~lastItem
+::Method pop
+  temp = self~top
+  self~delete(self~last)
+  return temp
+::Method push
+  self~append(Arg(1))
