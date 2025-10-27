@@ -15,8 +15,9 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20241206    0.1  First public release                                      */
-/* 20241209    0.1b Add .PACKAGE.FUNCTION.NAME, .PACKAGE.SUBROUTINE.NAME       */
+/* 20241209    0.1b Add .PACKAGE.FUNCTION.NAME, .PACKAGE.SUBROUTINE.NAME      */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20251027    0.2e Add support for ::OPTIONS NUMERIC [NO]INHERIT             */
 /*                                                                            */
 /******************************************************************************/
 
