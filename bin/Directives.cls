@@ -18,6 +18,7 @@
 /* 20241209    0.1b Add .PACKAGE.FUNCTION.NAME, .PACKAGE.SUBROUTINE.NAME      */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20251027    0.2e Add support for ::OPTIONS NUMERIC [NO]INHERIT             */
+/* 20251031         Add support for namespaces in ::CLASS directive           */
 /*                                                                            */
 /******************************************************************************/
 
@@ -262,7 +263,9 @@ Done:
 
   name = TheElementAfter( CLASS )
 
-  Call ExpectClassName name, 19.901
+  NotNamespaced = .False
+
+  Call ExpectClassName name, 19.901, NotNamespaced
 
   options.             = .Nil
   options.public       = 0
@@ -290,24 +293,24 @@ Done:
       When "METACLASS" Then Do
         metaClass = TheElementAfter( keyword, ignoreBlanks )
         Call ExpectClassName metaClass, 19.906
-        options.kValue = metaClass
-        keyword = TheElementAfter( metaclass, ignoreBlanks )
+        options.kValue = ( nameSpace, className )
+        keyword = TheElementAfter( className, ignoreBlanks )
       End
       When "SUBCLASS", "MIXINCLASS" Then Do
         option = TheElementAfter( keyword, ignoreBlanks )
         If kValue == "SUBCLASS" Then Call ExpectClassName option, 19.907
         Else                         Call ExpectClassName option, 19.913
-        options.kValue = option
+        options.kValue = ( nameSpace, className )
         allOptions~~remove("MIXINCLASS")~~remove("SUBCLASS")
-        keyword = TheElementAfter( option, ignoreBlanks )
+        keyword = TheElementAfter( className, ignoreBlanks )
       End
       When "INHERIT" Then Do
         inherit = TheElementAfter( keyword, ignoreBlanks )
         Loop
           Call ExpectClassName inherit, 19.908
           If options.kValue == .Nil Then options.kValue = Array()
-          options.kValue~append( inherit )
-          inherit = TheElementAfter( inherit, ignoreBlanks )
+          options.kValue~append( ( nameSpace, className ) )
+          inherit = TheElementAfter( className, ignoreBlanks )
           If inherit < .EL.END_OF_CLAUSE Then Signal Done
         End
       End
@@ -328,9 +331,21 @@ Done:
   Exit .Class.Directive~new( package, begin, end, name, options. )
 
 ExpectClassName:
-  Use Arg element, code
+  nameSpace = .Nil
+  Use Arg element, code, nameSpaceAllowed = .True
+  If nameSpaceAllowed, element < .ALL.SYMBOLS Then Do
+    next = TheElementAfter( element )
+    If next < .EL.COLON Then Do
+      nameSpace = element
+      Call SetConstantName element, .NAMESPACE.NAME
+      element   = TheElementAfter( next )
+      If element \< .ALL.SYMBOLS Then Signal 20.921
+    End
+  End
+
   If element \< .ALL.SYMBOLS_AND_STRINGS Then Signal (code)
   Call SetConstantName element, .CLASS.NAME
+  className = element
 Return
 
 -- String or symbol expected after ::CLASS keyword.
@@ -347,6 +362,9 @@ Return
 
 -- String or symbol expected after MIXINCLASS keyword.
 19.913: Syntax( 19.913, CLASS, element )
+
+-- Symbol expected as a class name of qualified class name.
+20.921: Syntax( 20.921, CLASS )
 
 -- Unknown keyword on ::CLASS directive; found "&1".
 25.901: Syntax( 25.901, CLASS, keyword )
