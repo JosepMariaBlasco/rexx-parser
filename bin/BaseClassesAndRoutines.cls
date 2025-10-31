@@ -180,7 +180,7 @@
     If next~isNil Then
       Internal.Error( "TheElementAfter was about to return .Nil" )
     element = next
-    If ignoreBlanks, element < .ALL.WHITESPACE_LIKE Then element~makeIgnorable
+    If ignoreBlanks, element < .ALL.WHITESPACE_LIKE Then element~setIgnorable
   End
   Return element
 
@@ -221,10 +221,10 @@
   Else              Call SetCategory keyword, .EL.KEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .ALL.WHITESPACE_LIKE Then before~makeIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~setIgnorable
 
   after  = TheElementAfter(  keyword )
-  If after  < .ALL.WHITESPACE_LIKE Then after~makeIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after~setIgnorable
 
 --------------------------------------------------------------------------------
 
@@ -234,10 +234,10 @@
   Call SetCategory keyword, .EL.SUBKEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .ALL.WHITESPACE_LIKE Then before~makeIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~setIgnorable
 
   after  = TheElementAfter(  keyword )
-  If after  < .ALL.WHITESPACE_LIKE Then after~makeIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after~setIgnorable
 
 --------------------------------------------------------------------------------
 
@@ -247,10 +247,10 @@
   Call SetCategory keyword, .EL.DIRECTIVE_KEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .ALL.WHITESPACE_LIKE Then before~makeIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~setIgnorable
 
   after  = TheElementAfter(  keyword )
-  If after  < .ALL.WHITESPACE_LIKE Then after~makeIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after~setIgnorable
 
 --------------------------------------------------------------------------------
 
@@ -260,10 +260,10 @@
   Call SetCategory keyword, .EL.DIRECTIVE_SUBKEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .ALL.WHITESPACE_LIKE Then before~makeIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~setIgnorable
 
   after  = TheElementAfter(  keyword )
-  If after  < .ALL.WHITESPACE_LIKE Then after~makeIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after~setIgnorable
 
 /******************************************************************************/
 /* SetCategory -- A routine to set the category of an element                 */
@@ -648,8 +648,8 @@ End.Clause:
   -- Apply Rexx whitespace rules
   left           = TheElementBefore( semicolon )
   right          = TheElementAfter(  semicolon )
-  If left  < .ALL.WHITESPACE_LIKE Then left ~makeIgnorable
-  If right < .ALL.WHITESPACE_LIKE Then right~makeIgnorable
+  If left  < .ALL.WHITESPACE_LIKE Then left ~setIgnorable
+  If right < .ALL.WHITESPACE_LIKE Then right~setIgnorable
 
   Return semicolon
 
@@ -674,7 +674,7 @@ End.Clause:
 
   -- And ignore whitespace to its right when necessary
   next = TheElementAfter( element )
-  If next~category < .ALL.WHITESPACE_LIKE Then next~makeIgnorable
+  If next~category < .ALL.WHITESPACE_LIKE Then next~setIgnorable
 
   Return 1
 
@@ -704,7 +704,7 @@ End.Clause:
   ignored_data~from     = line start
   ignored_data~to       = line (Length(source[line])+1)
   ignored_data~source   = SubStr( source[line], start )
-  ignored_data~makeIgnorable
+  ignored_data~setIgnorable
   Return                  ignored_data
 
 --------------------------------------------------------------------------------

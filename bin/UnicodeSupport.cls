@@ -23,8 +23,7 @@
 package     = .context~package
 local       =  package~local
 myName      =  package~name
-myDrive     =  FileSpec( "Drive", myName )
-myPath      =  myDrive||FileSpec( "Path", myName )
+myPath      =  FileSpec( "Location", myName )
 
 -- We will ensure that these two files exist, but we will not load them
 -- until they are really needed, because loading them is expensive.

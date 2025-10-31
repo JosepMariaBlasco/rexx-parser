@@ -28,6 +28,7 @@
 /* 20250531    0.2c Implement more flexible rules for doc-comments            */
 /* 20251014    0.2e Add optional support for Lua and, not, or                 */
 /* 20251016         Add support for Lua "#" and Lambdas                       */
+/* 20251029         Add isInserted method to Element class (Thanks, Rony!)    */
 /*                                                                            */
 /******************************************************************************/
 
@@ -164,7 +165,7 @@ Invalid.Character   : If .Options.Lua, ch == "#" Then Return self~Lua.Length
     previous = TheElementBefore( previous )
   End
   If previous < .ALL.WHITESPACE_LIKE Then Do
-    previous~makeIgnorable
+    previous~setIgnorable
     previous = TheElementBefore( previous )
   End
 
@@ -176,7 +177,7 @@ Invalid.Character   : If .Options.Lua, ch == "#" Then Return self~Lua.Length
   If line < lines, previous < .ALL.CONTINUATION_CHARACTERS Then Do
     previous~category = .EL.CONTINUATION
     If TheElementBefore( previous ) < .IGNORE_WHITESPACE_AFTER Then
-      previous~makeIgnorable
+      previous~setIgnorable
     Return .Nil -- Do not generate an end-of-clause on return
   End
 
@@ -192,7 +193,7 @@ Invalid.Character   : If .Options.Lua, ch == "#" Then Return self~Lua.Length
   -- A semicolon eats blanks at the left
   beforeSemicolon = TheElementBefore( semicolon )
   If beforeSemicolon < .ALL.WHITESPACE_LIKE Then
-    beforeSemicolon~makeIgnorable
+    beforeSemicolon~setIgnorable
 
 Return semicolon
 
@@ -881,7 +882,7 @@ Done:
   -- Now apply Rexx rules about ignoring whitespace before operator chars
   predecessor = TheElementBefore( element )
   If predecessor < .ALL.WHITESPACE_LIKE Then Do
-    predecessor~makeIgnorable
+    predecessor~setIgnorable
     -- Recalculate predecessor
     predecessor = TheElementBefore(predecessor)
   End
@@ -924,7 +925,7 @@ Done:
 CompoundOperatorOrExtendedAssignment:
   predecessor~value = sequence
   element~category  = category
-  element~makeIgnorable
+  element~setIgnorable
 
 Return element
 
@@ -959,7 +960,7 @@ Return
   -- Whitespace not before an opening bracket gets ignored
   If element < .ALL.LEFT_BRACES Then Nop
   Else If predecessor < .ALL.WHITESPACE_LIKE Then Do
-    predecessor~makeIgnorable
+    predecessor~setIgnorable
     -- Recalculate predecessor
     predecessor = TheElementBefore( predecessor )
   End
@@ -976,7 +977,7 @@ Return
       Call RemoveElement predecessor
     End
     Else Do
-      element~makeIgnorable
+      element~setIgnorable
       Call SetCategory predecessor, .EL.DIRECTIVE_START
     End
   End
@@ -994,7 +995,7 @@ Return
     .Lua.Operator~new(.EL.LUA.LENGTH,line, col, col+1, source[line]) -
   )
   predecessor = TheElementBefore( element )
-  If predecessor < .ALL.WHITESPACE_LIKE Then predecessor~makeIgnorable
+  If predecessor < .ALL.WHITESPACE_LIKE Then predecessor~setIgnorable
 
   Exit element
 
@@ -1018,7 +1019,7 @@ Return
   -- Apply Rexx rules about ignoring posterior whitespace
 
   If TheElementBefore( element ) < .IGNORE_WHITESPACE_AFTER Then
-    element~makeIgnorable
+    element~setIgnorable
 
   Return element
 
@@ -1069,7 +1070,7 @@ TestLuaOperatorOrValue:
       )
       predecessor = TheElementBefore( element )
       If predecessor < .ALL.WHITESPACE_LIKE Then
-        predecessor~makeIgnorable
+        predecessor~setIgnorable
       Exit element
     End
     When "fail", "false", "nil", "true" Then
@@ -1445,13 +1446,16 @@ EndDelimiterFound:
   self~assigned = 1
 ::Method isIgnorable
   Return self~hasIndex(ignored)
-::Method makeIgnorable
+::Method setIgnorable
   self~ignored = 1
+::Method isInserted
+  Return self~from == self~to
 
 ::Method "<"
   Use Strict Arg category
   If category~isA( .String ) Then Return   category~contains( self~category )
   Return self ~  "<" : super( category )
+
 ::Method "\<"
   Use Strict Arg category
   If category~isA( .String ) Then Return \ category~contains( self~category )
@@ -1466,6 +1470,7 @@ EndDelimiterFound:
       Else Return .False
   End
   Return self ~  "<<" : super( subcategory )
+
 ::Method "\<<"
   Use Strict Arg subcategory
   If subcategory~isA( .String ) Then Do

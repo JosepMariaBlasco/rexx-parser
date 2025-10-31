@@ -44,7 +44,7 @@
 package      = .context~package
 pkgLocal     =  package~local
 myName       =  package~name
-mypath       =  FileSpec( "Drive", myName )FileSpec( "Path", myName )
+mypath       =  FileSpec( "Location", myName )
 pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
 
 /******************************************************************************/

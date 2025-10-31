@@ -163,7 +163,7 @@ Print:
   Parse Var from fromLine fromCol
   Parse Var   to   toLine   toCol
   Call Chunk "["Extent(element)"]"
-  Call Chunk (from == to)~?(" >","  ")
+  Call Chunk (element~isImplicit)~?(" >","  ")
   Call Chunk (element~ignored == 1)~?("X"," ")
   Call Chunk (element~isAssigned)~?("A"," ")
   If class \== .EL.RESOURCE_DATA Then value = element~value

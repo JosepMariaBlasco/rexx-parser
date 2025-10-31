@@ -22,9 +22,10 @@
 /* 20250107         Change -t and --term for -a and --ansi                    */
 /* 20250108         Add --pad= option                                         */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx.parser        */
-/* 20250526    0.2b Add --css opt. & "-" to select stdin (thanks, Rony!)      */
+/* 20250526    0.2b Add --css opt. & "-" to select .input (thanks, Rony!)     */
 /* 20250529    0.2c Add support for detailed string and number highlighting   */
 /* 20250706    0.2d Add support for detailed doc-comment highlighting         */
+/* 20251029    0.2e Change .stdin to .input (thanks, Rony!)                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -32,8 +33,7 @@ Parse Arg fn
 
 -- Remember how we were called
 Parse Source . how myself
-myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
-myPath = FileSpec("Drive",myself)FileSpec("Path",myself)
+myPath = FileSpec("Location",myself)
 sep = .File~separator
 
 -- We will store our processed options in a stem
@@ -127,7 +127,7 @@ If fn = "" Then Do
   Exit 1
 End
 
-If fn == "-" Then source = .StdIn~ArrayIn
+If fn == "-" Then source = .Input~ArrayIn
 Else Do
 
   -- Process filenames containing blanks

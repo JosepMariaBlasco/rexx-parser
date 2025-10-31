@@ -5,6 +5,12 @@ The Parser includes an optional Lua mode which
 enables a number of syntax modifications and extensions
 in preparation for a yet unannounced project.
 
+**Please note** that these extensions are not intended
+to be used in normal Rexx programs, and most probably
+will produce code that won't run, or won't run
+as intended, without extra software components
+that are still unreleased.
+
 You can enable Lua support by specifying the `"LUA"` option
 with an arbitrary value (e.g., `("LUA",1)`)
 when you invoke the parser,
@@ -120,15 +126,16 @@ Options Lua
 multiplier = x -> y -> y*x
 ```
 
-then `multiplier(3)` returns a function that multiplies by 3 its only argument.
+then `multiplier(3)` returns a function that multiplies by 3 its only argument `y`.
 
 Please note that the "->" operator is <em>right-associative</em>.
 
 When an expression follows the "->" operator, an implicit `return` instructions
 is assumed.
+
 You can also use several instructions after the "->" operator, and
 in this case you should enclose these instructions inside an unlabeled
-single `DO` block:
+simple `DO` block:
 
 ```rexx
 Options Lua
@@ -155,10 +162,10 @@ End
 
 ### Syntax modifications to allow for first-class functions
 
-Since when Lua extensions are in effect an expression can have
-a function as a value, a small modification of Classic Rexx syntax
-has had to be introduced. In Classic Rexx, an expression of the
-form
+When Lua extensions are active, any expression can
+have a result which is a function, and, therefore,
+a small modification of Classic Rexx syntax has had to be introduced.
+In Classic Rexx, an expression of the form
 
 ```rexx
 (whatever)(x)
@@ -174,9 +181,9 @@ is inserted between the two adjacent parentheses, as if
 had been written. Since we now accept values which can themselves be
 functions, this behaviour of the parser is no longer desirable.
 Therefore, when `Options Lua` is in effect, the above expression
- will be parsed *as a function call*, that is, the value of
- `(whatever)` will be evaluated, assuming that it is a function,
- and then this function will be called with `x` as its only argument.
+will be parsed *as a function call*, that is, the value of
+`(whatever)` will be evaluated, assuming that it is a function,
+and then this function will be called with `x` as its only argument.
 
 Please note that, contrary to Lua, where blanks before argument lists
 are optional, in Rexx they are now, and, therefore, if there are

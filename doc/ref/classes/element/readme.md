@@ -50,6 +50,10 @@ the element stream by ensuring that it has certain
 properties (for example, that a clause is always
 delimited by two end-of-clause markers).
 
+You can use the [isInserted](#isinserted) method
+of the Element class to test whether an element is
+inserted or not.
+
 ### Non-inserted elements {#portion}
 
 **Portions**, or **non-inserted** elements
@@ -74,7 +78,7 @@ are [**ignorable elements**](/rexx-parser/doc/glossary/#ignorable-element).
 You can check whether a element is ignorable by using the
 [isIgnorable](#isignorable) method of the [Element](.) class,
 and you can make an element ignorable by using the
-[makeIgnorable](#makeignorable) method.
+[setIgnorable](#setignorable) method.
 
 Please note that the knowledge of the fact that
 a certain element is or is not ignorable may imply
@@ -314,15 +318,21 @@ whitespace sequences. Higher levels of parsing
 Please refer to the description of
 [ignorable elements](#ignorable-elements), above.
 
-See also method [makeIgnorable](#makeignorable).
+See also method [setIgnorable](#setignorable).
 
-### makeIgnorable
+### isInserted {#isinserted}
 
-![makeIgnorable](Element.makeIgnorable.svg) \
+![isInserted](Element.isInserted.svg) \
 
-Makes the destination element ignorable.
+Returns `.True` when the destination element is
+automatically inserted by the Parser.
+For example, an implicit
+semicolon is added to the end of every
+line which doesn't end inside a comment,
+or before the `THEN` keyword, etc.
 
-See also method [isIgnorable](#isignorable).
+Please refer to the description of
+[inserted elements](#marker), above.
 
 ### next
 
@@ -356,6 +366,14 @@ See also method [next](#next).
 
 Marks the element as assigned, so that subsequent calls to
 [isAssigned](#isassigned) will return `.True`.
+
+### setIgnorable
+
+![setIgnorable](Element.setIgnorable.svg) \
+
+Makes the destination element ignorable.
+
+See also method [isIgnorable](#isignorable).
 
 ### source
 

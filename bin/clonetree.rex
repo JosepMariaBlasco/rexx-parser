@@ -39,7 +39,7 @@
   package = parser~package
 
   element = parser~firstElement
-  package~process(element, .STDOut, .StringTable~new)
+  package~process(element, .Output, .StringTable~new)
 
   -- We are done
   Exit 0

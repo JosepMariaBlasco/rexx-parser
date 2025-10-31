@@ -112,7 +112,7 @@ Process:
   Use Arg code = ""
 
   -- Restore the output destination to .SdtOut
- .output~destination( .StdOut )
+ .output~destination( .stdout )
 
   -- Emit an Apache-like soft 404 error
   Say 'Content-Type: text/html; charset=iso-8859-1'

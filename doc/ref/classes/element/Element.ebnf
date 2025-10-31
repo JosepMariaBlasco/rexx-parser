@@ -6,11 +6,11 @@ Element.isAssigned ::= "isAssigned"
 
 Element.isIgnorable ::= "isIgnorable"
 
+Element.isInserted ::= "isInserted"
+
 Element.less ::= element "<" categories
 
 Element.lessless ::= element "<<" subcategories
-
-Element.makeIgnorable ::= "makeIgnorable"
 
 Element.next ::= "next"
 
@@ -23,6 +23,8 @@ Element.parts ::= "parts"
 Element.prev ::= "prev"
 
 Element.setAssigned ::= "setAssigned"
+
+Element.setIgnorable ::= "setIgnorable"
 
 Element.source ::= "source"
 

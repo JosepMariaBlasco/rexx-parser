@@ -21,6 +21,12 @@ Version history
   <li> Add experimental [Lua support](/rexx-parser/Lua/) (20251014).
   <li> Add experimental [Lambda support](/rexx-parser/Lua/) for Lua variants (20251017).
   <li> Add support for `::OPTIONS NUMERIC [NO]INHERIT` (20251027).
+  <li> Update .ALL.SYMBOLS_AND_KEYWORDS so that it has .ALL.DIRECTIVE_KEYWORDS
+       as a subset, following a reflection by Rony (20251029).
+  <li> **Breaking change** Rename "makeIgnorable" to "setIgnorable" to make
+       the API more homogeneous (20251029).
+  <li> Add the "isInserted" method to the Element class, following a suggestions
+       by Rony (thanks!) (20251029).
 <tr><td>20250622<td>0.2d<td>
 <ul>
   <li> **Breaking change**: The character used to separate foreground

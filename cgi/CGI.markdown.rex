@@ -50,7 +50,7 @@
 --------------------------------------------------------------------------------
   package   = .context~package
   local     =  package~local
-  mypath    =  FileSpec( "Drive", package~name )FileSpec( "Path", package~name )
+  mypath    =  FileSpec( "Location", package~name )
   local ~ . = .File~new( mypath"../" )~absolutePath      -- Creates ".."
 
   Call Requires .."/bin/FencedCode.cls"

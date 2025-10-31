@@ -24,7 +24,7 @@
 /*                                                                            */
 /******************************************************************************/
 
-mypath      =  FileSpec("Path",.context~package~name)
+mypath      =  FileSpec("Location",.context~package~name)
 parent      = .File~new(mypath"..")      ~absolutePath
 cls         = .File~new(mypath"../bin")  ~absolutePath
 HLDrivers   = .File~new(mypath"../bin/HLDrivers")  ~absolutePath

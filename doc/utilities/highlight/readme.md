@@ -17,11 +17,11 @@ When calling `highlight` as a command, the default mode is ANSI;
 otherwise, the default mode is HTML.
 
 When <em>file</em> is a single dash ("-") which is the last
-option in the command line argument, input is taken from stdin.
-In all other cases, <em>file</em> has to refer to a filesystem
-file; when the extension of that file is `.md`, `.htm` or `.html`,
-the utility processes all Rexx fenced code blocks in <em>file</em>
-and highlights them. Otherwise, the utility assumes that <em>file</em>
+option in the command line argument, input is taken from the
+`.input` monitor. In all other cases, <em>file</em> has to refer
+to a filesystem file; when the extension of that file is `.md`, `.htm`
+or `.html`, the utility processes all Rexx fenced code blocks in
+<em>file</em> and highlights them. Otherwise, the utility assumes that <em>file</em>
 is a Rexx file, it is highlighted accordingly.
 
 ### Options:

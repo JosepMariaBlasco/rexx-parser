@@ -28,7 +28,7 @@ If .environment~Highlighter.Driver == .Nil Then Do
    .environment~Highlighter.Driver =  .Highlighter.Driver
   package    = .context~package
   local      =  package~local
-  mypath     =  FileSpec( "Drive", package~name )FileSpec( "Path", package~name )
+  mypath     =  FileSpec( "Location", package~name )
   myName     =  FileSpec( "Name", package~name )
   drivers    = .File~new(mypath)~list
   Do driver Over drivers

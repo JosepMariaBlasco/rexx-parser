@@ -564,7 +564,8 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewSet ALL.SYMBOLS, .ALL.VAR_SYMBOLS, .ALL.CONST_SYMBOLS, .ALL.NUMBERS
 
   -- Symbols or keywords
-  Call NewSet ALL.SYMBOLS_AND_KEYWORDS, .ALL.SYMBOLS, .ALL.KEYWORDS
+  Call NewSet ALL.SYMBOLS_AND_KEYWORDS, -
+   .ALL.SYMBOLS, .ALL.KEYWORDS, .ALL.DIRECTIVE_KEYWORDS
 
   -- Variables or keywords
   Call NewSet ALL.VARIABLES_AND_KEYWORDS, .ALL.VAR_SYMBOLS, .ALL.KEYWORDS
