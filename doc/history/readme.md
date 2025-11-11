@@ -8,6 +8,12 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20251111<td>0.3a<td>
+<ul>
+  <li> Add a series of CSS files inspired by the highlighting
+       styles used by [the vim editor](https://en.wikipedia.org/wiki/Vim_(text_editor)):
+       please refer to the `css/vim` subdir for details.
+       This is a contribution from Rony Flatscher: thank you!
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

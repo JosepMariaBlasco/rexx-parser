@@ -44,6 +44,8 @@ HTML classes to every
 The actual highlighting is taken care of by an
 extensible system of [drivers](#drivers).
 
+------------
+
 #### CSS {#css}
 
 The highlighter is distributed with an
@@ -79,12 +81,38 @@ Say "Done!" -- Inform the user
 </div>
 </div>
 
+Starting with release 0.3a, the Rexx Highlighter includes
+an additional collection of dark and light styles, inspired
+by the vim color files distributed with
+[the vim editor](https://en.wikipedia.org/wiki/Vim_(text_editor)):
+\
+
+Vim dark styles                  Vim light styles
+--------------------------       ------------------------------
+rexx-vim-dark-blue.css           rexx-vim-light-delek.css
+rexx-vim-dark-darkblue.css&nbsp; rexx-vim-light-morning.css
+rexx-vim-dark-desert.css         rexx-vim-light-peachpuff.css
+rexx-vim-dark-elflord.css        rexx-vim-light-shine.css
+rexx-vim-dark-evening.css        rexx-vim-light-zellner.css
+rexx-vim-dark-industry.css
+rexx-vim-dark-koehler.css
+rexx-vim-dark-murphy.css
+rexx-vim-dark-pablo.css
+rexx-vim-dark-ron.css
+rexx-vim-dark-slate.css
+rexx-vim-dark-torte.css
+--------------------------       ------------------------------
+\
+
+These files have been curated and adapted by Rony Flatscher.
+
 You can select a style by using the `style=` attribute on a
 [Rexx fenced code block](fencedcode/), or the
 `--style=` option of the [highlight](../utilities/highlight/) utility.
 The [Highlighter class](../ref/classes/highlighter/) class
 also allows to specify a style in the options argument.
 
+------------
 
 #### The style patch system {#stylepatch}
 
@@ -114,6 +142,8 @@ of a [Rexx fenced code block](fencedcode/#patch), or the
 [Highlighter class](../ref/classes/highlighter/)
 also accepts an optional [style patch](../ref/classes/stylepatch/) argument.
 
+-----------
+
 #### From element categories to HTML classes {#category2html}
 
 The Rexx Parser assigns a [category](../ref/categories/)
@@ -139,6 +169,8 @@ your own version of [HTMLClasses](HTMLClasses/) (and
 prepare the corresponding CSS files), or simply use
 the [style patch system](../ref/classes/stylepatch/)
 and temporarily patch the highlighting styles.
+
+-----------------
 
 #### Drivers {#drivers}
 
