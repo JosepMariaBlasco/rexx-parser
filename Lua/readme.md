@@ -5,11 +5,13 @@ The Parser includes an optional Lua mode which
 enables a number of syntax modifications and extensions
 in preparation for a yet unannounced project.
 
-**Please note** that these extensions are not intended
-to be used in normal Rexx programs, and most probably
-will produce code that won't run, or won't run
-as intended, without extra software components
-that are still unreleased.
+Please note that **these extensions are not Rexx entensions**,
+that is, they are not extensions to the Rexx language.
+They are ways to write Lua programs using a
+Rexx-like syntax, while still being able to use the
+full power of Lua. In other words, they are
+ways to use the features of Lua that don't have a
+simple mapping to Rexx.
 
 You can enable Lua support by specifying the `"LUA"` option
 with an arbitrary value (e.g., `("LUA",1)`)

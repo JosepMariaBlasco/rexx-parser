@@ -28,6 +28,8 @@ Version history
   <li> Add the "isInserted" method to the Element class, following a suggestions
        by Rony (thanks!) (20251029).
   <li> Fix <https://github.com/JosepMariaBlasco/rexx-parser/issues/20> (20251031)
+  <li> Miscelaneous improvements to the ANSI highlighter driver after
+       some suggestions by Rony (thanks! - 20251111).
 <tr><td>20250622<td>0.2d<td>
 <ul>
   <li> **Breaking change**: The character used to separate foreground

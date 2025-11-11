@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*                                                                            */
-/* ident.rex - Tests if a Rexx file and its parsing are identical             */
-/* ==============================================================             */
+/* elident.rex - Check that a program is equal to its Element API parsing     */
+/* ======================================================================     */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -17,6 +17,7 @@
 /* 20241206    0.1  First public release                                      */
 /* 20241208    0.1a c/CLASSIC_COMMENT/STANDARD_COMMENT/                       */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20251110    0.23 Change the name to elident.rex                            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -50,12 +51,12 @@ Do Counter elements Until element == .Nil
   If element~from \== element~to Then Do
     category = element~category
     elementLine  = element~from~word(1)
-    If elementLine > currentLineNo Then Call ChangeLine
-    If category == .EL.STANDARD_COMMENT Then Call StandardComment
-    Else If category == .EL.DOC_COMMENT Then Call StandardComment
+    If      elementLine > currentLineNo          Then Call ChangeLine
+    If      category == .EL.STANDARD_COMMENT     Then Call StandardComment
+    Else If category == .EL.DOC_COMMENT          Then Call StandardComment
     Else If category == .EL.DOC_COMMENT_MARKDOWN Then Call StandardComment
-    Else If category == .EL.RESOURCE_DATA   Then Call ResourceData
-    Else currentLine ||= element~source
+    Else If category == .EL.RESOURCE_DATA        Then Call ResourceData
+    Else    currentLine ||= element~source
   End
   element = element~next
 End

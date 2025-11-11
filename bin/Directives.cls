@@ -19,6 +19,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20251027    0.2e Add support for ::OPTIONS NUMERIC [NO]INHERIT             */
 /* 20251031         Add support for namespaces in ::CLASS directive           */
+/* 20251101         Enhance and complete API for Requires.Directive           */
 /*                                                                            */
 /******************************************************************************/
 
@@ -485,14 +486,14 @@ SignedNumber:
 
   Call SetConstantName name, .METHOD.NAME
 
-  options.attribute    = 0
-  options.class        = 0
-  options.visibility   = "PUBLIC"
-  options.guarded      = 1
-  options.protected    = 0
-  options.abstract     = 0
-  options.delegateName = ""
-  options.external     = ""
+  options.              = .Nil
+  options.isAbstract    = 0
+  options.isAttribute   = 0
+  options.isClassMethod = 0
+  options.isGuarded     = 1
+  options.isPackage     = 0
+  options.isPrivate     = 0
+  options.isProtected   = 0
 
   ignoreBlanksToTheRight = 1
 
@@ -500,9 +501,14 @@ SignedNumber:
 
   allOptions = .set~of(                                   -
     "ATTRIBUTE", "CLASS", "PUBLIC", "PACKAGE", "PRIVATE", -
-    "GUARDED", "UNGUARDED", "UNPROTECTED", "PROTECTED",    -
-    "ABSTRACT", "DELEGATE", "EXTERNAL"                     -
+    "GUARDED", "UNGUARDED", "UNPROTECTED", "PROTECTED",   -
+    "ABSTRACT", "DELEGATE", "EXTERNAL"                    -
   )
+
+  If .Options.Lua | .Options.Experimental Then Do
+    allOptions[] = "EXTENDS"
+    allOptions[] = "OVERRIDES"
+  End
 
   options.containingClass = package~currentClass
 
@@ -517,41 +523,56 @@ SignedNumber:
     allOptions~remove(kValue)
 
     Select case kValue
-      When "ATTRIBUTE" Then options.attribute = 1
+      When "ATTRIBUTE" Then options.isAttribute = 1
       When "GUARDED", "UNGUARDED" Then Do
-        If kValue == "UNGUARDED" Then options.guarded = 0
+        If kValue == "UNGUARDED" Then options.isGuarded = 0
         allOptions~~remove("GUARDED")~~remove("UNGUARDED")
       End
       When "PROTECTED", "UNPROTECTED" Then Do
-        If kValue == "PROTECTED" Then options.protected = 1
+        If kValue == "PROTECTED" Then options.isProtected = 1
         allOptions~~remove("PROTECTED")~~remove("UNPROTECTED")
       End
       When "PUBLIC", "PACKAGE", "PRIVATE" Then Do
-        options.visibility = kValue
+        If      kValue == "PACKAGE" Then options.isPackage = 1
+        Else If kValue == "PRIVATE" Then options.isPrivate = 1
         allOptions~~remove("PUBLIC")~~remove("PACKAGE")~~remove("PRIVATE")
       End
       When "CLASS" Then Do
         If package~inTheProlog Then Signal 99.905
-        options.class = 1
+        options.isClassMethod = 1
       End
-      When "ABSTRACT" Then options.abstract = 1
-      When "DELEGATE" Then Do
-        thisDelegateName = TheElementAfter( keyword )
+      When "EXTENDS", "OVERRIDES" Then Do -- Experimental or Lua
+        className = TheElementAfter( keyword )
+        Call ExpectClassName className, 20.900
+        options.kValue = ( nameSpace, className )
         ignoreBlanksToTheRight = 1
-        If thisDelegateName \< .ALL.SYMBOLS_AND_STRINGS Then
-          Call 20.926 thisDelegateName
-        options.delegateName = thisDelegateName
-        keyword = TheElementAfter( thisDelegateName, ignoreBlanksToTheRight )
+        keyword = TheElementAfter( className, ignoreBlanksToTheRight )
         Iterate -- Jump directly to next keyword, if any
       End
-      When "EXTERNAL" Then Do -- Should check spec syntax
-        spec = TheElementAfter( keyword )
-        ignoreBlanksToTheRight = 1
-        If spec \< .ALL.STRINGS Then Signal 19.905
-        options.external = spec~value
-        keyword = TheElementAfter( spec, ignoreBlanksToTheRight )
+      Otherwise -- "ABSTRACT", "DELEGATE", "EXTERNAL"
+        allOptions~~remove("ABSTRACT")~~remove("DELEGATE")~~remove("EXTERNAL")
+        Select Case kValue
+          When "ABSTRACT" Then Do
+            options.isAbstract = 1
+            keyword = TheElementAfter( keyword )
+          End
+          When "DELEGATE" Then Do
+            thisDelegateName = TheElementAfter( keyword )
+            ignoreBlanksToTheRight = 1
+            If thisDelegateName \< .ALL.SYMBOLS_AND_STRINGS Then
+              Call 20.926 thisDelegateName
+           options.delegateName = thisDelegateName
+            keyword = TheElementAfter( thisDelegateName, ignoreBlanksToTheRight )
+          End
+          When "EXTERNAL" Then Do -- Should check spec syntax
+            spec = TheElementAfter( keyword )
+            ignoreBlanksToTheRight = 1
+            If spec \< .ALL.STRINGS Then Signal 19.905
+            options.external = spec~value
+            keyword = TheElementAfter( spec, ignoreBlanksToTheRight )
+          End
+        End
         Iterate -- Jump directly to next keyword, if any
-      End
     End
     -- Step to next keyword, if any
     keyword = TheElementAfter( keyword )
@@ -559,6 +580,24 @@ SignedNumber:
 
 Done:
   Return .Method.Directive~new( package, begin, end, name, options. )
+
+ExpectClassName:
+  nameSpace = .Nil
+  Use Arg element, code
+  If element < .ALL.SYMBOLS Then Do
+    next = TheElementAfter( element )
+    If next < .EL.COLON Then Do
+      nameSpace = element
+      Call SetConstantName element, .NAMESPACE.NAME
+      element   = TheElementAfter( next )
+      If element \< .ALL.SYMBOLS Then Signal 20.921
+    End
+  End
+
+  If element \< .ALL.SYMBOLS_AND_STRINGS Then Signal (code)
+  Call SetConstantName element, .CLASS.NAME
+  className = element
+Return
 
 -- String or symbol expected after ::METHOD keyword.
 19.902: Syntax( 19.902, METHOD, name )
@@ -569,6 +608,12 @@ Done:
 -- Unknown keyword on ::METHOD directive; found "&1".
 25.902: Syntax( 25.902, METHOD, keyword )
 
+-- Symbol expected after the XXX keyword.
+20.900: Syntax( 20.900, METHOD, "Symbol expected after the" kValue "keyword." )
+
+-- Symbol expected as a class name of qualified class name.
+20.921: Syntax( 20.921, METHOD )
+
 -- Symbol expected after the DELEGATE keyword.
 20.926: Syntax( 20.926, METHOD, Arg(1) )
 
@@ -578,12 +623,40 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Method.Directive Public SubClass Rexx.Directive
-::Attribute name     Get
-::Attribute options. Get
+::Attribute name          Get
+::Attribute isAbstract    Get
+::Attribute isAttribute   Get
+::Attribute isConstant    Get
+::Attribute isClassMethod Get
+::Attribute isGuarded     Get
+::Attribute isPackage     Get
+::Attribute isPrivate     Get
+::Attribute isProtected   Get
+::Attribute delegateName  Get
+::Attribute external      Get
+::Attribute extends       Get -- Experimental
+::Attribute overrides     Get -- Experimental
+
+-- A .Rexx.Method, set when parsing the directive
 ::Attribute method
+
 ::Method init
-  Expose name  options.
+  Expose name isAbstract isAttribute isClassMethod isGuarded -
+    isPackage isPrivate isProtected delegateName external extends overrides
   Use Strict Arg package, begin, end, name, options.
+  isAttribute   = options.isAttribute
+  isAbstract    = options.isAbstract
+  isClassMethod = options.isClassMethod
+  isGuarded     = options.isGuarded
+  isPackage     = options.ispackage
+  isPrivate     = options.isPrivate
+  isProtected   = options.isProtected
+
+  delegateName  = options.delegatename
+  external      = options.external
+  extends       = options.extends
+  overrides     = options.overrides
+
   self~init:super( package, begin, end )
 
 /******************************************************************************/
@@ -754,6 +827,7 @@ Done:
     Signal Done
   End
 
+  -- kValue == "NAMESPACE"
   element = TheElementAfter( keyword )
 
   If element \< .ALL.SYMBOLS Then Signal 20.920
@@ -784,9 +858,14 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Requires.Directive Public SubClass Rexx.Directive
+::Attribute programName
+::Attribute nameSpace
+::Attribute library
 ::Method init
-  Expose programName options.
+  Expose programName nameSpace library
   Use Strict Arg package, begin, end, programName, options.
+  nameSpace = options.namespace
+  library   = options.library
   self~init:super( package, begin, end )
 
 /******************************************************************************/

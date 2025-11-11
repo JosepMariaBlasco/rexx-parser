@@ -404,6 +404,7 @@
           value = value"ff"
         End
       End
+      Otherwise Iterate
     End
     newList[i] = (Strip( ChangeStr(".", rest, " ") ), property, value)
   End

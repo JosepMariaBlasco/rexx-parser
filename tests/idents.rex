@@ -55,7 +55,11 @@ End
 
 Do file Over files
   Say "Checking '"file"'..."
-  Call Ident file
+  Say "  Elements..."
+  Call ElIdent file
+  If result \== 0 Then Exit 1
+  Say "  Tree..."
+  Call TrIdent file
   If result \== 0 Then Exit 1
 End
 

@@ -34,22 +34,30 @@ End
   self~init:super(Options., output)
 
 ::Method Prolog
-  Expose Options.
+  Expose Options. linenoHL linebarHL
   self~emit( "1B"x"[0m" )
 
-  If Options.numberLines Then
-    self~emit( Right(options.startFrom, Options.!numberWidth)" " )
+  If Options.numberLines Then Do
+    linenoHL  = self~hl2SGR("rx-lineno")
+    linebarHL = self~hl2SGR("rx-linebar")
+    lineno    = Right(options.startFrom, Options.!numberWidth)
+    self~emit( ANSI(linenoHL,  lineno) )
+    self~emit( ANSI(linebarHL, " | " ) )
+  End
 
 ::Method startLine
-  Expose Options.
+  Expose Options. linenoHL linebarHL
   Use Strict Arg lineNo
 
   self~EnsureWidth
 
   self~say( "" )
 
-  If Options.numberLines Then
-    self~emit( Right(lineNo, options.!numberWidth)" " )
+  If Options.numberLines Then Do
+    lineno = Right(lineNo, options.!numberWidth)
+    self~emit( ANSI(linenoHL,  lineno) )
+    self~emit( ANSI(linebarHL, " | " ) )
+  End
 
 ::Method Highlight
   Expose Options.
@@ -68,6 +76,11 @@ End
     End
   End
 
+  self~emit( ANSI(self~hl2SGR(tags,extra), string) )
+
+::Method hl2SGR
+  Use Strict Arg tags, extra = ""
+
   Parse Value self~tags2highlight(tags, extra) -
     With bold italic underline color":"background
 
@@ -78,7 +91,7 @@ End
   If color      \== "" Then command ||= "38;2;"color2SGR(color)
   If background \== "" Then command ||= "48;2;"color2SGR(background)
 
-  self~emit( ANSI(command, string) )
+  Return command
 
 ::Method Epilog
   self~EnsureWidth

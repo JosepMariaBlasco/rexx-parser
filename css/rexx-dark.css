@@ -26,6 +26,7 @@
 /* 20250630         Add support for doc-comment subelements                   */
 /* 20250722         Add styles for rx-dskw                                    */
 /* 20251014    0.2e Add support for Lua extensions                            */
+/* 20251111         Support customizable line numbers in ANSI                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -58,6 +59,14 @@
 /* Support for line numbers                                                   */
 /* ========================                                                   */
 /******************************************************************************/
+
+  .rx-lineno  {                         /* ANSI Driver only                   */
+    color: #ff0;
+    font-style: italic;
+  }
+  .rx-linebar {                         /* ANSI Driver only                   */
+    color: #ff0;
+  }
 
   pre.number-lines {
           padding-left: 50px;
@@ -330,25 +339,29 @@
       &.rx-cquo {color: #ff0;}
     }
 
-    /* Resource ignored stuff                                                 */
-    &.rx-res-ignore {
-      color: #ccc;
-      font-style: italic;
-    }
-
-    /* Resource data                                                          */
-    &.rx-res-data {
-      color: #fc0;
-      font-style: italic;
-    }
-
     /* Resource delimiter                                                     */
-    &.rx-res-delimiter {
+    .rx-res-delimiter {
       color: #fc0;
       text-decoration:underline;
     }
 
   } /* <-- END OF .rx-const                                                   */
+
+/******************************************************************************/
+/* ::RESOURCE data and ignored stuff                                          */
+/******************************************************************************/
+
+  /* Resource data                                                            */
+  .rx-res-data {
+    color: #fc0;
+    font-style: italic;
+  }
+
+  /* Resource ignored stuff                                                   */
+  .rx-res-ignore {
+    color: #ccc;
+    font-style: italic;
+  }
 
 /******************************************************************************/
 /* Lua extensions                                                             */

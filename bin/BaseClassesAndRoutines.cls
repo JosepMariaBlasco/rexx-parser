@@ -28,7 +28,10 @@
 /* A Rexx Clause                                                              */
 /******************************************************************************/
 
- .environment~Lambda.Do.Block = .Lambda.Do.Block
+ .environment~Lambda.Do.Block  = .Lambda.Do.Block
+ .environment~Rexx.Clause      = .Rexx.Clause
+ .environment~Rexx.Directive   = .Rexx.Directive
+ .environment~Rexx.Instruction = .Rexx.Instruction
 
 ::Class Rexx.Clause Public
 

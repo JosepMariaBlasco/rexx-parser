@@ -24,6 +24,8 @@
 /* 20250629    0.2d Complete refactor to use nesting and "&"                  */
 /* 20250706         Add support for doc-comment subelements                   */
 /* 20250722         Add styles for rx-dskw                                    */
+/* 20251014    0.2e Add support for Lua extensions                            */
+/* 20251111         Support customizable line numbers in ANSI                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -60,6 +62,14 @@
 /* Support for line numbers                                                   */
 /* ========================                                                   */
 /******************************************************************************/
+
+  .rx-lineno  {                         /* ANSI Driver only                   */
+    color: #ff0;
+    font-style: italic;
+  }
+  .rx-linebar {                         /* ANSI Driver only                   */
+    color: #ff0;
+  }
 
   pre.number-lines {
           padding-left: 50px;
@@ -334,18 +344,6 @@
       &.rx-cquo {color: #ff0;}
     }
 
-    /* Resource ignored stuff                                                 */
-    &.rx-res-ignore {
-      color: #ccc;
-      font-style: italic;
-    }
-
-    /* Resource data                                                          */
-    &.rx-res-data {
-      color: #fc0;
-      font-style: italic;
-    }
-
     /* Resource delimiter                                                     */
     &.rx-res-delimiter {
       color: #fc0;
@@ -353,6 +351,35 @@
     }
 
   } /* <-- END OF .rx-const                                                   */
+
+/******************************************************************************/
+/* ::RESOURCE data and ignored stuff                                          */
+/******************************************************************************/
+
+  /* Resource data                                                            */
+  &.rx-res-data {
+    color: #fc0;
+    font-style: italic;
+  }
+
+  /* Resource ignored stuff                                                   */
+  &.rx-res-ignore {
+    color: #ccc;
+    font-style: italic;
+  }
+
+/******************************************************************************/
+/* Lua extensions                                                             */
+/* ==============                                                             */
+/*                                                                            */
+/*   Highlighting of Lua operators "and", "not" and "or"; constants "fail",   */
+/*   "false", "nil" and "true"; table delimiters "[", "(", ")", "]"; and      */
+/*   table field names.                                                       */
+/******************************************************************************/
+
+  .rx-lua {
+    color: #65fa25;
+  }
 
 /******************************************************************************/
 /******************************************************************************/

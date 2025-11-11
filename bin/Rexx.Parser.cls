@@ -65,7 +65,8 @@
 
   -- .Directory~of() crashes the interpreter
  .environment~Parser.Options = .Directory~new
- .environment~Options.Lua = 0
+ .environment~Options.Lua          = 0
+ .environment~Options.Experimental = 0
   If Arg(3,'E') Then Do
     .Validate~classType("options",options,.Array)
     If \ options~isEmpty Then Do
@@ -75,7 +76,9 @@
       End
      .environment~Parser.Options = .Directory~sendWith("of", options)
       If .Parser.Options~hasIndex("LUA") Then
-        .environment~Options.Lua = 1
+        .environment~Options.Lua          = 1
+      If .Parser.Options~hasIndex("EXPERIMENTAL") Then
+        .environment~Options.Experimental = 1
     End
   End
 
@@ -254,7 +257,7 @@ CheckThatUseLocalIsValid:
   local               = .Directory~new
 
   If directive~class == .Method.Directive Then
-    classMethod = directive~options.[class]
+    classMethod = directive~isClassMethod
 
   -- Set begin and end to nil, will be updated by addInstruction
   self~init:super( package, .Nil, .Nil )
@@ -657,7 +660,7 @@ Return
     If lastClass~instanceMethods~hasIndex(name) Then Signal 99.932
     lastClass~addInstanceMethod( name, constant )
   End
-  directive~body = codeBody
+  directive~body     = codeBody
   directive~constant = constant
   package~addDirective( directive )
   Return
@@ -685,14 +688,13 @@ Return
 ::Routine Method
   Use Strict Arg package, directive
   codeBody = Code.Body( package, directive )
-  options. = directive~options.
   If \codeBody~isEmpty Then Do
     firstInstruction = codeBody~instructions[1]
     instructionBegin = TheElementAfter( firstInstruction~begin )
-    If options.abstract                 Then Signal 99.933
-    Else If options.["ATTRIBUTE"]       Then Signal 99.934
-    Else If options.external \== ""     Then Signal 99.936
-    Else If options.delegateName \== "" Then Signal 99.946
+    If directive~isAbstract                 Then Signal 99.933
+    Else If directive~isAttribute           Then Signal 99.934
+    Else If directive~external \== .Nil     Then Signal 99.936
+    Else If directive~delegateName \== .Nil Then Signal 99.946
   End
   name = Upper( directive~name~value )
   method = .Rexx.Method~new(name, directive, codeBody)
@@ -702,10 +704,10 @@ Return
   End
   Else Do
     lastClass = package~currentClass
-    If options.["CLASS"] Then Do -- Class method
+    If directive~isClassMethod Then Do -- Class method
       If lastClass~classMethods~hasIndex(name) Then Signal 99.902
       lastClass~addClassMethod( name, method )
-      If options.attribute Then Do
+      If directive~isAttribute Then Do
         name = name"="
         If lastClass~classMethods~hasIndex( name ) Then Signal 99.902
         lastClass~addClassMethod( name, method )
@@ -714,7 +716,7 @@ Return
     Else Do -- Instance method
       If lastClass~instanceMethods~hasIndex(name) Then Signal 99.902
       lastClass~addInstanceMethod( name, method )
-      If options.attribute Then Do
+      If directive~isAttribute Then Do
         name = name"="
         If lastClass~instanceMethods~hasIndex(name) Then Signal 99.902
         lastClass~addInstanceMethod( name, method )

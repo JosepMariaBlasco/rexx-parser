@@ -194,6 +194,10 @@ Crumb:
     When ref"/classes"             Then Return "Classes"
     When ref"/classes/driver"      Then Return "Driver"
     When ref"/classes/highlighter" Then Return "Highlighter"
+    When ref"/classes/rexx.clause" Then Return "Rexx.Clause"
+    When ref"/classes/rexx.clause/rexx.directive" Then Return "Rexx.Directive"
+    When ref"/classes/rexx.clause/rexx.directive/method.directive" Then
+      Return "Method.Directive"
     When ref"/classes/rexx.parser" Then Return "Rexx.Parser"
     When ref"/classes/rexx.parser/early-check" Then Return "Early checks"
     When ref"/classes/stylepatch"  Then Return "StylePatch"

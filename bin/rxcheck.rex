@@ -23,6 +23,7 @@
 /* 20250508         Fix typo (GitHub issue no. 10 - Thanks Geoff!)            */
 /* 20250831    0.2e Add support for LEAVE and INTERPRET checks                */
 /* 20250929         Add ".rex" to filename when appropriate                   */
+/* 20251102         Add support for "experimental" option                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -38,6 +39,7 @@
   debug            = 0
   itrace           = 0
   lua              = 0
+  experimental     = 0
   extraletters     = ""
   emptyassignments = 0
   Do While "+-"~contains(Left(file,1))
@@ -58,24 +60,26 @@
         leave   = 1
         iterate = 1
       End
-      When "-signal"  Then signal  = 0
-      When "+signal"  Then signal  = 1
-      When "-leave"   Then leave   = 0
-      When "+leave"   Then leave   = 1
-      When "-iterate" Then iterate = 0
-      When "+iterate" Then iterate = 1
-      When "-guard"   Then guard   = 0
-      When "+guard"   Then guard   = 0
-      When "-bifs"    Then bifs    = 0
-      When "+bifs"    Then bifs    = 1
-      When "-lua"     Then lua     = 0
-      When "+lua"     Then lua     = 1
-      When "-debug"   Then debug   = 0
-      When "+debug"   Then debug   = 1
-      When "-itrace"  Then itrace  = 0
-      When "+itrace"  Then itrace  = 1
+      When "-signal"       Then signal  = 0
+      When "+signal"       Then signal  = 1
+      When "-leave"        Then leave   = 0
+      When "+leave"        Then leave   = 1
+      When "-iterate"      Then iterate = 0
+      When "+iterate"      Then iterate = 1
+      When "-guard"        Then guard   = 0
+      When "+guard"        Then guard   = 0
+      When "-bifs"         Then bifs    = 0
+      When "+bifs"         Then bifs    = 1
+      When "-debug"        Then debug   = 0
+      When "+debug"        Then debug   = 1
+      When "-itrace"       Then itrace  = 0
+      When "+itrace"       Then itrace  = 1
+      When "-experimental", -
+           "+experimental", -
+           "-exp", "+exp"  Then experimental     = 1
       When "-emptyassignments", "+emptyassignments" Then emptyassignments = 1
-      When "-e", "+e" Then Do
+      When "-lua", "+lua"  Then lua     = 1
+      When "-e", "+e"      Then Do
         c = file[1]
         If Pos(c,"'""") == 0 Then Do
           Say "The -e option must be immediately followed by a quoted code string."
@@ -134,6 +138,7 @@ Code:
   If extraletters \== "" Then Options~append(("EXTRALETTERS", extraletters))
   If emptyassignments    Then Options~append(("EMPTYASSIGNMENTS", emptyassignments))
   If Lua                 Then Options~append(("LUA", 1))
+  If experimental        Then Options~append(("EXPERIMENTAL", 1))
 
   Signal On Syntax
 
@@ -204,26 +209,28 @@ Options:
 
 Toggles:
 
-  +all         Activate all toggles. This is the default.
-  -all         Deactivate all toggles.
-  [+|-]signal  Toggle detecting SIGNAL to inexistent labels.
-  [+|-]guard   Toggle checking that GUARD is in a method body.
-  [+|-]bifs    Check BIF arguments.
+  +all          Activate all toggles. This is the default.
+  -all          Deactivate all toggles.
+  [+|-]signal   Toggle detecting SIGNAL to inexistent labels.
+  [+|-]guard    Toggle checking that GUARD is in a method body.
+  [+|-]bifs     Check BIF arguments.
 
-  [+|-]debug   (De)activate debug mode (not affected by "all").
-  [+|-]itrace  Toggle printing internal traceback on error
+  [+|-]debug    (De)activate debug mode (not affected by "all").
+  [+|-]itrace   Toggle printing internal traceback on error
 
 Other options (all can be prefixed with "+" or "-"):
 
+  -experimental Enable experimental features
+  -exp          Enable experimental features
   -emptyassignments  Allow assignments like "var =".
   -extraletters "extra"  Allow all the characters in "extra"
-               to function as letters.
-  -lua         Enable Lua support
+                to function as letters.
+  -lua          Enable Lua support
 
 Executing short code fragments:
 
-  -e "code"    Immediately parse a string of Rexx code.
-  -e 'code'    This has to be the last argument.
+  -e "code"     Immediately parse a string of Rexx code.
+  -e 'code'     This has to be the last argument.
 
 All toggles except "debug" are active by default
 ::END
