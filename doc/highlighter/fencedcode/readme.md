@@ -179,8 +179,7 @@ Default is "dark". Style names can only use uppercase or lowercase ANSI letters 
 
 #### `tutor` {#tutor}
 
-Enables experimental
-[TUTOR-flavored Unicode support](/rexx-parser/doc/unicode/).
+Enables experimental [TUTOR-flavored Unicode support](/rexx-parser/doc/unicode/).
 
 See also [unicode](#unicode).
 

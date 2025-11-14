@@ -23,10 +23,10 @@ or `.Nil` if the `DELEGATE` keyword has not been used when specifying this direc
 ![extends](Method.Directive.extends.svg) \
 
 Returns the possibly namespace-qualified name of the class this method is extending,
-as a two-element array, or `.Nil` when the `EXTENDS` keyword was not
-specified. The first item of the array is the namespace, as a symbol element, or
-`.Nil` when no namespace was specified. The second item is a string element
-or a symbol element, which represent the class to be extended.
+as a two-element array. The first item of the array is a symbol element containing
+the namespace, or `.Nil` when no namespace was specified. The second item is a string element
+or a symbol element containing the class to be extended.
+Returns `.Nil` when the `EXTENDS` keyword was not specified.
 
 ### external
 
@@ -104,7 +104,8 @@ Returns the name of the method, as a string element or a symbol element.
 ![overrides](Method.Directive.overrides.svg) \
 
 Returns the possibly namespace-qualified name of the class this method is overriding,
-as a two-element array, or `.Nil` when the `OVERRIDES` keyword
-was not specified. The first item of the array is the namespace, as a symbol element, or
-`.Nil` when no namespace was specified. The second item is a string element
-or a symbol element, which represent the name of the class to be overrided.
+as a two-element array. The first item of the array is a symbol element
+containing the namespace, or `.Nil` when no namespace was specified.
+The second item is a string element or a symbol element containing
+the name of the class to be overrided.
+Returns `.Nil` when the `OVERRIDES` keyword was not specified.

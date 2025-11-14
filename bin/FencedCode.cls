@@ -26,6 +26,7 @@
 /* 20250529    0.2c Add support for detailed string highlighting              */
 /* 20250706    0.2d Add support for detailed doc-comment highlighting         */
 /* 20251014    0.2e Add support for Lua extensions                            */
+/* 20251114    0.3a Add support for Experimental features                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -84,6 +85,8 @@
 --     constant) will be highlighted.
 --   doccomments= "detailed" | "block"
 --     Determines whether doc-comment parts are individually highlighted.
+--   experimental
+--     Enables Experimental features
 --   extraletters= <string>
 --     Allows symbols to contain characters present in <string>, which should
 --     be specified between quotes.
@@ -319,8 +322,9 @@ MissingEndMarker:
     End
     Else Do -- Options does not contain "="
       Select Case option
-        When "unicode", "tutor"              Then Options.unicode     = .True
-        When ".numberLines", ".number-lines" Then Options.numberLines = .True
+        When "unicode", "tutor"              Then Options.unicode      = .True
+        When "experimental"                  Then Options.experimental = .True
+        When ".numberLines", ".number-lines" Then Options.numberLines  = .True
         Otherwise Nop -- Exit BadOption()
       End
     End

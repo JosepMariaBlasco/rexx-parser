@@ -32,6 +32,7 @@
 /* 20250529    0.2c Add support for detailed string and number highlighing    */
 /* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /* 20250630         Add support for doc-comment subelements                   */
+/* 20251114    0.3a Add support for Experimental features                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -174,6 +175,8 @@ Return
     parserOptions~append( (extraletters, options.extraletters) )
   If options.unicode == 1 | options.tutor == 1 Then
     parserOptions~append( (unicode, 1) )
+  If options.experimental == 1 Then
+    parserOptions~append( (experimental, 1) )
 
   -- Instantiate a parser, parse the program, and get the first element
   parser  = .Rexx.Parser~new(file, source, parserOptions)

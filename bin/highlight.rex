@@ -26,6 +26,7 @@
 /* 20250529    0.2c Add support for detailed string and number highlighting   */
 /* 20250706    0.2d Add support for detailed doc-comment highlighting         */
 /* 20251029    0.2e Change .stdin to .input (thanks, Rony!)                   */
+/* 20251114    0.3a Add support for Experimental features                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -108,6 +109,7 @@ If op[1] \== "-" | fn == "-" Then Leave
     When "-l", "--latex"       Then options.mode        =  LaTeX
     When "-n", "--numberlines" Then options.numberlines = .True
     When "-a", "--ansi"        Then options.mode        =  ANSI
+    When "-e", "-exp", "--experimental" Then options.experimental = 1
     When "--css"               Then options.css         = 1
     When "--tutor"             Then options.unicode     = 1
     When "-u", "--unicode"     Then options.unicode     = 1
@@ -221,22 +223,23 @@ in FILE and highlight them. Otherwise, we assume that this is a Rexx file,
 and we highlight it directly.
 
 Options:
-  -a, --ansi             Select ANSI mode
-      --css              Include links to css files (HTML only)
+  -a, --ansi               Select ANSI mode
+      --css                Include links to css files (HTML only)
       --doccomments=detailed|block Select highlighting level for doc-comments
-  -h, --html             Select HTML mode
-  -l, --latex            Select LaTeX mode
-      --noprolog         Do not print a prolog (LaTeX only)
-  -n, --numberlines      Print line numbers
-      --patch="PATCHES"  Apply semicolon-separated PATCHES
-      --patchfile=FILE   Load patches from FILE
-      --pad=N            Pad doc-comments and ::resources to N characters
-      --prolog           Print a prolog (LaTeX only)
-      --startFrom=N      Start line numbers at N
-  -s, --style=STYLE      Use "rexx-STYLE.css" (default is "dark")
-      --tutor            Enable TUTOR-flavored Unicode
-  -u, --unicode          Enable TUTOR-flavored Unicode
-  -w, --width=N          Ensure that all lines have width >= N (ANSI only)
+  -e, -exp, --experimental Enable Experimental features
+  -h, --html               Select HTML mode
+  -l, --latex              Select LaTeX mode
+      --noprolog           Do not print a prolog (LaTeX only)
+  -n, --numberlines        Print line numbers
+      --patch="PATCHES"    Apply semicolon-separated PATCHES
+      --patchfile=FILE     Load patches from FILE
+      --pad=N              Pad doc-comments and ::resources to N characters
+      --prolog             Print a prolog (LaTeX only)
+      --startFrom=N        Start line numbers at N
+  -s, --style=STYLE        Use "rexx-STYLE.css" (default is "dark")
+      --tutor              Enable TUTOR-flavored Unicode
+  -u, --unicode            Enable TUTOR-flavored Unicode
+  -w, --width=N            Ensure that all lines have width >= N (ANSI only)
 
 The 'highlight' program is part of the Rexx Parser package, and is distributed
 under the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).

@@ -106,6 +106,7 @@ Crumb:
   parser       = "/rexx-parser"
   print        = "/rexx-parser/doc/print"
   doc          = "/rexx-parser/doc"
+  exp          = "/rexx-parser/doc/experimental"
   bin          = "/rexx-parser/bin"
   guide        = doc"/guide"
   ref          = doc"/ref"
@@ -215,9 +216,15 @@ Crumb:
     When doc"/oorexx-bugs"         Then Return "Related ooRexx bugs"
     When doc"/utilities"           Then Return "Utilities"
     When doc"/utilities/rxcheck"   Then Return "RxCheck"
+    When doc"/utilities/erexx"     Then Return "ERexx"
     When doc"/utilities/highlight" Then Return "Highlight"
     When doc"/utilities/elements"  Then Return "Elements"
     When doc"/unicode"             Then Return "Unicode"
+
+    -- "/rexx-parser/doc/experimental"
+
+    When exp                       Then Return "Experimental"
+    When exp"/classextensions"      Then Return "Class extensions"
 
     -- "/rexx-parser/doc/highlighter"
 
@@ -295,6 +302,7 @@ Crumb:
               <br><a href="/rexx-parser/tests/">Tests</a>
               <br><a href="/rexx-parser/doc/todo/">To-do</a>
               <br><a href="/rexx-parser/doc/samples/">Samples</a>
+              <br><a href="/rexx-parser/doc/experimental/">Experimental</a>
             </div>
           </div>
 ::END

@@ -25,6 +25,7 @@
 /* 20250606    0.2c Add --from and --to options                               */
 /* 20250928    0.2e Fix crash when no args, add .rex to file when needed      */
 /* 20251014         Add -lua, --lua options                                   */
+/* 20251114    0.3a Add support for Experimental features                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -44,10 +45,11 @@
 -- Main program                                                               --
 --------------------------------------------------------------------------------
 
-  unicode = 0
-  lua     = 1
-  opFrom  = 1
-  opTo    = "*"
+  unicode      = 0
+  lua          = 0
+  experimental = 0
+  opFrom       = 1
+  opTo         = "*"
 
   Parse Arg file
 
@@ -62,6 +64,7 @@ ProcessOptions:
   If option[1] == "-" Then Do
     Select Case Lower(option)
       When "-u", "--tutor", "--unicode" Then unicode = 1
+      When "-e", "-exp", "--exp", "--experimental" Then experimental = 1
       When "-lua", "--lua" Then lua = 1
       When "--help" Then Do
         Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
@@ -118,8 +121,9 @@ ProcessOptions:
 
   -- Parse our program, and get the first element
   Options = .Array~new
-  If Unicode Then Options~append(("UNICODE", 1))
-  If Lua     Then Options~append(("LUA", 1))
+  If Unicode      Then Options~append(("UNICODE", 1))
+  If Lua          Then Options~append(("LUA", 1))
+  If experimental Then Options~append(("EXPERIMENTAL", 1))
   parser = .Rexx.Parser~new(file, source, Options)
 
   element  = parser~firstElement
@@ -163,7 +167,7 @@ Print:
   Parse Var from fromLine fromCol
   Parse Var   to   toLine   toCol
   Call Chunk "["Extent(element)"]"
-  Call Chunk (element~isImplicit)~?(" >","  ")
+  Call Chunk (element~isInserted)~?(" >","  ")
   Call Chunk (element~ignored == 1)~?("X"," ")
   Call Chunk (element~isAssigned)~?("A"," ")
   If class \== .EL.RESOURCE_DATA Then value = element~value
@@ -249,12 +253,13 @@ Usage: myName [options] FILE
 Transform FILE into a list of elements and list them.
 
 Options:
-     --from [LINE] Show elements starting at line LINE
-     --help        Display this information
-     --lua         Enable Lua support (also -lua)
-     --to   [LINE] Stop showing elements after line LINE
-     --tutor       Enable TUTOR-flavored Unicode
- -u, --unicode     Enable TUTOR-flavored Unicode
+-e,  --experimental Enable Experimental features (also -exp)
+     --from [LINE]  Show elements starting at line LINE
+     --help         Display this information
+     --lua          Enable Lua support (also -lua)
+     --to   [LINE]  Stop showing elements after line LINE
+     --tutor        Enable TUTOR-flavored Unicode
+ -u, --unicode      Enable TUTOR-flavored Unicode
 
 The 'myname' program is part of the Rexx Parser package, and is distributed
 under the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).

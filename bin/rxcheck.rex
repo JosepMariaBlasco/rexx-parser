@@ -23,7 +23,7 @@
 /* 20250508         Fix typo (GitHub issue no. 10 - Thanks Geoff!)            */
 /* 20250831    0.2e Add support for LEAVE and INTERPRET checks                */
 /* 20250929         Add ".rex" to filename when appropriate                   */
-/* 20251102         Add support for "experimental" option                     */
+/* 20251114    0.3a Add support for Experimental features                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -226,6 +226,7 @@ Other options (all can be prefixed with "+" or "-"):
   -extraletters "extra"  Allow all the characters in "extra"
                 to function as letters.
   -lua          Enable Lua support
+ 
 
 Executing short code fragments:
 

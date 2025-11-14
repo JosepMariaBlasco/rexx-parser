@@ -39,10 +39,12 @@ Toggles:
 &nbsp;
 Other options (all can be prefixed with "+" or "-"):
 &nbsp;
+`-experimental`                     Enable experimental features
+`-exp`                              Enable experimental features
 `-emptyassignments`                 Allow assignments like "var =".
 `-extraletters "extra"`             Allow all the characters in "extra" to function as letters.
 `-lua`                              Enable Lua support
-&nbsp;
+`&nbsp;
 Executing short code fragments:
 &nbsp;
 `-e "code"`                         Immediately parse a string of Rexx code.

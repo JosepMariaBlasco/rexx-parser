@@ -13,3 +13,7 @@ All the utilities are located in the `bin` subdirectory.
 - [**RxCheck**](rxcheck/) - A [utility program](rxcheck/)
   that runs the parser with a selectable number of
   early check options enabled.
+- [**ERexx**](erexx/) - The [Experimental Rexx compiler](erexx/)
+  compiles programs written in Rexx enhanced with
+  [Experimental features](../experimental/), translates them to standard
+  ooRexx, and executes them.

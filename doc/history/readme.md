@@ -14,6 +14,8 @@ Version history
        styles used by [the vim editor](https://en.wikipedia.org/wiki/Vim_(text_editor)):
        please refer to the `css/vim` subdir for details.
        This is a contribution from Rony Flatscher: thank you!
+  <li> Add support for [Experimental features](../experimental/). Implement an Experimental
+       [class extension mechanism](../experimental/classextensions/) based on Gil's syntax suggestions (20251114).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

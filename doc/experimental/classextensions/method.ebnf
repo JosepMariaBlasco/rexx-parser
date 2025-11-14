@@ -1,0 +1,8 @@
+method ::= '::METHOD' methodname 'ATTRIBUTE'? 'CLASS'?
+                      ( 'PUBLIC' | 'PACKAGE' | 'PRIVATE' )?
+                      ( 'EXTENDS' classname | 'OVERRIDES' classname)?
+                      ( 'GUARDED' | 'UNGUARDED' )?
+                      ( 'UNPROTECTED' | 'PROTECTED' )?
+                      ( 'ABSTRACT' |
+                        'DELEGATE' delegatename |
+                        'EXTERNAL' spec )?

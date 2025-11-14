@@ -30,6 +30,7 @@ is a Rexx file, it is highlighted accordingly.
 `-a`, `--ansi`                                          Select ANSI SGR terminal highlighting
 `--css`                                                 Include links to css files (HTML only)
 `--doccomments=detailed|block`&nbsp;&nbsp;              Select highlighting level for doc-comments
+`-e`, `-exp`, `--experimental`                          Enable Experimental features
 `-h`, `--html`                                          Select HTML highlighting
 `-l`, `--latex`                                         Select LaTeX highlighting
 `--noprolog`                                            Don't print a prolog
@@ -63,13 +64,18 @@ in the current directory.
 development in RAD scenarios, not a way to generate distribution-ready
 or production files.
 
-### --doccomments=[detailed|block]
+#### --doccomments=[detailed|block]
 
 Select the highlighting level for doc-comments. When "detailed" is specified
 (the default), some sub-elements of doc-comments, like the summary
 statement, block tags or tag values, receive their own, separated
 styling; when "block" is specified, all the doc-comment as a whole
 gets a single style.
+
+#### -e, -exp, --experimental {#exp}
+
+Enables [Experimental Rexx features](../../experimental/) so that they are recognized
+by the Parser.
 
 #### -h, --html
 

@@ -1,13 +1,9 @@
 #!/usr/bin/env rexx
 /******************************************************************************/
 /*                                                                            */
-/* trident.rex - Check that a program is equal to its Tree API parsing        */
-/* ===================================================================        */
+/* erexx.rex - Run an Experimental REXX program                               */
+/* ============================================                               */
 /*                                                                            */
-/* This program compiles a ooRexx source program and produces an identical    */
-/* program using the Tree API. You can build over it to produce other         */
-/* language processors that do things more interesting than simply cloning    */
-/* the source.                                                                */
 /*                                                                            */
 /* This file is part of the Rexx Parser package                               */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -20,22 +16,41 @@
 /*                                                                            */
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
-/* 20250707    0.2d First version                                             */
-/* 20251110    0.2e Rename to "trident.rex" (was "clonetree")                 */
+/* 20251113    0.3a First version                                             */
 /*                                                                            */
 /******************************************************************************/
 
   Signal On Syntax
 
-  Parse Arg filename
+  nArgs = .SysCArgs~items
+  If nArgs == 0 Then Call ShowHelp
+
+  list = 0
+
+  Loop Counter n i = 1 By 1 While i <= nArgs, .SysCArgs[i][1] == "-"
+    Select Case lower(.SysCArgs[i])
+      When "-l" Then list = 1
+      Otherwise Call ShowHelp
+    End
+  End
+
+  n = n + 1
+  If n > nArgs Then Call ShowHelp
+  filename = .SysCArgs[n]
+
+  moreArgs = .SysCArgs~section(n+1)~makeString("L"," ")
 
   filename = Strip(filename)
 
   fullPath = .context~package~findProgram(filename)
 
+  If fullPath == .Nil Then
+    fullPath = .context~package~findProgram(filename".erx")
+
   If fullPath == .Nil Then Do
-    Say "File '"filename"' does not exist."
-    Exit 1
+    Say "Error 3:  Failure during initialization."
+    Say "Error 3.901:  Failure during initialization: Program "filename" was not found."
+    Exit -3
   End
 
   -- We need to compute the source separately to properly handle syntax errors
@@ -46,8 +61,10 @@
   If Right(chunk,1) == "0a"X Then source~append("")
   Call Stream fullPath, "C", "Close"
 
+  options = .Array~of((Experimental,1))
+
   -- Parse our program
-  parser = .Rexx.Parser~new(fullPath, source)
+  parser = .Rexx.Parser~new(fullPath, source, options)
 
   package = parser~package
 
@@ -55,28 +72,24 @@
 
   output = .Array.OutputStream~new
 
+  -- Compile the program
   package~compile(element, output, .StringTable~new)
 
-  Do i = 1 To Min(source~items, output~items)
-    If source[i] \== output[i] Then Do
-      Say "Difference found in line number" i":"
-      Say "Source line is '"source[i]"',"
-      Say "Parsed line is '"output[i]"'."
-      Exit 1
-    End
+  -- Add a call to the enabler for experimental features
+  If output[1][1] == "#" Then insertAt = 2 -- A shebang
+  Else                        insertAt = 1
+  output[insertAt] = "Call EnableExperimentalFeatures .Methods; "output[insertAt]
+
+  If list Then Do
+    Say output
+    Exit 0
   End
 
-  If source~items == output~items +1, source~lastItem == "" Then Exit 0
-
-  If source~items \== output~items Then Do
-    Say "No. of source lines and parsed lines are different:"
-    Say "Source:" source~items
-    Say "Parsed:" output~items
-    Exit 1
-  End
+  -- Run the program we just compiled
+ .routine~new(fullPath, output)~call(moreArgs)
 
   -- We are done
-  Exit 0
+  Exit result
 
 Syntax:
 
@@ -87,7 +100,7 @@ Syntax:
   End
 
   additional = Condition("A")
-  Say additional[1]":"
+  --Say additional[1]":"
   additional = additional~lastItem
   line = additional~position
   code = additional~code
@@ -101,12 +114,17 @@ Syntax:
 
   Exit -major
 
+ShowHelp:
+  Say .Resources~help
+  Exit 1
+
 --------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"
 ::Requires "ANSI.ErrorText.cls"
 ::Requires "modules/print/print.cls"    -- Helps in debug
 ::Requires "modules/compile/compile.cls"
+::Requires "modules/experimental/classextension.cls"
 
 --------------------------------------------------------------------------------
 
@@ -122,7 +140,7 @@ Syntax:
   Use Strict Arg string = ""
 
   If written == 0 Then self~append( string )
-  Else                self[self~last] ||= string
+  Else                 self[self~last] ||= string
 
   written = 0
 
@@ -137,3 +155,20 @@ Syntax:
   Else                 self[self~last] ||= string
 
   written = 1
+
+--------------------------------------------------------------------------------
+
+::Resource Help
+erexx -- Run a Rexx program with Experimental features
+
+Usage:
+  erexx [OPTIONS] [FILE]
+
+Runs the Rexx Parser against FILE, compiles
+the Experimental features, and runs the resulting
+program.
+
+Options:
+
+  -l      Print the translated program and exit
+::END

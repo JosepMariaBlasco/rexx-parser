@@ -41,7 +41,7 @@
 /* CLONE -- Clone a single element                                            */
 /******************************************************************************/
 
-::Routine Clone
+::Routine Clone Public
   Use Strict Arg element, stream, context
 
   -- Inserted elements are zero-length and do not need to be cloned
@@ -71,7 +71,7 @@
 /* PREPARECLAUSE -- Skip whitespace, end-of-clause, comments and labels       */
 /******************************************************************************/
 
-::Routine PrepareClause
+::Routine PrepareClause Public
   Use Strict Arg element, stream, context
 
   -- Clone initial end-of-clauses, whitespace, comments,

@@ -38,6 +38,7 @@ Utilities and samples
   - [Elements](utilities/elements/)
   - [Highlight](utilities/highlight/)
   - [RxCheck](utilities/rxcheck/)
+  - [ERexx](utilities/erexx/)
 - [Sample programs](samples/)
 
 The Rexx Highlighter

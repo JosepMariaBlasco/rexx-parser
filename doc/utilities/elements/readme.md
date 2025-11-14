@@ -16,14 +16,15 @@ Transform *file* into a list of elements, according to
 Options
 -------
 
------------------------------ ------------------------------
-`--from [LINE]`               Show elements starting at line LINE
-`--help`                      Display this information
-`--lua`                       Enable OPTIONS LUA (also `-lua`)
-`--to   [LINE]`               Stop showing elements after line LINE
-`--tutor`                     Enable TUTOR-flavored Unicode
-`-u`, `--unicode`&nbsp;&nbsp; Enable TUTOR-flavored Unicode
------------------------------ ------------------------------
+---------------------------------- ------------------------------
+`-e`, `--experimental`&nbsp;&nbsp; Enable Experimental features (also `-exp`)
+`--from [LINE]`                    Show elements starting at line LINE
+`--help`                           Display this information
+`--lua`                            Enable OPTIONS LUA (also `-lua`)
+`--to   [LINE]`                    Stop showing elements after line LINE
+`--tutor`                          Enable TUTOR-flavored Unicode
+`-u`, `--unicode`                  Enable TUTOR-flavored Unicode
+---------------------------------- ------------------------------
 
 Program source
 --------------

@@ -179,8 +179,8 @@ Exit
   -- Special case for .rex or .cls files                                      --
   ------------------------------------------------------------------------------
 
-  If URI~endsWith( ".rex") Then Signal View
-  If URI~endsWith( ".cls") Then Signal View
+  If URI~endsWith( ".rex" ) Then Signal View
+  If URI~endsWith( ".cls" ) Then Signal View
 
   ------------------------------------------------------------------------------
   -- We process Rexx fenced code blocks first                                 --
