@@ -1,4 +1,4 @@
-
+Call EnableExperimentalFeatures .Methods;
 Say ".Methods[Floating]=".Methods[Floating]
 Say "Method A has disappeared from the .METHODS stringtable"
 Say ".Methods[A]       =".Methods[A]
@@ -29,17 +29,17 @@ StrangeAPI: Return 0
 ::Method Floating
 
 -- A floating extension method. It will be removed from .METHODS
-::Method A Extends Class1
+::Method /*A*/"A<+>CLASS1" /*Extends*/ /*Class1*/
   Say "Class1 method A called"
 
 ::Class AClass
 
 -- An extension method. It will be removed from class AClass
-::Method M Extends X:Class1
+::Method /*M*/"M<+>X:CLASS1" /*Extends*/ /*X*//*:*//*Class1*/
   Say "Class1 method M called"
 
 -- An overriding extension method. It will be removed from class AClass
-::Method O Overrides Class1
+::Method /*O*/"O<*>CLASS1" /*Overrides*/ /*Class1*/
   Say "Replaced method called"
 
 ::Requires "extended.cls" Namespace X

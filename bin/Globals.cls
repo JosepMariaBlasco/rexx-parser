@@ -6,7 +6,7 @@
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
-/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
@@ -470,10 +470,6 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewElement EL.LUA.OR               -- or
   Call NewElement EL.LUA.TRUE             -- true
   Call NewElement EL.LUA.LENGTH           -- prefix "#"
-  Call NewElement EL.LUA.TABLE.FIELD.NAME -- The name of a table field
-  Call NewElement EL.LUA.TABLE.LEFT_BRACKET       -- "["
-  Call NewElement EL.LUA.TABLE.RIGHT_BRACKET      -- "]"
-  Call NewElement EL.LUA.TABLE.EQUALS             -- "="
   Call NewElement EL.LUA.MAPS.TO                  -- "->"
   Call NewElement EL.LUA.LAMBDA.LEFT_PARENTHESIS  -- "("
   Call NewElement EL.LUA.LAMBDA.RIGHT_PARENTHESIS -- ")"
@@ -649,6 +645,10 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewConstant ROUTINE.NAME
   Call NewConstant USER.CONDITION.NAME
 
+  -- Experimental names
+  Call NewConstant TABLE.FIELD.NAME       -- The name of a table field
+
+  -- Constant that are not names, but values
   Call NewConstant ANNOTATION.VALUE       -- Not including the optional sign
   Call NewConstant CONSTANT.VALUE         -- Value of a ::CONSTANT (no sign)
 

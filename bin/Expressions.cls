@@ -6,7 +6,7 @@
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
-/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
@@ -29,13 +29,13 @@
 
  .environment ~ Concatenation.Expression   = .Concatenation.Expression
  .environment ~ Expression.List            = .Expression.List
- .environment ~ Field.List                 = .Field.List
  .environment ~ And.Expression             = .And.Expression
  .environment ~ NAry.Expression            = .NAry.Expression
  .environment ~ Addition.Expression        = .Addition.Expression
  .environment ~ Comparison.Expression      = .Comparison.Expression
  .environment ~ Multiplication.Expression  = .Multiplication.Expression
  .environment ~ Or.Expression              = .Or.Expression
+ .environment ~ Initializer                = .Initializer
  .environment ~ Lambda.Expression          = .Lambda.Expression
  .environment ~ Prefix.Expression          = .Prefix.Expression
  .environment ~ Power.Expression           = .Power.Expression
@@ -667,10 +667,12 @@
 
   Use Strict Arg package, begin, terminators
 
+  allowInitializers = .Options.Lua | .Options.Experimental
+
   Select
     When begin < .EL.LEFT_PARENTHESIS Then
       Exit SubExpression( package, begin, terminators )
-    When .Options.Lua, begin < .EL.LEFT_BRACKET Then
+    When allowInitializers, begin < .EL.LEFT_BRACKET Then
       Exit Initializer( package, begin, terminators )
     When begin < .ALL.LUA_CONSTANTS   Then
       Exit Lua.Constant.Term(package, begin)
@@ -719,27 +721,9 @@
 -- Incorrect expression detected at "&1".
 35.001: Syntax( 35.001, begin, Arg(1) )
 
---------------------------------------------------------------------------------
--- INITIALIZER                                                                --
---------------------------------------------------------------------------------
-
-::Routine Initializer
-
-  Use Strict Arg package, begin, terminators
-
-  Call SetCategory begin, .EL.LUA.TABLE.LEFT_BRACKET
-
-  fieldList = Field.List(     -
-    package,                  -
-    begin,                    - -- Where to begin parsing
-    .EL.RIGHT_BRACKET         - -- Clear terminators: only "]"
-  )
-
-  Return fieldList
-
 /******************************************************************************/
 /*                                                                            */
-/* FIELD LIST                                                                 */
+/* INITIALIZER                                                                */
 /*                                                                            */
 /*   Parsing of extended initializers with Lua features.                      */
 /*                                                                            */
@@ -762,9 +746,11 @@
 /*                                                                            */
 /******************************************************************************/
 
-::Routine Field.List Public
+::Routine Initializer
 
-  Use Strict Arg package, begin, terminators = ""
+  Use Strict Arg package, begin, terminators
+
+  terminators = .EL.RIGHT_BRACKET
 
   fieldList      = Array()
   element        = TheElementAfter(begin)
@@ -778,12 +764,21 @@
   Loop While element \< terminators
 
     lhs = .Nil
-    If element < .ALL.VAR_SYMBOLS Then Do
+    If element < .ALL.OPS.ADDITIVE Then Do
+      next = TheElementAfter(element)
+      If next < .EL.INTEGER_NUMBER Then Do
+        next2 = TheElementAfter(next)
+        If next2 = .EL.OP.EQUAL Then Do
+          lhs = Prefix.Expression(package, element, .EL.OP.EQUAL)
+          element = TheElementAfter( next2 )
+        End
+      End
+    End
+    Else If element < .ALL.SYMBOLS_AND_STRINGS Then Do
       next = TheElementAfter(element)
       If next < .EL.OP.EQUAL Then Do
-        Call SetCategory next, .EL.LUA.TABLE.EQUALS
         lhs     = element
-        Call SetCategory lhs, .EL.LUA.TABLE.FIELD.NAME
+        Call SetConstantName lhs, .TABLE.FIELD.NAME
         element = TheElementAfter( next )
       End
     End
@@ -800,7 +795,6 @@
         next = TheElementAfter( next )
         If Stack~items > 0 Then Iterate
         If next < .EL.OP.EQUAL Then Do
-          Call SetCategory next, .EL.LUA.TABLE.EQUALS
           next1 = TheElementAfter( element )
           lhs = Or.Expression(package, next1, .EL.RIGHT_PARENTHESIS)
           element = TheElementAfter( next )
@@ -817,6 +811,11 @@
 
     element = TheElementAfter( element )
 
+    Loop While element < .EL.COMMA
+      fieldList~append( .Nil )
+      element = TheElementAfter( element )
+    End
+
   End
 
   If element \< .EL.RIGHT_BRACKET Then Do
@@ -825,8 +824,7 @@
   End
 
 Done:
-  Call SetCategory element, .EL.LUA.TABLE.RIGHT_BRACKET
-  Return .Field.List~new( fieldList, begin, element )
+  Return .Initializer~new( fieldList, begin, element )
 
 -- Square bracket "[" in position &1 on line &2 requires
 -- a corresponding right square bracket "]".
@@ -834,7 +832,7 @@ Done:
 
 --------------------------------------------------------------------------------
 
-::Class Field.List Public SubClass Rexx.Expression
+::Class Initializer Public SubClass Rexx.Expression
 ::Attribute fields
 ::Attribute begin
 ::Attribute end
@@ -851,12 +849,10 @@ Done:
         When "O" Then Return \fields~hasIndex(n)
       End
   End
-::Method isEmpty
-  Expose args
-  Return args == .Nil
 ::Method init
   Expose args fields begin end
   Use Strict Arg args, begin, end
+  end = end~next
   fields = args
 
 --------------------------------------------------------------------------------
@@ -1500,6 +1496,8 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class Variable.Reference.Term Public SubClass Rexx.Term
+::Attribute operator Get
+::Attribute variable Get
 ::Attribute begin
 ::Attribute end
 ::Method init

@@ -6,7 +6,7 @@
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
-/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
@@ -364,10 +364,6 @@ SkipOverLua:
   Call Lua .EL.LUA.NOT,                          "lua-not"
   Call Lua .EL.LUA.OR,                           "lua-or"
   Call Lua .EL.LUA.TRUE,                         "lua-true"
-  Call Lua .EL.LUA.TABLE.LEFT_BRACKET,           "lua-table-left-bracket"
-  Call Lua .EL.LUA.TABLE.FIELD.NAME,             "lua-table-field-name"
-  Call Lua .EL.LUA.TABLE.RIGHT_BRACKET,          "lua-table-right-bracket"
-  Call Lua .EL.LUA.TABLE.EQUALS,                 "lua-table-equals"
 
 /******************************************************************************/
 /* SPECIAL CHARACTERS                                                         */
@@ -520,6 +516,8 @@ SkipOverConstant:
   Call Constant .RESOURCE.NAME,                    "resource"
   Call Constant .RESOURCE.DELIMITER.NAME,          "res-delimiter"
   Call Constant .USER.CONDITION.NAME,              "user-condition"
+
+  Call Constant .TABLE.FIELD.NAME,                 "table-field-name"
 
   Call Constant .ANNOTATION.VALUE,                 "annotation-value"
   Call Constant .CONSTANT.VALUE,                   "constant-value"

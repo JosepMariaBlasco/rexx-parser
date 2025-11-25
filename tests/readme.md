@@ -48,17 +48,19 @@ under Linux.
 Self-parsing: [`idents.rex`](idents.rex)
 ----------------------------------------
 
-The Rexx Parser includes a small program called
-[`ident.rex`](ident.rex), which is located in the
-[`tests`](.) subdirectory. It takes a file name
+The Rexx Parser includes two small programs called
+[`elident.rex`](elident.rex) and
+[`trident.rex`](trident.rex), located in the
+[`tests`](.) subdirectory. They take a file name
 as an argument; the contents of the file
-are parsed and accesed using the Element API,
-and the source file is compared to the concatenation
-of the returned elements. The program returns 0
+is parsed and accesed using the Element API (elident)
+or the Tree API (trident),
+and the source file is compared to parsed result.
+The programs return 0
 when the comparison succeeds, and 1 otherwise.
 
 The [`idents.rex`](idents.rex) utility, located in the same subdirectory,
-builds over `ident.rex`, and it checks that the results of
+builds over `elident.rex` and `trident.rex`, and it checks that the results of
 parsing `Rexx.Parser.cls` and all the files
 in the [`cls`](/rexx-parser/bin/) subdirectory are identical to their own scanning.
 

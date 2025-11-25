@@ -12,7 +12,7 @@
 /* This file is part of the Rexx Parser package                               */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
-/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
@@ -106,7 +106,14 @@ Syntax:
 ::Requires "Rexx.Parser.cls"
 ::Requires "ANSI.ErrorText.cls"
 ::Requires "modules/print/print.cls"    -- Helps in debug
-::Requires "modules/compile/compile.cls"
+
+::Requires "modules/identity/compile.cls"         -- The Identity compiler
+::Requires "modules/identity/Clauses.cls"
+::Requires "modules/identity/Directives.cls"
+::Requires "modules/identity/Expressions.cls"
+::Requires "modules/identity/Instructions.cls"
+::Requires "modules/identity/iterations.cls"
+::Requires "modules/identity/Parsing.cls"
 
 --------------------------------------------------------------------------------
 

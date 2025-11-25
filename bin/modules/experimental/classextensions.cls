@@ -1,12 +1,12 @@
 /******************************************************************************/
 /*                                                                            */
-/* ClassExtension.cls -- Implement ::METHO EXTENDS and OVERRIDES              */
-/* =============================================================              */
+/* ClassExtension.cls -- Implement ::METHOD EXTENDS and OVERRIDES             */
+/* ==============================================================             */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
-/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
@@ -18,9 +18,10 @@
 /*                                                                            */
 /******************************************************************************/
 
-  Call "modules/Load.Parser.Module.rex"
+  Overrides = .True
+  Call "modules/Load.Parser.Module.rex" , Overrides
 
-::Requires "modules/compile/compile.cls"
+::Requires "modules/identity/compile.cls"
 
 ::Method "Method.Directive::Compile"
 

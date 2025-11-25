@@ -6,7 +6,7 @@
 /* This file is part of the Rexx Parser package                               */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
-/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
@@ -994,7 +994,7 @@ Continue:
   Call PrepareExpression package, element, "FOR WHILE UNTIL"
   expression = Expression.List( package, element )
   If expression~isEmpty Then Signal 35.911
-  options.over = expression
+  options.collection = expression
   for = 0
   Loop
     element = expression~end
@@ -1069,33 +1069,33 @@ Done:
   If class == .Do.Clause Then Do
     If      options.~hasIndex("ITEM") | options.~hasIndex("INDEX") Then
       class = .Do.With.Clause
-    Else If options.~hasIndex("OVER")      Then class = .Do.Over.Clause
-    Else If options.~hasIndex("CONTROL")   Then class = .Do.Controlled.Clause
-    Else If options.~hasIndex("FOREVER")   Then Do
-      If options.~hasIndex("WHILE")        Then class = .Do.While.Clause
-      Else If options.~hasIndex("UNTIL")   Then class = .Do.Until.Clause
-      Else                                      class = .Do.Forever.Clause
+    Else If options.~hasIndex("COLLECTION") Then class = .Do.Over.Clause
+    Else If options.~hasIndex("CONTROL")    Then class = .Do.Controlled.Clause
+    Else If options.~hasIndex("FOREVER")    Then Do
+      If options.~hasIndex("WHILE")         Then class = .Do.While.Clause
+      Else If options.~hasIndex("UNTIL")    Then class = .Do.Until.Clause
+      Else                                       class = .Do.Forever.Clause
     End
     Else If options.~hasIndex("EXPRR") Then
       class = .Simple.Repetitive.Do.Clause
-    Else If options.~hasIndex("WHILE")     Then class = .Do.While.Clause
-    Else If options.~hasIndex("UNTIL")     Then class = .Do.Until.Clause
+    Else If options.~hasIndex("WHILE")      Then class = .Do.While.Clause
+    Else If options.~hasIndex("UNTIL")      Then class = .Do.Until.Clause
     Else class = .Simple.Do.Clause
   End
   Else Do
     If      options.~hasIndex("ITEM") | options.~hasIndex("INDEX") Then
       class = .Loop.With.Clause
-    Else If options.~hasIndex("OVER")      Then class = .Loop.Over.Clause
-    Else If options.~hasIndex("CONTROL")   Then class = .Loop.Controlled.Clause
-    Else If options.~hasIndex("FOREVER")   Then Do
-      If options.~hasIndex("WHILE")        Then class = .Loop.While.Clause
-      Else If options.~hasIndex("UNTIL")   Then class = .Loop.Until.Clause
-      Else                                      class = .Loop.Forever.Clause
+    Else If options.~hasIndex("COLLECTION") Then class = .Loop.Over.Clause
+    Else If options.~hasIndex("CONTROL")    Then class = .Loop.Controlled.Clause
+    Else If options.~hasIndex("FOREVER")    Then Do
+      If options.~hasIndex("WHILE")         Then class = .Loop.While.Clause
+      Else If options.~hasIndex("UNTIL")    Then class = .Loop.Until.Clause
+      Else                                       class = .Loop.Forever.Clause
     End
     Else If options.~hasIndex("EXPRR") Then
       class = .Simple.Repetitive.Loop.Clause
-    Else If options.~hasIndex("WHILE")     Then class = .Loop.While.Clause
-    Else If options.~hasIndex("UNTIL")     Then class = .Loop.Until.Clause
+    Else If options.~hasIndex("WHILE")      Then class = .Loop.While.Clause
+    Else If options.~hasIndex("UNTIL")      Then class = .Loop.Until.Clause
     Else class = .Simple.Loop.Clause
   End
   iteration = class~new( package, begin, element, options. )
@@ -1178,7 +1178,7 @@ Keyword:
   Call PrepareExpression package, element, "FOR WHILE UNTIL"
   expression = Expression.List( package, element )
   If expression~isEmpty Then Signal 35.911
-  options.over = expression
+  options.supplier = expression
   element = expression~end
   If element < .ALL.SYMBOLS_AND_KEYWORDS, element~value == "FOR" Then Do
     Call SetSubkeyword element
@@ -1241,60 +1241,63 @@ Keyword:
 --------------------------------------------------------------------------------
 
 ::Class Iterative.Clause Public SubClass Rexx.Clause
-::Attribute name      Get
-::Attribute ctr       Get
-::Attribute exprr     Get
-::Attribute control   Get
-::Attribute forever   Get
-::Attribute exprw     Get
-::Attribute expru     Get
-::Attribute over      Get
-::Attribute index     Get
-::Attribute item      Get
-::Attribute expri     Get
-::Attribute exprt     Get
-::Attribute exprb     Get
-::Attribute exprf     Get
-::Attribute order     Get -- Of TO, BY and FOR
-::Attribute id        Get
+::Attribute name       Get
+::Attribute ctr        Get
+::Attribute exprr      Get
+::Attribute control    Get
+::Attribute forever    Get
+::Attribute exprw      Get
+::Attribute expru      Get
+::Attribute collection Get
+::Attribute supplier   Get
+::Attribute index      Get
+::Attribute item       Get
+::Attribute expri      Get
+::Attribute exprt      Get
+::Attribute exprb      Get
+::Attribute exprf      Get
+::Attribute order      Get -- Of TO, BY and FOR
+::Attribute id         Get
 ::Method init
   Expose name ctr expri exprt exprb exprf exprr order control forever -
-    exprw expru type over item index id
+    exprw expru type collection supplier item index id
   Use Strict Arg package, begin, end, options.
 
   -- ID and ORDER are always calculated
-  id        = options.id
-  order     = Strip(options.order)
+  id         = options.id
+  order      = Strip(options.order)
 
-  name      = .Nil                      -- LABEL name
-  ctr       = .Nil                      -- COUNTER ctr
-  control   = .Nil
-  expri     = .Nil                      -- expression after "="
-  exprt     = .Nil                      -- expression after "TO"
-  exprb     = .Nil                      -- expression after "BY"
-  exprf     = .Nil                      -- expression after "FOR"
-  exprw     = .Nil                      -- expression after "WHILE"
-  expru     = .Nil                      -- expression after "UNTIL"
-  over      = .Nil
-  item      = .Nil
-  index     = .Nil
-  exprr     = .Nil
-  forever   = 0
+  name       = .Nil                     -- LABEL name
+  ctr        = .Nil                     -- COUNTER ctr
+  control    = .Nil
+  expri      = .Nil                     -- expression after "="
+  exprt      = .Nil                     -- expression after "TO"
+  exprb      = .Nil                     -- expression after "BY"
+  exprf      = .Nil                     -- expression after "FOR"
+  exprw      = .Nil                     -- expression after "WHILE"
+  expru      = .Nil                     -- expression after "UNTIL"
+  collection = .Nil
+  supplier   = .Nil
+  item       = .Nil
+  index      = .Nil
+  exprr      = .Nil
+  forever    = 0
 
-  If HasOption("label")     Then name      = Option("label")
-  If HasOption("counter")   Then ctr       = Option("counter")
-  If HasOption("control")   Then control   = Option("control")
-  If HasOption("=")         Then expri     = Option("=")
-  If HasOption("to")        Then exprt     = Option("to")
-  If HasOption("by")        Then exprb     = Option("by")
-  If HasOption("for")       Then exprf     = Option("for")
-  If HasOption("while")     Then exprw     = Option("while")
-  If HasOption("until")     Then expru     = Option("until")
-  If HasOption("exprr")     Then exprr     = Option("exprr")
-  If HasOption("over")      Then over      = Option("over")
-  If HasOption("index")     Then index     = Option("index")
-  If HasOption("item")      Then item      = Option("item")
-  If HasOption("forever")   Then forever   = 1
+  If HasOption("label")      Then name       = Option("label")
+  If HasOption("counter")    Then ctr        = Option("counter")
+  If HasOption("control")    Then control    = Option("control")
+  If HasOption("=")          Then expri      = Option("=")
+  If HasOption("to")         Then exprt      = Option("to")
+  If HasOption("by")         Then exprb      = Option("by")
+  If HasOption("for")        Then exprf      = Option("for")
+  If HasOption("while")      Then exprw      = Option("while")
+  If HasOption("until")      Then expru      = Option("until")
+  If HasOption("exprr")      Then exprr      = Option("exprr")
+  If HasOption("collection") Then collection = Option("collection")
+  If HasOption("supplier")   Then supplier   = Option("supplier")
+  If HasOption("index")      Then index      = Option("index")
+  If HasOption("item")       Then item       = Option("item")
+  If HasOption("forever")    Then forever    = 1
 
   self~init:super( package, begin, end )
   Return

@@ -16,6 +16,8 @@ Version history
        This is a contribution from Rony Flatscher: thank you!
   <li> Add support for [Experimental features](../experimental/). Implement an Experimental
        [class extension mechanism](../experimental/classextensions/) based on Gil's syntax suggestions (20251114).
+  <li> Add support for the new GC BIF (20251116).
+  <li> The identity compiler is practically finished (20251125).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

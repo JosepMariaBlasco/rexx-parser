@@ -67,9 +67,9 @@ the _classname_ in the parse tree.
 
 To make use of the enhanced parse tree, we need to transform
 our program into standard ooRexx. To this effect, we will
-be using [a small compile module, `classextension.cls`](../../../bin/modules/experimental/classextension.cls?view=highlight).
+be using [a small compile module, `classextensions.cls`](../../../bin/modules/experimental/classextensions.cls?view=highlight).
 Compile modules build over
-[the predefined identity compiler module, `compile.cls`](../../../bin/modules/compile/compile.cls?view=highlight).
+[the predefined identity compiler module, `compile.cls`](../../../bin/modules/identity/compile.cls?view=highlight).
 The identity compiler module compiles a program into a perfect
 copy of itself. Specialized compiler modules add
 new `compile` methods to one of more of the Rexx Parser classes
@@ -136,6 +136,45 @@ process is started with all of the classes defined in the
 caller package (`classes` method of the package class).
 In that case, methods are first added or replaced in the corresponding
 class, and later deleted in the class that defined them.
+
+Example
+-------
+
+The following is `extends.rex`, located in the `tests/experimental` directory:
+
+```rexx {experimental source="../../../tests/experimental/extends.rex"}
+```
+
+And here is `extended.cls`, located in the same directory.
+
+```rexx {experimental source="../../../tests/experimental/extended.cls"}
+```
+
+When `erexx extends` is executed, this is the translated program that
+gets called:
+
+```rexx {experimental source="../../../tests/experimental/extends.rex.translated"}
+```
+
+And this is the output from running the program:
+
+```
+.Methods[Floating]=a Method
+Method A has disappeared from the .METHODS stringtable
+.Methods[A]       =The NIL object
+The translated method name has also disappeared
+.Methods['M<+>X:CLASS1']=The NIL object
+Class AClass does not have methods called M or O
+M: 0
+O: 0
+Creating a CLASS1 object...
+Invoking CLASS1 method A...
+Class1 method A called
+Invoking CLASS1 method M...
+Class1 method M called
+Invoking CLASS1 method O...
+Replaced method called
+```
 
 Limitations
 -----------

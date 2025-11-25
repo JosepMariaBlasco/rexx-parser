@@ -15,7 +15,8 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20250414    0.2  First version                                             */
-/* 20250421    0.2b Major rewrite, add BIF early checking.                    */
+/* 20250421    0.2b Major rewrite, add BIF early checking                     */
+/* 20251116    0.3a Add support for the new GC BIF                            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -160,6 +161,7 @@
   BIFARGS.ERRORTEXT    = "r0_99"
   BIFARGS.FILESPEC     = "rDELNP rANY"
   -- INSERT Bug: Arg(3) should be POS. See ooRexx bug n. 2012
+  BIFARGS.GC           = "oF"
   BIFARGS.INSERT       = "rANY rANY oLENGTH oLENGTH oPAD"
   BIFARGS.LASTPOS      = "rANY rANY oPOS oLENGTH"
   BIFARGS.LEFT         = "rANY rLENGTH oPAD"

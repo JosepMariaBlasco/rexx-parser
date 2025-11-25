@@ -6,7 +6,7 @@
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
-/* Copyright (c) 2024-2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
@@ -437,10 +437,10 @@ Value:
   Return .Constant.Directive~new( package, begin, end, name, value )
 
 Expression:
-  Return .Constant.Directive~new( package, begin, end, name,,expression )
+  Return .Constant.Directive~new( package, begin, end, name, expression )
 
 SignedNumber:
-  Return .Constant.Directive~new( package, begin, end, name, , ,sign, number )
+  Return .Constant.Directive~new( package, begin, end, name, (sign, number) )
 
 -- String or symbol expected as ::CONSTANT directive name.
 19.915: Syntax( 19.915, CONSTANT, name )
@@ -459,15 +459,12 @@ SignedNumber:
 
 ::Class Constant.Directive Public SubClass Rexx.Directive
 ::Attribute name    Get
+::Attribute value   Get
 ::Attribute constant
 ::Method init
   Expose name value expression sign number
   Use Strict Arg        -
-    package, begin, end, name, -
-    value      = .Nil,  -
-    expression = .Nil,  -
-    sign       = .Nil,  -
-    number     = .Nil
+    package, begin, end, name, value = .Nil
   self~init:super( package, begin, end )
 
 /******************************************************************************/
