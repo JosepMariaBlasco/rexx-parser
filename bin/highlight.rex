@@ -27,6 +27,7 @@
 /* 20250706    0.2d Add support for detailed doc-comment highlighting         */
 /* 20251029    0.2e Change .stdin to .input (thanks, Rony!)                   */
 /* 20251114    0.3a Add support for Experimental features                     */
+/* 20251125         Add support for Executor                                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -110,6 +111,7 @@ If op[1] \== "-" | fn == "-" Then Leave
     When "-n", "--numberlines" Then options.numberlines = .True
     When "-a", "--ansi"        Then options.mode        =  ANSI
     When "-e", "-exp", "--experimental" Then options.experimental = 1
+    When "-exe", "--executor"  Then options.executor    = 1
     When "--css"               Then options.css         = 1
     When "--tutor"             Then options.unicode     = 1
     When "-u", "--unicode"     Then options.unicode     = 1
@@ -226,6 +228,7 @@ Options:
   -a, --ansi               Select ANSI mode
       --css                Include links to css files (HTML only)
       --doccomments=detailed|block Select highlighting level for doc-comments
+  -exe,--executor          Enable support for Executor
   -e, -exp, --experimental Enable Experimental features
   -h, --html               Select HTML mode
   -l, --latex              Select LaTeX mode

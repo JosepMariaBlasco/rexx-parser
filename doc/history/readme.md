@@ -18,6 +18,8 @@ Version history
        [class extension mechanism](../experimental/classextensions/) based on Gil's syntax suggestions (20251114).
   <li> Add support for the new GC BIF (20251116).
   <li> The identity compiler is practically finished (20251125).
+  <li> Start to implement support for Jean Louis Faucher's Executor (20251125).
+  <li> Add support for Executor-styel constructs like "2i" (20251126).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

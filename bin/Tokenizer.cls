@@ -29,6 +29,7 @@
 /* 20251014    0.2e Add optional support for Lua and, not, or                 */
 /* 20251016         Add support for Lua "#" and Lambdas                       */
 /* 20251029         Add isInserted method to Element class (Thanks, Rony!)    */
+/* 20251126    0.3a Add support for Executor                                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -1040,6 +1041,7 @@ Return
   p = currentLine~verify( var_symbol_char,,col+1)
   If p == 0 Then p = len + 1
   symbol = currentLine[col, p - col]
+
   If .Options.Lua Then Call TestLuaOperatorOrValue
   Return self~InsertNewElement(                                           -
     .StringOrSymbol.Element~new(SymbolKind(), line, col, p, source[line]) -
@@ -1102,10 +1104,25 @@ SymbolKind:
     Otherwise Select
       When symbol == "."                  Then Return .EL.PERIOD
       When IsANumberWithASignedExponent() Then Return .EL.EXPONENTIAL_NUMBER
+      When ContainsExecutorNumber()       Then Signal SymbolKind
       When symbol[1] == "."               Then Return .EL.ENVIRONMENT_SYMBOL
       Otherwise                                Return .EL.SYMBOL_LITERAL
     End
   End
+
+ContainsExecutorNumber:
+  -- If Executor support is active, handle cases like 2i or 3.42pq
+  If .Options.Executor, DataType(symbol) \== "NUM" Then Do
+    Loop q = p-1 To col By -1
+      If DataType(currentLine[col, q - col]) == "NUM" Then Do
+        p = q
+        symbol = currentLine[col, p - col]
+        Return 1
+      End
+    End
+  End
+  Return 0
+
 
 Lua.2Cat:
   Select Case Arg(1)
@@ -1149,8 +1166,9 @@ IsANumberWithASignedExponent:
     p = len + 1                             -- ..and also if..
     Signal ExponentDone
   End
-  If Pos(currentLine[p2], general_letter".") > 0 -- ..the following char..
-                              Then Return 0 -- ..is not a letter a dot.
+  If \.Options.Executor Then                -- ..Executor support is off...
+  If Pos(currentLine[p2], general_letter".") > 0 -- ..and the following char..
+                              Then Return 0 -- ..is not a letter or a dot.
   p = p2
   -- Recalculate symbol
 ExponentDone:

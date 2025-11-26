@@ -27,6 +27,7 @@
 /* 20250706    0.2d Add support for detailed doc-comment highlighting         */
 /* 20251014    0.2e Add support for Lua extensions                            */
 /* 20251114    0.3a Add support for Experimental features                     */
+/* 20251125         Add support for Executor                                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -85,6 +86,8 @@
 --     constant) will be highlighted.
 --   doccomments= "detailed" | "block"
 --     Determines whether doc-comment parts are individually highlighted.
+--   executor
+--     Enables Executor extensions
 --   experimental
 --     Enables Experimental features
 --   extraletters= <string>
@@ -324,6 +327,7 @@ MissingEndMarker:
       Select Case option
         When "unicode", "tutor"              Then Options.unicode      = .True
         When "experimental"                  Then Options.experimental = .True
+        When "executor"                      Then Options.executor     = .True
         When ".numberLines", ".number-lines" Then Options.numberLines  = .True
         Otherwise Nop -- Exit BadOption()
       End

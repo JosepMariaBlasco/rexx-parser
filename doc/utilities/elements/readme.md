@@ -18,6 +18,7 @@ Options
 
 ---------------------------------- ------------------------------
 `-e`, `--experimental`&nbsp;&nbsp; Enable Experimental features (also `-exp`)
+`-exe`, `--executor`               Enable Executor support
 `--from [LINE]`                    Show elements starting at line LINE
 `--help`                           Display this information
 `--lua`                            Enable OPTIONS LUA (also `-lua`)

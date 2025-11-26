@@ -33,6 +33,7 @@
 /* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /* 20250630         Add support for doc-comment subelements                   */
 /* 20251114    0.3a Add support for Experimental features                     */
+/* 20251125         Add support for Executor                                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -177,6 +178,8 @@ Return
     parserOptions~append( (unicode, 1) )
   If options.experimental == 1 Then
     parserOptions~append( (experimental, 1) )
+  If options.executor == 1 Then
+    parserOptions~append( (executor, 1) )
 
   -- Instantiate a parser, parse the program, and get the first element
   parser  = .Rexx.Parser~new(file, source, parserOptions)

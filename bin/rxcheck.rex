@@ -24,6 +24,7 @@
 /* 20250831    0.2e Add support for LEAVE and INTERPRET checks                */
 /* 20250929         Add ".rex" to filename when appropriate                   */
 /* 20251114    0.3a Add support for Experimental features                     */
+/* 20251125         Add support for Executor                                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -40,6 +41,7 @@
   itrace           = 0
   lua              = 0
   experimental     = 0
+  executor         = 0
   extraletters     = ""
   emptyassignments = 0
   Do While "+-"~contains(Left(file,1))
@@ -60,25 +62,27 @@
         leave   = 1
         iterate = 1
       End
-      When "-signal"       Then signal  = 0
-      When "+signal"       Then signal  = 1
-      When "-leave"        Then leave   = 0
-      When "+leave"        Then leave   = 1
-      When "-iterate"      Then iterate = 0
-      When "+iterate"      Then iterate = 1
-      When "-guard"        Then guard   = 0
-      When "+guard"        Then guard   = 0
-      When "-bifs"         Then bifs    = 0
-      When "+bifs"         Then bifs    = 1
-      When "-debug"        Then debug   = 0
-      When "+debug"        Then debug   = 1
-      When "-itrace"       Then itrace  = 0
-      When "+itrace"       Then itrace  = 1
+      When "-signal"       Then signal   = 0
+      When "+signal"       Then signal   = 1
+      When "-leave"        Then leave    = 0
+      When "+leave"        Then leave    = 1
+      When "-iterate"      Then iterate  = 0
+      When "+iterate"      Then iterate  = 1
+      When "-guard"        Then guard    = 0
+      When "+guard"        Then guard    = 0
+      When "-bifs"         Then bifs     = 0
+      When "+bifs"         Then bifs     = 1
+      When "-debug"        Then debug    = 0
+      When "+debug"        Then debug    = 1
+      When "-itrace"       Then itrace   = 0
+      When "+itrace"       Then itrace   = 1
+      When "-exe",-
+           "-executor"     Then executor = 1
       When "-experimental", -
            "+experimental", -
-           "-exp", "+exp"  Then experimental     = 1
+           "-exp", "+exp"  Then experimental = 1
       When "-emptyassignments", "+emptyassignments" Then emptyassignments = 1
-      When "-lua", "+lua"  Then lua     = 1
+      When "-lua", "+lua"  Then lua      = 1
       When "-e", "+e"      Then Do
         c = file[1]
         If Pos(c,"'""") == 0 Then Do
@@ -139,6 +143,7 @@ Code:
   If emptyassignments    Then Options~append(("EMPTYASSIGNMENTS", emptyassignments))
   If Lua                 Then Options~append(("LUA", 1))
   If experimental        Then Options~append(("EXPERIMENTAL", 1))
+  If executor            Then Options~append(("EXECUTOR", 1))
 
   Signal On Syntax
 
@@ -220,13 +225,15 @@ Toggles:
 
 Other options (all can be prefixed with "+" or "-"):
 
+  -executor     Enable support for Executor
+  -exe          Enable support for Executor
   -experimental Enable experimental features
   -exp          Enable experimental features
   -emptyassignments  Allow assignments like "var =".
   -extraletters "extra"  Allow all the characters in "extra"
                 to function as letters.
   -lua          Enable Lua support
- 
+
 
 Executing short code fragments:
 

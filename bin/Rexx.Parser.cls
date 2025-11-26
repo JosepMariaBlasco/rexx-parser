@@ -67,6 +67,7 @@
  .environment~Parser.Options = .Directory~new
  .environment~Options.Lua          = 0
  .environment~Options.Experimental = 0
+ .environment~Options.Executor     = 0
   If Arg(3,'E') Then Do
     .Validate~classType("options",options,.Array)
     If \ options~isEmpty Then Do
@@ -79,6 +80,8 @@
         .environment~Options.Lua          = 1
       If .Parser.Options~hasIndex("EXPERIMENTAL") Then
         .environment~Options.Experimental = 1
+      If .Parser.Options~hasIndex("EXECUTOR") Then
+        .environment~Options.Executor = 1
     End
   End
 

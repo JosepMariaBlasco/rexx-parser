@@ -21,6 +21,7 @@
 /* 20250722    0.2d Add Set.Directive.SubKeyword                              */
 /* 20251014    0.2e Add support for Lua constants and Lua table constructors  */
 /* 20251014         Add support for lambda expressions                        */
+/* 20251026    0.3a Add support for Executor <number><extra> constructs       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -349,17 +350,19 @@
 --   Performs a quick scan and sanitizing of an expression list.              --
 --   It identifies and reports unbalanced parentheses and brackets            --
 --   It produces syntax errors for opening brackets preceded by whitespace,   --
---     except when Options Lua is in effect.                                  --
+--     except when Lua or Experimental options are active.                    --
 --   It stops prescanning if one the provided keywords is found, and in this  --
 --     case, it marks the keyword as such, which automatically marks          --
 --     whitespace before and after the keyword, if any, as ignorable.         --
 --   It inserts an implied semicolon before the "THEN" keyword.               --
 --   It changes whitespace into blank concatenation operators                 --
 --   It inserts abuttal concatenation operators in the following contexts:    --
---     + a string or symbol immediately followed by another string or symbol  --
+--     + a string or symbol immediately followed by another string or symbol; --
 --     (when Options Lua is not in effect:)                                   --
---     + ")" immediately followed by "(" or a string or a symbol              --
---     + "]" immediately followed by "(" or a string or a symbol              --
+--     + ")" immediately followed by "(" or a string or a symbol;             --
+--     + "]" immediately followed by "(" or a string or a symbol.             --
+--   When Executor support is active, and in the special case of constructs   --
+--     like "2i", a high-priority abuttal operator is inserted instead.       --
 --     When Options Lua is in effect, the above are function calls            --
 --   It scans for variable reference terms, in the form ">var" or "<var",     --
 --     and substitutes the comparison operators for the corresponding         --
@@ -395,13 +398,20 @@
            .EL.LUA.FAIL, .EL.LUA.FALSE, .EL.LUA.NIL, .EL.LUA.TRUE Then Do
         Select
           When nesting~isEmpty, IsAKeyword( element ) Then Do
-            -- If we generated a spurious blank operator, we fix it now
-            Call FixSpuriousBlanks
-            Call SetSubkeyword element
-            If element~value == "THEN" Then Do
-              Call InsertSemicolonBefore element
+            If .Options.Executor, predecessor \== .Nil, predecessor < .ALL.NUMBERS, -
+              predecessor~to == element~from Then Do
+              Call 35.001 "" -- Mimic Executor behaviour
             End
-            Leave
+            Else Do
+              -- If we generated a spurious blank operator, we fix it now
+              Call FixSpuriousBlanks
+
+              Call SetSubkeyword element
+              If element~value == "THEN" Then Do
+                Call InsertSemicolonBefore element
+              End
+              Leave
+            End
           End
           Otherwise
             Call CheckAbuttal
@@ -431,7 +441,7 @@
       When .EL.LEFT_BRACKET Then Do
         If \.Options.Lua, \predecessor~isNil, -
           predecessor < .ALL.WHITESPACE_LIKE Then
-          Signal 35.001
+          Call 35.001 "["
         nesting~append( element )
       End
       When .EL.LUA.MAPS.TO Then Do
@@ -463,7 +473,8 @@
         Call SetCategory element, .EL.OP.BLANK
         element~value = " "
       End
-      Otherwise Call CheckAbuttal
+      Otherwise
+        Call CheckAbuttal
     End
     predecessor = element
     element    = TheElementAfter( element )
@@ -513,11 +524,15 @@ CheckAbuttal:
   Select
     When element < .EL.LEFT_PARENTHESIS Then
       If predecessor < .ALL.RIGHT_BRACES Then Call InsertAbuttal
+    When predecessor < .ALL.NUMBERS, element < .ALL.SYMBOLS, -
+      predecessor~to == element~from
+      Then Call InsertExecutorAbuttal
     When element < (.ALL.SYMBOLS_AND_STRINGS || .ALL.LUA_CONSTANTS ) Then Do
       Select
         When predecessor < ( .ALL.SYMBOLS_AND_STRINGS || .ALL.LUA_CONSTANTS )
           Then Call InsertAbuttal .True
-        When predecessor < .ALL.RIGHT_BRACES        Then Call InsertAbuttal .True
+        When predecessor < .ALL.RIGHT_BRACES
+          Then Call InsertAbuttal .True
         Otherwise Nop
       End
     End
@@ -533,12 +548,19 @@ InsertAbuttal:
   result~value = ""
 Return
 
+InsertExecutorAbuttal:
+  -- No check for keywords, see
+  -- https://github.com/JosepMariaBlasco/rexx-parser/discussions/22#discussioncomment-15085682
+  Call InsertAfter predecessor, .EL.OP.EXECUTOR.ABUTTAL
+  result~value = ""
+Return
+
 IsAKeyword:
   If Arg(1) \< .ALL.SYMBOLS Then Return 0
   Return WordPos( Arg(1)~value, keywords ) > 0
 
 -- Incorrect expression detected at "&1".
-35.001: Syntax( 35.001, element, "[" )
+35.001: Syntax( 35.001, element, Arg(1) )
 
 -- Left parenthesis "(" in position &1 on line &2
 -- requires a corresponding right parenthesis ")".

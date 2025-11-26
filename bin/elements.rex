@@ -26,6 +26,7 @@
 /* 20250928    0.2e Fix crash when no args, add .rex to file when needed      */
 /* 20251014         Add -lua, --lua options                                   */
 /* 20251114    0.3a Add support for Experimental features                     */
+/* 20251125         Add support for Executor                                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -48,6 +49,7 @@
   unicode      = 0
   lua          = 0
   experimental = 0
+  executor     = 0
   opFrom       = 1
   opTo         = "*"
 
@@ -65,6 +67,7 @@ ProcessOptions:
     Select Case Lower(option)
       When "-u", "--tutor", "--unicode" Then unicode = 1
       When "-e", "-exp", "--exp", "--experimental" Then experimental = 1
+      When "-exe", "--executor" Then executor = 1
       When "-lua", "--lua" Then lua = 1
       When "--help" Then Do
         Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
@@ -124,6 +127,7 @@ ProcessOptions:
   If Unicode      Then Options~append(("UNICODE", 1))
   If Lua          Then Options~append(("LUA", 1))
   If experimental Then Options~append(("EXPERIMENTAL", 1))
+  If executor     Then Options~append(("EXECUTOR", 1))
   parser = .Rexx.Parser~new(file, source, Options)
 
   element  = parser~firstElement
@@ -253,6 +257,7 @@ Usage: myName [options] FILE
 Transform FILE into a list of elements and list them.
 
 Options:
+-exe,--executor     Enable support for Executor
 -e,  --experimental Enable Experimental features (also -exp)
      --from [LINE]  Show elements starting at line LINE
      --help         Display this information

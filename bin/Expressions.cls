@@ -24,6 +24,7 @@
 /* 20251014    0.2e Add optional support for Lua "and", "not" and "or", and   */
 /*                  for Lua constants "fail", "false", "nil" and "true".      */
 /* 20251017         Add support for Lua "#" and Lambdas                       */
+/* 20251126    0.3a Add support for Executor <number><rest> constructs        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -636,6 +637,7 @@
 --    Case 7), an array term, is handled elsewhere in the parser.             --
 --    8) When Lua is active, a Lua constant, like                             --
 --       "fail", "false", "nil" or "true"                                     --
+--    9) A numeric symbol abutted to a non-numeric symbol (Executor only)     --
 --  See rexxref 5.1.0 1.11.1. Terms and Expressions                           --
 --------------------------------------------------------------------------------
 
@@ -660,6 +662,7 @@
 --    6) A literal string                                                     --
 --    7) A Lua constant term ("fail", "false", "nil" or "true"), when         --
 --       Lua is active.                                                       --
+--    8) A numeric symbol abutted to a non-numeric symbol (Executor only)     --
 --  See rexxref 5.1.0 1.11.1. Terms and Expressions                           --
 --------------------------------------------------------------------------------
 
@@ -678,6 +681,17 @@
       Exit Lua.Constant.Term(package, begin)
     When begin < .ALL.SYMBOLS Then Do
       symbol = begin
+
+      If .Options.Executor, symbol < .ALL.NUMBERS,      -
+        symbol~next < .EL.OP.EXECUTOR.ABUTTAL Then Do
+        Exit .Concatenation.Expression~sendWith("new",  -
+          (                                        -
+            Symbol.Term( package, begin ),              -
+            begin~next,                                 -
+            Symbol.Term( package, begin~next~next )     -
+          )                                             -
+        )
+      End
 
       If Global.Option(Closures) \== "", symbol~value == "PROCEDURE" Then
         Exit Closure(package, symbol)

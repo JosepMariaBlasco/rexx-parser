@@ -107,6 +107,7 @@ Crumb:
   print        = "/rexx-parser/doc/print"
   doc          = "/rexx-parser/doc"
   exp          = "/rexx-parser/doc/experimental"
+  exe          = "/rexx-parser/doc/executor"
   bin          = "/rexx-parser/bin"
   guide        = doc"/guide"
   ref          = doc"/ref"
@@ -224,7 +225,11 @@ Crumb:
     -- "/rexx-parser/doc/experimental"
 
     When exp                       Then Return "Experimental"
-    When exp"/classextensions"      Then Return "Class extensions"
+    When exp"/classextensions"     Then Return "Class extensions"
+
+    -- "/rexx-parser/doc/executor"
+
+    When exe                       Then Return "Executor"
 
     -- "/rexx-parser/doc/highlighter"
 
