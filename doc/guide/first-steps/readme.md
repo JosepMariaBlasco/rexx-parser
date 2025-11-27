@@ -11,7 +11,7 @@ First steps
   instructions of that bundle. You can then choose
   to test the Parser from a terminal session (after running
   `setenv`), or use ooRexxShell, a powerful, Swiss army knife shell
-  developed by Jean Louis Faucher, which is part of the
+  developed by JLF, which is part of the
   net-oo-rexx distribution; ooRexxShell includes direct
   support for the Parser.
 + Change to the [`samples`](/rexx-parser/samples/)

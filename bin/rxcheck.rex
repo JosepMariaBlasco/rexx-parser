@@ -76,7 +76,7 @@
       When "+debug"        Then debug    = 1
       When "-itrace"       Then itrace   = 0
       When "+itrace"       Then itrace   = 1
-      When "-exe",-
+      When "-xtr",-
            "-executor"     Then executor = 1
       When "-experimental", -
            "+experimental", -
@@ -226,7 +226,7 @@ Toggles:
 Other options (all can be prefixed with "+" or "-"):
 
   -executor     Enable support for Executor
-  -exe          Enable support for Executor
+  -xtr          Enable support for Executor
   -experimental Enable experimental features
   -exp          Enable experimental features
   -emptyassignments  Allow assignments like "var =".

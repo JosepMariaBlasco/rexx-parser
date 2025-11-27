@@ -40,7 +40,7 @@ Toggles:
 Other options (all can be prefixed with "+" or "-"):
 &nbsp;
 `-executor`                         Enable support for Executor
-`-exe`                              Enable support for Executor
+`-xtr`                              Enable support for Executor
 `-experimental`                     Enable experimental features
 `-exp`                              Enable experimental features
 `-emptyassignments`                 Allow assignments like "var =".

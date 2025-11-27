@@ -17,6 +17,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20251113    0.3a First version                                             */
+/* 20251127         Add support for Executor                                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -25,11 +26,14 @@
   nArgs = .SysCArgs~items
   If nArgs == 0 Then Call ShowHelp
 
-  list = 0
+  list     = 0
+  executor = 0
 
   Loop Counter n i = 1 By 1 While i <= nArgs, .SysCArgs[i][1] == "-"
     Select Case lower(.SysCArgs[i])
-      When "-l" Then list = 1
+      When "-l"         Then list     = 1
+      When "-xtr"       Then executor = 1
+      When "--executor" Then executor = 1
       Otherwise Call ShowHelp
     End
   End
@@ -62,6 +66,7 @@
   Call Stream fullPath, "C", "Close"
 
   options = .Array~of((Experimental,1))
+  If executor Then options~append(("EXECUTOR",1))
 
   -- Parse our program
   parser = .Rexx.Parser~new(fullPath, source, options)
@@ -179,5 +184,7 @@ program.
 
 Options:
 
-  -l      Print the translated program and exit
+  -l         Print the translated program and exit
+  -xtr       Activate Executor support
+  --executor Activate Executor support
 ::END

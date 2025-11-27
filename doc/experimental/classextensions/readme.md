@@ -8,7 +8,7 @@ Introduction and specification
 
 A number of mechanisms have been proposed
 to extend both user-defined and built-in Rexx classes.
-Jean Louis Faucher has created [a very detailed synopsys of these
+JLF has created [a very detailed synopsys of these
 mechanisms.](https://github.com/jlfaucher/executor/blob/master/sandbox/jlf/_changes.md#2extensions)
 
 The Rexx Parser implements a class extension mechanism suggested by

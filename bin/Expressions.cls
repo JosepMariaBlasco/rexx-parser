@@ -126,7 +126,7 @@
   expressions    = Array()
   element        = begin
   trailingComma  = 0
-  stopParsing    = .EL.KEYWORD || .EL.END_OF_CLAUSE
+  stopParsing    = .EL.KEYWORD || .EL.SUBKEYWORD ||.EL.END_OF_CLAUSE
   terminators  ||= stopParsing
   commasFound    = 0
   end            = element              -- In case list is empty
@@ -170,6 +170,8 @@
     commasFound = 1
   End
 
+  If element \< terminators Then Call 35.001 element
+
   If trailingComma, logical Then Call 35.929 begin
 
   If arguments Then Do
@@ -186,6 +188,10 @@
   End
 
   Return .Expression.List~new(expressions, begin, end)
+
+-- Incorrect expression detected at "&1".
+35.001: Syntax( 35.001, element, Arg(1) )
+
 
 -- Missing expression in logical expression list.
 35.929: Syntax( 35.929, Arg(1) )

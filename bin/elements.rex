@@ -67,7 +67,7 @@ ProcessOptions:
     Select Case Lower(option)
       When "-u", "--tutor", "--unicode" Then unicode = 1
       When "-e", "-exp", "--exp", "--experimental" Then experimental = 1
-      When "-exe", "--executor" Then executor = 1
+      When "-xtr", "--executor" Then executor = 1
       When "-lua", "--lua" Then lua = 1
       When "--help" Then Do
         Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
@@ -257,7 +257,7 @@ Usage: myName [options] FILE
 Transform FILE into a list of elements and list them.
 
 Options:
--exe,--executor     Enable support for Executor
+-xtr,--executor     Enable support for Executor
 -e,  --experimental Enable Experimental features (also -exp)
      --from [LINE]  Show elements starting at line LINE
      --help         Display this information

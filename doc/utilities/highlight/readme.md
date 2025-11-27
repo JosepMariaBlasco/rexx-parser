@@ -30,7 +30,7 @@ is a Rexx file, it is highlighted accordingly.
 `-a`, `--ansi`                                          Select ANSI SGR terminal highlighting
 `--css`                                                 Include links to css files (HTML only)
 `--doccomments=detailed|block`&nbsp;&nbsp;              Select highlighting level for doc-comments
-`-exe`, `--executor`                                    Enable support for Executor
+`-xtr`, `--executor`                                    Enable support for Executor
 `-e`, `-exp`, `--experimental`                          Enable Experimental features
 `-h`, `--html`                                          Select HTML highlighting
 `-l`, `--latex`                                         Select LaTeX highlighting
@@ -72,10 +72,6 @@ Select the highlighting level for doc-comments. When "detailed" is specified
 statement, block tags or tag values, receive their own, separated
 styling; when "block" is specified, all the doc-comment as a whole
 gets a single style.
-
-#### -exe, --executor {#exe}
-
-Enables support for Jean Louis Faucher's Executor extensions.
 
 
 #### -e, -exp, --experimental {#exp}
@@ -152,6 +148,10 @@ Ensure that lines have a minimum width of _n_ characters
 (ANSI highlighting only).
 
 See also [--ansi](#ansi).
+
+#### -xtr, --executor {#xtr}
+
+Enables support for JLF's Executor extensions.
 
 --------------
 

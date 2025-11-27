@@ -800,7 +800,7 @@ SkipOverTheInternalRoutines:            -- Main code continues here
      EL.OP.BLANK,                       - -- " " (when it is not whitespace)
      EL.OP.ABUTTAL                        -- ""  (always an implicit element)
   --
-  -- Jean Louis Faucher's Executor has a high-priority abuttal operator
+  -- JLF's Executor has a high-priority abuttal operator
   -- which is automatically inserted when a constant symbol with a syntax of
   -- <number><extra> is found.
   --
