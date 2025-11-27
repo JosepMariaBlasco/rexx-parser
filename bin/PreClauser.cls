@@ -19,6 +19,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250531    0.2c Fix issue no. 13                                          */
 /* 20251014    0.2e (Lua only) Check that Lua constants are not assigned to   */
+/* 20251127    0.3a (Executor) Allow "var == expression;"                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -133,8 +134,8 @@
 
   -- Case 6: Symbol + assignment operator? --> An assignment
   If t1 < .ALL.SYMBOLS Then Do
-    If t2 < .EL.OP.STRICT.EQUAL Then Signal 35.001 -- Special case
-    If t2 < .ALL.ASSIGNMENTS Then Exit self~Assignment.Instruction
+    If \.Options.Executor, t2 < .EL.OP.STRICT.EQUAL Then Signal 35.001 -- Special case
+    If t2 < .ALL.ASSIGNMENTS    Then Exit self~Assignment.Instruction
   End
 
   -- Case 6b: (Lua only) Lua constant + assignment operator? --> Error

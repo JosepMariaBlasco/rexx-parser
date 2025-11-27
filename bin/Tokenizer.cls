@@ -1110,6 +1110,7 @@ SymbolKind:
     End
   End
 
+-- Migrate to PrepareExpression
 ContainsExecutorNumber:
   -- If Executor support is active, handle cases like 2i or 3.42pq
   If .Options.Executor, DataType(symbol) \== "NUM" Then Do
@@ -1684,6 +1685,7 @@ EndDelimiterFound:
 
 ::Class StringOrSymbol.Element Public subclass Element
 ::Attribute category
+::Attribute sourceLine Get
 ::Method value
   source = self~source
   If self~isAString Then Do -- Strings

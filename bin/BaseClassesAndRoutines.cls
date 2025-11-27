@@ -156,7 +156,7 @@
 /******************************************************************************/
 /* Internal.Error                                                             */
 /*                                                                            */
-/* We print a panic error and we raise the HALT condition.                    */
+/* We print a panic error and raise the HALT condition.                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -173,8 +173,8 @@
 /*   elements. In these cases, we will be interested in navigating from       */
 /*   a certain, non-ignorable, element, to the next non-ignorable element.    */
 /*                                                                            */
-/*   TheElementAfter and TheElementBefore will take care of this   */
-/*   non-ignorable navigation.                                                              */
+/*   TheElementAfter and TheElementBefore will take care of this              */
+/*   non-ignorable navigation.                                                */
 /******************************************************************************/
 
 ::Routine TheElementAfter Public
