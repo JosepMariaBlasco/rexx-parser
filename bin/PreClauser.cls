@@ -20,6 +20,7 @@
 /* 20250531    0.2c Fix issue no. 13                                          */
 /* 20251014    0.2e (Lua only) Check that Lua constants are not assigned to   */
 /* 20251127    0.3a (Executor) Allow "var == expression;"                     */
+/* 20251127         (Executor) Allow "keyword(..."                            */
 /*                                                                            */
 /******************************************************************************/
 

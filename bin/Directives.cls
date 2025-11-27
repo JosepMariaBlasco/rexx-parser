@@ -667,9 +667,11 @@ Return
 
   OPTIONS = elements[2]
 
-  element        = TheElementAfter( OPTIONS )
-  options.     = .Nil
-  ignoreBlanks = .True
+  element            = TheElementAfter( OPTIONS )
+  options.           = .Nil
+  options.commands   = 1
+  options.macrospace = 1
+  ignoreBlanks       = .True
 
   If element < .EL.END_OF_CLAUSE Then Signal Done
 
@@ -677,8 +679,11 @@ Return
   numeric    = "DIGITS FORM FUZZ NUMERIC"
   allOptions = numeric conditions "PROLOG NOPROLOG TRACE"
 
+  If .Options.Executor Then
+    allOptions ||= " COMMANDS NOCOMMANDS MACROSPACE NOMACROSPACE"
+
   Loop While element \< .EL.END_OF_CLAUSE
-    If element \< .ALL.SYMBOLS            Then Signal 25.924
+    If element \< .ALL.SYMBOLS          Then Signal 25.924
     tValue = element~value
     If WordPos(tValue, allOptions) == 0 Then Signal 25.924
     Call Set.Directive.SubKeyword element
@@ -693,9 +698,13 @@ Return
         Call Set.Directive.SubKeyword element
         element = TheElementAfter( element )
       End
-      When tValue == "PROLOG"   Then options.prolog = 1
-      When tValue == "NOPROLOG" Then options.prolog = 0
-      When tValue == "FORM" Then Do
+      When tValue == "COMMANDS"     Then options.commands   = 1
+      When tValue == "NOCOMMANDS"   Then options.commands   = 0
+      When tValue == "MACROSPACE"   Then options.macrospace = 1
+      When tValue == "NOMACROSPACE" Then options.macrospace = 0
+      When tValue == "PROLOG"       Then options.prolog     = 1
+      When tValue == "NOPROLOG"     Then options.prolog     = 0
+      When tValue == "FORM"         Then Do
         If element \< .ALL.SYMBOLS Then Signal 20.925
         If WordPos( element~value, "SCIENTIFIC ENGINEERING") == 0 Then Signal 25.011
         options.form = element~value
@@ -783,9 +792,17 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Options.Directive Public SubClass Rexx.Directive
+::Attribute Commands   -- Executor only
+::Attribute Macrospace -- Executor only
+::Attribute Prolog
 ::Method init
-  Expose options.
+  Expose Commands Macrospace
   Use Strict Arg package, begin, end, options.
+
+  self~commands   = options.commands
+  self~macrospace = options.macrospace
+  self~prolog     = options.prolog
+
   self~init:super( package, begin, end )
 
 /******************************************************************************/
