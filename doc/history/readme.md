@@ -21,6 +21,7 @@ Version history
   <li> Start to implement support for JLF's Executor (20251125).
   <li> Add support for Executor-style constructs like `2i` (20251126).
   <li> Add support for Executor instructions starting with `var ==` (20251127).
+  <li> Add support for Executor instructions starting with `keyword(` (20251127).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

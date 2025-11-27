@@ -134,13 +134,13 @@
 
   -- Case 6: Symbol + assignment operator? --> An assignment
   If t1 < .ALL.SYMBOLS Then Do
-    If \.Options.Executor, t2 < .EL.OP.STRICT.EQUAL Then Signal 35.001 -- Special case
+    If \.Options.Executor, t2 < .EL.OP.STRICT.EQUAL Then Call 35.001 "=="
     If t2 < .ALL.ASSIGNMENTS    Then Exit self~Assignment.Instruction
   End
 
   -- Case 6b: (Lua only) Lua constant + assignment operator? --> Error
   If .Options.Lua, t1 < .ALL.LUA_CONSTANTS Then Do
-    If t2 < .EL.OP.STRICT.EQUAL Then Signal 35.001 -- Special case
+    If t2 < .EL.OP.STRICT.EQUAL Then Call 35.001 "=" -- Special case
     If t2 < .ALL.ASSIGNMENTS Then Signal 31.900
   End
 
@@ -148,9 +148,13 @@
   If t1 < .ALL.SYMBOLS, t2 < .ALL.OPS.MESSAGE_SEND Then
     Exit self~Command.Or.Message.Instruction
 
-  If t1 < .ALL.VARIABLES_AND_KEYWORDS, instructions~hasItem( t1~value ) Then
+  If t1 < .ALL.VARIABLES_AND_KEYWORDS, instructions~hasItem( t1~value ) Then Do
     -- Case 3 (bis): keyword instructions
+    -- Special case: "address()" -> 35.1
+    If \.Options.Executor, t1~next < .EL.LEFT_PARENTHESIS Then
+      Call 35.001 "("
     Exit self~Keyword.Clause
+  End
 
   -- Case 4 (ter): Command or message instruction
   Exit self~Command.Or.Message.Instruction
@@ -158,7 +162,7 @@
 31.900: Syntax( 31.900, t1, "Lua fail, false, nil and true cannot be assigned to")
 
 -- Incorrect expression detected at "&1".
-35.001: Syntax( 35.001, t1, "==" )
+35.001: Syntax( 35.001, t1, Arg(1) )
 
 /******************************************************************************/
 /* generateElementsArray collects all the a priori non-ignorable elements     */
