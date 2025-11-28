@@ -21,6 +21,7 @@
 /* 20250419    0.2a Fix bug no. 4                                             */
 /* 20250419    0.2a Fix bug no. 4                                             */
 /* 20251014    0.2e Add support for Lua options                               */
+/* 20251128    0.3a (Executor) Add support for ::EXTENSION directive          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -360,6 +361,7 @@ CheckThatUseLocalIsValid:
       When .Attribute.Directive Then Call Attribute  package, directive
       When     .Class.Directive Then Call Class      package, directive
       When  .Constant.Directive Then Call Constant   package, directive
+      When .Extension.Directive Then Call Extension  package, directive
       When    .Method.Directive Then Call Method     package, directive
       When   .Options.Directive Then Call Options    package, directive
       When  .Requires.Directive Then Call Requires   package, directive
@@ -683,6 +685,33 @@ Return
 ::Attribute name      Get
 ::Attribute directive Get
 ::Attribute body      Get
+
+/******************************************************************************/
+/* EXTENSION                                                                      */
+/******************************************************************************/
+
+::Routine Extension
+  Use Strict Arg package, directive
+  body = Empty.Body( package, directive )
+  extension = .Rexx.Extension~new( directive~name, directive, body )
+  -- package~currentClass = class
+  name = Upper( directive~name~value )
+  options. = directive~options.
+  directive~body = body
+  directive~extension = extension
+  package~addDirective( directive )
+  Return
+
+--------------------------------------------------------------------------------
+
+::Class Rexx.Extension
+
+::Attribute name      Get
+::Attribute directive Get
+::Method init
+  Expose         name  directive body
+  Use Strict Arg name, directive, body
+
 
 /******************************************************************************/
 /* METHOD                                                                     */

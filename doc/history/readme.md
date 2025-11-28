@@ -29,6 +29,7 @@ Version history
   <li> (Executor) Support `/==` and `/=` operators (20251128).
   <li> (Executor) Support `^` and `¬` as a negator (20251128).
   <li> (Executor) Allow `#@$` in identifiers (20251128).
+  <li> (Executor) Add support for `::EXTENSION` directive (20251128).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

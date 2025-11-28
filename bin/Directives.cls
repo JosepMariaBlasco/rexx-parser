@@ -20,6 +20,7 @@
 /* 20251027    0.2e Add support for ::OPTIONS NUMERIC [NO]INHERIT             */
 /* 20251031         Add support for namespaces in ::CLASS directive           */
 /* 20251101         Enhance and complete API for Requires.Directive           */
+/* 20251128    0.3a (Executor) Implement ::EXTENSION directive                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -27,6 +28,7 @@
 .environment ~ Attribute.Directive = .Attribute.Directive
 .environment ~     Class.Directive =     .Class.Directive
 .environment ~  Constant.Directive =  .Constant.Directive
+.environment ~ Extension.Directive = .Extension.Directive
 .environment ~    Method.Directive =    .Method.Directive
 .environment ~   Options.Directive =   .Options.Directive
 .environment ~   Requires.Directive = .Requires.Directive
@@ -466,6 +468,90 @@ SignedNumber:
   Use Strict Arg        -
     package, begin, end, name, value = .Nil
   self~init:super( package, begin, end )
+
+/******************************************************************************/
+/* EXTENSION Directive                                                        */
+/******************************************************************************/
+
+::Routine Extension.Directive Public
+
+  Use Strict Arg package, begin, end, elements
+
+  EXTENSION = elements[2]
+
+  name = TheElementAfter( EXTENSION )
+
+  NotNamespaced = .False
+
+  Call ExpectClassName name, 19.900, NotNamespaced
+
+  options.             = .Nil
+
+  ignoreBlanks         = 1
+
+  keyword = TheElementAfter( name, ignoreBlanks )
+
+  inherit = .Nil
+
+  If keyword \< .EL.END_OF_CLAUSE Then Do
+
+    If keyword~value \== "INHERIT" Then Signal 25.900
+
+    Call Set.Directive.SubKeyword keyword
+
+    next = TheElementAfter( keyword, ignoreBlanks )
+    Loop Until next < .EL.END_OF_CLAUSE
+      Call ExpectClassName next, 19.908
+      If inherit == .Nil Then inherit = Array()
+      inherit~append( ( nameSpace, className ) )
+      next = TheElementAfter( className, ignoreBlanks )
+    End
+
+  End
+
+  Exit .Extension.Directive~new( package, begin, end, name, options. )
+
+ExpectClassName:
+  nameSpace = .Nil
+  Use Arg element, code, nameSpaceAllowed = .True
+  If nameSpaceAllowed, element < .ALL.SYMBOLS Then Do
+    next = TheElementAfter( element )
+    If next < .EL.COLON Then Do
+      nameSpace = element
+      Call SetConstantName element, .NAMESPACE.NAME
+      element   = TheElementAfter( next )
+      If element \< .ALL.SYMBOLS Then Signal 20.921
+    End
+  End
+
+  If element \< .ALL.SYMBOLS_AND_STRINGS Then Signal (code)
+  Call SetConstantName element, .CLASS.NAME
+  className = element
+Return
+
+-- String or symbol expected after ::EXTENSION keyword.
+19.900: Syntax( 19.900, EXTENSION, "String or symbol expected after ::EXTENSION keyword" )
+
+-- String or symbol expected after INHERIT keyword.
+19.908: Syntax( 19.908, EXTENSION, element )
+
+-- Symbol expected as a class name of qualified class name.
+20.921: Syntax( 20.921, CLASS )
+
+-- Unknown keyword on ::INHERIT directive; found "&1".
+25.900: Syntax( 25.900, CLASS, 'Unknown keyword on ::INHERIT directive; found "'keyword'"' )
+
+--------------------------------------------------------------------------------
+
+::Class Extension.Directive Public SubClass Rexx.Directive
+::Attribute name     Get
+::Attribute options. Get
+::Attribute extension
+::Method init
+  Expose name options.
+  Use Strict Arg package, begin, end, name, options.
+  self~init:super( package, begin, end )
+
 
 /******************************************************************************/
 /* METHOD Directive                                                           */

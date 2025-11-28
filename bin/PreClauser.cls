@@ -21,7 +21,8 @@
 /* 20251014    0.2e (Lua only) Check that Lua constants are not assigned to   */
 /* 20251127    0.3a (Executor) Allow "var == expression;"                     */
 /* 20251127         (Executor) Allow "keyword(..."                            */
-/* 20251128         (Executor) UPPER instruction                              */
+/* 20251128         (Executor) Implement UPPER instruction                    */
+/* 20251128         (Executor) Implement ::EXTENSION directive                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -233,6 +234,8 @@
     method, options, requires, resource, routine)
     directives[] = keyword
   End
+
+  If .Options.Executor Then directives[] = extension
 
   -- These are pure clauses (i.e., not complete instructions).
   -- The rest of the keywords produce clauses that are also instructions.

@@ -1,1 +1,1 @@
-Say a ¬= 1
+::Extension xx inherit ab ac ad
