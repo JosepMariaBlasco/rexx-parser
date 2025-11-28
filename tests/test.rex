@@ -1,1 +1,1 @@
-Upper  A B
+Say a ¬= 1

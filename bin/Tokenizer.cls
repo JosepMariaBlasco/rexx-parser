@@ -30,6 +30,10 @@
 /* 20251016         Add support for Lua "#" and Lambdas                       */
 /* 20251029         Add isInserted method to Element class (Thanks, Rony!)    */
 /* 20251126    0.3a Add support for Executor                                  */
+/* 20251128         (Executor) Support "/==" and "/="                         */
+/* 20251128         Add basic Unicode support to the tokenizer                */
+/* 20251128         (Executor) Support "^" and "¬" as a negators              */
+/* 20251128         (Executor) Allow #@$ in identifiers                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -126,7 +130,22 @@ Continuation.Found:
 
   -- Pick a character (or, in some cases, a character pair)
   ch  = source[line][ col   ]
-  ch2 = source[line][ col+1 ] -- May be ""
+
+  Select -- We're assuming well formed UTF-8
+    When ch <= "7F"X Then
+      ch2 = source[line][ col+1 ] -- May be ""
+    When ch <= "DF"X Then Do
+      ch ||= source[line][ col+1 ]
+      ch2 = source[line][ col+2 ] -- May be ""
+    End
+    When ch <= "EF"X Then Do
+      ch ||= source[line][ col+1 ]source[line][ col+2 ]
+      ch2 = source[line][ col+3 ] -- May be ""
+    End
+    Otherwise
+      ch ||= source[line][ col+1 ]source[line][ col+2 ]source[line][ col+3 ]
+      ch2 = source[line][ col+4 ] -- May be ""
+  End
 
   -- And jump!
   Signal ( ElementStartedBy[ ch ] )
@@ -239,8 +258,6 @@ Return semicolon
     ( WordPos( Line    , AllowedDocComments) > 0 ) | -
     ( WordPos( Markdown, AllowedDocComments) > 0 )
 
-
-
 /******************************************************************************/
 /*                                                                            */
 /* Defines three collections:                                                 */
@@ -252,6 +269,7 @@ Return semicolon
 
 ::Method initialize_tables
   Use Local
+
 --------------------------------------------------------------------------------
 -- Operator characters                                                        --
 --                                                                            --
@@ -269,19 +287,24 @@ Return semicolon
 --------------------------------------------------------------------------------
 
   ClassOfOperatorChar = StringTable( -
-    ("&", .EL.OP.AND          ),  -
-    ("=", .EL.OP.EQUAL       ),  -
-    (">", .EL.OP.GREATER_THAN ),  -
-    ("<", .EL.OP.LOWER_THAN   ),  -
-    ("-", .EL.OP.MINUS        ),  -
-    ("\", .EL.OP.NEGATION    ),  -
-    ("+", .EL.OP.PLUS         ),  -
-    ("~", .EL.OP.MESSAGE      ),  -
-    ("|", .EL.OP.OR           ),  -
-    ("%", .EL.OP.INTEGER_DIVISION      ),  -
-    ("/", .EL.OP.DIVISION        ),  -
-    ("*", .EL.OP.MULTIPLICATION         )   -
+    ("&", .EL.OP.AND              ), -
+    ("=", .EL.OP.EQUAL            ), -
+    (">", .EL.OP.GREATER_THAN     ), -
+    ("<", .EL.OP.LOWER_THAN       ), -
+    ("-", .EL.OP.MINUS            ), -
+    ("\", .EL.OP.NEGATION         ), -
+    ("+", .EL.OP.PLUS             ), -
+    ("~", .EL.OP.MESSAGE          ), -
+    ("|", .EL.OP.OR               ), -
+    ("%", .EL.OP.INTEGER_DIVISION ), -
+    ("/", .EL.OP.DIVISION         ), -
+    ("*", .EL.OP.MULTIPLICATION   )  -
   )
+
+  If .Options.Executor Then Do
+    ClassOfOperatorChar["^"] = .EL.OP.NEGATION
+    ClassOfOperatorChar["¬"] = .EL.OP.NEGATION
+  End
 
 --------------------------------------------------------------------------------
 -- Compound operator character sequences and their meaning.                   --
@@ -323,6 +346,26 @@ Return semicolon
     ("><" , .EL.OP.GREATER_OR_LOWER_THAN   ), -
     ("//" , .EL.OP.REMAINDER               )  -
   )
+
+  If .Options.Executor Then Do
+    -- TSO/E negations
+    compoundOperator["/=="] = .EL.OP.STRICT.NOT_EQUAL
+    compoundOperator["/=" ] = .EL.OP.NOT_EQUAL
+    -- "^" as a negator
+    compoundOperator["^=="] = .EL.OP.STRICT.NOT_EQUAL
+    compoundOperator["^=" ] = .EL.OP.NOT_EQUAL
+    compoundOperator["^>" ] = .EL.OP.NOT_GREATER_THAN
+    compoundOperator["^<" ] = .EL.OP.NOT_LOWER_THAN
+    compoundOperator["^<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
+    compoundOperator["^>>"] = .EL.OP.STRICT.NOT_GREATER_THAN
+    -- "¬" as a negator
+    compoundOperator["¬=="] = .EL.OP.STRICT.NOT_EQUAL
+    compoundOperator["¬=" ] = .EL.OP.NOT_EQUAL
+    compoundOperator["¬>" ] = .EL.OP.NOT_GREATER_THAN
+    compoundOperator["¬<" ] = .EL.OP.NOT_LOWER_THAN
+    compoundOperator["¬<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
+    compoundOperator["¬>>"] = .EL.OP.STRICT.NOT_GREATER_THAN
+ End
 
   ClassOfSpecialChar =                        -
     StringTable(                              -
@@ -382,7 +425,11 @@ Return semicolon
   special           = ",;:()"                        -- ANSI 6.2.2.2
   special         ||= "[]"                           -- Rexxref 5.1.0, 1.10.4.7. Special Characters; "~" moved to operator
   not               = "\"                            -- ANSI 6.2.2.3
+  If .Options.Executor Then
+    not           ||= "^¬"
   operator_only     = "+-%|&=><\"                    -- ANSI 6.2.2.4
+  If .Options.Executor Then
+    operator_only ||= "^¬"
   operator_only   ||= "~"                            -- See Rexxref 5.10, 1.11.3. Parentheses and Operator Precedence
   operator_or_other = "/*"                           -- ANSI 6.2.2.5
   operator_char     = operator_only ||,              -- ANSI 6.2.2.6
@@ -392,6 +439,8 @@ Return semicolon
     extra_letter    = .Parser.Options~extraletters   -- ANSI 5.3.2
     general_letter||= extra_letter
   End
+  If .Options.Executor Then
+    general_letter||= "#@$"
   blank             = "2009"X                        -- ANSI 6.2.2.8
   -- "whitespace" is a better name, and more coherent with ooRexx
   -- nomenclature and with the text of error messages
@@ -404,22 +453,40 @@ Return semicolon
 
   -- Table for the Finite State Machine
 
-  ElementStartedBy             = .Stem~new
-  ElementStartedBy[]           = Invalid.Character     -- Default value
+  ElementStartedBy          = .Stem~new
+  ElementStartedBy[]        =  Invalid.Character     -- Default value
 
   Call Assign var_symbol_char, Symbol.Element
   Call Assign operator_char  , Operator.Char
   Call Assign special        , Special.Char
   Call Assign whitespace     , Whitespace.Sequence
   Call Assign "'"""          , String.Element
-  ElementStartedBy["/"]        = Standard.Comment?
-  ElementStartedBy["-"]        = Line.Comment?
+  ElementStartedBy["/"]      = Standard.Comment?
+  ElementStartedBy["-"]      = Line.Comment?
 
   Return
 
 Assign:
-  Do c over Arg(1)~makeArray("")
-    ElementStartedBy[ c ]      = Arg(2)
+  chars = Arg(1)
+  kind  = Arg(2)
+  Do i = 1 To Length(chars)
+    c = chars[i]
+    -- We are assuming that chars contains well-formed UTF-8
+    Select
+      When c <= "7F"X Then Nop -- ASCII
+      When c <= "DF"X Then Do
+        i += 1
+        c ||= chars[i]
+      End
+      When c <= "EF"X Then Do
+        i += 2
+        c ||= chars[i-1]||chars[i]
+      End
+      Otherwise
+        i += 3
+        c ||= chars[i-2]||chars[i-1]||chars[i]
+    End
+    ElementStartedBy[ c ] = kind
   End
 Return
 
@@ -875,8 +942,16 @@ Done:
 
   category = ClassOfOperatorChar[ ch ]
 
+  c1 = ch[1]
+  Select
+    When c1 <= "7F"X Then chlen = 1
+    When c1 <= "DF"X Then chlen = 2
+    When c1 <= "EF"X Then chlen = 3
+    Otherwise             chlen = 4
+  End
+
   element = .Operator.Character.Sequence~new( -
-    category, line, col, col+1, ch   -
+    category, line, col, col+chlen, ch        -
   )
   self~InsertNewElement( element )
 

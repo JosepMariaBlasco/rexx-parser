@@ -19,12 +19,16 @@ Version history
   <li> Add support for the new GC BIF (20251116).
   <li> The identity compiler is practically finished (20251125).
   <li> Start to implement support for JLF's Executor (20251125).
-  <li> Add support for Executor-style constructs like `2i` (20251126).
-  <li> Add support for Executor instructions starting with `var ==` (20251127).
-  <li> Add support for Executor instructions starting with `keyword(` (20251127).
-  <li> Add support for Executor `::OPTIONS [NO]COMMAND` and `[NO]MACROSPACE` (20251127).
-  <li> Add support for Executor `X =; -- Assigns ''` (20251127).
-  <li> Add support for Executor `UPPER` instructions (20251128).
+  <li> (Executor) Support constructs like `2i` (20251126).
+  <li> (Executor) Support instructions starting with `var ==` (20251127).
+  <li> (Executor) Support instructions starting with `keyword(` (20251127).
+  <li> (Executor) Support `::OPTIONS [NO]COMMAND` and `[NO]MACROSPACE` (20251127).
+  <li> (Executor) Support `X =; -- Assigns ''` (20251127).
+  <li> (Executor) Support `UPPER` instructions (20251128).
+  <li> Add basic Unicode support to the tokenizer (20251128).
+  <li> (Executor) Support `/==` and `/=` operators (20251128).
+  <li> (Executor) Support `^` and `¬` as a negator (20251128).
+  <li> (Executor) Allow `#@$` in identifiers (20251128).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.
