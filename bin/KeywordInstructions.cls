@@ -26,6 +26,7 @@
 /* 20250419         Fix bug nos. 3, 6 & 7                                     */
 /* 20250803    0.2d Add support for array terms                               */
 /* 20250808         Add support for length positional patterns                */
+/* 20251128    0.3a Add the UPPER instruction (e.g., for Executor)            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -63,6 +64,7 @@
  .environment~          Signal.Off.Instruction =          .Signal.Off.Instruction
  .environment~           Signal.On.Instruction =           .Signal.On.Instruction
  .environment~               Trace.Instruction =               .Trace.Instruction
+ .environment~               Upper.Instruction =               .Upper.Instruction
  .environment~             Use.Arg.Instruction =             .Use.Arg.Instruction
  .environment~           Use.Local.Instruction =           .Use.Local.Instruction
 
@@ -528,7 +530,7 @@ Arguments:
   self~init:super( package, begin, end )
 
 /******************************************************************************/
-/* Drop instruction                                                           */
+/* DROP instruction                                                           */
 /******************************************************************************/
 
 ::Routine Drop.Instruction Public
@@ -710,9 +712,30 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Forward.Instruction Public SubClass Rexx.Instruction
+::Attribute Continue  Get
+::Attribute Arguments Get
+::Attribute Array     Get
+::Attribute Message   Get
+::Attribute theClass  Get
+::Attribute To        Get
 ::Method init
-  Expose options.
+  Expose Continue Arguments Array Message theClass To
+
   Use Strict Arg package, begin, end, options.
+
+  If options.~hasIndex("CONTINUE")  Then Continue  = options.continue
+  Else                                   Continue  = .Nil
+  If options.~hasIndex("ARGUMENTS") Then Arguments = options.arguments
+  Else                                   Arguments = .Nil
+  If options.~hasIndex("ARRAY")     Then Array     = options.array
+  Else                                   Array     = .Nil
+  If options.~hasIndex("MESSAGE")   Then Message   = options.message
+  Else                                   Message   = .Nil
+  If options.~hasIndex("CLASS")     Then theClass  = options.class
+  Else                                   theClass  = .Nil
+  If options.~hasIndex("TO")        Then To        = options.to
+  Else                                   To        = .Nil
+
   self~init:super( package, begin, end )
 
 /******************************************************************************/
@@ -1102,6 +1125,8 @@ Expression:
 --------------------------------------------------------------------------------
 
 ::Class Numeric.Instruction Public SubClass Rexx.Instruction
+::Attribute option     Get
+::Attribute expression Get
 ::Method init
   Expose option expression
   Use Strict Arg package, begin, end, option, expression = .Nil
@@ -1976,9 +2001,48 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Trace.Instruction Public SubClass Rexx.Instruction
+::Attribute number     Get
+::Attribute theString  Get
+::Attribute symbol     Get
+::Attribute expression Get
 ::Method init
-  Expose options.
+  Expose number theString symbol expression
+
   Use Strict Arg package, begin, end, options.
+
+  number     = .Nil
+  theString  = .Nil
+  symbol     = .Nil
+  expression = .Nil
+
+  If options.~hasIndex("NUMBER") Then number     = options.["NUMBER"]
+  If options.~hasIndex("STRING") Then theString  = options.["STRING"]
+  If options.~hasIndex("SYMBOL") Then symbol     = options.["SYMBOL"]
+  If options.~hasIndex("VALUE" ) Then expression = options.["VALUE" ]
+
+  self~init:super( package, begin, end )
+
+/******************************************************************************/
+/* UPPER instruction                                                          */
+/******************************************************************************/
+
+::Routine Upper.Instruction Public
+  Use Strict Arg package, begin, end, elements
+
+  Return Name.List.Instruction(                       -
+    package, .Upper.Instruction, begin, end, elements -
+  )
+
+--------------------------------------------------------------------------------
+--   nameList format: a list of valid symbols; a parenthesized symbol is      --
+--   stored as a 1-element array.                                             --
+--------------------------------------------------------------------------------
+
+::Class Upper.Instruction Public SubClass Rexx.Instruction
+::Attribute nameList
+::Method init
+  Expose nameList
+  Use Strict Arg package, begin, end, nameList
   self~init:super( package, begin, end )
 
 /******************************************************************************/

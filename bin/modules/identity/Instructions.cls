@@ -34,30 +34,6 @@
 /******************************************************************************/
 /******************************************************************************/
 
-::Method "Rexx.Instruction::compile"
-  Use Strict Arg element, stream, context
-
-  element = PrepareClause( element, stream, context )
-
-  if .DEBUG Then Do Label Debug
-    Select Case self~class
-      When .Arg.Instruction, -
-        .Parse.Instruction,  -
-        .Raise.Instruction  -
-        Then Nop
-      Otherwise
-        Say "Unexpected instruction class:" self~class
-        Trace ?a
-        Nop
-    End
-  End Debug
-
-  Do Until element < .EL.END_OF_CLAUSE
-    element = Clone( element, stream, context )
-  End
-
-  Return element
-
 /******************************************************************************/
 /* ASSIGNMENT INSTRUCTIONS                                                    */
 /******************************************************************************/
@@ -323,6 +299,97 @@
   Return element
 
 /******************************************************************************/
+/* FORWARD INSTRUCTIONS                                                       */
+/******************************************************************************/
+
+::Method "Forward.Instruction::compile"
+  Use Strict Arg element, stream, context
+
+  -- Look for FORWARD keyword
+  element = PrepareClause( element, stream, context )
+
+  -- Skip it
+  element = Clone( element, stream, context )
+
+  Do Until element \< .EL.SUBKEYWORD
+    -- Skip ignorables
+    Loop While element \< .EL.END_OF_CLAUSE
+      element = Clone( element, stream, context )
+    End
+    If element < .EL.SUBKEYWORD Then Do
+      last = element
+      -- Skip ignorables
+      Loop While element \< .EL.END_OF_CLAUSE
+        element = Clone( element, stream, context )
+      End
+      Select Case Lower( last~value )
+        When "continue"  Then Nop
+        When "arguments" Then
+          element = self~arguments~compile( element, stream, context )
+        When "array" Then
+          element = self~array    ~compile( element, stream, context )
+        When "message" Then
+          element = self~message  ~compile( element, stream, context )
+        When "class" Then
+          element = self~theClass ~compile( element, stream, context )
+        When "to" Then
+          element = self~to       ~compile( element, stream, context )
+      End
+      Iterate
+    End
+  End
+
+  Return element
+
+/******************************************************************************/
+/* GUARD INSTRUCTIONS                                                         */
+/******************************************************************************/
+
+::Method "Guard.Instruction::compile"
+  Use Strict Arg element, stream, context
+
+  -- Look for GUARD keyword
+  element = PrepareClause( element, stream, context )
+
+  -- Skip it
+  element = Clone( element, stream, context )
+
+  -- Skip ignorables until ON or OFF
+  Loop While element \< .EL.END_OF_CLAUSE
+    element = Clone( element, stream, context )
+  End
+
+  -- Skip ON or OFF
+  element = Clone( element, stream, context )
+
+  -- Skip ignorables
+  Loop While element \< .EL.END_OF_CLAUSE
+    element = Clone( element, stream, context )
+  End
+
+  -- EOC? We are done
+  If element < .EL.END_OF_CLAUSE Then Return element
+
+  -- That's WHEN. Skip it
+  element = Clone( element, stream, context )
+
+  -- Skip ignorables
+  Loop While element \< .EL.END_OF_CLAUSE
+    element = Clone( element, stream, context )
+  End
+
+  -- Compile expression
+  element = self~expression~compile( element, stream, context )
+
+  -- Skip ignorables
+  Loop While element \< .EL.END_OF_CLAUSE
+    element = Clone( element, stream, context )
+  End
+
+  Return element
+
+
+/******************************************************************************/
 /* IF INSTRUCTIONS                                                            */
 /******************************************************************************/
 
@@ -545,6 +612,38 @@
 
   -- Skip until EOC
   Loop While element \< .EL.END_OF_CLAUSE
+    element = Clone( element, stream, context )
+  End
+
+  Return element
+
+/******************************************************************************/
+/* NUMERIC INSTRUCTIONS                                                       */
+/******************************************************************************/
+
+::Method "Numeric.Instruction::compile"
+  Use Strict Arg element, stream, context
+
+  -- Look for NUMERIC keyword
+  element = PrepareClause( element, stream, context )
+
+  Do Until element \< .EL.SUBKEYWORD
+    -- Skip it
+    element = Clone( element, stream, context )
+    -- Skip ignorables
+    Loop While element~isIgnorable
+      element = Clone( element, stream, context )
+    End
+  End
+
+  -- No EOC?
+  If element \< .EL.END_OF_CLAUSE Then Do
+    -- This must be an expression
+    element = self~expression~compile( element, stream, context )
+  End
+
+  -- Skip ignorables
+  Loop While element~isIgnorable
     element = Clone( element, stream, context )
   End
 
@@ -848,6 +947,68 @@
   End
 
   element = self~expression~compile( element, stream, context )
+
+  -- Skip until EOC
+  Loop While element \< .EL.END_OF_CLAUSE
+    element = Clone( element, stream, context )
+  End
+
+  Return element
+
+/******************************************************************************/
+/* TRACE INSTRUCTIONS                                                         */
+/******************************************************************************/
+
+::Method "Trace.Instruction::compile"
+  Use Strict Arg element, stream, context
+
+  -- Look for TRACE keyword
+  element = PrepareClause( element, stream, context )
+
+  -- Skip it
+  element = Clone( element, stream, context )
+
+  -- Skip ignorables
+  Loop While element~ isIgnorable
+    element = Clone( element, stream, context )
+  End
+
+  Select
+    When element < .ALL.NUMBERS Then
+      element = self~number~compile( element, stream, context )
+    When element < .ALL.SYMBOLS Then
+      element = self~symbol~compile( element, stream, context )
+    When element < .ALL.STRINGS Then
+      element = self~theString~compile( element, stream, context )
+    When element < .EL.SUBKEYWORD Then Do -- VALUE
+      -- Skip "VALUE"
+      element = Clone( element, stream, context )
+      -- Skip ignorables
+      Loop While element~ isIgnorable
+        element = Clone( element, stream, context )
+      End
+      element = self~expression~compile( element, stream, context )
+    End
+    Otherwise -- Expression
+      element = self~expression~compile( element, stream, context )
+  End
+
+  -- Skip ignorables
+  Loop While element~ isIgnorable
+    element = Clone( element, stream, context )
+  End
+
+  Return element
+
+/******************************************************************************/
+/* UPPER INSTRUCTIONS                                                         */
+/******************************************************************************/
+
+::Method "Upper.Instruction::compile"
+  Use Strict Arg element, stream, context
+
+  -- Look for UPPER keyword
+  element = PrepareClause( element, stream, context )
 
   -- Skip until EOC
   Loop While element \< .EL.END_OF_CLAUSE

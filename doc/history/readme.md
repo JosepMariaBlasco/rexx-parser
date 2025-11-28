@@ -23,6 +23,8 @@ Version history
   <li> Add support for Executor instructions starting with `var ==` (20251127).
   <li> Add support for Executor instructions starting with `keyword(` (20251127).
   <li> Add support for Executor `::OPTIONS [NO]COMMAND` and `[NO]MACROSPACE` (20251127).
+  <li> Add support for Executor `X =; -- Assigns ''` (20251127).
+  <li> Add support for Executor `UPPER` instructions (20251128).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

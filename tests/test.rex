@@ -1,2 +1,1 @@
-Say "hi"
-::Options NoCOMMANDS Macrospace nomacrospace
+Upper  A B

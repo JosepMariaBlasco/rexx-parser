@@ -20,6 +20,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250421    0.2b Allow optional empty assignments                          */
 /* 20251017    0.2e Add support for Lambdas                                   */
+/* 20251017    0.3a Add support for Executor "V=;"                            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -699,8 +700,12 @@ NoLabels:
   -- Allow empty assignments when the "emptyassignments" option
   -- has been specified with a value of "1".
   If expression~isEmpty Then Do
-    If Global.Option("emptyassignments") == 1 Then Nop
-    Else Signal 35.918
+    Select
+      When Global.Option("emptyassignments") == 1 Then Nop
+      When .Options.Executor Then Nop
+      Otherwise
+        Signal 35.918
+    End
   End
 
   -- In this context, an expression list is an array term.

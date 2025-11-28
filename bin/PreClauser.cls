@@ -21,6 +21,7 @@
 /* 20251014    0.2e (Lua only) Check that Lua constants are not assigned to   */
 /* 20251127    0.3a (Executor) Allow "var == expression;"                     */
 /* 20251127         (Executor) Allow "keyword(..."                            */
+/* 20251128         (Executor) UPPER instruction                              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -136,7 +137,7 @@
   -- Case 6: Symbol + assignment operator? --> An assignment
   If t1 < .ALL.SYMBOLS Then Do
     If \.Options.Executor, t2 < .EL.OP.STRICT.EQUAL Then Call 35.001 "=="
-    If t2 < .ALL.ASSIGNMENTS    Then Exit self~Assignment.Instruction
+    If t2 < .ALL.ASSIGNMENTS Then Exit self~Assignment.Instruction
   End
 
   -- Case 6b: (Lua only) Lua constant + assignment operator? --> Error
@@ -219,6 +220,10 @@
   Do keyword Over (expose, forward, guard, loop, raise, reply, use)
     instructions[] = keyword
   End
+
+  -- Executor-only
+
+  If .Options.Executor Then instructions[] = upper
 
   -- Directives
 
