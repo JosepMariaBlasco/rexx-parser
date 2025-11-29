@@ -1,1 +1,1 @@
-::Extension xx inherit ab ac ad
+Say "left"~()

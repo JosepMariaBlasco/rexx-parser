@@ -34,6 +34,7 @@
 /* 20251128         Add basic Unicode support to the tokenizer                */
 /* 20251128         (Executor) Support "^" and "¬" as a negators              */
 /* 20251128         (Executor) Allow #@$ in identifiers                       */
+/* 20251129         (Executor) Allow ¢ in identifiers                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -413,7 +414,7 @@ Return semicolon
 /******************************************************************************/
 
 ::Method initialize_FSM
-  Expose whitespace var_symbol_char radix -
+  Expose whitespace var_symbol_char ascii_var_symbol_char radix -
     extra_letter general_letter ElementStartedBy
 
   -- We will use .String~digit instead
@@ -423,14 +424,16 @@ Return semicolon
   -- We will use the literal "01" instead
   -- binary_digit   = "01"                           -- ANSI 6.2.2.42
   special           = ",;:()"                        -- ANSI 6.2.2.2
-  special         ||= "[]"                           -- Rexxref 5.1.0, 1.10.4.7. Special Characters; "~" moved to operator
+  special         ||= "[]"                           -- Rexxref 5.1.0, 1.10.4.7.
+  -- Special Characters; "~" moved to operator
   not               = "\"                            -- ANSI 6.2.2.3
   If .Options.Executor Then
     not           ||= "^¬"
   operator_only     = "+-%|&=><\"                    -- ANSI 6.2.2.4
   If .Options.Executor Then
     operator_only ||= "^¬"
-  operator_only   ||= "~"                            -- See Rexxref 5.10, 1.11.3. Parentheses and Operator Precedence
+  -- See Rexxref 5.10, 1.11.3. Parentheses and Operator Precedence
+  operator_only   ||= "~"
   operator_or_other = "/*"                           -- ANSI 6.2.2.5
   operator_char     = operator_only ||,              -- ANSI 6.2.2.6
                       operator_or_other              -- ANSI 6.2.2.6
@@ -440,7 +443,7 @@ Return semicolon
     general_letter||= extra_letter
   End
   If .Options.Executor Then
-    general_letter||= "#@$"
+    general_letter||= "#@$¢"
   blank             = "2009"X                        -- ANSI 6.2.2.8
   -- "whitespace" is a better name, and more coherent with ooRexx
   -- nomenclature and with the text of error messages
@@ -450,6 +453,8 @@ Return semicolon
   radix             = "BX"                           -- Hex and binary strings
   If .Parser.Options~unicode == 1 Then               -- TUTOR-flavored Unicode
     radix           = "BXYPGTU"
+
+  ascii_var_symbol_char = Translate(var_symbol_char,"",XRange("80"X,"FF"X))~Space(0)
 
   -- Table for the Finite State Machine
 
@@ -465,6 +470,8 @@ Return semicolon
   ElementStartedBy["-"]      = Line.Comment?
 
   Return
+
+
 
 Assign:
   chars = Arg(1)
@@ -1110,11 +1117,31 @@ Return
 
 ::Method Symbol.Element
 
-  Expose source line col len var_symbol_char extra_letter general_letter
+  Expose source line col len var_symbol_char ascii_var_symbol_char -
+    extra_letter general_letter ElementStartedBy
 
   currentLine = source[line]
-  p = currentLine~verify( var_symbol_char,,col+1)
-  If p == 0 Then p = len + 1
+  p = col
+  Loop
+    p = currentLine~verify( ascii_var_symbol_char,,p)
+    If p == 0 Then Do
+      p = len + 1
+      Leave
+    End
+    Else Do -- p \== 0
+      If currentLine[p] <<= "7F"X Then Leave
+      c = currentLine[p]
+      Select
+        When c << "E0"X Then clen = 2
+        When c << "F0"X Then clen = 3
+        Otherwise            clen = 4
+      End
+      If ElementStartedBy[currentLine[p,clen]] \== "SYMBOL.ELEMENT" Then
+        Leave
+      p += clen
+      Iterate
+    End
+  End
   symbol = currentLine[col, p - col]
 
   If .Options.Lua Then Call TestLuaOperatorOrValue
@@ -1214,10 +1241,10 @@ Number:
   Return DataType(Arg(1)) == "NUM"
 
 IsAVariable:
-  Return DataType( -
-    Arg(1)~translate(Copies("X",Length(extra_letter)),extra_letter), -
-    "Variable" -
-  )
+  c = Arg(1)[1]
+  If c == "." Then Return .False
+  If c >>= "0", c <<= "9" Then Return .False
+  Return .True
 
 --------------------------------------------------------------------------------
 -- See if this is an exponential number with a signed exponent                --

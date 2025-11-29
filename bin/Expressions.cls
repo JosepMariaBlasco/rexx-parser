@@ -25,6 +25,7 @@
 /*                  for Lua constants "fail", "false", "nil" and "true".      */
 /* 20251017         Add support for Lua "#" and Lambdas                       */
 /* 20251126    0.3a Add support for Executor <number><rest> constructs        */
+/* 20251129         (Executor) The message name can be omitted after ~, ~~    */
 /*                                                                            */
 /******************************************************************************/
 
@@ -1431,21 +1432,33 @@ Return
 
   Use Strict Arg package, receiver, operator, terminators = ""
 
+  -- 'operator' is either '~' or '~~'
+
   messageName = TheElementAfter( operator )
 
-  If messageName \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.909
-
+  checkMessageName = 1
   scope = .Nil
-  next = TheElementAfter( messageName )
+  If .Options.Executor, messageName < .EL.LEFT_PARENTHESIS Then
+    checkMessageName = 0
 
-  If next < .EL.COLON Then Do
-    scope = TheElementAfter( next )
+  If checkMessageName Then Do
+    If messageName \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.909
 
-    If scope \< .ALL.MESSAGE_SCOPE_ELEMENTS Then Signal 20.917
+    next = TheElementAfter( messageName )
 
-    lParen = TheElementAfter( scope )
+    If next < .EL.COLON Then Do
+      scope = TheElementAfter( next )
+
+      If scope \< .ALL.MESSAGE_SCOPE_ELEMENTS Then Signal 20.917
+
+     lParen = TheElementAfter( scope )
+    End
+    Else lParen  = next
   End
-  Else lParen  = next
+  Else Do
+    lParen       = messageName
+    messageName  = .Nil
+  End
 
   arguments = .Nil
   If lParen < .EL.LEFT_PARENTHESIS Then Do
@@ -1485,7 +1498,9 @@ Return
   Expose term operator messageName scope arguments begin end
   Use Strict Arg term, operator, messageName, scope, arguments
   begin = term~begin
-  Call SetConstantName messageName, .METHOD.NAME
+
+  If messageName \== .Nil Then Call SetConstantName messageName, .METHOD.NAME
+
   If arguments == .Nil Then
     If scope \== .Nil Then end = TheElementAfter( scope       )
     Else                   end = TheElementAfter( messageName )
