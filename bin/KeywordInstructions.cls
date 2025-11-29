@@ -1179,17 +1179,6 @@ Expression:
 
   If elements~items == 1 Then Signal 35.913
 
-  SkipIgnorables = .True
-  element = TheElementAfter( OPTIONS, SkipIgnorables )
-  If element \< .ALL.SYMBOLS Then Signal 20.900
-  Loop Until element \< .ALL.SYMBOLS
-    value = element~value
-    If value == "LUA" Then .environment~Options.Lua = 1
-    package~options[] = value
-    element = TheElementAfter( element, SkipIgnorables )
-  End
-  If element \< .EL.END_OF_CLAUSE Then Signal 20.900
-
   element = elements[2]
 
   Call PrepareExpression package, element
@@ -1197,9 +1186,6 @@ Expression:
   expression = Expression.List( package, element, .EL.END_OF_CLAUSE )
 
   Return .Options.Instruction~new( package, begin, end, expression )
-
-20.900: Syntax( 20.900, OPTIONS, "OPTIONS must be followed by one or more" -
-  "symbols, found '"element~value"'.")
 
 -- Missing expression following OPTIONS keyword.
 35.913: Syntax( 35.913, OPTIONS )

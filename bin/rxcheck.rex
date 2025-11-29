@@ -25,6 +25,7 @@
 /* 20250929         Add ".rex" to filename when appropriate                   */
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
+/* 20251129         -e option does not need quotes now                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -84,18 +85,7 @@
       When "-emptyassignments", "+emptyassignments" Then emptyassignments = 1
       When "-lua", "+lua"  Then lua      = 1
       When "-e", "+e"      Then Do
-        c = file[1]
-        If Pos(c,"'""") == 0 Then Do
-          Say "The -e option must be immediately followed by a quoted code string."
-          Exit 1
-        End
-        Parse Var file (c)code(c)rest
-        If code == "" Then Do
-          Say "No code found after '-e' option."
-        End
-        If rest \== "" Then Do
-          Say "A code string must be the last argument after '-e', found '"rest"'."
-        End
+        code = file
         source = .Array~of( code )
         fullPath = "INSTORE"
         Signal code
@@ -237,8 +227,8 @@ Other options (all can be prefixed with "+" or "-"):
 
 Executing short code fragments:
 
-  -e "code"     Immediately parse a string of Rexx code.
-  -e 'code'     This has to be the last argument.
+  -e code       Immediately parse a string of Rexx code.
+                This has to be the last argument.
 
 All toggles except "debug" are active by default
 ::END

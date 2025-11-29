@@ -7,7 +7,7 @@ RxCheck
 
 <pre>
 [rexx] rxcheck [<em>options</em>] <em>file</em>
-[rexx] rxcheck [<em>options</em>] -e "rexx code"
+[rexx] rxcheck [<em>options</em>] -e <em>rexx code</em>
 </pre>
 
 Perform a series of early checks on a Rexx program or
@@ -49,8 +49,8 @@ Other options (all can be prefixed with "+" or "-"):
 `&nbsp;
 Executing short code fragments:
 &nbsp;
-`-e "code"`                         Immediately parse a string of Rexx code.
-`-e 'code'`                         This has to be the last argument.
+`-e code`                           Immediately parse a string of Rexx code.
+                                    This has to be the last argument.
 ----------------------------------- ----------------------
 
 \
