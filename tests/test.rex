@@ -1,1 +1,1 @@
-Forward namedarguments x namedarguments y
+Use Auto Strict Named Arg package, begin, end

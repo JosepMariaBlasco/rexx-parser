@@ -2055,6 +2055,8 @@ Done:
 ::Routine Use.Instruction Public
   Use Strict Arg package, begin, end, elements
 
+--Trace ?a
+
   USE = elements[1]
 
   strict = 0
@@ -2063,42 +2065,44 @@ Done:
 
   keyword = TheElementAfter( USE )
 
-  nextKeywords = .Set~of("ARG", "LOCAL", "STRICT")
-  If .Options.Executor Then Do
-    nextKeywords[] = "AUTO"
-    nextKeywords[] = "NAMED"
+  If   keyword < .ALL.VAR_SYMBOLS, keyword~value == "LOCAL" Then Do
+    Call SetSubkeyword keyword
+    Return Use.Local.Instruction( package, begin, keyword )
   End
 
-  Do While keyword < .ALL.VAR_SYMBOLS, nextKeywords~hasItem( keyword~value )
+  If   keyword < .ALL.VAR_SYMBOLS, keyword~value == "STRICT" Then Do
     Call SetSubkeyword keyword
-    kValue = keyword~value
-    Select Case kValue
-      When "LOCAL" Then
-        Return Use.Local.Instruction( package, begin, keyword )
-      When "STRICT" Then strict = 1
-      When "NAMED"  Then named  = 1
-      When "AUTO"   Then auto   = 1
-      When "ARG"   Then
-        Return Use.Arg.Instruction( -
-          package, begin, keyword, strict, auto, named -
-        )
-      Otherwise
-        If .Options.Executor Then Signal 25.900
-        Signal 25.929
-    End
-    -- LOCAL has to be the first (and only) keyword after USE
-    nextKeywords~remove(kValue )
-    nextKeywords~remove("LOCAL")
-    -- Examine next keyword
+    strict = 1
     keyword = TheElementAfter( keyword )
   End
 
-  -- Here keyword is either not a symbol, or not one of the allowed keywords
-  If .Options.Executor Then Signal 25.900
-  Else                      Signal 25.905
+  If .Options.Executor Then Do
+    If keyword < .ALL.VAR_SYMBOLS, keyword~value == "AUTO"  Then Do
+      Call SetSubkeyword keyword
+      auto   = 1
+      keyword = TheElementAfter( keyword )
+    End
+    If keyword < .ALL.VAR_SYMBOLS, keyword~value == "NAMED" Then Do
+      Call SetSubkeyword keyword
+      named  = 1
+      keyword = TheElementAfter( keyword )
+    End
+  End
 
--- Invalue USE subkeyword "&1".
-25.900: Syntax( 25.900, USE, 'Invalid USE subkeyword "'keyword'"' )
+  If   keyword < .ALL.VAR_SYMBOLS, keyword~value \== "ARG"  Then Do
+    If .Options.Executor Then Signal 25.900
+    Else If strict       Then Signal 25.929
+    Else                      Signal 25.905
+  End
+
+  Call SetSubkeyword keyword
+
+  Return Use.Arg.Instruction( -
+    package, begin, keyword, strict, auto, named -
+  )
+
+-- Invalid or misplaced USE subkeyword "&1".
+25.900: Syntax( 25.900, USE, 'Invalid or misplaced USE subkeyword "'keyword'"' )
 
 -- USE must be followed by the keyword ARG, LOCAL or STRICT; found "&1".
 25.905: Syntax( 25.905, USE, keyword )
