@@ -1338,22 +1338,26 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class NameSpace.Qualified.Function.Call Public SubClass Rexx.Term
+::Attribute begin
 ::Attribute end
 ::Method init
-  Expose nameSpace name argumentList end
+  Expose nameSpace name argumentList begin end
   Use Strict Arg nameSpace, name, argumentList
-  end = argumentList~end~next
+  begin = nameSpace
+  end   = argumentList~end~next
 
 --------------------------------------------------------------------------------
 
 ::Class NameSpace.Qualified.ClassName Public SubClass Rexx.Term
+::Attribute begin
 ::Attribute end
 ::Method init
-  Expose nameSpace className end
+  Expose nameSpace className begin end
   Use Strict Arg nameSpace, className
   Call SetConstantName nameSpace, .NAMESPACE.NAME
   Call SetConstantName className, .CLASS.NAME
-  end = TheElementAfter( className )
+  begin = nameSpace
+  end   = TheElementAfter( className )
 
 --------------------------------------------------------------------------------
 -- Indexed.Or.Invoked.                                                        --

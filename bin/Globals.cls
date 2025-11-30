@@ -32,6 +32,7 @@
 /* 20251014    0.2e Add support for Lua keywords, values and tables           */
 /* 20251017         Add support for Lua "#" and lambdas                       */
 /* 20251125    0.3a Add support for Executor implicit abuttal                 */
+/* 20251129         (Executor) Create elements for curly brackets             */
 /*                                                                            */
 /******************************************************************************/
 
@@ -682,7 +683,9 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     EL.LEFT_PARENTHESIS,              - -- "("
     EL.RIGHT_PARENTHESIS,             - -- ")"
     EL.LEFT_BRACKET,                  - -- "["
-    EL.RIGHT_BRACKET                    -- "]"
+    EL.RIGHT_BRACKET,                 - -- "]"
+    EL.LEFT_CURLY_BRACKET,            - -- "{"
+    EL.RIGHT_CURLY_BRACKET              -- "{"
   -- We include here the ooRexx-only "::" directive start sequence.
   -- It is the only compound construct made of special characters.
   Call NewElements EL.DIRECTIVE_START

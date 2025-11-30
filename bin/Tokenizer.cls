@@ -35,6 +35,7 @@
 /* 20251128         (Executor) Support "^" and "¬" as a negators              */
 /* 20251128         (Executor) Allow #@$ in identifiers                       */
 /* 20251129         (Executor) Allow ¢ in identifiers                         */
+/* 20251129         (Executor) Recognize curly brackets                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -374,6 +375,8 @@ Return semicolon
       (")", .EL.RIGHT_PARENTHESIS          ), -
       ("[", .EL.LEFT_BRACKET               ), -
       ("]", .EL.RIGHT_BRACKET              ), -
+      ("{", .EL.LEFT_CURLY_BRACKET         ), -
+      ("}", .EL.RIGHT_CURLY_BRACKET        ), -
       (":", .EL.COLON                      ), -
       (",", .EL.COMMA                      ), -
       (";", .EL.END_OF_CLAUSE              )  -
@@ -425,6 +428,8 @@ Return semicolon
   -- binary_digit   = "01"                           -- ANSI 6.2.2.42
   special           = ",;:()"                        -- ANSI 6.2.2.2
   special         ||= "[]"                           -- Rexxref 5.1.0, 1.10.4.7.
+  If .Options.Executor Then
+    special       ||= "{}"
   -- Special Characters; "~" moved to operator
   not               = "\"                            -- ANSI 6.2.2.3
   If .Options.Executor Then
@@ -979,7 +984,7 @@ Done:
   -- Special case: handle the "mapsto" operator "->", taken from
   -- extended Lua (Pluto)
   If .Options.Lua, sequence == "->" Then Do
-    category             = .EL.LUA.MAPS.TO
+    category = .EL.LUA.MAPS.TO
     predecessor~category = category
     Signal CompoundOperatorOrExtendedAssignment
   End
