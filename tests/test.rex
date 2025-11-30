@@ -1,1 +1,1 @@
-Say "left"~()
+Forward namedarguments x namedarguments y

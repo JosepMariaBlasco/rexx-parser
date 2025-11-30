@@ -33,6 +33,7 @@ Version history
   <li> `rxcheck -e` now works without quotes (20251129).
   <li> (Executor) Allow `¢` in identifiers (20251129).
   <li> (Executor) The message name can be omitted in message terms (20251129).
+  <li> (Executor) Implement `USE [STRICT] [AUTO] NAMED` and `FORWARD NAMEDARGUMENTS` (20251130).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

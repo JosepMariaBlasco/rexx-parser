@@ -27,6 +27,8 @@
 /* 20250803    0.2d Add support for array terms                               */
 /* 20250808         Add support for length positional patterns                */
 /* 20251128    0.3a Add the UPPER instruction (e.g., for Executor)            */
+/* 20251130         (Executor) Implement USE NAMED and USE NAMED AUTO         */
+/* 20251130         (Executor) Implement FORWARD NAMEDARGUMENTS               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -605,19 +607,22 @@ Arguments:
 
   element = TheElementAfter( FORWARD )
   keywords = "CONTINUE ARGUMENTS ARRAY MESSAGE CLASS TO"
+  If .Options.Executor Then keywords ||= " NAMEDARGUMENTS"
 
-  duplicate.to        = 25.917
-  duplicate.arguments = 25.918
-  duplicate.array     = 25.918
-  duplicate.continue  = 25.919
-  duplicate.class     = 25.921
-  duplicate.message   = 25.922
+  duplicate.to             = 25.917
+  duplicate.arguments      = 25.918
+  duplicate.namedarguments = 25.900
+  duplicate.array          = 25.918
+  duplicate.continue       = 25.919
+  duplicate.class          = 25.921
+  duplicate.message        = 25.922
 
-  missing.array       = 35.924
-  missing.to          = 35.925
-  missing.arguments   = 35.926
-  missing.message     = 35.927
-  missing.class       = 35.928
+  missing.array            = 35.924
+  missing.to               = 35.925
+  missing.arguments        = 35.926
+  missing.namedarguments   = 35.900
+  missing.message          = 35.927
+  missing.class            = 35.928
 
   Loop
     If element  < .EL.END_OF_CLAUSE       Then Signal Done
@@ -640,7 +645,7 @@ Arguments:
     If element < .EL.END_OF_CLAUSE Then Signal (missing.tValue)
 
     Select Case tValue
-      When "ARGUMENTS" Then Do
+      When "ARGUMENTS", "NAMEDARGUMENTS" Then Do
         Call PrepareExpression package, element, keywords
         expression = Expression.List( package, element )
         element = expression~end
@@ -673,6 +678,9 @@ Done:
 
   Return .Forward.Instruction~new( package, begin, end, options. )
 
+-- Duplicate NAMEDARGUMENTS keyword found.
+25.900: Syntax( 25.900, FORWARD, "Duplicate NAMEDARGUMENTS keyword found" )
+
 -- Unknown keyword on FORWARD instruction; found "&1".
 25.916: Syntax( 25.916, FORWARD, element )
 
@@ -694,6 +702,11 @@ Done:
 -- Incorrect expression detected at "&1".
 35.001: Syntax( 35.001, FORWARD, element )
 
+-- Missing expression following NAMEDARGUMENTS keyword of a FORWARD instruction.
+35.900: Syntax( 35.900, FORWARD, "Missing expression following" -
+  "NAMEDARGUMENTS keyword of a FORWARD instruction"             -
+)
+
 -- Missing "(" on expression list of the ARRAY keyword.
 35.924: Syntax( 35.924, FORWARD )
 
@@ -712,12 +725,13 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Forward.Instruction Public SubClass Rexx.Instruction
-::Attribute Continue  Get
-::Attribute Arguments Get
-::Attribute Array     Get
-::Attribute Message   Get
-::Attribute theClass  Get
-::Attribute To        Get
+::Attribute Continue       Get
+::Attribute Arguments      Get
+::Attribute NamedArguments Get
+::Attribute Array          Get
+::Attribute Message        Get
+::Attribute theClass       Get
+::Attribute To             Get
 ::Method init
   Expose Continue Arguments Array Message theClass To
 
@@ -727,6 +741,9 @@ Done:
   Else                                   Continue  = .Nil
   If options.~hasIndex("ARGUMENTS") Then Arguments = options.arguments
   Else                                   Arguments = .Nil
+  If options.~hasIndex("NAMEDARGUMENTS") Then
+    NamedArguments = options.namedArguments
+  Else                                   NamedArguments = .Nil
   If options.~hasIndex("ARRAY")     Then Array     = options.array
   Else                                   Array     = .Nil
   If options.~hasIndex("MESSAGE")   Then Message   = options.message
@@ -2040,27 +2057,48 @@ Done:
 
   USE = elements[1]
 
+  strict = 0
+  auto   = 0                            -- Executor only
+  named  = 0                            -- Executor only
+
   keyword = TheElementAfter( USE )
 
   nextKeywords = .Set~of("ARG", "LOCAL", "STRICT")
+  If .Options.Executor Then Do
+    nextKeywords[] = "AUTO"
+    nextKeywords[] = "NAMED"
+  End
 
-  If keyword < .ALL.VAR_SYMBOLS, nextKeywords~hasItem( keyword~value ) Then Do
+  Do While keyword < .ALL.VAR_SYMBOLS, nextKeywords~hasItem( keyword~value )
     Call SetSubkeyword keyword
-    Select Case keyword~value
+    kValue = keyword~value
+    Select Case kValue
       When "LOCAL" Then
         Return Use.Local.Instruction( package, begin, keyword )
-      When "STRICT" Then Do
-        keyword = TheElementAfter( keyword )
-        If keyword < .ALL.VAR_SYMBOLS, keyword~value == "ARG" Then Do
-          Call SetSubkeyword keyword
-          Return Use.Arg.Instruction( package, begin, keyword, .True )
-        End
-        Signal 25.929
-      End
+      When "STRICT" Then strict = 1
+      When "NAMED"  Then named  = 1
+      When "AUTO"   Then auto   = 1
       When "ARG"   Then
-        Return Use.Arg.Instruction( package, begin, keyword, .False )
+        Return Use.Arg.Instruction( -
+          package, begin, keyword, strict, auto, named -
+        )
+      Otherwise
+        If .Options.Executor Then Signal 25.900
+        Signal 25.929
     End
+    -- LOCAL has to be the first (and only) keyword after USE
+    nextKeywords~remove(kValue )
+    nextKeywords~remove("LOCAL")
+    -- Examine next keyword
+    keyword = TheElementAfter( keyword )
   End
+
+  -- Here keyword is either not a symbol, or not one of the allowed keywords
+  If .Options.Executor Then Signal 25.900
+  Else                      Signal 25.905
+
+-- Invalue USE subkeyword "&1".
+25.900: Syntax( 25.900, USE, 'Invalid USE subkeyword "'keyword'"' )
 
 -- USE must be followed by the keyword ARG, LOCAL or STRICT; found "&1".
 25.905: Syntax( 25.905, USE, keyword )
@@ -2074,7 +2112,7 @@ Done:
 
 ::Routine Use.Arg.Instruction
 
-  Use Strict Arg package, begin, keyword, strict
+  Use Strict Arg package, begin, keyword, strict, auto, named
 
   arguments      =  Array()
   ignoreBlanks   = .True
@@ -2163,7 +2201,18 @@ Return:
 
   If \argProcessed Then N += 1
 
-  Return .Use.Arg.Instruction~new( package, begin, element, strict, arguments)
+  -- USE STRICT AUTO NAMED ARG requires ... at the end
+  If strict, auto, named Then Do
+    If arguments~isEmpty       Then Signal 99.900
+    last = arguments~lastItem
+    If last~items > 1          Then Signal 99.900
+    If \last[1]~isA(.Element)  Then Signal 99.900
+    If last[1] \< .EL.ELLIPSIS Then Signal 99.900
+  End
+
+  Return .Use.Arg.Instruction~new(                          -
+    package, begin, element, strict, auto, named, arguments -
+  )
 
 Ellipsis:
   Call SetCategory element, .EL.ELLIPSIS
@@ -2206,6 +2255,11 @@ NextElement:
 -- of variables or assignment message terms.
 89.001: Syntax( 89.001, keyword, element )
 
+-- STRICT AUTO requires the "..." argument marker
+-- at the end of the argument list
+99.900: Syntax( 99.900, keyword, 'STRICT AUTO requires the "..." argument' -
+  'marker at the end of the argument list')
+
 -- The "..." argument marker can only appear at the end of the argument list.
 99.930: Syntax( 99.930, keyword )
 
@@ -2216,10 +2270,12 @@ NextElement:
 
 ::Class Use.Arg.Instruction Public SubClass Rexx.Instruction
 ::Attribute strict    Get
+::Attribute auto      Get
+::Attribute named     Get
 ::Attribute arguments Get
 ::Method init
   Expose strict arguments
-  Use Strict Arg package, begin, end, strict, arguments
+  Use Strict Arg package, begin, end, strict, auto, named, arguments
   self~init:super( package, begin, end )
 
 /******************************************************************************/
