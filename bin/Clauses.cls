@@ -21,6 +21,7 @@
 /* 20250421    0.2b Allow optional empty assignments                          */
 /* 20251017    0.2e Add support for Lambdas                                   */
 /* 20251017    0.3a Add support for Executor "V=;"                            */
+/* 20251201         (Executor) Add support for source literals                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -67,6 +68,7 @@
  .environment~             Select.Instruction =             .Select.Instruction
 
  .environment~              Block.Instruction =              .Block.Instruction
+ .environment~             Source.Literal.End =             .Source.Literal.End
 
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "KeywordInstructions.cls"
@@ -202,7 +204,7 @@
 
 ::Method Next.Instruction
 
-  Use Strict Arg ENDClauseIsOK = .False
+  Use Strict Arg ENDClauseIsOK = .False, Source.Literal = .False
 
   clause = self~Next.Instruction.Fragment
 
@@ -241,6 +243,17 @@
     When           .End.Clause Then
       If ENDClauseIsOK         Then Return clause
       Else                          Signal 10.001
+    When          .R.Directive Then
+      If Source.Literal        Then Return clause
+      Else                          Signal 90.900
+    When .Coactivity.Directive Then
+      If Source.Literal        Then Return clause
+      Else                          Signal 90.900
+    When   .Source.Literal.End Then
+      If Source.Literal        Then Return clause
+      Else                          Signal 90.916
+    Otherwise
+      Internal.Error("Next.Instruction: Unexpected clause class '"clause~class"'.")
   End
 
 -- THEN has no corresponding IF or WHEN clause.
@@ -257,6 +270,12 @@
 
 -- END has no corresponding DO, LOOP, or SELECT.
 10.001: Syntax( 10.001, firstElement )
+
+-- Unexpected "}" found
+90.900: Syntax( 90.900, firstElement, 'Unexpected "}" found' )
+
+-- Unrecognized directive instruction
+90.916: Syntax( 90.916, firstElement )
 
 /******************************************************************************/
 /* DO INSTRUCTION                                                             */
@@ -647,6 +666,7 @@ NoLabels:
 /*     DO clauses (not the whole instruction!)                                */
 /*     ELSE clauses                                                           */
 /*     END clauses                                                            */
+/*     "}" (Executor only: source literal end markers)                        */
 /*     The END-OF-SOURCE clause                                               */
 /*     IF clauses (not the whole instruction!)                                */
 /*     The implicit EXIT clause, generated automatically before each          */
@@ -1557,6 +1577,22 @@ Done:
   If options.~hasIndex("NAME") Then name = options.["NAME"]
   If options.~hasIndex("CASE") Then case = options.["CASE"]
 
+  self~init:super( package, begin, end )
+
+/******************************************************************************/
+/* Source Literal End                                                         */
+/******************************************************************************/
+
+::Routine Source.Literal.End
+  Use Strict Arg package, begin, end, elements
+
+  Return .Source.Literal.End~new( package, begin, end )
+
+--------------------------------------------------------------------------------
+
+::Class Source.Literal.End Public SubClass Rexx.Clause
+::Method init
+  Use Strict Arg package, begin, end
   self~init:super( package, begin, end )
 
 /******************************************************************************/

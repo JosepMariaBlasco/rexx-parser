@@ -21,19 +21,22 @@
 /* 20251031         Add support for namespaces in ::CLASS directive           */
 /* 20251101         Enhance and complete API for Requires.Directive           */
 /* 20251128    0.3a (Executor) Implement ::EXTENSION directive                */
+/* 20251201         (Executor) Add support for source literals                */
 /*                                                                            */
 /******************************************************************************/
 
-.environment ~  Annotate.Directive =  .Annotate.Directive
-.environment ~ Attribute.Directive = .Attribute.Directive
-.environment ~     Class.Directive =     .Class.Directive
-.environment ~  Constant.Directive =  .Constant.Directive
-.environment ~ Extension.Directive = .Extension.Directive
-.environment ~    Method.Directive =    .Method.Directive
-.environment ~   Options.Directive =   .Options.Directive
-.environment ~   Requires.Directive = .Requires.Directive
-.environment ~   Resource.Directive = .Resource.Directive
-.environment ~    Routine.Directive =  .Routine.Directive
+.environment ~   Annotate.Directive =   .Annotate.Directive
+.environment ~  Attribute.Directive =  .Attribute.Directive
+.environment ~      Class.Directive =      .Class.Directive
+.environment ~ Coactivity.Directive = .Coactivity.Directive -- Executor
+.environment ~   Constant.Directive =   .Constant.Directive
+.environment ~  Extension.Directive =  .Extension.Directive
+.environment ~     Method.Directive =     .Method.Directive
+.environment ~    Options.Directive =    .Options.Directive
+.environment ~   Requires.Directive =   .Requires.Directive
+.environment ~   Resource.Directive =   .Resource.Directive
+.environment ~          R.Directive =          .R.Directive -- Executor
+.environment ~    Routine.Directive =    .Routine.Directive
 
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Expressions.cls"
@@ -381,6 +384,39 @@ Return
 ::Method init
   Expose name options.
   Use Strict Arg package, begin, end, name, options.
+  self~init:super( package, begin, end )
+
+/******************************************************************************/
+/* CO Directive                                                               */
+/******************************************************************************/
+
+::Routine Co.Directive Public
+
+  Use Strict Arg package, begin, end, elements
+
+  CO = elements[2]
+
+  Return .COACTIVITY.Directive~new( package, begin, end, CO )
+
+/******************************************************************************/
+/* COACTIVITY Directive                                                       */
+/******************************************************************************/
+
+::Routine Coactivity.Directive Public
+
+  Use Strict Arg package, begin, end, elements
+
+  COACTIVITY = elements[2]
+
+  Return .COACTIVITY.Directive~new( package, begin, end, COACTIVITY )
+
+--------------------------------------------------------------------------------
+
+::Class Coactivity.Directive Public SubClass Rexx.Directive
+::Attribute directive
+::Method init
+  Expose         package  begin  end  directive
+  Use Strict Arg package, begin, end, directive
   self~init:super( package, begin, end )
 
 /******************************************************************************/
@@ -1046,6 +1082,27 @@ Done:
   self~init:super( package, begin, end )
 
 /******************************************************************************/
+/* R Directive                                                                */
+/******************************************************************************/
+
+::Routine R.Directive Public
+
+  Use Strict Arg package, begin, end, elements
+
+  R = elements[2]
+
+  Return .R.Directive~new( package, begin, end, R )
+
+--------------------------------------------------------------------------------
+
+::Class R.Directive Public SubClass Rexx.Directive
+::Attribute directive
+::Method init
+  Expose         package  begin  end  directive
+  Use Strict Arg package, begin, end, directive
+  self~init:super( package, begin, end )
+
+/******************************************************************************/
 /* ROUTINE Directive                                                          */
 /******************************************************************************/
 
@@ -1054,6 +1111,11 @@ Done:
   Use Strict Arg package, begin, end, elements
 
   ROUTINE = elements[2]
+
+  If \package~sourceLiteralStack~isEmpty Then Do
+    semicolon = InsertSemicolonAfter( ROUTINE )
+    Return .R.Directive~new( package, begin, semicolon, ROUTINE )
+  End
 
   ignoreBlanks = .True
 

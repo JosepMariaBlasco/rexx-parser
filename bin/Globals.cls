@@ -685,7 +685,7 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     EL.LEFT_BRACKET,                  - -- "["
     EL.RIGHT_BRACKET,                 - -- "]"
     EL.LEFT_CURLY_BRACKET,            - -- "{"
-    EL.RIGHT_CURLY_BRACKET              -- "{"
+    EL.RIGHT_CURLY_BRACKET              -- "}"
   -- We include here the ooRexx-only "::" directive start sequence.
   -- It is the only compound construct made of special characters.
   Call NewElements EL.DIRECTIVE_START

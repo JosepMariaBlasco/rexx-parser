@@ -36,6 +36,7 @@
 /* 20251128         (Executor) Allow #@$ in identifiers                       */
 /* 20251129         (Executor) Allow ¢ in identifiers                         */
 /* 20251129         (Executor) Recognize curly brackets                       */
+/* 20251201         (Executor) Add support for source literals                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -1030,7 +1031,7 @@ Return
 /******************************************************************************/
 
 ::Method Special.Character.Sequence
-  Expose line col ClassOfSpecialChar
+  Expose line col tail ClassOfSpecialChar
 
   Arg ch
 
@@ -1053,8 +1054,15 @@ Return
     predecessor = TheElementBefore( predecessor )
   End
 
+  -- Insert a semicolon after "{"
+  If ch == "{" Then Do
+    semicolon       = .Inserted.Semicolon~new(line, col)
+    semicolon~prev  = tail
+    tail~next       = semicolon
+    tail            = semicolon
+  End
   -- Handle "::"
-  If ch == ":", predecessor < .EL.COLON Then Do
+  Else If ch == ":", predecessor < .EL.COLON Then Do
     Call SetCategory element, .EL.DIRECTIVE_START
     -- In the most common case, the two colons will be adjacent.
     -- We generate a new "::" element and remove the predecessor element.

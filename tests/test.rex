@@ -1,1 +1,2 @@
-Use Auto Strict Named Arg package, begin, end
+a = {::coactivity; X;  Expose a  }
+Nop

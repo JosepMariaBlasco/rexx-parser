@@ -23,6 +23,7 @@
 /* 20251127         (Executor) Allow "keyword(..."                            */
 /* 20251128         (Executor) Implement UPPER instruction                    */
 /* 20251128         (Executor) Implement ::EXTENSION directive                */
+/* 20251201         (Executor) Add support for source literals                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -68,8 +69,9 @@
 /*        name".INSTRUCTION"  for all ooRexx instructions that are            */
 /*                            not identified as clauses.                      */
 /*        "END.OF.SOURCE",    returned once, at end of source (EOS).          */
-/*        "IMPLICIT.EXIT.INSTRUCTION" added before every directive,           */
-/*                            and before EOS                                  */
+/*        "IMPLICIT.EXIT.INSTRUCTION" added before every directive that       */
+/*                            is not inside a source literal, before "}"      */
+/*                            (Executor only) and before EOS                  */
 /*                                                                            */
 /*   a[2] is the first element ("begin") of the delimiting semicolon pair     */
 /*   a[3] is the second element ("end") of the delimiting semicolon pair      */
@@ -88,18 +90,37 @@
 /******************************************************************************/
 
 ::Method nextClause
-  Expose tokenizer begin end elements instructions lastClauseWas
+  Expose package tokenizer begin end elements instructions lastClauseWas
 
   -- First pass. This applies Rexx rules, as implemented by the tokenizer,
   -- to the element sequence
 
-  next = begin
+  next      = begin
+  directive = 0
   Loop Until next < .EL.END_OF_CLAUSE
+    If next < .EL.DIRECTIVE_START Then directive = 1
+    If directive, next~prev < .EL.SIMPLE_VARIABLE Then Do
+      If \package~sourceLiteralStack~isEmpty, -
+        WordPos(next~prev~value,"R ROUTINE CO COACTIVITY") > 0 Then Do
+        Call InsertSemicolonBefore next
+        next = result
+        next = next~prev~prev -- Backtrack two elements
+      End
+      directive = 0
+    End
     If next~next == .Nil Then Do
       tokenizer~nextElement
       next = result
     End
     Else next = next~next
+    -- Insert a semicolon before "}"
+    If next < .EL.RIGHT_CURLY_BRACKET Then Do
+      If next~prev < .EL.END_OF_CLAUSE Then Leave
+      Call InsertSemicolonBefore next
+      tokenizer~nextElement
+      next = result
+      next = next~prev~prev -- Backtrack two elements
+    End
   End
 
   -- We now collect the (supposedly) non-ignorable elements in an array
@@ -115,51 +136,54 @@
 
   t1 = elements[1]
 
-  -- Case 1: End-of-source
+  -- Case 1: A "}" closing an executor source literal
+  If t1 < .EL.RIGHT_CURLY_BRACKET Then Exit self~Source.Literal.End
+
+  -- Case 2: End-of-source
   If t1 < .EL.END_OF_SOURCE Then Exit self~End.Of.Source
 
-  -- Case 2: "::" --> A directive
+  -- Case 3: "::" --> A directive
   If t1 < .EL.DIRECTIVE_START Then Exit self~directive
 
   -- Only a non-ignorable element in the clause
   If c == 1 Then Do
-    -- Case 3: A keyword? It's a keyword instruction
+    -- Case 4: A keyword? It's a keyword instruction
     If t1 < .ALL.VARIABLES_AND_KEYWORDS, instructions~hasItem( t1~value ) Then
       Exit self~Keyword.Clause
-    -- Case 4: Not a keyword? A command or message instruction
+    -- Case 5: Not a keyword? A command or message instruction
     Exit self~Command.Or.Message.Instruction
   End
 
   t2 = elements[2]
 
-  -- Case 5: Symbol or string + colon? --> A label
+  -- Case 6: Symbol or string + colon? --> A label
   If t2 < .EL.COLON , t1 < .ALL.SYMBOLS_AND_STRINGS Then Exit self~Label.Clause
 
-  -- Case 6: Symbol + assignment operator? --> An assignment
+  -- Case 7: Symbol + assignment operator? --> An assignment
   If t1 < .ALL.SYMBOLS Then Do
     If \.Options.Executor, t2 < .EL.OP.STRICT.EQUAL Then Call 35.001 "=="
     If t2 < .ALL.ASSIGNMENTS Then Exit self~Assignment.Instruction
   End
 
-  -- Case 6b: (Lua only) Lua constant + assignment operator? --> Error
+  -- Case 7b: (Lua only) Lua constant + assignment operator? --> Error
   If .Options.Lua, t1 < .ALL.LUA_CONSTANTS Then Do
     If t2 < .EL.OP.STRICT.EQUAL Then Call 35.001 "=" -- Special case
     If t2 < .ALL.ASSIGNMENTS Then Signal 31.900
   End
 
-  -- Case 4 (bis): Symbol + "[", "~" or "~~" -> Message instruction
+  -- Case 5 (bis): Symbol + "[", "~" or "~~" -> Message instruction
   If t1 < .ALL.SYMBOLS, t2 < .ALL.OPS.MESSAGE_SEND Then
     Exit self~Command.Or.Message.Instruction
 
   If t1 < .ALL.VARIABLES_AND_KEYWORDS, instructions~hasItem( t1~value ) Then Do
-    -- Case 3 (bis): keyword instructions
+    -- Case 4 (bis): keyword instructions
     -- Special case: "address()" -> 35.1
     If \.Options.Executor, t1~next < .EL.LEFT_PARENTHESIS Then
       Call 35.001 "("
     Exit self~Keyword.Clause
   End
 
-  -- Case 4 (ter): Command or message instruction
+  -- Case 5 (ter): Command or message instruction
   Exit self~Command.Or.Message.Instruction
 
 31.900: Syntax( 31.900, t1, "Lua fail, false, nil and true cannot be assigned to")
@@ -179,7 +203,7 @@
   elements = Array()
 
   next = begin
-  Loop
+  Loop Until next < .EL.RIGHT_CURLY_BRACKET
     next = TheElementAfter( next )
   If next < .EL.END_OF_CLAUSE, next~assignment \== 1 Then Leave
     elements~append( next )
@@ -235,7 +259,12 @@
     directives[] = keyword
   End
 
-  If .Options.Executor Then directives[] = extension
+  If .Options.Executor Then Do
+    directives[] = extension
+    directives[] = r
+    directives[] = co
+    directives[] = coactivity
+  End
 
   -- These are pure clauses (i.e., not complete instructions).
   -- The rest of the keywords produce clauses that are also instructions.
@@ -273,6 +302,18 @@
 /******************************************************************************/
 
 ::Method Assignment.Instruction; Return self~return( Assignment.Instruction )
+
+/******************************************************************************/
+/* SOURCE LITERAL END                                                         */
+/******************************************************************************/
+
+::Method Source.Literal.End
+  Expose lastClauseWas
+
+  If lastClauseWas \== Implicit.Exit.Instruction Then
+    Exit self~Implicit.Exit.Instruction
+
+  Return self~return( Source.Literal.End )
 
 /******************************************************************************/
 /* END OF SOURCE                                                              */
@@ -314,9 +355,10 @@
 /******************************************************************************/
 
 ::Method directive
-  Expose elements directives lastClauseWas
+  Expose package elements directives lastClauseWas
 
-  If lastClauseWas \== Implicit.Exit.Instruction Then
+  If package~sourceLiteralStack~isEmpty, -
+    lastClauseWas \== Implicit.Exit.Instruction Then
     Exit self~Implicit.Exit.Instruction
 
   directive_start = elements[1]
@@ -329,6 +371,9 @@
 
   If \ directives~hasItem( name~value ) Then Signal 99.916
 
+  If \ package~sourceLiteralStack~isEmpty, -
+    WordPos(name~value, "R ROUTINE CO COACTIVITY") == 0 Then Signal 99.900
+
   Call SetKeyword name, .True
 
   If elements~items > 2, elements[3]~isIgnorable Then elements~delete( 3 )
@@ -337,6 +382,11 @@
 
 -- Symbol expected after ::.
 20.916: Syntax( 20.916, directive_start )
+
+-- Unrecognized directive instruction "&1".
+99.900: Syntax( 99.900, directive_start, -
+  'Unrecognized directive instruction "'name~value'"' -
+)
 
 -- Unrecognized directive instruction.
 99.916: Syntax( 99.916, directive_start )
@@ -424,35 +474,6 @@ IF: WHEN:
   Else end = InsertSemicolonAfter( colon )
 
   Return self~return( Label.Clause )
-
---------------------------------------------------------------------------------
--- InsertSemicolonAfter                                                       --
---------------------------------------------------------------------------------
-
-::Routine InsertSemicolonAfter Public
-
-  Use Strict Arg element
-
-  Parse Value element~to With line col
-
-  semicolon      = .Inserted.Semicolon~new(line, col)
-
-  -- Insert it between element and element~next
-
-  next           = element~next
-
-  semicolon~next = next
-  semicolon~prev = element
-  element~next     = semicolon
-  next~prev      = semicolon
-
-  -- Apply Rexx whitespace rules
-  left           = TheElementBefore( semicolon )
-  right          = TheElementAfter(  semicolon )
-  If left  < .ALL.WHITESPACE_LIKE Then left ~setIgnorable
-  If right < .ALL.WHITESPACE_LIKE Then right~setIgnorable
-
-  Return semicolon
 
 --------------------------------------------------------------------------------
 -- ISAMESSAGEINSTRUCTION                                                      --

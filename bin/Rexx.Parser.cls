@@ -22,6 +22,7 @@
 /* 20250419    0.2a Fix bug no. 4                                             */
 /* 20251014    0.2e Add support for Lua options                               */
 /* 20251128    0.3a (Executor) Add support for ::EXTENSION directive          */
+/* 20251201         (Executor) Add support for source literals                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -368,6 +369,8 @@ CheckThatUseLocalIsValid:
       When  .Resource.Directive Then Call Resource   package, directive
       When   .Routine.Directive Then Call Routine    package, directive
 
+      When  .Source.Literal.End Then Signal 90.900
+
     End
 
   End
@@ -375,6 +378,8 @@ CheckThatUseLocalIsValid:
   Call SecondPass package
 
   Return package
+
+90.900: Syntax( 90.900, directive~begin, 'Unexpected "}"' )
 
 --------------------------------------------------------------------------------
 
@@ -399,6 +404,7 @@ CheckThatUseLocalIsValid:
 ::Attribute privateRoutines
 ::Attribute definedMethods          -- [Similar to the ooRexx Package class]
 ::Attribute blockInstructionsStacks -- Stack of stacks of active block instructions
+::Attribute sourceLiteralStack      -- Stack of active source literals
 
 ::Method firstElement -- Convenient shortcut
   Return self~prolog~body~begin
@@ -422,7 +428,8 @@ CheckThatUseLocalIsValid:
     currentBodies           -
     directives              -
     blockInstructionsStacks -
-    resources
+    resources               -
+    sourceLiteralStack
 
   Use Strict Arg name, source
 
@@ -442,6 +449,7 @@ CheckThatUseLocalIsValid:
   directives              =  Array()
   blockInstructionsStacks = .Stack~new
   options                 = .Set~new
+  sourceLiteralStack      = .Stack~new
 
 ::Method addClass -- [As in in the ooRexx Package class]
   Expose privateClasses

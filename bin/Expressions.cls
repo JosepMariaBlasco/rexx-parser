@@ -26,6 +26,7 @@
 /* 20251017         Add support for Lua "#" and Lambdas                       */
 /* 20251126    0.3a Add support for Executor <number><rest> constructs        */
 /* 20251129         (Executor) The message name can be omitted after ~, ~~    */
+/* 20251201         (Executor) Add support for source literals                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -38,6 +39,7 @@
  .environment ~ Multiplication.Expression  = .Multiplication.Expression
  .environment ~ Or.Expression              = .Or.Expression
  .environment ~ Initializer                = .Initializer
+ .environment ~ Source.Literal             = .Source.Literal
  .environment ~ Lambda.Expression          = .Lambda.Expression
  .environment ~ Prefix.Expression          = .Prefix.Expression
  .environment ~ Power.Expression           = .Power.Expression
@@ -237,6 +239,79 @@
     End
 
   End
+
+/******************************************************************************/
+/* SOURCE.LITERAL                                                             */
+/******************************************************************************/
+
+::Routine Source.Literal Public
+
+  Use Strict Arg package, begin, terminators = ""
+
+  element = TheElementAfter(begin)
+
+  instructions = Array()
+
+  package~blockInstructionsStacks~push(.Stack~new())
+  package~blockInstructionsStacks~top~push(begin)
+  package~sourceLiteralStack~push(begin)
+
+  NoEndClause    = 0
+  Source.Literal = 1
+
+  coactivity = 0
+
+  Loop Counter instrNo
+    instruction = package~clauser~Next.Instruction( NoEndClause, Source.Literal )
+    instrClass = instruction~class
+    Select Case instrClass
+      When .R.Directive               Then
+        If instrNo > 1                Then Signal 99.916
+      When .Coactivity.Directive      Then
+        If instrNo == 1               Then coactivity = 1
+                                      Else Signal 99.916
+      When .Expose.Instruction        Then Do
+        If instrNo \== 1 + coactivity Then Signal 99.900
+      End
+      When .End.Clause                Then Signal 10.001
+      When .Source.Literal.End        Then Leave
+      Otherwise Nop
+    End
+    instructions~append( instruction )
+    lastInstruction = instruction
+  End
+
+  end    = instruction~end~next
+
+  package~sourceLiteralStack~pop
+  package~blockInstructionsStacks~pop
+
+  Source.Literal = .Source.Literal~new( begin, end, instructions )
+
+  begin~Source.Literal = Source.Literal
+
+  Return Source.Literal
+
+-- END has no corresponding DO, LOOP, or SELECT
+10.001: Syntax( 10.001, instruction~begin )
+
+-- EXPOSE must be the first instruction executed in a closure
+99.900: Syntax( 99.900, instruction~begin, -
+  "EXPOSE must be the first instruction executed in a closure" -
+)
+
+
+-- Unrecognized directive instruction
+99.916: Syntax( 99.916, begin )
+
+--------------------------------------------------------------------------------
+
+::Class Source.Literal Public SubClass Rexx.Expression
+::Attribute begin
+::Attribute end
+::Method init
+  Expose         begin  end
+  Use Strict Arg begin, end, instructions
 
 /******************************************************************************/
 /* LAMBDA.EXPRESSION                                                          */
@@ -680,6 +755,8 @@
   allowInitializers = .Options.Lua | .Options.Experimental
 
   Select
+    When begin < .EL.LEFT_CURLY_BRACKET Then
+      Exit Source.Literal( package, begin, "" )
     When begin < .EL.LEFT_PARENTHESIS Then
       Exit SubExpression( package, begin, terminators )
     When allowInitializers, begin < .EL.LEFT_BRACKET Then

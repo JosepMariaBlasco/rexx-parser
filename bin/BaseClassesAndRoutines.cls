@@ -22,6 +22,7 @@
 /* 20251014    0.2e Add support for Lua constants and Lua table constructors  */
 /* 20251014         Add support for lambda expressions                        */
 /* 20251026    0.3a Add support for Executor <number><extra> constructs       */
+/* 20251201         (Executor) Add support for source literals                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -160,7 +161,7 @@
 /*                                                                            */
 /******************************************************************************/
 
-::Routine Internal.Error
+::Routine Internal.Error Public
   Use Strict Arg text
   Say Copies("-",80)
   Say "Internal error:"
@@ -648,6 +649,35 @@ End.Clause:
 ::Method Init
   Expose  DO  END  instructions
   Use Arg DO, END, instructions
+
+--------------------------------------------------------------------------------
+-- InsertSemicolonAfter                                                       --
+--------------------------------------------------------------------------------
+
+::Routine InsertSemicolonAfter Public
+
+  Use Strict Arg element
+
+  Parse Value element~to With line col
+
+  semicolon      = .Inserted.Semicolon~new(line, col)
+
+  -- Insert it between element and element~next
+
+  next           = element~next
+
+  semicolon~next = next
+  semicolon~prev = element
+  element~next     = semicolon
+  next~prev      = semicolon
+
+  -- Apply Rexx whitespace rules
+  left           = TheElementBefore( semicolon )
+  right          = TheElementAfter(  semicolon )
+  If left  < .ALL.WHITESPACE_LIKE Then left ~setIgnorable
+  If right < .ALL.WHITESPACE_LIKE Then right~setIgnorable
+
+  Return semicolon
 
 --------------------------------------------------------------------------------
 -- InsertSemicolonBefore                                                      --
