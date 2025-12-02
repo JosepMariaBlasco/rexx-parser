@@ -37,6 +37,7 @@
 /* 20251129         (Executor) Allow ¢ in identifiers                         */
 /* 20251129         (Executor) Recognize curly brackets                       */
 /* 20251201         (Executor) Add support for source literals                */
+/* 20251202         Fix line no reported for syntax error 13.001              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -132,7 +133,7 @@ Continuation.Found:
   End
 
   -- Pick a character (or, in some cases, a character pair)
-  ch  = source[line][ col   ]
+  ch  = source[line][ col ]
 
   Select -- We're assuming well formed UTF-8
     When ch <= "7F"X Then
@@ -157,7 +158,7 @@ Line.Comment?     : If ch2 == "-" Then
                       Return self~Line.Comment
                     Else
                       Return self~Operator.Character.Sequence(ch)
-Standard.Comment?   : If ch2 == "*" Then
+Standard.Comment? : If ch2 == "*" Then
                       Return self~Standard.Comment
                     Else
                       Return self~Operator.Character.Sequence(ch)
@@ -171,7 +172,7 @@ Invalid.Character   : If .Options.Lua, ch == "#" Then Return self~Lua.Length
                       Signal 13.001
 
 -- Incorrect character in program "&1" ('&2'X).
-13.001: Syntax( 13.001, tail, ch, c2x(ch) )
+13.001: Syntax( 13.001, line col, ch, c2x(ch) )
 
 /******************************************************************************/
 

@@ -23,6 +23,7 @@
 /* 20251014         Add support for lambda expressions                        */
 /* 20251026    0.3a Add support for Executor <number><extra> constructs       */
 /* 20251201         (Executor) Add support for source literals                */
+/* 20251202         Fix line no reported for syntax error 13.001              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -116,21 +117,26 @@
 
   Parse Var code major"."minor
 
-  -- "element" is any element in a clause. We need to determine the location
-  -- or the first element in that clause, to accurately place the error message.
+  -- In some few cases, Arg(2) contains "line col" as a string
+  If element~isA(.String) Then Parse Var element line col
 
-  -- We first go back to the first end-of-clause before the given element,...
-  Do While element \< .EL.END_OF_CLAUSE
-    prev = TheElementBefore(element)
-    If prev == .Nil Then Leave -- In some rare cases, prev may be .Nil
-    element = prev
+  -- In most cases, Arg(2) is any element in the clause in error.
+  -- We need to determine the location or the first element in that clause,
+  -- to accurately place the error message.
+  Else Do
+    -- We first go back to the first end-of-clause before the given element,...
+    Do While element \< .EL.END_OF_CLAUSE
+      prev = TheElementBefore(element)
+      If prev == .Nil Then Leave -- In some rare cases, prev may be .Nil
+      element = prev
+    End
+    -- ...and then we move forward one element, so that we are now located
+    -- at the beginning of the clause.
+    If element~next \== .Nil Then -- In some rare cases, next may be .Nil
+      element = TheElementAfter( element )
+
+    Parse Value element~from With line col
   End
-  -- ...and then we move forward one element, so that we are now located
-  -- at the beginning of the clause.
-  If element~next \== .Nil Then -- In some rare cases, next may be .Nil
-    element = TheElementAfter( element )
-
-  Parse Value element~from With line col
 
   additional = Arg(3,"A")
   message = "Syntax error" major"."minor "at line" line
