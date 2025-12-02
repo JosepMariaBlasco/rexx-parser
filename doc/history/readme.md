@@ -35,6 +35,7 @@ Version history
   <li> (Executor) The message name can be omitted in message terms (20251129).
   <li> (Executor) Implement `USE [STRICT] [AUTO] NAMED` and `FORWARD NAMEDARGUMENTS` (20251130).
   <li> (Executor) Implement source literals (trailing blocks are still missing) (20251201).
+  <li> Support Latin-1 encodings for `"¬"` and `"¢"` (20251202).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

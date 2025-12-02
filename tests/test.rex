@@ -1,2 +1,1 @@
-a = {::coactivity; X;  Expose a  }
-Nop
+¢ = 1

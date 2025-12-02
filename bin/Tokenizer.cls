@@ -38,6 +38,7 @@
 /* 20251129         (Executor) Recognize curly brackets                       */
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251202         Fix line no reported for syntax error 13.001              */
+/* 20251202         Support Latin-1 encodings for ¬ and ¢                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -136,7 +137,7 @@ Continuation.Found:
   ch  = source[line][ col ]
 
   Select -- We're assuming well formed UTF-8
-    When ch <= "7F"X Then
+    When ch <= "C1"X Then -- ASCII + some Latin-1
       ch2 = source[line][ col+1 ] -- May be ""
     When ch <= "DF"X Then Do
       ch ||= source[line][ col+1 ]
@@ -306,8 +307,9 @@ Return semicolon
   )
 
   If .Options.Executor Then Do
-    ClassOfOperatorChar["^"] = .EL.OP.NEGATION
-    ClassOfOperatorChar["¬"] = .EL.OP.NEGATION
+    ClassOfOperatorChar["^"  ] = .EL.OP.NEGATION
+    ClassOfOperatorChar["¬"  ] = .EL.OP.NEGATION
+    ClassOfOperatorChar["AC"X] = .EL.OP.NEGATION -- Latin-1 ¬
   End
 
 --------------------------------------------------------------------------------
@@ -353,22 +355,29 @@ Return semicolon
 
   If .Options.Executor Then Do
     -- TSO/E negations
-    compoundOperator["/=="] = .EL.OP.STRICT.NOT_EQUAL
-    compoundOperator["/=" ] = .EL.OP.NOT_EQUAL
+    compoundOperator["/=="]     = .EL.OP.STRICT.NOT_EQUAL
+    compoundOperator["/=" ]     = .EL.OP.NOT_EQUAL
     -- "^" as a negator
-    compoundOperator["^=="] = .EL.OP.STRICT.NOT_EQUAL
-    compoundOperator["^=" ] = .EL.OP.NOT_EQUAL
-    compoundOperator["^>" ] = .EL.OP.NOT_GREATER_THAN
-    compoundOperator["^<" ] = .EL.OP.NOT_LOWER_THAN
-    compoundOperator["^<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
-    compoundOperator["^>>"] = .EL.OP.STRICT.NOT_GREATER_THAN
+    compoundOperator["^=="]     = .EL.OP.STRICT.NOT_EQUAL
+    compoundOperator["^=" ]     = .EL.OP.NOT_EQUAL
+    compoundOperator["^>" ]     = .EL.OP.NOT_GREATER_THAN
+    compoundOperator["^<" ]     = .EL.OP.NOT_LOWER_THAN
+    compoundOperator["^<<"]     = .EL.OP.STRICT.NOT_LOWER_THAN
+    compoundOperator["^>>"]     = .EL.OP.STRICT.NOT_GREATER_THAN
     -- "¬" as a negator
-    compoundOperator["¬=="] = .EL.OP.STRICT.NOT_EQUAL
-    compoundOperator["¬=" ] = .EL.OP.NOT_EQUAL
-    compoundOperator["¬>" ] = .EL.OP.NOT_GREATER_THAN
-    compoundOperator["¬<" ] = .EL.OP.NOT_LOWER_THAN
-    compoundOperator["¬<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
-    compoundOperator["¬>>"] = .EL.OP.STRICT.NOT_GREATER_THAN
+    compoundOperator["¬=="]     = .EL.OP.STRICT.NOT_EQUAL
+    compoundOperator["¬=" ]     = .EL.OP.NOT_EQUAL
+    compoundOperator["¬>" ]     = .EL.OP.NOT_GREATER_THAN
+    compoundOperator["¬<" ]     = .EL.OP.NOT_LOWER_THAN
+    compoundOperator["¬<<"]     = .EL.OP.STRICT.NOT_LOWER_THAN
+    compoundOperator["¬>>"]     = .EL.OP.STRICT.NOT_GREATER_THAN
+    -- "AC"X as a negator
+    compoundOperator["AC"X"=="] = .EL.OP.STRICT.NOT_EQUAL
+    compoundOperator["AC"X"=" ] = .EL.OP.NOT_EQUAL
+    compoundOperator["AC"X">" ] = .EL.OP.NOT_GREATER_THAN
+    compoundOperator["AC"X"<" ] = .EL.OP.NOT_LOWER_THAN
+    compoundOperator["AC"X"<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
+    compoundOperator["AC"X">>"] = .EL.OP.STRICT.NOT_GREATER_THAN
  End
 
   ClassOfSpecialChar =                        -
@@ -438,7 +447,7 @@ Return semicolon
     not           ||= "^¬"
   operator_only     = "+-%|&=><\"                    -- ANSI 6.2.2.4
   If .Options.Executor Then
-    operator_only ||= "^¬"
+    operator_only ||= "^¬" || "AC"X     -- "AC"X is Latin-1 for "¬"
   -- See Rexxref 5.10, 1.11.3. Parentheses and Operator Precedence
   operator_only   ||= "~"
   operator_or_other = "/*"                           -- ANSI 6.2.2.5
@@ -450,7 +459,7 @@ Return semicolon
     general_letter||= extra_letter
   End
   If .Options.Executor Then
-    general_letter||= "#@$¢"
+    general_letter||= "#@$¢" || "A2"X   -- "A2"X is Latin-1 for "¢"
   blank             = "2009"X                        -- ANSI 6.2.2.8
   -- "whitespace" is a better name, and more coherent with ooRexx
   -- nomenclature and with the text of error messages
@@ -461,7 +470,8 @@ Return semicolon
   If .Parser.Options~unicode == 1 Then               -- TUTOR-flavored Unicode
     radix           = "BXYPGTU"
 
-  ascii_var_symbol_char = Translate(var_symbol_char,"",XRange("80"X,"FF"X))~Space(0)
+  -- ASCII + some Latin-1
+  ascii_var_symbol_char = Translate(var_symbol_char,"",XRange("C2"X,"FF"X))~Space(0)
 
   -- Table for the Finite State Machine
 
@@ -478,8 +488,6 @@ Return semicolon
 
   Return
 
-
-
 Assign:
   chars = Arg(1)
   kind  = Arg(2)
@@ -487,7 +495,7 @@ Assign:
     c = chars[i]
     -- We are assuming that chars contains well-formed UTF-8
     Select
-      When c <= "7F"X Then Nop -- ASCII
+      When c <= "C1"X Then Nop -- ASCII + some Latin-1
       When c <= "DF"X Then Do
         i += 1
         c ||= chars[i]
@@ -958,7 +966,7 @@ Done:
 
   c1 = ch[1]
   Select
-    When c1 <= "7F"X Then chlen = 1
+    When c1 <= "C1"X Then chlen = 1 -- ASCII and some Latin-1
     When c1 <= "DF"X Then chlen = 2
     When c1 <= "EF"X Then chlen = 3
     Otherwise             chlen = 4
@@ -1143,7 +1151,7 @@ Return
       Leave
     End
     Else Do -- p \== 0
-      If currentLine[p] <<= "7F"X Then Leave
+      If currentLine[p] <<= "C1"X Then Leave -- ASCII and some Latin-1
       c = currentLine[p]
       Select
         When c << "E0"X Then clen = 2
