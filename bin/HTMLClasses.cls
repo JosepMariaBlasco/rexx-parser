@@ -26,7 +26,6 @@
 /* 20250528    0.2c Add support for detailed string highlighting              */
 /* 20250630    0.2d Add support for doc-comment subelements                   */
 /* 20250722         Add "dskw" for .EL.DIRECTIVE_SUBKEYWORD                   */
-/* 20251014    0.2e Add support for Lua extensions                            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -338,32 +337,6 @@ SkipOverAssignment:
   Call Assignment .EL.ASG.CONCATENATION,         "asg-cat"
   Call Assignment .EL.ASG.XOR,                   "asg-xor"
   Call Assignment .EL.ASG.POWER,                 "asg-pow"
-
-/******************************************************************************/
-/* LUA EXTENSIONS                                                             */
-/******************************************************************************/
-
-  Signal SkipOverLua
-
-Lua:
-  Select Case Options.lua
-    When "group"  Then Call Assign Arg(1), "lua"
-    When 0,1,"full"   Then Call Assign Arg(1), "lua" Arg(2)
-    When "detail" Then Call Assign Arg(1), Arg(2)
-  End
-Return
-
-SkipOverLua:
-
---------------------------------------------------------------------------------
-
-  Call Lua .EL.LUA.AND,                          "lua-and"
-  Call Lua .EL.LUA.FAIL,                         "lua-fail"
-  Call Lua .EL.LUA.FALSE,                        "lua-false"
-  Call Lua .EL.LUA.NIL,                          "lua-nil"
-  Call Lua .EL.LUA.NOT,                          "lua-not"
-  Call Lua .EL.LUA.OR,                           "lua-or"
-  Call Lua .EL.LUA.TRUE,                         "lua-true"
 
 /******************************************************************************/
 /* SPECIAL CHARACTERS                                                         */

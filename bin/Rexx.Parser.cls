@@ -20,7 +20,6 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250419    0.2a Fix bug no. 4                                             */
 /* 20250419    0.2a Fix bug no. 4                                             */
-/* 20251014    0.2e Add support for Lua options                               */
 /* 20251128    0.3a (Executor) Add support for ::EXTENSION directive          */
 /* 20251201         (Executor) Add support for source literals                */
 /*                                                                            */
@@ -38,7 +37,8 @@
 ::Requires "DebugSettings.cls"
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Globals.cls"
-::Requires "Tokenizer.cls"
+::Requires "Scanner.cls"
+::Requires "Elements.cls"
 ::Requires "Expressions.cls"
 ::Requires "PreClauser.cls"
 ::Requires "Clauses.cls"
@@ -67,9 +67,9 @@
 
   -- .Directory~of() crashes the interpreter
  .environment~Parser.Options = .Directory~new
- .environment~Options.Lua          = 0
  .environment~Options.Experimental = 0
  .environment~Options.Executor     = 0
+ .environment~Options.Unicode      = 0
   If Arg(3,'E') Then Do
     .Validate~classType("options",options,.Array)
     If \ options~isEmpty Then Do
@@ -78,12 +78,12 @@
         option[1] = Upper(option[1])
       End
      .environment~Parser.Options = .Directory~sendWith("of", options)
-      If .Parser.Options~hasIndex("LUA") Then
-        .environment~Options.Lua          = 1
       If .Parser.Options~hasIndex("EXPERIMENTAL") Then
         .environment~Options.Experimental = 1
       If .Parser.Options~hasIndex("EXECUTOR") Then
-        .environment~Options.Executor = 1
+        .environment~Options.Executor     = 1
+      If .Parser.Options~hasIndex("UNICODE") Then
+        .environment~Options.Unicode      = 1
     End
   End
 
@@ -390,7 +390,7 @@ CheckThatUseLocalIsValid:
 ::Attribute options                 -- Global options, when NetRexxOptions = 1
 ::Attribute Clauser                 -- The clauser
 ::Attribute preClauser              -- The preClauser
-::Attribute tokenizer               -- The tokenizer
+::Attribute scanner                 -- The scanner
 ::Attribute currentClass            -- Current class (.Nil --> prolog)
 ::Attribute currentBodies           -- Stack of bodies being currently parsed
 ::Attribute directives              -- Sequential list of directives
@@ -405,6 +405,7 @@ CheckThatUseLocalIsValid:
 ::Attribute definedMethods          -- [Similar to the ooRexx Package class]
 ::Attribute blockInstructionsStacks -- Stack of stacks of active block instructions
 ::Attribute sourceLiteralStack      -- Stack of active source literals
+::Attribute scannerStack            --
 
 ::Method firstElement -- Convenient shortcut
   Return self~prolog~body~begin
@@ -418,7 +419,7 @@ CheckThatUseLocalIsValid:
     options                 -
     Clauser                 -
     preclauser              -
-    tokenizer               -
+    scanner                 -
     privateClasses          -
     publicClasses           -
     privateRoutines         -
@@ -429,7 +430,8 @@ CheckThatUseLocalIsValid:
     directives              -
     blockInstructionsStacks -
     resources               -
-    sourceLiteralStack
+    sourceLiteralStack      -
+    scannerStack
 
   Use Strict Arg name, source
 
@@ -437,7 +439,7 @@ CheckThatUseLocalIsValid:
 
   Clauser                 = .Clauser~new( self )
   preClauser              =  Clauser~preClauser
-  tokenizer               =  Clauser~tokenizer
+  scanner                 =  Clauser~scanner
   definedMethods          = .StringTable~new
   privateClasses          = .StringTable~new
   publicClasses           = .StringTable~new
@@ -450,6 +452,7 @@ CheckThatUseLocalIsValid:
   blockInstructionsStacks = .Stack~new
   options                 = .Set~new
   sourceLiteralStack      = .Stack~new
+  scannerStack            = .Stack~new
 
 ::Method addClass -- [As in in the ooRexx Package class]
   Expose privateClasses
@@ -819,7 +822,7 @@ Return
 
 ::Routine Resource
   Use Strict Arg package, directive
-  package~tokenizer~resource.data( package, directive )
+  --package~scanner~resource.data( package, directive )
   body = Empty.Body( package, directive )
   directive~body = body
   package~addDirective( directive )

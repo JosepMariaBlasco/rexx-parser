@@ -25,9 +25,8 @@
 /* 20250624    0.2d Complete refactor to use nesting and "&"                  */
 /* 20250630         Add support for doc-comment subelements                   */
 /* 20250722         Add styles for rx-dskw                                    */
-/* 20251014    0.2e Add support for Lua extensions                            */
-/*                                                                            */
 /* 20251109         use rexx-dark as template for vim colorschemes            */
+/*                                                                            */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -250,7 +249,7 @@
     /* Default highlighting                                                   */
     /*------------------------------------------------------------------------*/
 
-    /* %STATEMENT%  */ color: #c0c000 ;font-weight: bold; 
+    /* %STATEMENT%  */ color: #c0c000 ;font-weight: bold;
 
     /*------------------------------------------------------------------------*/
     /* Built-in functions and procedures                                      */
@@ -353,19 +352,6 @@
   /* Resource ignored stuff                                                   */
   .rx-res-ignore {
    /* %COMMENT%    */ color: #808080 ;
-  }
-
-/******************************************************************************/
-/* Lua extensions                                                             */
-/* ==============                                                             */
-/*                                                                            */
-/*   Highlighting of Lua operators "and", "not" and "or"; constants "fail",   */
-/*   "false", "nil" and "true"; table delimiters "[", "(", ")", "]"; and      */
-/*   table field names.                                                       */
-/******************************************************************************/
-
-  .rx-lua {
-    /* %UNDERLINED% */ color: #80a0ff ;text-decoration: underline; 
   }
 
 /******************************************************************************/

@@ -2,9 +2,9 @@ Element.category ::= "category"
 
 Element.from ::= "from"
 
-Element.isAssigned ::= "isAssigned"
+Element.ignorable ::= "ignorable"
 
-Element.isIgnorable ::= "isIgnorable"
+Element.isAssigned ::= "isAssigned"
 
 Element.isInserted ::= "isInserted"
 
@@ -23,8 +23,6 @@ Element.parts ::= "parts"
 Element.prev ::= "prev"
 
 Element.setAssigned ::= "setAssigned"
-
-Element.setIgnorable ::= "setIgnorable"
 
 Element.source ::= "source"
 

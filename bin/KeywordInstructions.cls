@@ -295,7 +295,7 @@ GetExpression:
       Call SetCategory element, .EL.CONTINUATION       -- Demote, ..
     Else
       Call SetCategory element, .EL.WHITESPACE         -- Demote, ..
-    element~setIgnorable                               -- .. make ignorable..
+    element~ignorable = 1                              -- .. make ignorable..
     element = TheElementAfter( element, ignoreBlanks ) -- .. and skip.
   End
   Signal Arguments
@@ -2156,7 +2156,7 @@ Done:
         element = term~end
         -- Consume blanks after ")" and "]"
         If element < .ALL.WHITESPACE_LIKE Then Do
-          element~setIgnorable
+          element~ignorable = 1
           element = TheElementAfter( element )
         End
         If element < continue Then Do
@@ -2548,7 +2548,7 @@ GetASymbol:
 
         -- Consume blanks after ")" and "]"
         If element < .ALL.WHITESPACE_LIKE Then Do
-          element~setIgnorable
+          element~ignorable = 1
           ignoreBlanks = .True
           element = TheElementAfter( element, ignoreBlanks )
         End
@@ -2685,7 +2685,7 @@ GetASymbol:
 
   If element < .ALL.WHITESPACE_LIKE Then Do
     next = TheElementAfter( element )
-    element~setIgnorable
+    element~ignorable = 1
     subExpression~end = next
   End
 

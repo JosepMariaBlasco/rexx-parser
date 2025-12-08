@@ -6,7 +6,7 @@
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
 /*                                                                            */
-/* Copyright (c) 2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>       */
+/* Copyright (c) 2025-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
@@ -197,7 +197,7 @@
   -- TUTOR additions. Types "UNI" and "UTF8" added
 
   -- [Only checked for required an optional args at the moment]
-  If .Parser.Options~Unicode == 1 Then Do
+  If .Options.Unicode Then Do
 
     BIFARGS.BYTES      = "rANY"
     BIFARGS.C2U        = "rANY oANY" -- Arg(2): one of CODES, UTF32, U+ or NAmes

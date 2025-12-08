@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*                                                                            */
-/* Tokenizer.cls                                                              */
-/* =============                                                              */
+/* Scanner.cls                                                                */
+/* ===========                                                                */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -26,12 +26,10 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250406         Rename fractional number to decimal                       */
 /* 20250531    0.2c Implement more flexible rules for doc-comments            */
-/* 20251014    0.2e Add optional support for Lua and, not, or                 */
-/* 20251016         Add support for Lua "#" and Lambdas                       */
-/* 20251029         Add isInserted method to Element class (Thanks, Rony!)    */
+/* 20251029    0.2e Add isInserted method to Element class (Thanks, Rony!)    */
 /* 20251126    0.3a Add support for Executor                                  */
 /* 20251128         (Executor) Support "/==" and "/="                         */
-/* 20251128         Add basic Unicode support to the tokenizer                */
+/* 20251128         Add basic Unicode support to the scanner                  */
 /* 20251128         (Executor) Support "^" and "¬" as a negators              */
 /* 20251128         (Executor) Allow #@$ in identifiers                       */
 /* 20251129         (Executor) Allow ¢ in identifiers                         */
@@ -39,231 +37,223 @@
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251202         Fix line no reported for syntax error 13.001              */
 /* 20251202         Support Latin-1 encodings for ¬ and ¢                     */
+/* 20251203         Rename to Scanner.cls                                     */
 /*                                                                            */
 /******************************************************************************/
 
- .environment ~                     Element =                     .Element
- .environment ~            Inserted.Element =            .Inserted.Element
- .environment ~          Inserted.Semicolon =          .Inserted.Semicolon
- .environment ~                Lua.Constant =                .Lua.Constant
- .environment ~                Lua.Operator =                .Lua.Operator
- .environment ~                Line.Comment =                .Line.Comment
- .environment ~ Operator.Character.Sequence = .Operator.Character.Sequence
- .environment ~               Resource.Data =               .Resource.Data
- .environment ~            Standard.Comment =            .Standard.Comment
- .environment ~  Special.Character.Sequence =  .Special.Character.Sequence
- .environment ~              Symbol.Element =              .Symbol.Element
- .environment ~      StringOrSymbol.Element =      .StringOrSymbol.Element
- .environment ~      Tail.Separator.Element =      .Tail.Separator.Element
- .environment ~          WhiteSpace.Element =          .WhiteSpace.Element
-
-::Requires "BaseClassesAndRoutines.cls"
-::Requires "UnicodeSupport.cls"
+::Requires "Elements.cls"               -- Defines the Element classes
+::Requires "Globals.cls"                -- Defines categories & subcategories
+::Requires "UnicodeSupport.cls"         -- For Unicode string literals
+::Requires "BaseClassesAndRoutines.cls" --
 
 /******************************************************************************/
 /******************************************************************************/
 /*                                                                            */
-/* The TOKENIZER class                                                        */
+/* The SCANNER class                                                          */
 /*                                                                            */
-/* A TOKENIZER instance receives a program source array, and it produces      */
-/* a doubly-linked list of Elements (elements are defined below).             */
+/* A SCANNER instance receives a program source array, and it produces        */
+/* a doubly-linked list of Elements (elements are defined in the required     */
+/* package Elements.cls.                                                      */
 /*                                                                            */
-/* Existing elements can be modified by the following elements. For example,  */
-/* a whitespace sequence can be flagged as ignorable when an operator         */
-/* character follows it.                                                      */
-/*                                                                            */
-/******************************************************************************/
-/******************************************************************************/
-
-::Class Tokenizer Public
-
-::Attribute tail Get
-
-/******************************************************************************/
-/* Get the next element                                                       */
-/*                                                                            */
-/* This may be:                                                               */
-/*   * A line comment                                                         */
-/*   * A classic comment                                                      */
-/*   * An operator character sequence, including:                             */
-/*     + Compound operators                                                   */
-/*     + Extended assignment operators                                        */
-/*   * Whitespace                                                             */
-/*   * A special character                                                    */
+/* An element can be modified after scanning the following elements.          */
+/* For example, a whitespace sequence will be flagged as ignorable when       */
+/* an operator character follows it.                                          */
 /*                                                                            */
 /******************************************************************************/
-
-::Method nextElement
-  Expose source line col len lines tail ElementStartedBy -
-    BOS bosReturned eosReached eolAfterEosReturned
-
-  -- On the first run, we always return the Begin-Of-Source element
-  If \bosReturned Then Do
-    bosReturned = 1
-    Return BOS
-  End
-
-  -- Process shebangs
-  If line == 1, line <= lines, col == 1, source[line][1,2] == "#!" Then
-    Return self~Shebang
-
-  -- Restart point when we find a continuation
-Continuation.Found:
-  Nop
-
-  -- Handle the end of source condition
-  If line > lines Then Do
-    If eosReached, eolAfterEosReturned Then
-      Internal.Error( "Tokenizer~nextElement called past EOS." )
-    If eosReached Then Do
-      eolAfterEosReturned = 1
-      Return self~endOfLine
-    End
-    eosReached = 1
-    Return self~EOSElement
-  End
-
-  -- Handle the end of line
-  If col > len Then Do
-    endOfLine = self~endOfLine
-    line += 1
-    col   = 1
-    If line <= lines Then len = Length( source[line] )
-    If endOfLine == .Nil Then Signal Continuation.Found
-    Return endOfLine
-  End
-
-  -- Pick a character (or, in some cases, a character pair)
-  ch  = source[line][ col ]
-
-  Select -- We're assuming well formed UTF-8
-    When ch <= "C1"X Then -- ASCII + some Latin-1
-      ch2 = source[line][ col+1 ] -- May be ""
-    When ch <= "DF"X Then Do
-      ch ||= source[line][ col+1 ]
-      ch2 = source[line][ col+2 ] -- May be ""
-    End
-    When ch <= "EF"X Then Do
-      ch ||= source[line][ col+1 ]source[line][ col+2 ]
-      ch2 = source[line][ col+3 ] -- May be ""
-    End
-    Otherwise
-      ch ||= source[line][ col+1 ]source[line][ col+2 ]source[line][ col+3 ]
-      ch2 = source[line][ col+4 ] -- May be ""
-  End
-
-  -- And jump!
-  Signal ( ElementStartedBy[ ch ] )
-
-Line.Comment?     : If ch2 == "-" Then
-                      Return self~Line.Comment
-                    Else
-                      Return self~Operator.Character.Sequence(ch)
-Standard.Comment? : If ch2 == "*" Then
-                      Return self~Standard.Comment
-                    Else
-                      Return self~Operator.Character.Sequence(ch)
-Whitespace.Sequence : Return self~Whitespace.Sequence
-Symbol.Element      : Return self~Symbol.Element
-Special.Char        : Return self~Special.Character.Sequence(ch)
-Operator.Char       : Return self~Operator.Character.Sequence(ch)
-String.Element      : Return self~String.Element(ch)
-
-Invalid.Character   : If .Options.Lua, ch == "#" Then Return self~Lua.Length
-                      Signal 13.001
-
--- Incorrect character in program "&1" ('&2'X).
-13.001: Syntax( 13.001, line col, ch, c2x(ch) )
-
 /******************************************************************************/
 
-::Method endOfLine
-  Expose line lines col tail
+--
+-- Elements are Rexx tokens, whitespace, comments, and other inserted tokens.
+--
+-- Every element has a Category, and possibly a SubCategory.
+-- See Elements.cls and Globals.cls for details.
+--
+-- Character set. By default, the scanner recognizes all ooRexx pure ASCII
+-- characters (this means that ¬ is not recognized). Every character
+-- recognized by the scanner has an associated value (a label), which
+-- is stored in the ElementStartedBy stem and later used in a calculated
+-- SIGNAL instruction to drive a Finite State Machine (see method
+-- initialize.FSM).
 
-  -- Either this is an implied semicolon, or a continuation char.
-  -- Both continuations and semicolons eat blanks at both sides, and
-  -- therefore it is safe to mark whitespace to the left as ignorable
-  -- (think of "A <eol>" -> "A<generated ;>)
+-- The scanner accepts a mixture of UTF-8 and Latin-1 characters
+-- (although mixing Latin-1 and UTF-8 characters in the same source
+-- file is bad practice and should be avoided). Since there are no UTF-8
+-- codes that start with characters in XRange("80"X,"C1"X), we handle such
+-- characters as Latin-1. This allows us to recognize "AC"X as "¬",
+-- or "A2"X as "¢", when certain options are active. Characters starting
+-- with bytes >= "C2"X are assumed to start a byte sequence containing
+-- a well-formed UTF-8 encoded Unicode codepoint. [--> TODO: 1) Verify
+-- that characters are indeed well-formed; 2) provide external options
+-- to indicate the encoding used by the source]
+--
 
-  previous = tail
-  Do While previous~isIgnorable
-    previous = TheElementBefore( previous )
-  End
-  If previous < .ALL.WHITESPACE_LIKE Then Do
-    previous~setIgnorable
-    previous = TheElementBefore( previous )
-  End
+::Class Scanner Public
 
-  -- Continuations in the last source line are not accepted as such
-  -- by the ANSI standard (see 6.2.2.1), but are happily processed by
-  -- ooRexx. We produce an implied semicolon when we find a
-  -- continuation just before EOS.
+::Attribute head                        -- First element scanned
+::Attribute tail                        -- Last  element scanned
 
-  If line < lines, previous < .ALL.CONTINUATION_CHARACTERS Then Do
-    previous~category = .EL.CONTINUATION
-    If TheElementBefore( previous ) < .IGNORE_WHITESPACE_AFTER Then
-      previous~setIgnorable
-    Return .Nil -- Do not generate an end-of-clause on return
-  End
-
-  -- No continuation? Return an implied semicolon EL.END_OF_CLAUSE element
-
-  semicolon       = .Inserted.Semicolon~new(line, col)
-
-  semicolon~prev  = tail
-  tail~next       = semicolon
-
-  tail            = semicolon
-
-  -- A semicolon eats blanks at the left
-  beforeSemicolon = TheElementBefore( semicolon )
-  If beforeSemicolon < .ALL.WHITESPACE_LIKE Then
-    beforeSemicolon~setIgnorable
-
-Return semicolon
-
+/******************************************************************************/
+/*                                                                            */
+/* INIT                                                                       */
+/*                                                                            */
 /******************************************************************************/
 
 ::Method init
-  Expose package source line col len lines tail -
-    BOS bosReturned eosReached eolAfterEosReturned -
-    StandardDocCommentAllowed MarkdownDocCommentAllowed
+  Expose                       -
+    package                    -        -- The package we are scanning
+    source                     -        -- Source code for our package
+    lines                      -        -- Number of lines in source
+    line col                   -        -- Current line and column
+    len                        -        -- Length of current line
+    head                       -        -- First element scanned
+    tail                       -        -- Last element scanned
+    BOS                        -        -- Begin-of-source marker
+    stopScanning               -        -- When an error is encountered
+    lastEndOfClause            -        -- To check for ::RESOURCES
+    bracketStack               -        -- Stack of "(","[","{"
+    StandardDocCommentsAllowed -        --
+    MarkdownDocCommentsAllowed          --
 
-  Use Strict Arg package
-
-  BOS = .Inserted.Semicolon~new(1, 1) -- Begin-Of-Source
-
-  source = package~source             -- An array of lines
-
-  self~initialize_FSM
-  self~initialize_tables
-
-  eosReached          = 0             -- EOS reached AND EOSElement returned
-  eolAfterEosReturned = 0             -- EOL after EOS returned
-  bosReturned         = 0             -- We haven't returned BOS yet
-
-  lines               = source~items  -- Total lines in source
-  line                = 1             -- Current line number
-  col                 = 1             -- Current column number
-  tail                = BOS           -- Last symbol in the doubly-linked chain
-
+  Use Strict Arg package                -- The package we are scanning
+  source = package~source               -- An array of lines
+  lines  = source~items                 -- Total lines in source
+  line   = 1                            -- Current line number
+  col    = 1                            -- Current column number
   If lines > 0 Then
-    len               = Length(source[line]) -- Length of current line
+    len  = Length(source[1])            -- Length of current line
+
+  BOS = .Inserted.Semicolon~new(1, 1)   -- We will insert a semicolon at BOS
+  lastEndOfClause = BOS
+
+  stopScanning = 0                      -- Will be 1 if we find an error
+
+  bracketStack = .Stack~new
+
+  self~initialize.FSM                   -- Finite State Machine
+  self~initialize.Other.Tables          -- Other tables
 
   AllowedDocComments = Upper( ChangeStr(",",Global.Option( DocComments )," ") )
 
-  StandardDocCommentAllowed = -
+  StandardDocCommentsAllowed = -
     ( WordPos( All,      AllowedDocComments) > 0 ) | -
     ( WordPos( Standard, AllowedDocComments) > 0 ) | -
     ( WordPos( Block   , AllowedDocComments) > 0 ) | -
     ( WordPos( Classic , AllowedDocComments) > 0 )
 
-  MarkdownDocCommentAllowed = -
+  MarkdownDocCommentsAllowed = -
     ( WordPos( All,      AllowedDocComments) > 0 ) | -
     ( WordPos( Line    , AllowedDocComments) > 0 ) | -
     ( WordPos( Markdown, AllowedDocComments) > 0 )
 
+
+  self~Build.Element.Chain
+
 /******************************************************************************/
+/*                                                                            */
+/* INITIALIZE.FSM                                                             */
+/*                                                                            */
+/* Define character categories, based on the ANSI standard, with some         */
+/* extensions for ooRexx and Executor, and initialize a table for a small     */
+/* Finite State Machine used to drive the scanner with a calculated           */
+/* SIGNAL instruction.                                                        */
+/*                                                                            */
+/******************************************************************************/
+
+::Method initialize.FSM Private         -- Called only from INIT
+
+  Expose whitespace var_symbol_char latin1_var_symbol_char radix -
+    extra_letter general_letter ElementStartedBy
+
+  -- We will use .String~digit instead
+  -- digit          = .String~digit                  -- ANSI 6.2.2.1
+  -- We will use .String~xDigit instead
+  -- hex_digit      = .String~xDigit                 -- ANSI 6.2.2.39
+  -- We will use the literal "01" instead
+  -- binary_digit   = "01"                           -- ANSI 6.2.2.42
+  special           = ",;:()"                        -- ANSI 6.2.2.2
+  special         ||= "[]"                           -- Rexxref 5.1.0, 1.10.4.7.
+  If .Options.Executor Then
+    special       ||= "{}"
+  -- Special Characters; "~" moved to operator
+  not               = "\"                            -- ANSI 6.2.2.3
+  If .Options.Executor Then
+    not           ||= "^¬"
+  operator_only     = "+-%|&=><\"                    -- ANSI 6.2.2.4
+  If .Options.Executor Then
+    operator_only ||= "^¬" || "AC"X     -- "AC"X is Latin-1 for "¬"
+  -- See Rexxref 5.10, 1.11.3. Parentheses and Operator Precedence
+  operator_only   ||= "~"
+  operator_or_other = "/*"                           -- ANSI 6.2.2.5
+  operator_char     = operator_only ||,              -- ANSI 6.2.2.6
+                      operator_or_other              -- ANSI 6.2.2.6
+  general_letter    = .String~alpha"!?_"             -- ANSI 6.2.2.7
+  If .Parser.Options~hasIndex( extraletters ) Then Do
+    extra_letter    = .Parser.Options~extraletters   -- ANSI 5.3.2
+    general_letter||= extra_letter
+  End
+  If .Options.Executor Then -- "A2"X is Latin-1 for "¢"
+    general_letter||= "#@$¢" || "A2"X
+  blank             = "2009"X                        -- ANSI 6.2.2.8
+  -- "whitespace" is a better name, and more coherent with ooRexx
+  -- nomenclature and with the text of error messages
+  whitespace        = blank
+  var_symbol_char   = general_letter".".String~digit -- ANSI 6.2.2.30
+
+  radix             = "BX"                           -- Hex and binary strings
+  If .Options.Unicode == 1 Then                      -- TUTOR-flavored Unicode
+    radix           = "BXYPGTU"
+
+  -- Since there are no UTF-8 combos starting with "80"X.."C1"X,
+  -- we can treat these as if they were Latin-1.
+  -- Otherwise, we're assuming well formed UTF-8
+  latin1_var_symbol_char = Translate(        -
+      var_symbol_char,"",XRange("C2"X,"FF"X) -
+    )~Space(0)
+
+  -- Table for the Finite State Machine
+
+  ElementStartedBy          = .Stem~new
+  ElementStartedBy[]        =  Invalid.Character     -- Default value
+
+  Call Assign var_symbol_char, Symbol.Element
+  Call Assign operator_char  , Operator.Char
+  Call Assign special        , Special.Char
+  Call Assign whitespace     , Whitespace.Sequence
+  Call Assign "'"""          , String.Element
+  ElementStartedBy["/"]      = Standard.Comment?
+  ElementStartedBy["-"]      = Line.Comment?
+
+  Return
+
+Assign:
+  chars = Arg(1)
+  kind  = Arg(2)
+  Do i = 1 To Length(chars)
+    c = chars[i]
+    -- Since there are no UTF-8 combos starting with "80"X.."C1"X,
+    -- we can treat these as if they were Latin-1.
+    -- Otherwise, we're assuming that 'chars' contains well formed UTF-8
+    Select
+      When c <= "C1"X Then Nop -- ASCII + some Latin-1
+      When c <= "DF"X Then Do
+        i += 1
+        c ||= chars[i]
+      End
+      When c <= "EF"X Then Do
+        i += 2
+        c ||= chars[i-1]||chars[i]
+      End
+      Otherwise
+        i += 3
+        c ||= chars[i-2]||chars[i-1]||chars[i]
+    End
+    ElementStartedBy[ c ] = kind
+  End
+Return
+
+/******************************************************************************/
+/*                                                                            */
+/* INITIALIZE.OTHER.TABLES                                                    */
 /*                                                                            */
 /* Defines three collections:                                                 */
 /*   * ClassOfOperatorChar: operator char     -> element category             */
@@ -272,7 +262,8 @@ Return semicolon
 /*                                                                            */
 /******************************************************************************/
 
-::Method initialize_tables
+::Method initialize.Other.Tables Private -- Called only from INIT
+
   Use Local
 
 --------------------------------------------------------------------------------
@@ -291,19 +282,19 @@ Return semicolon
 -- and "~~" are referred to as "message send operators".                      --
 --------------------------------------------------------------------------------
 
-  ClassOfOperatorChar = StringTable( -
-    ("&", .EL.OP.AND              ), -
-    ("=", .EL.OP.EQUAL            ), -
-    (">", .EL.OP.GREATER_THAN     ), -
-    ("<", .EL.OP.LOWER_THAN       ), -
-    ("-", .EL.OP.MINUS            ), -
-    ("\", .EL.OP.NEGATION         ), -
-    ("+", .EL.OP.PLUS             ), -
-    ("~", .EL.OP.MESSAGE          ), -
-    ("|", .EL.OP.OR               ), -
-    ("%", .EL.OP.INTEGER_DIVISION ), -
-    ("/", .EL.OP.DIVISION         ), -
-    ("*", .EL.OP.MULTIPLICATION   )  -
+  ClassOfOperatorChar = .StringTable~of( -
+    ("&", .EL.OP.AND              ),     -
+    ("=", .EL.OP.EQUAL            ),     -
+    (">", .EL.OP.GREATER_THAN     ),     -
+    ("<", .EL.OP.LOWER_THAN       ),     -
+    ("-", .EL.OP.MINUS            ),     -
+    ("\", .EL.OP.NEGATION         ),     -
+    ("+", .EL.OP.PLUS             ),     -
+    ("~", .EL.OP.MESSAGE          ),     -
+    ("|", .EL.OP.OR               ),     -
+    ("%", .EL.OP.INTEGER_DIVISION ),     -
+    ("/", .EL.OP.DIVISION         ),     -
+    ("*", .EL.OP.MULTIPLICATION   )      -
   )
 
   If .Options.Executor Then Do
@@ -330,7 +321,7 @@ Return semicolon
 -- ClassOfOperatorChar collection.                                            --
 --------------------------------------------------------------------------------
 
-  compoundOperator = StringTable(             -
+  compoundOperator = .StringTable~of(         -
     ("&&" , .EL.OP.XOR                     ), -
     ("||" , .EL.OP.CONCATENATION           ), -
     ("~~" , .EL.OP.CASCADING_MESSAGE       ), -
@@ -381,7 +372,7 @@ Return semicolon
  End
 
   ClassOfSpecialChar =                        -
-    StringTable(                              -
+    .StringTable~of(                          -
       ("(", .EL.LEFT_PARENTHESIS           ), -
       (")", .EL.RIGHT_PARENTHESIS          ), -
       ("[", .EL.LEFT_BRACKET               ), -
@@ -397,165 +388,344 @@ Return semicolon
 -- List of extended assignment character sequences                            --
 --------------------------------------------------------------------------------
 
-  assignmentSequence = Set(                    -
+  assignmentSequence = .Set~of(                -
     "=", "+=", "-=", "*=", "/=", "%=", "//=",  -
     "||=", "&=", "|=", "&&=", "**="            -
   )
 
-  assignmentClass = StringTable(                 -
-    (   "=", .EL.ASG.EQUAL               ), -
-    (  "+=", .EL.ASG.PLUS          ), -
-    (  "-=", .EL.ASG.MINUS         ), -
-    (  "*=", .EL.ASG.MULTIPLY          ), -
-    (  "/=", .EL.ASG.DIVIDE         ), -
-    (  "%=", .EL.ASG.INTEGER_DIVISION       ), -
-    ( "//=", .EL.ASG.REMAINDER   ), -
-    ( "||=", .EL.ASG.CONCATENATION ), -
-    (  "&=", .EL.ASG.AND           ), -
-    (  "|=", .EL.ASG.OR            ), -
-    ( "&&=", .EL.ASG.XOR           ), -
-    ( "**=", .EL.ASG.POWER         )  -
+  assignmentClass = .StringTable~of(     -
+    (   "=", .EL.ASG.EQUAL            ), -
+    (  "+=", .EL.ASG.PLUS             ), -
+    (  "-=", .EL.ASG.MINUS            ), -
+    (  "*=", .EL.ASG.MULTIPLY         ), -
+    (  "/=", .EL.ASG.DIVIDE           ), -
+    (  "%=", .EL.ASG.INTEGER_DIVISION ), -
+    ( "//=", .EL.ASG.REMAINDER        ), -
+    ( "||=", .EL.ASG.CONCATENATION    ), -
+    (  "&=", .EL.ASG.AND              ), -
+    (  "|=", .EL.ASG.OR               ), -
+    ( "&&=", .EL.ASG.XOR              ), -
+    ( "**=", .EL.ASG.POWER            )  -
   )
 
-
 /******************************************************************************/
 /*                                                                            */
-/* Define character categories, based on the ANSI standard, with some         */
-/* extensions for ooRexx, and initialize a table for a small                  */
-/* Finite State Machine used to drive the tokenizer with a calculated         */
-/* SIGNAL instruction.                                                        */
+/* Build.Element.Chain                                                        */
 /*                                                                            */
 /******************************************************************************/
 
-::Method initialize_FSM
-  Expose whitespace var_symbol_char ascii_var_symbol_char radix -
-    extra_letter general_letter ElementStartedBy
+::Method Build.Element.Chain Private    -- Called only from INIT
 
-  -- We will use .String~digit instead
-  -- digit          = .String~digit                  -- ANSI 6.2.2.1
-  -- We will use .String~xDigit instead
-  -- hex_digit      = .String~xDigit                 -- ANSI 6.2.2.39
-  -- We will use the literal "01" instead
-  -- binary_digit   = "01"                           -- ANSI 6.2.2.42
-  special           = ",;:()"                        -- ANSI 6.2.2.2
-  special         ||= "[]"                           -- Rexxref 5.1.0, 1.10.4.7.
-  If .Options.Executor Then
-    special       ||= "{}"
-  -- Special Characters; "~" moved to operator
-  not               = "\"                            -- ANSI 6.2.2.3
-  If .Options.Executor Then
-    not           ||= "^¬"
-  operator_only     = "+-%|&=><\"                    -- ANSI 6.2.2.4
-  If .Options.Executor Then
-    operator_only ||= "^¬" || "AC"X     -- "AC"X is Latin-1 for "¬"
-  -- See Rexxref 5.10, 1.11.3. Parentheses and Operator Precedence
-  operator_only   ||= "~"
-  operator_or_other = "/*"                           -- ANSI 6.2.2.5
-  operator_char     = operator_only ||,              -- ANSI 6.2.2.6
-                      operator_or_other              -- ANSI 6.2.2.6
-  general_letter    = .String~alpha"!?_"             -- ANSI 6.2.2.7
-  If .Parser.Options~hasIndex( extraletters ) Then Do
-    extra_letter    = .Parser.Options~extraletters   -- ANSI 5.3.2
-    general_letter||= extra_letter
+  Expose package source line col len lines head tail ElementStartedBy -
+    BOS stopScanning
+
+  head = BOS                            -- First element is always BOS
+  tail = head                           -- We have only one element now
+
+  -- Process shebangs
+  If line == 1, line <= lines, col == 1, source[line][1,2] == "#!" Then
+    self~Shebang
+
+Main.Loop:
+  If stopScanning Then Return 0         -- 0: Errors encountered
+
+  -- Handle the end of source condition
+  If line > lines Then Do
+    self~EndOfSource
+    Return 1                            -- 1: No errors found
   End
-  If .Options.Executor Then
-    general_letter||= "#@$¢" || "A2"X   -- "A2"X is Latin-1 for "¢"
-  blank             = "2009"X                        -- ANSI 6.2.2.8
-  -- "whitespace" is a better name, and more coherent with ooRexx
-  -- nomenclature and with the text of error messages
-  whitespace        = blank
-  var_symbol_char   = general_letter".".String~digit -- ANSI 6.2.2.30
 
-  radix             = "BX"                           -- Hex and binary strings
-  If .Parser.Options~unicode == 1 Then               -- TUTOR-flavored Unicode
-    radix           = "BXYPGTU"
+  -- Handle the end of line
+  If col > len Then Do
+    self~endOfLine
+    line += 1
+    col   = 1
+    If line <= lines Then len = Length( source[line] )
+    Signal Main.Loop
+  End
 
-  -- ASCII + some Latin-1
-  ascii_var_symbol_char = Translate(var_symbol_char,"",XRange("C2"X,"FF"X))~Space(0)
+  -- Pick a character (or, in some cases, a character pair)
+  ch  = source[line][ col ]
 
-  -- Table for the Finite State Machine
+  -- Since there are no UTF-8 combos starting with "80"X.."C1"X,
+  -- we can treat these as if they were Latin-1.
+  -- Otherwise, we're assuming well formed UTF-8
 
-  ElementStartedBy          = .Stem~new
-  ElementStartedBy[]        =  Invalid.Character     -- Default value
-
-  Call Assign var_symbol_char, Symbol.Element
-  Call Assign operator_char  , Operator.Char
-  Call Assign special        , Special.Char
-  Call Assign whitespace     , Whitespace.Sequence
-  Call Assign "'"""          , String.Element
-  ElementStartedBy["/"]      = Standard.Comment?
-  ElementStartedBy["-"]      = Line.Comment?
-
-  Return
-
-Assign:
-  chars = Arg(1)
-  kind  = Arg(2)
-  Do i = 1 To Length(chars)
-    c = chars[i]
-    -- We are assuming that chars contains well-formed UTF-8
-    Select
-      When c <= "C1"X Then Nop -- ASCII + some Latin-1
-      When c <= "DF"X Then Do
-        i += 1
-        c ||= chars[i]
-      End
-      When c <= "EF"X Then Do
-        i += 2
-        c ||= chars[i-1]||chars[i]
-      End
-      Otherwise
-        i += 3
-        c ||= chars[i-2]||chars[i-1]||chars[i]
+  Select
+    When ch <= "C1"X Then -- ASCII + some Latin-1
+      ch2 = source[line][ col+1 ] -- May be ""
+    When ch <= "DF"X Then Do
+      ch ||= source[line][ col+1 ]
+      ch2 = source[line][ col+2 ] -- May be ""
     End
-    ElementStartedBy[ c ] = kind
+    When ch <= "EF"X Then Do
+      ch ||= source[line][ col+1 ]source[line][ col+2 ]
+      ch2 = source[line][ col+3 ] -- May be ""
+    End
+    Otherwise
+      ch ||= source[line][ col+1 ]source[line][ col+2 ]source[line][ col+3 ]
+      ch2 = source[line][ col+4 ] -- May be ""
   End
+
+  -- And jump!
+  Signal ( ElementStartedBy[ ch ] )
+
+Line.Comment?       : If ch2 == "-" Then self~Line.Comment
+                      Else self~Operator.Character.Sequence(ch)
+                      Signal Main.Loop
+
+Standard.Comment?   : If ch2 == "*" Then self~Standard.Comment
+                      Else self~Operator.Character.Sequence(ch)
+                      Signal Main.Loop
+
+Whitespace.Sequence : self~Whitespace.Sequence
+                      Signal Main.Loop
+
+Symbol.Element      : self~Symbol.Element
+                      Signal Main.Loop
+
+Special.Char        : self~Special.Character.Sequence(ch)
+                      Signal Main.Loop
+
+Operator.Char       : self~Operator.Character.Sequence(ch)
+                      Signal Main.Loop
+
+String.Element      : self~String.Element(ch)
+                      Signal Main.Loop
+
+Invalid.Character   : signal 13.001
+
+-- Incorrect character in program "&1" ('&2'X).
+13.001: self~error( 13.001, line col line (col+Length(ch)), ch, c2x(ch) )
+Return 0                                -- 0: Error encountered
+
+/******************************************************************************/
+/* error                                                                      */
+/******************************************************************************/
+
+::Method error
+  Expose package stopScanning tail
+
+  Use Strict Arg code, anchor, ...
+
+  additional = Arg(3,"A")
+
+  error = .Error.Element~new( package, code, anchor, additional )
+  If anchor~isA(.Element) Then
+    If anchor == tail Then self~append( error )
+    Else self~insertAfter(anchor, error)
+  Else self~append( error )
+
+  stopScanning = 1
+
+/******************************************************************************/
+/* endOfLine                                                                  */
+/******************************************************************************/
+
+::Method endOfLine
+  Expose line lines col tail
+
+  -- Either this is an implied semicolon, or a continuation char.
+  -- Both continuations and semicolons eat blanks at both sides, and
+  -- therefore it is safe to mark whitespace to the left as ignorable
+  -- (think of "A <eol>" -> "A<generated ;>)
+
+  previous = tail
+  Do While previous~ignorable
+    previous = TheElementBefore( previous )
+  End
+  If previous < .ALL.WHITESPACE_LIKE Then Do
+    previous~ignorable = 1
+    previous = TheElementBefore( previous )
+  End
+
+  -- Continuations in the last source line are not accepted as such
+  -- by the ANSI standard (see 6.2.2.1), but are happily processed by
+  -- ooRexx. We produce an implied semicolon when we find a
+  -- continuation just before EOS.
+
+  If line < lines, previous < .ALL.CONTINUATION_CHARACTERS Then Do
+    previous~category = .EL.CONTINUATION
+    If TheElementBefore( previous ) < .IGNORE_WHITESPACE_AFTER Then
+      previous~ignorable = 1
+    Return -- Do not generate an end-of-clause
+  End
+
+  -- No continuation? Insert an implied semicolon (EL.END_OF_CLAUSE)
+
+  semicolon       = .Inserted.Semicolon~new(line, col)
+
+  self~append( semicolon )
+
+  -- A semicolon eats blanks at the left
+  beforeSemicolon = TheElementBefore( semicolon )
+  If beforeSemicolon < .ALL.WHITESPACE_LIKE Then
+    beforeSemicolon~ignorable = 1
+
+  -- Special case: check if this is a ::RESOURCE directive
+  self~checkResource
+
 Return
 
 --------------------------------------------------------------------------------
--- EOSElement - Return a EOS element                                          --
+-- checkResource                                                              --
+--------------------------------------------------------------------------------
+
+::Method checkResource
+  Expose tail lastEndOfClause
+
+  ignoreBlanks = .True
+
+  -- "::"
+  first = TheElementAfter( lastEndOfClause )
+  If first \< .EL.DIRECTIVE_START      Then Signal NotAResourceDirective
+
+  -- "RESOURCE"
+  second = TheElementAfter( first )
+  If second \< .ALL.VAR_SYMBOLS        Then Signal NotAResourceDirective
+  If second~value \== "RESOURCE"       Then Signal NotAResourceDirective
+
+  -- resource_name
+  third  = TheElementAfter( second, ignoreBlanks )
+  If third \< .ALL.SYMBOLS_AND_STRINGS Then Signal NotAResourceDirective
+
+  -- Maybe "END delimiter"
+  fourth = TheElementAfter( third, ignoreBlanks )
+  If fourth < .EL.END_OF_CLAUSE Then delimiter = "::END"
+  Else Do
+    If fourth \< .ALL.VAR_SYMBOLS  Then Signal 25.926
+    Else If fourth~value \== "END" Then Signal 25.926
+    Else Do
+      fifth = TheElementAfter( fourth, ignoreBlanks )
+      If fifth \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.921
+      delimiter = fifth~value
+
+      sixth = TheElementAfter( fifth, ignoreBlanks )
+      If sixth \< .EL.END_OF_CLAUSE Then Signal 21.914
+    End
+  End
+  self~processResource( first, third, delimiter )
+  Return
+
+-- String or symbol expected after ::RESOURCE END keyword
+19.921: self~error( 19.921, fifth, fifth )
+Return
+
+-- Data must not follow the ::RESOURCE directive; found "&1"
+21.914: self~error( 21.914, sixth, sixth )
+Return
+
+-- Unknown keyword on ::RESOURCE directive; found "&1".
+25.926: self~error( 25.926, fourth, fourth )
+Return
+
+NotAResourceDirective:
+  lastEndOfClause = tail
+  Return
+
+--------------------------------------------------------------------------------
+-- processResource                                                            --
+--------------------------------------------------------------------------------
+::Method processResource
+  Expose source line lines col len tail lastEndOfClause
+
+  Use Strict Arg marker, name, delimiter
+
+  -- "tail" now points to the closing directive semicolon, implied or not
+
+  -- Pick the line and column of the tail
+  Parse Value tail~to With tailLine tailEnd
+
+  -- There is some extra stuff in the line?
+  -- It has to be ignored (see doc. bug. no. 307),
+  -- https://sourceforge.net/p/oorexx/documentation/307/
+  If tailLine == line, tailEnd < len | tail~from \== tail~to Then
+    self~append( IgnoredData( source, line, tailEnd ) )
+
+  -- The resource starts on the next line
+  fromLine = line + 1
+
+  -- We now look for a line starting with the delimiter
+  delimiterLength = Length( delimiter )
+
+  -- No more lines? That's an error
+  If fromLine >= lines Then Signal 99.943
+
+  Do lineNo = fromLine To lines
+    If source[lineNo]~startsWith(delimiter) Then Signal EndDelimiterFound
+  End
+
+  -- Not found? That's an error too.
+  Signal 99.943
+
+EndDelimiterFound:
+  -- Store the resource end line
+  toLine = lineNo - 1
+
+  -- Add the resource data element to the end of the element list
+  self~append( Resource.Data( source, fromLine, toLine ) )
+
+  -- Create a taken_constant...
+  endDelimiter = .StringOrSymbol.Element~new(                           -
+   .EL.TAKEN_CONSTANT, lineNo, 1, delimiterLength+1, source[lineNo]  -
+  )
+  -- ... with a .RESOURCE.DELIMITER.NAME subCategory...
+  Call SetConstantName endDelimiter, .RESOURCE.DELIMITER.NAME
+  -- ...and insert it into the element list too.
+  self~append( endDelimiter )
+
+  delimiterLineLength = source[lineNo]~length
+
+  -- Store final ignored data, if it exists
+  If delimiterLineLength > delimiterLength Then Do
+    self~append( -
+      IgnoredData(source, lineNo, delimiterLength + 1)                 -
+    )
+  End
+
+  semicolon = .Inserted.Semicolon~new( lineNo, delimiterLineLength + 1 )
+
+  -- Update len and col
+  len = delimiterLineLength
+  col = len + 1
+
+  self~append( semicolon )
+
+  lastEndOfClause = semicolon
+
+  marker~closing  = semicolon
+
+  Return
+
+IgnoredData: Procedure
+  Use Strict Arg source, line, start
+
+  ignored_data           = .Element~new
+  ignored_data~category  = .EL.RESOURCE_IGNORED_DATA
+  ignored_data~from      = line start
+  ignored_data~to        = line (Length(source[line])+1)
+  ignored_data~source    = SubStr( source[line], start )
+  ignored_data~ignorable = 1
+  Return                   ignored_data
+
+99.943: self~error(99.943, marker, delimiter, name)
+--------------------------------------------------------------------------------
+-- EndOfSource                                                                --
+--                                                                            --
 --   Add a trailing end-of-clause to ensure that all clauses/instructions     --
 --   end with an end-of-clause. This simplifies code.                         --
 --------------------------------------------------------------------------------
 
-::Method EOSElement
+::Method EndOfSource
   Expose tail
 
-  EOSElement       = .Inserted.End.Of.Source~after( tail )
+  Parse Value tail~to With line, col
 
-  semicolon      = .Inserted.Semicolon    ~after( EOSElement )
+  self~append( .Inserted.Element~new(.EL.END_OF_SOURCE, line, col) )
 
-  EOSElement~prev  = tail
-  EOSElement~next  = semicolon
-  tail~next      = EOSElement
-  semicolon~prev = EOSElement
+  self~append( .Inserted.Semicolon    ~after( tail ) )
 
-  Return EOSElement
-
---------------------------------------------------------------------------------
--- InsertNewElement                                                           --
---   We have a new element. Insert it at the end of the element chain,        --
---   and update the tail and the parsing pointers.                            --
---------------------------------------------------------------------------------
-
-::Method InsertNewElement Private
-  Expose line col tail
-
-  Use Strict Arg element
-
-  element~prev = tail
-  --element~next is aways .Nil for new elements
-  tail~next  = element
-
-  -- Advance to the current element
-
-  tail       = element
-
-  -- Advance the line and column pointers just after the current element
-
-  Parse Value element~to With line col
-
-Return element
+  Return
 
 /******************************************************************************/
 /* SHEBANGS                                                                   */
@@ -565,7 +735,7 @@ Return element
 
   Expose package line col len
 
-  Return self~InsertNewElement( .Shebang~new(package, line, col, len + 1) )
+  self~append( .Shebang~new(package, line, col, len + 1) )
 
 /******************************************************************************/
 /* LINE COMMENTS                                                              */
@@ -573,12 +743,12 @@ Return element
 
 ::Method Line.Comment
 
-  Expose package source line lines col len MarkdownDocCommentAllowed
+  Expose package source line lines col len MarkdownDocCommentsAllowed
 
   startLine = line
   startCol  = col
-  If \MarkdownDocCommentAllowed Then Signal NormalLineComment
-  If \IsADocCommentLine(line)   Then Signal NormalLineComment
+  If \MarkdownDocCommentsAllowed Then Signal NormalLineComment
+  If \IsADocCommentLine(line)    Then Signal NormalLineComment
 
   Do While line < lines, IsADocCommentLine(line+1)
     line = line + 1
@@ -587,7 +757,9 @@ Return element
 
   comment = .Line.Comment~new(package, startLine, startCol, line, len + 1)
 
-  Return self~Markdown.DocComment( comment )
+  self~Markdown.DocComment( comment )
+
+  Return
 
 IsADocCommentLine: Procedure expose source
   Arg line
@@ -597,8 +769,7 @@ IsADocCommentLine: Procedure expose source
 Return .True
 
 NormalLineComment:
-  comment = .Line.Comment~new(package, line, col, line, len + 1)
-  Return self~InsertNewElement( comment )
+  self~append( .Line.Comment~new(package, line, col, line, len + 1) )
 
 /******************************************************************************/
 /* MARKDOWN DOC-COMMENT                                                       */
@@ -617,7 +788,7 @@ NormalLineComment:
 
   -- Set the right category. This applies when we look at the element
   -- as a whole.
-  Call SetCategory comment, .EL.DOC_COMMENT_MARKDOWN
+  comment~category = .EL.DOC_COMMENT_MARKDOWN
 
   -- We now perform a rough parsing of the whole doc-comment, and store
   -- its parts in the "parts" attribute.
@@ -662,7 +833,7 @@ NormalLineComment:
     self~ProcessDocCommentLine( line )
   End
 
-  Return self~InsertNewElement( comment )
+  self~append( comment )
 
 ::Method ProcessDocCommentLine
 
@@ -876,7 +1047,7 @@ GotAComment:
 
   comment = .Standard.Comment~new( package, startLine, startColumn, line, pos )
 
-  If StandardDocCommentAllowed Then Do
+  If StandardDocCommentsAllowed Then Do
     starting = source[startLine]~strip~Left(4)
     If starting[1,3] \== "/**" Then Signal Done
     If starting[4]    == "*"   Then Signal Done
@@ -884,12 +1055,15 @@ GotAComment:
     If ending[2,2]   \== "*/"  Then Signal Done
     If ending[1]      == "*"   Then Signal Done
 
-    Return self~Classic.DocComment( comment )
+    self~Classic.DocComment( comment )
+
+    Return
 
   End
 
 Done:
-  Return self~InsertNewElement( comment )
+  self~append( comment )
+  Return
 
 -- Unmatched comment delimiter ("/*") on line &1.
  6.001: Syntax(  6.001, tail, startLine )
@@ -911,7 +1085,7 @@ Done:
 
   -- Set the right category. This applies when we look at the element
   -- as a whole.
-  Call SetCategory comment, .EL.DOC_COMMENT
+  comment~category = .EL.DOC_COMMENT
 
   Parse Value comment~from With first firstCol
   Parse Value comment~to   With last  lastCol
@@ -951,7 +1125,7 @@ Done:
     End
   End
 
-  Return self~InsertNewElement( comment )
+  self~append( comment )
 
 /******************************************************************************/
 /* OPERATOR character sequences                                               */
@@ -964,6 +1138,10 @@ Done:
 
   category = ClassOfOperatorChar[ ch ]
 
+  -- Since there are no UTF-8 combos starting with "80"X.."C1"X,
+  -- we can treat these as if they were Latin-1.
+  -- Otherwise, we're assuming well formed UTF-8
+
   c1 = ch[1]
   Select
     When c1 <= "C1"X Then chlen = 1 -- ASCII and some Latin-1
@@ -975,12 +1153,13 @@ Done:
   element = .Operator.Character.Sequence~new( -
     category, line, col, col+chlen, ch        -
   )
-  self~InsertNewElement( element )
+
+  self~append( element )
 
   -- Now apply Rexx rules about ignoring whitespace before operator chars
   predecessor = TheElementBefore( element )
   If predecessor < .ALL.WHITESPACE_LIKE Then Do
-    predecessor~setIgnorable
+    predecessor~ignorable = 1
     -- Recalculate predecessor
     predecessor = TheElementBefore(predecessor)
   End
@@ -990,14 +1169,6 @@ Done:
 
   -- Check if this is a compound operator or an extended assignment
   sequence = predecessor~value || element~value
-
-  -- Special case: handle the "mapsto" operator "->", taken from
-  -- extended Lua (Pluto)
-  If .Options.Lua, sequence == "->" Then Do
-    category = .EL.LUA.MAPS.TO
-    predecessor~category = category
-    Signal CompoundOperatorOrExtendedAssignment
-  End
 
   category = CompoundOperator[sequence]
   If category == .Nil Then Do
@@ -1023,7 +1194,7 @@ Done:
 CompoundOperatorOrExtendedAssignment:
   predecessor~value = sequence
   element~category  = category
-  element~setIgnorable
+  element~ignorable = 1
 
 Return element
 
@@ -1040,7 +1211,7 @@ Return
 /******************************************************************************/
 
 ::Method Special.Character.Sequence
-  Expose line col tail ClassOfSpecialChar
+  Expose line col tail ClassOfSpecialChar bracketStack
 
   Arg ch
 
@@ -1050,59 +1221,98 @@ Return
     category, line, col, col+1, ch -
   )
 
-  self~InsertNewElement( element )
+  self~append( element )
 
   -- Apply Rexx rules about ignoring whitespace
   predecessor = TheElementBefore( element )
 
-  -- Whitespace not before an opening bracket gets ignored
+  -- Whitespace not before an opening bracket is ignorable
   If element < .ALL.LEFT_BRACES Then Nop
   Else If predecessor < .ALL.WHITESPACE_LIKE Then Do
-    predecessor~setIgnorable
+    predecessor~ignorable = 1
     -- Recalculate predecessor
     predecessor = TheElementBefore( predecessor )
   End
 
-  -- Insert a semicolon after "{"
-  If ch == "{" Then Do
-    semicolon       = .Inserted.Semicolon~new(line, col)
-    semicolon~prev  = tail
-    tail~next       = semicolon
-    tail            = semicolon
+
+  -- See that brackets are correctly paired
+  Select Case element~category
+    When .EL.LEFT_PARENTHESIS Then Do
+      bracketStack~push( element )
+      Return
+    End
+    When .EL.RIGHT_PARENTHESIS Then Do
+      -- See that "(" and ")" are paired
+      If bracketStack~isEmpty           Then Signal 37.002
+      If bracketStack~top~value \== "(" Then Signal 37.002
+      bracketStack~top~closing = element
+      bracketStack~pop
+      Return
+    End
+    When .EL.LEFT_BRACKET Then Do
+      bracketStack~push( element )
+      Return
+    End
+    When .EL.RIGHT_BRACKET Then Do
+      -- See that "[" and "]" are paired
+      If bracketStack~isEmpty           Then Signal 37.901
+      If bracketStack~top~value \== "[" Then Signal 37.901
+      bracketStack~top~closing = element
+      bracketStack~pop
+      Return
+    End
+    When .EL.LEFT_CURLY_BRACKET Then Do
+      bracketStack~push( element )
+      -- Add an extra semicolon after "{"
+      Parse Value element~to With line col
+      self~append(.Inserted.Semicolon~new(line, col))
+      Return
+    End
+  -- Add an extra semicolon before "}"
+    When .EL.RIGHT_CURLY_BRACKET Then Do
+      -- See that "{" and "}" are paired
+      If bracketStack~isEmpty           Then Signal 37.900
+      If bracketStack~top~value \== "{" Then Signal 37.900
+      bracketStack~top~closing = element
+      bracketStack~pop
+      -- Add an extra semicolon before "}"
+      Parse Value element~to With line col
+      self~insertBefore(element, .Inserted.Semicolon~new(line, col))
+      Return
+    End
+    Otherwise Nop
   End
+
   -- Handle "::"
-  Else If ch == ":", predecessor < .EL.COLON Then Do
-    Call SetCategory element, .EL.DIRECTIVE_START
+  If ch == ":", predecessor < .EL.COLON Then Do
+    element~category = .EL.DIRECTIVE_START
     -- In the most common case, the two colons will be adjacent.
     -- We generate a new "::" element and remove the predecessor element.
     If predecessor~to == element~from Then Do
-      element~from = predecessor~from
+      element~from   = predecessor~from
       element~source = "::"
       element~value  = "::"
-      Call RemoveElement predecessor
+      predecessor~remove
     End
     Else Do
-      element~setIgnorable
-      Call SetCategory predecessor, .EL.DIRECTIVE_START
+      element~ignorable = 1
+      predecessor~category = .EL.DIRECTIVE_START
     End
   End
 
-  Return element
+  Return
 
-/******************************************************************************/
-/* LUA.LENGTH                                                                 */
-/******************************************************************************/
+-- Unexpected ")"
+37.002: self~error( 37.002, element)
+Return
 
-::Method Lua.Length
-  Expose source line col len
+-- Unexpected "}"
+37.900: self~error( 37.900, element, 'Unexpected "}"')
+Return
 
-  element = self~InsertNewElement(                                 -
-    .Lua.Operator~new(.EL.LUA.LENGTH,line, col, col+1, source[line]) -
-  )
-  predecessor = TheElementBefore( element )
-  If predecessor < .ALL.WHITESPACE_LIKE Then predecessor~setIgnorable
-
-  Exit element
+-- Unexpected "]"
+37.901: self~error( 37.901, element)
+Return
 
 /******************************************************************************/
 /* WHITESPACE                                                                 */
@@ -1115,18 +1325,20 @@ Return
   If p == 0 Then p = len + 1
 
   -- Special case: a markdown doc-comment preceded by whitespace
-  If col == 1, source[line][p,3] == "---", source[line][p+3] \== "-" Then
-    Return self~Line.Comment
+  If col == 1, source[line][p,3] == "---", source[line][p+3] \== "-" Then Do
+    self~Line.Comment
+    Return
+  End
 
   element = .WhiteSpace.Element~new( line, col, p, source[line] )
-  self~InsertNewElement( element )
+  self~append( element )
 
   -- Apply Rexx rules about ignoring posterior whitespace
 
   If TheElementBefore( element ) < .IGNORE_WHITESPACE_AFTER Then
-    element~setIgnorable
+    element~ignorable = 1
 
-  Return element
+  Return
 
 /******************************************************************************/
 /* SYMBOL:                                                                    */
@@ -1139,18 +1351,21 @@ Return
 
 ::Method Symbol.Element
 
-  Expose source line col len var_symbol_char ascii_var_symbol_char -
+  Expose source line col len var_symbol_char latin1_var_symbol_char -
     extra_letter general_letter ElementStartedBy
 
   currentLine = source[line]
   p = col
   Loop
-    p = currentLine~verify( ascii_var_symbol_char,,p)
+    p = currentLine~verify( latin1_var_symbol_char,,p)
     If p == 0 Then Do
       p = len + 1
       Leave
     End
     Else Do -- p \== 0
+      -- Since there are no UTF-8 combos starting with "80"X.."C1"X,
+      -- we can treat these as if they were Latin-1.
+      -- Otherwise, we're assuming well formed UTF-8
       If currentLine[p] <<= "C1"X Then Leave -- ASCII and some Latin-1
       c = currentLine[p]
       Select
@@ -1166,45 +1381,11 @@ Return
   End
   symbol = currentLine[col, p - col]
 
-  If .Options.Lua Then Call TestLuaOperatorOrValue
-  Return self~InsertNewElement(                                           -
+  self~append(                                                            -
     .StringOrSymbol.Element~new(SymbolKind(), line, col, p, source[line]) -
   )
 
---
--- We recognize "and", "fail", "false", "nil", "not", "or" and "true"
--- as Lua constants and keywords only when they are spelled in lowercase.
--- This means that, for example, you can have variables called "Or" or
--- "NIL", and function calls like "Not(args)", while "not(args)" is a-f
--- logical expression, i.e., the use of the Lua "not" prefix operator
--- before the expression "(args)".
---
--- Although this is not completely Rexx-like, this seems to be the best
--- possible compromise if we want to be able to use Lua operators and
--- constants in Rexx code: since these will appear for sure, by their
--- very nature, inside expressions, there seems to be no other way,
--- besides using baroque notations like .Lua.False, which is undesirable.
---
-TestLuaOperatorOrValue:
-  -- Quick checks
-  If \IsAVariable(symbol) Then Return
-  If  HasADot(symbol)     Then Return
-  Select Case symbol
-    When "and", "not", "or" Then Do
-      element = self~InsertNewElement(                                 -
-        .Lua.Operator~new(Lua.2Cat(symbol),line, col, p, source[line]) -
-      )
-      predecessor = TheElementBefore( element )
-      If predecessor < .ALL.WHITESPACE_LIKE Then
-        predecessor~setIgnorable
-      Exit element
-    End
-    When "fail", "false", "nil", "true" Then
-      Exit self~InsertNewElement(                                    -
-        .Lua.Constant~new(Lua.2Cat(symbol),line, col, p, source[line]) -
-      )
-    Otherwise Return
-  End
+  Return
 
 -- Determine the kind of symbol we are dealing with
 -- This gets complex for exponential numbers with a signed exponent
@@ -1246,18 +1427,6 @@ ContainsExecutorNumber:
     End
   End
   Return 0
-
-
-Lua.2Cat:
-  Select Case Arg(1)
-    When "and"   Then Return .EL.LUA.AND
-    When "fail"  Then Return .EL.LUA.FAIL
-    When "false" Then Return .EL.LUA.FALSE
-    When "nil"   Then Return .EL.LUA.NIL
-    When "not"   Then Return .EL.LUA.NOT
-    When "or"    Then Return .EL.LUA.OR
-    When "true"  Then Return .EL.LUA.TRUE
-  End
 
 Number:
   Return DataType(Arg(1)) == "NUM"
@@ -1329,7 +1498,8 @@ Exponential:
     If endQ +1 == len                                 Then Signal RADIX
     If Pos(currentLine[endQ+2], var_symbol_char) == 0 Then Signal RADIX
   End
-  Return Element(.EL.STRING, col + length)
+  Call Element .EL.STRING, col + length
+  Return
 
 RADIX: -- ANSI 6.2.1.1
   string = currentLine[col+1, length-2]
@@ -1354,28 +1524,35 @@ RADIX: -- ANSI 6.2.1.1
 --------------------------------------------------------------------------------
 
 BytesString:
-  Return Element(.EL.BYTES_STRING, col + length + 1)
+  Call Element .EL.BYTES_STRING, col + length + 1
+  Return
 
 --------------------------------------------------------------------------------
 -- CODEPOINTS STRINGS                                                         --
 --------------------------------------------------------------------------------
 
 CodePointsString:
-  If CheckUTF8() Then Return Element(.EL.CODEPOINTS_STRING, col + length + 1)
+  If CheckUTF8() Then
+    Call Element .EL.CODEPOINTS_STRING, col + length + 1
+  Return
 
 --------------------------------------------------------------------------------
 -- GRAPHEMES STRINGS                                                          --
 --------------------------------------------------------------------------------
 
 GraphemesString:
-  If CheckUTF8() Then Return Element(.EL.GRAPHEMES_STRING, col + length + 1)
+  If CheckUTF8() Then
+    Call Element .EL.GRAPHEMES_STRING, col + length + 1
+  Return
 
 --------------------------------------------------------------------------------
 -- TEXT STRINGS                                                               --
 --------------------------------------------------------------------------------
 
 TextString:
-  If CheckUTF8() Then Return Element(.EL.TEXT_STRING, col + length + 1)
+  If CheckUTF8() Then
+    Call Element .EL.TEXT_STRING, col + length + 1
+  Return
 
 --------------------------------------------------------------------------------
 -- UNICODE STRINGS                                                            --
@@ -1383,14 +1560,18 @@ TextString:
 
 UnicodeString:
   value = CheckUnicode()
-  Return UString(.EL.UNICODE_STRING, col + length + 1, value)
+  Call UString .EL.UNICODE_STRING, col + length + 1, value
+  Return
 
 --------------------------------------------------------------------------------
 -- BINARY STRINGS                                                             --
 --------------------------------------------------------------------------------
 
 BinaryString:
-  If DataType(string, "B") Then Return Element(.EL.BINARY_STRING, col + length + 1)
+  If DataType(string, "B") Then Do
+    Call Element .EL.BINARY_STRING, col + length + 1
+    Return
+  End
 
   -- The DATATYPE function has complained: determine the cause of the error
 
@@ -1418,8 +1599,10 @@ BinaryString:
 --------------------------------------------------------------------------------
 
 HexString:
-  If DataType(string, "X") Then
-    Return Element(.EL.HEX_STRING, col + length + 1)
+  If DataType(string, "X") Then Do
+    Call Element .EL.HEX_STRING, col + length + 1
+    Return
+  End
 
   -- The DATATYPE function has complained: determine the cause of the error
 
@@ -1476,467 +1659,73 @@ CheckUnicode:
 Element:
   sourceString = source[line][col, Arg(2)-col]
 
-  Return self~InsertNewElement(                                            -
+  self~append(                                                             -
     .StringOrSymbol.Element~new( Arg(1), line, col, Arg(2), source[line] ) -
   )
+
+  Exit
 
 UString:
   sourceString = source[line][col, Arg(2)-col]
 
-  Return self~InsertNewElement(                                             -
+  self~append(                                             -
     .UString.Element~new( Arg(1), line, col, Arg(2), source[line], Arg(3) ) -
   )
 
-/******************************************************************************/
-/* RESOURCE.DATA                                                              */
-/******************************************************************************/
+  Exit
 
-::Method Resource.Data
-  Expose source line lines col len tail
-
-  Use Strict Arg package, directive
-
-  -- "tail" now points to the closing directive semicolon, implied or not
-
-  -- Pick the line and column of the tail
-  Parse Value tail~to With tailLine tailEnd
-
-  -- There is some extra stuff in the line.
-  -- It has to be ignored (see doc. bug. no. 307).
-  If tailLine == line, tailEnd < len | tail~from \== tail~to Then Do
-    self~InsertNewElement( IgnoredData( source, line, tailEnd ) )
-    fromLine = line + 1
-  End
-  -- We are already in the next line
-  Else Do
-    fromLine = line
-  End
-
-  -- We now look for a line starting with the delimiter
-  delimiter = directive~delimiter
-
-  delimiterLength = Length( delimiter )
-
-  -- No more lines? That's an error
-  If fromLine >= lines Then Signal 99.943
-
-  Do lineNo = fromLine To lines
-    If source[lineNo]~startsWith(delimiter) Then Signal EndDelimiterFound
-  End
-
-  -- Not found? That's an error too.
-  Signal 99.943
-
-EndDelimiterFound:
-  -- Store the resource end line
-  toLine = lineNo - 1
-
-  -- Add the resource data element to the end of the element list
-  self~InsertNewElement( Resource.Data( source, fromLine, toLine ) )
-
-  -- Create a taken_constant...
-  endDelimiter = .StringOrSymbol.Element~new(                           -
-   .EL.TAKEN_CONSTANT, lineNo, 1, delimiterLength+1, source[lineNo]  -
-  )
-  -- ... with a .RESOURCE.DELIMITER.NAME subCategory...
-  Call SetConstantName endDelimiter, .RESOURCE.DELIMITER.NAME
-  -- ...and insert it into the element list too.
-  self~InsertNewElement( endDelimiter )
-
-  delimiterLineLength = source[lineNo]~length
-
-  -- Store final ignored data, if it exists
-  If delimiterLineLength > delimiterLength Then Do
-    self~InsertNewElement( -
-      IgnoredData(source, lineNo, delimiterLength + 1)                 -
-    )
-  End
-
-  semicolon = .Inserted.Semicolon~new( lineNo, delimiterLineLength + 1 )
-
-  -- Update len and col
-  len = delimiterLineLength
-  col = len + 1
-
-  self~InsertNewElement( semicolon )
-
-  directive ~      end = semicolon
-
-  directive ~ fromLine =  fromLine
-  directive ~   toLine =    toLine
-
-  package~preclauser~begin = semicolon
-
-  Return
-
--- Missing ::RESOURCE end marker "&1" for resource "&2".
-99.943: Syntax( 99.943, directive~begin, delimiter, directive~name )
-
-/******************************************************************************/
-/******************************************************************************/
-/* The ELEMENT class                                                          */
-/******************************************************************************/
 /******************************************************************************/
 /*                                                                            */
-/* An Element is a ooRexx Directory with some additional entries.             */
+/* insertAfter -- Insert an element after another element which is not        */
+/*                the tail (use append in that case)                          */
+/*                                                                            */
+/******************************************************************************/
 
-::Class Element Public SubClass Directory
+::Method insertAfter
+  Use Strict Arg element, new
 
-::Method isAssigned
-  Return self~hasIndex(assigned)
-::Method setAssigned
-  self~assigned = 1
-::Method isIgnorable
-  Return self~hasIndex(ignored)
-::Method setIgnorable
-  self~ignored = 1
-::Method isInserted
-  Return self~from == self~to
+  new~next      = element~next
+  new~prev      = element
 
-::Method "<"
-  Use Strict Arg category
-  If category~isA( .String ) Then Return   category~contains( self~category )
-  Return self ~  "<" : super( category )
+  element~next  = new
+  new~next~prev = new
 
-::Method "\<"
-  Use Strict Arg category
-  If category~isA( .String ) Then Return \ category~contains( self~category )
-  Return self ~ "\<" : super( category )
+/******************************************************************************/
+/*                                                                            */
+/* insertBefore -- Insert an element before another element which is not      */
+/*                 the head                                                   */
+/*                                                                            */
+/******************************************************************************/
 
-::Method "<<"
-  Use Strict Arg subcategory
-  If subcategory~isA( .String ) Then Do
-    If self~category == .EL.TAKEN_CONSTANT,  -
-       subcategory~contains( self~subcategory)
-      Then Return .True
-      Else Return .False
-  End
-  Return self ~  "<<" : super( subcategory )
+::Method insertBefore
+  Use Strict Arg element, new
 
-::Method "\<<"
-  Use Strict Arg subcategory
-  If subcategory~isA( .String ) Then Do
-    If self~category == .EL.TAKEN_CONSTANT,  -
-       subcategory~contains( self~subcategory)
-      Then Return .False
-      Else Return .True
-  End
-  Return self ~  "\<<" : super( subcategory )
+  new~next          = element
+  new~prev          = element~prev
 
---------------------------------------------------------------------------------
+  element~prev~next = new
+  element~prev      = new
 
-::Class Resource.Data Public SubClass Element
+/******************************************************************************/
+/*                                                                            */
+/* append -- Append an element to the end of the element chain                */
+/*                                                                            */
+/******************************************************************************/
 
---------------------------------------------------------------------------------
+::Method append
+  Expose tail line col
 
-::Class Standard.Comment Public subclass Element
-::Attribute parts
-::Method value -- A placeholder
-  If self~category == .EL.STANDARD_COMMENT Then Return "/* A COMMENT */"
-  Else Return "/* A DOC-COMMENT */"
-::Method init
-  Expose         package  startLine  startCol  endLine  endCol parts
-  Use Strict Arg package, startLine, startCol, endLine, endCol
-  self~init:super
-  self~parts    = Array()
-  self~category = .EL.STANDARD_COMMENT
-  self~ignored  = 1 -- Classic comments are always ignored
-  self~from     = startLine startCol
-  self~to       = endLine   endCol
-::Method isMultiLine
-  Expose startLine endLine
-  Return startLine \== endLine
-::Method source
-  Expose         package  startLine  startCol  endLine  endCol
-  Do lineNo = startLine To endLine
-    line = package~source[lineNo]
-    Select case lineNo
-      When startLine Then Do
-        If lineNo == endLine Then ret = Array( line[startCol, endCol-startCol] )
-        Else ret = Array( SubStr( line, startCol ) )
-      End
-      When endLine Then ret~append( line[1, endCol-1] )
-      Otherwise ret~append( line )
-    End
-  End
-  Return ret
-
---------------------------------------------------------------------------------
-
-::Class Line.Comment Public subclass Element
-::Attribute parts
-::Method init
-  Expose package line start end
-  Use Strict Arg package, line, start, endLine, end
-  self~init:super
-  self~parts    = Array()
-  self~category = .EL.LINE_COMMENT
-  self~ignored  = 1 -- Line comments are always ignored
-  self~from     = line    start
-  self~to       = endLine end
-::Method source
-  Expose package line start endLine end
-  If self~category == .EL.LINE_COMMENT Then
-    Return package~source[line][start, end-start]
-  Parse Value self~from With startLine  startCol
-  Parse Value self~to   With endLine    endCol
-  Do lineNo = startLine To endLine
-    line = package~source[lineNo]
-    Select case lineNo
-      When startLine Then Do
-        If lineNo == endLine Then ret = Array( line[startCol, endCol-startCol] )
-        Else ret = Array( SubStr( line, startCol ) )
-      End
-      When endLine Then ret~append( line[1, endCol-1] )
-      Otherwise ret~append( line )
-    End
-  End
-  Return ret
-::Method value; Return self~source
-
---------------------------------------------------------------------------------
-
-::Class Operator.Character.Sequence Public subclass Element
-
-::Attribute category
-
--- "source" is the operator char as it appears in the source program, and,
--- as such, it cannot be changed.
-::Attribute source Get
-
--- "value" is the current value of this character sequence. Initially, it
--- is the same value as "source", but it may change, for example when
--- encountering certain sequences that denote compound operators.
-::Attribute value
-
-::Method init
-  Expose         category  line  start  end  source  value
-  Use Strict Arg category, line, start, end, source
-  value = source
-  self~init:super
-
-::Method from
-  Expose line start
-  Return line start
-
-::Method to
-  Expose line end
-  Return line end
-
---------------------------------------------------------------------------------
-
-::Class Special.Character.Sequence Public subclass Element
-
-::Attribute category
-::Attribute from
-::Attribute source
-
--- "value" is the current value of this character sequence. Initially, it
--- is the same value as "source", but it may change, for example when
--- encountering certain sequences, like ": :"
-::Attribute value
-
-::Method init
-  Expose         category  line  start  end  source  value from
-  Use Strict Arg category, line, start, end, source
-  value = source
-  self~init:super
-  from = line start
-
-::Method to
-  Expose line end
-  Return line end
-
---------------------------------------------------------------------------------
-
-::Class Tail.Separator.Element Public subclass Element
-::Attribute category
-::Constant value  "."
-::Constant source "."
-::Method init
-  Expose         category  line  col source
-  Use Strict Arg category, line, col
-  self~init:super
-::Method from
-  Expose line col
-  Return line col
-::Method to
-  Expose line col
-  Return line (col+1)
-
---------------------------------------------------------------------------------
-
-::Class Lua.Operator Public Subclass Element
-::Attribute category
-::Method source
-  Expose sourceLine start end
-  Return sourceLine[ start, end-start ]
-::Method value
-  Return self~source
-::Method init
-  Expose         category  line  start  end  sourceLine
-  Use Strict Arg category, line, start, end, sourceLine
-  self~init:super
-::Method from
-  Expose line start
-  Return line start
-::Method to
-  Expose line end
-  Return line end
-
---------------------------------------------------------------------------------
-
-::Class Lua.Constant Public Subclass Element
-::Attribute category
-::Method source
-  Expose sourceLine start end
-  Return sourceLine[ start, end-start ]
-::Method value
-  Return self~source
-::Method init
-  Expose         category  line  start  end  sourceLine
-  Use Strict Arg category, line, start, end, sourceLine
-  self~init:super
-::Method from
-  Expose line start
-  Return line start
-::Method to
-  Expose line end
-  Return line end
-
---------------------------------------------------------------------------------
-
-::Class StringOrSymbol.Element Public subclass Element
-::Attribute category
-::Attribute sourceLine Get
-::Method value
-  source = self~source
-  If self~isAString Then Do -- Strings
-    length = Length( source )
-    c = Upper( Right(source,1) )
-    Select Case c
-      When "X" Then Return     X2C(SubStr(source,2,length-3))
-      When "B" Then Return X2C(B2X(SubStr(source,2,length-3)))
-      When "Y", "P", "G", "T" Then
-                    Return         SubStr(source,2,length-3)~changeStr(c||c,c)
-      Otherwise     Return         SubStr(source,2,length-2)~changeStr(c||c,c)
-    End
-  End
-  Else Do -- Symbols
-    Return Upper( source )
-  End
-::Method init
-  Expose         category  line  start  end  sourceLine
-  Use Strict Arg category, line, start, end, sourceLine
-  self~init:super
-::Method source
-  Expose sourceLine start end
-  Return sourceLine[ start, end-start ]
-::Method isAString
-  Expose sourceLine start
-  Return Pos( sourceLine[start], "'""") > 0
-::Method from
-  Expose line start
-  Return line start
-::Method to
-  Expose line end
-  Return line end
-
---------------------------------------------------------------------------------
-
-::Class UString.Element Public SubClass StringOrSymbol.Element
-::Method value
-  Expose value
-  Return value
-::Method init
-  Expose value
-  Use Strict Arg category, line, start, end, sourceLine, value
-  self~init:super(category, line, start, end, sourceLine)
-
---------------------------------------------------------------------------------
-
-::Class WhiteSpace.Element Public subclass Element
-::Method source
-  Expose sourceLine start end
-  Return sourceLine[ start, end-start ]
-::Method value
-  Expose start end sourceLine
-  Return sourceLine[start, end-start]
-::Method init
-  Expose         line  start  end  sourceLine
-  Use Strict Arg line, start, end, sourceLine
-  self~init:super
-  self~category = .EL.WHITESPACE
-::Method from
-  Expose line start
-  Return line start
-::Method to
-  Expose line end
-  Return line end
-
---------------------------------------------------------------------------------
-
-::Class Shebang Public subclass Element
-::Method category; Return .EL.SHEBANG
-::Method init
-  Expose package line start end
-  Use Strict Arg package, line, start, end
-  self~init:super
-  self~ignored = 1 -- Shebangs are always ignored
-::Method source
-  Expose package line start end
-  Return package~source[line][start, end-start]
-::Method value; Return self~source
-::Method from
-  Expose line start
-  Return line start
-::Method to
-  Expose line end
-  Return line end
-
---------------------------------------------------------------------------------
-
-::Class Inserted.Element Public subclass Element
-::Attribute category
-::Method after Class
   Use Strict Arg element
-  Parse Value element ~ from With line col
-  new = self~new(line, col)
-  next = element~next
-  element~next = new
-  new  ~prev = element
-  If next \== .Nil Then Do
-    next~prev = new
-    new ~next = next
-  End
-  Return new
-::Method init
-  Expose         category  line  col
-  Use Strict Arg category, line, col
-  self~init:super
-  self~from = line col
-  self~to   = line col
 
---------------------------------------------------------------------------------
+  -- Insert the element into the chain
 
-::Class Inserted.End.Of.Source Public SubClass Inserted.Element
-::Constant value ""
-::Method init
-  Use Strict Arg line, col
-  self~init:super(.EL.END_OF_SOURCE, line, col)
+  tail~next    = element                -- tail~next was .Nil
+  element~prev = tail                   --
 
---------------------------------------------------------------------------------
+  -- Update tail
 
-::Class Inserted.Semicolon Public SubClass Inserted.Element
-::Constant value ";"
-::Method init
-  Use Strict Arg line, col
-  self~init:super(.EL.END_OF_CLAUSE, line, col)
+  tail         = element
 
---------------------------------------------------------------------------------
+  -- Update line and col
 
-::Class Inserted.Implicit.Exit Public SubClass Inserted.Element
-::Constant value ""
-::Method init
-  Use Strict Arg line, col
-  self~init:super(.EL.IMPLICIT_EXIT, line, col)
+  Parse Value tail~to With line col

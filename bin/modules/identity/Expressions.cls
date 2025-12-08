@@ -158,7 +158,7 @@
   If self~isEmpty Then Return element
 
   Loop arg Over self~args
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
     If arg~isA( .Special.Character.Sequence ) Then
@@ -183,13 +183,13 @@
   -- "("
   element = Clone( element, stream, context )
   -- Ignorable stuff
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
   -- Argument list
   element = argumentList~compile( element, stream, context )
   -- More ignorable stuff
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
   -- ")"
@@ -255,7 +255,7 @@
       element = Clone( element, stream, context )
     End
     element = Clone( element, stream, context )
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
     element = scope~compile( element, stream, context )
@@ -263,11 +263,11 @@
 
   If element < .EL.LEFT_PARENTHESIS Then Do
     element = Clone( element, stream, context )
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
     element = arguments~compile( element, stream, context )
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
     element = Clone( element, stream, context )
@@ -413,7 +413,7 @@
   element = subExpression~compile( element, stream, context )
 
   -- Skip until ")"
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -444,7 +444,7 @@
   element = Clone( element, stream, context )
 
   -- Skip all ignorables until we find the variable
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 

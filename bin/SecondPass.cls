@@ -22,7 +22,7 @@
 /* 20250414         Add argument info to called routine chain                 */
 /* 20250418    0.2a Support for BIF early checking                            */
 /* 20250418         Fix SIGNAL early checking                                 */
-/* 20250531    0.2c Move support for doc-comments to Tokenizer.cls            */
+/* 20250531    0.2c Move support for doc-comments to Scanner.cls              */
 /*                                                                            */
 /******************************************************************************/
 

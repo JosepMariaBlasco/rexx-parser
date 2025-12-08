@@ -113,7 +113,7 @@
   End
 
   -- Clone ignorables
-  Do while element~isIgnorable
+  Do while element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -121,7 +121,7 @@
   element = Clone( element, stream, context )
 
   -- Clone ignorables
-  Do while element~isIgnorable
+  Do while element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -129,7 +129,7 @@
   element = Clone( element, stream, context )
 
   -- Clone ignorables
-  Do while element~isIgnorable
+  Do while element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -139,13 +139,13 @@
       -- Clone sign
       element = Clone( element, stream, context )
       -- Clone ignorables
-      Do while element~isIgnorable
+      Do while element~ignorable
         element = Clone( element, stream, context )
       End
       -- Clone integer
       element = Clone( element, stream, context )
       -- Clone ignorables
-      Do while element~isIgnorable
+      Do while element~ignorable
         element = Clone( element, stream, context )
       End
     End
@@ -158,7 +158,7 @@
   End
 
   -- Clone ignorables
-  Do while element~isIgnorable
+  Do while element~ignorable
     element = Clone( element, stream, context )
   End
 

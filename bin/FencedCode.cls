@@ -25,7 +25,6 @@
 /* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250529    0.2c Add support for detailed string highlighting              */
 /* 20250706    0.2d Add support for detailed doc-comment highlighting         */
-/* 20251014    0.2e Add support for Lua extensions                            */
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
 /*                                                                            */
@@ -246,7 +245,6 @@ MissingEndMarker:
   Options.special     = "group"         -- All specials are displayed the same
   Options.constant    = "full"          -- Flexibility with taken constants
   Options.assignment  = "group"         -- Assignments are displayed the same
-  Options.Lua         = "group"         -- Lua operators & values displayed the same
   Options.style       = defaultStyle    -- Set default style
   Options.classprefix = "rx-"           -- Default HTML class prefix is "rx-"
   Options.["SOURCE"]  = ""              -- No external source by default
@@ -308,11 +306,6 @@ MissingEndMarker:
         When "constant" Then
           Select Case Lower(value)
             When "group", "full", "detail" Then Options.constant   = Lower(value)
-            Otherwise Exit BadValue()
-          End
-        When "lua" Then
-          Select Case Lower(value)
-            When "group", "full", "detail" Then Options.lua   = Lower(value)
             Otherwise Exit BadValue()
           End
         When "assignment" Then

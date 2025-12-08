@@ -25,9 +25,8 @@
 /* 20250624    0.2d Complete refactor to use nesting and "&"                  */
 /* 20250630         Add support for doc-comment subelements                   */
 /* 20250722         Add styles for rx-dskw                                    */
-/* 20251014    0.2e Add support for Lua extensions                            */
-/*                                                                            */
 /* 20251109         use rexx-dark as template for vim colorschemes            */
+/*                                                                            */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -95,7 +94,7 @@
 
   .rx-cm,                               /* Classic, block comments            */
   .rx-lncm {                            /* Line comments                      */
-    /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold; 
+    /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold;
   }
 
 /******************************************************************************/
@@ -108,24 +107,24 @@
 
                                         /* Default values (for "block"..      */
                                         /* ..highlighting.                    */
-    /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold; 
+    /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold;
 
     &.rx-doc-comment-armature,          /* Armature, whitespace and main      */
     &.rx-doc-comment-whitespace,        /* description share the same style.  */
     &.rx-doc-comment-main-description {
-        /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold; 
+        /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold;
     }
     &.rx-doc-comment-summary {          /* Initial summary statement.         */
-        /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold; 
+        /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold;
     }
     &.rx-doc-comment-tag {              /* @block-tag                         */
-        /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold; 
+        /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold;
     }
     &.rx-doc-comment-tag-value {        /* As the name in "@param name".      */
-        /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold; 
+        /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold;
     }
     &.rx-doc-comment-tag-description {  /* Text after @deprecated.            */
-        /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold; 
+        /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold;
     }
   }
 
@@ -190,7 +189,7 @@
   .rx-int,                              /* Integers                           */
   .rx-deci,                             /* Decimals (w/ a dot, no exponent)   */
   .rx-exp {                             /* Exponentials (w/ or w/o a dot)     */
-    /* %NUMBER%     */ color: #a07070 ;font-weight: bold; 
+    /* %NUMBER%     */ color: #a07070 ;font-weight: bold;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -204,7 +203,7 @@
   .rx-fpart,                            /* Fractional part                    */
   .rx-expon                             /* The exponent itself                */
   {
-    /* %NUMBER%     */ color: #a07070 ;font-weight: bold; 
+    /* %NUMBER%     */ color: #a07070 ;font-weight: bold;
   }
 
   .rx-dpoint { /* %NUMBER%     */ color: #a07070 ;font-weight: bold;  }        /* The decimal point                  */
@@ -250,7 +249,7 @@
     /* Default highlighting                                                   */
     /*------------------------------------------------------------------------*/
 
-    /* %STATEMENT%  */ color: #2e8b57 ;font-weight: bold; 
+    /* %STATEMENT%  */ color: #2e8b57 ;font-weight: bold;
 
     /*------------------------------------------------------------------------*/
     /* Built-in functions and procedures                                      */
@@ -352,20 +351,7 @@
 
   /* Resource ignored stuff                                                   */
   .rx-res-ignore {
-   /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold; 
-  }
-
-/******************************************************************************/
-/* Lua extensions                                                             */
-/* ==============                                                             */
-/*                                                                            */
-/*   Highlighting of Lua operators "and", "not" and "or"; constants "fail",   */
-/*   "false", "nil" and "true"; table delimiters "[", "(", ")", "]"; and      */
-/*   table field names.                                                       */
-/******************************************************************************/
-
-  .rx-lua {
-    /* %UNDERLINED% */ color: #6a0dad ;text-decoration: underline; 
+   /* %COMMENT%    */ color: #a8a8a8 ;font-weight: bold;
   }
 
 /******************************************************************************/

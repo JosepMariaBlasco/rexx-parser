@@ -25,9 +25,8 @@
 /* 20250624    0.2d Complete refactor to use nesting and "&"                  */
 /* 20250630         Add support for doc-comment subelements                   */
 /* 20250722         Add styles for rx-dskw                                    */
-/* 20251014    0.2e Add support for Lua extensions                            */
-/*                                                                            */
 /* 20251109         use rexx-dark as template for vim colorschemes            */
+/*                                                                            */
 /******************************************************************************/
 
 /******************************************************************************/
@@ -190,7 +189,7 @@
   .rx-int,                              /* Integers                           */
   .rx-deci,                             /* Decimals (w/ a dot, no exponent)   */
   .rx-exp {                             /* Exponentials (w/ or w/o a dot)     */
-    /* %NUMBER%     */ color: #00ffff ;font-weight: bold; 
+    /* %NUMBER%     */ color: #00ffff ;font-weight: bold;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -204,7 +203,7 @@
   .rx-fpart,                            /* Fractional part                    */
   .rx-expon                             /* The exponent itself                */
   {
-    /* %NUMBER%     */ color: #00ffff ;font-weight: bold; 
+    /* %NUMBER%     */ color: #00ffff ;font-weight: bold;
   }
 
   .rx-dpoint { /* %NUMBER%     */ color: #00ffff ;font-weight: bold;  }        /* The decimal point                  */
@@ -347,25 +346,12 @@
 
   /* Resource data                                                            */
   .rx-res-data {
-   /* %STRING%     */ color: #00ffff ;font-weight: bold; 
+   /* %STRING%     */ color: #00ffff ;font-weight: bold;
   }
 
   /* Resource ignored stuff                                                   */
   .rx-res-ignore {
    /* %COMMENT%    */ color: #00ff00 ;
-  }
-
-/******************************************************************************/
-/* Lua extensions                                                             */
-/* ==============                                                             */
-/*                                                                            */
-/*   Highlighting of Lua operators "and", "not" and "or"; constants "fail",   */
-/*   "false", "nil" and "true"; table delimiters "[", "(", ")", "]"; and      */
-/*   table field names.                                                       */
-/******************************************************************************/
-
-  .rx-lua {
-    /* %UNDERLINED% */ color: #80a0ff ;text-decoration: underline; 
   }
 
 /******************************************************************************/

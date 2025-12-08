@@ -76,9 +76,7 @@ but do not fall under the Rexx definition of token
 are [**ignorable elements**](/rexx-parser/doc/glossary/#ignorable-element).
 
 You can check whether a element is ignorable by using the
-[isIgnorable](#isignorable) method of the [Element](.) class,
-and you can make an element ignorable by using the
-[setIgnorable](#setignorable) method.
+[ignorable](#ignorable) attribute of the [Element](.) class.
 
 Please note that the knowledge of the fact that
 a certain element is or is not ignorable may imply
@@ -286,6 +284,17 @@ A semicolon inserted in an empty line will have a from value of "line 1".
 
 See also method [to](#to).
 
+### ignorable
+
+![ignorable](Element.ignorable.svg) \
+
+Has the value `.True` when the destination element is ignorable.
+Comments are always ignorable, as are, in many cases,
+whitespace sequences. Higher levels of parsing
+"jump over" (i.e., they *ignore*) ignorable elements.
+Please refer to the description of
+[ignorable elements](#ignorable-elements), above.
+
 ### isAssigned {#isassigned}
 
 ![isAssigned](Element.isAssigned.svg) \
@@ -306,19 +315,6 @@ Returns `.True` when the destination element is one of:
   instruction.
 
 See also method [setAssigned](#setassigned).
-
-### isIgnorable
-
-![isIgnorable](Element.isIgnorable.svg) \
-
-Returns `.True` when the destination element is ignorable.
-Comments are always ignorable, as are, in many cases,
-whitespace sequences. Higher levels of parsing
-"jump over" (i.e., they *ignore*) ignorable elements.
-Please refer to the description of
-[ignorable elements](#ignorable-elements), above.
-
-See also method [setIgnorable](#setignorable).
 
 ### isInserted {#isinserted}
 
@@ -366,14 +362,6 @@ See also method [next](#next).
 
 Marks the element as assigned, so that subsequent calls to
 [isAssigned](#isassigned) will return `.True`.
-
-### setIgnorable
-
-![setIgnorable](Element.setIgnorable.svg) \
-
-Makes the destination element ignorable.
-
-See also method [isIgnorable](#isignorable).
 
 ### source
 

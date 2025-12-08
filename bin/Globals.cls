@@ -29,8 +29,6 @@
 /* 20250722    0.2d Add .EL.DIRECTIVE_SUBKEYWORD and .ALL.DIRECTIVE_KEYWORDS  */
 /* 20250729         Add .ALL.EXPOSED_VARIABLES                                */
 /* 20250808         Add support for length positional patterns                */
-/* 20251014    0.2e Add support for Lua keywords, values and tables           */
-/* 20251017         Add support for Lua "#" and lambdas                       */
 /* 20251125    0.3a Add support for Executor implicit abuttal                 */
 /* 20251129         (Executor) Create elements for curly brackets             */
 /*                                                                            */
@@ -82,7 +80,7 @@
 /* The list below contains all the possible element categories, which are     */
 /* stored as part of each element, in the attribute element~category.         */
 /* Some of these categories are created and assigned in the first parts       */
-/* of the tokenizing process, and some others are discovered, altered,        */
+/* of the scanning process, and some others are discovered, altered,          */
 /* or inserted later.                                                         */
 /*                                                                            */
 /* We will dynamically (i.e., on each run) assign a 1-byte value to each of   */
@@ -176,6 +174,11 @@ Halt:
 --------------------------------------------------------------------------------
 
 SkipOverTheInternalRoutines:            -- Main code continues here
+
+  ------------------------------------------------------------------------------
+  -- Syntax errors                                                            --
+  ------------------------------------------------------------------------------
+  Call NewElement EL.SYNTAX_ERROR       --
 
   ------------------------------------------------------------------------------
   -- Shebangs                                                                 --
@@ -461,34 +464,6 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewSet ALL.REFERENCED_SYMBOLS, .EL.SIMPLE_VARIABLE, .EL.STEM_VARIABLE
 
   ------------------------------------------------------------------------------
-  -- Lua operators and values                                                 --
-  ------------------------------------------------------------------------------
-
-  Call NewElement EL.LUA.AND              -- and
-  Call NewElement EL.LUA.FAIL             -- fail
-  Call NewElement EL.LUA.FALSE            -- false
-  Call NewElement EL.LUA.NIL              -- nil
-  Call NewElement EL.LUA.NOT              -- not
-  Call NewElement EL.LUA.OR               -- or
-  Call NewElement EL.LUA.TRUE             -- true
-  Call NewElement EL.LUA.LENGTH           -- prefix "#"
-  Call NewElement EL.LUA.MAPS.TO                  -- "->"
-  Call NewElement EL.LUA.LAMBDA.LEFT_PARENTHESIS  -- "("
-  Call NewElement EL.LUA.LAMBDA.RIGHT_PARENTHESIS -- ")"
-  Call NewElement EL.LUA.LAMBDA.PARAMETER_NAME    --
-
-  Call NewSet ALL.LUA_LOGICAL_OPERATORS,-
-    .EL.LUA.AND,                        - -- and
-    .EL.LUA.NOT,                        - -- not
-    .EL.LUA.OR                            -- or
-
-  Call NewSet ALL.LUA_CONSTANTS,        -
-    .EL.LUA.FAIL,                       -  -- fail
-    .EL.LUA.FALSE,                      -  -- false
-    .EL.LUA.NIL,                        -  -- nil
-    .EL.LUA.TRUE                           -- true
-
-  ------------------------------------------------------------------------------
   -- Keywords                                                                 --
   ------------------------------------------------------------------------------
   --
@@ -700,10 +675,12 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewElements EL.TAIL_SEPARATOR
 
   -- The set of left braces
-  Call NewSet ALL.LEFT_BRACES,  .EL.LEFT_PARENTHESIS,  .EL.LEFT_BRACKET
+  Call NewSet ALL.LEFT_BRACES,  -
+   .EL.LEFT_PARENTHESIS,  .EL.LEFT_BRACKET,  .EL.LEFT_CURLY_BRACKET
 
   -- The set of right braces
-  Call NewSet ALL.RIGHT_BRACES, .EL.RIGHT_PARENTHESIS, .EL.RIGHT_BRACKET
+  Call NewSet ALL.RIGHT_BRACES, -
+   .EL.RIGHT_PARENTHESIS, .EL.RIGHT_BRACKET, .EL.RIGHT_CURLY_BRACKET
 
   -- We provide this set, which we don't use, as a convenience.
   -- We don't include .EL.DIRECTIVE_START here, as it normally is
@@ -831,25 +808,21 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   -- .EL.OP.PREFIX.PLUS and .EL.OP.PREFIX.MINUS by the expression
   -- parser.
   Call NewSet PREFIX_OPERATORS,         -
-   .EL.OP.PLUS, .EL.OP.MINUS, .EL.OP.NEGATION, .EL.LUA.NOT, .EL.LUA.LENGTH
+   .EL.OP.PLUS, .EL.OP.MINUS, .EL.OP.NEGATION
 
   -- The set of all concatenation operators ("||", " " and "")
   Call NewSet ALL.OPS.CONCATENATION,    -
     .EL.OP.CONCATENATION, .EL.OP.BLANK, .EL.OP.ABUTTAL
 
-  -- The set of all logical alternative operators ("|" and "&&", and "or"
-  -- when Lua is active).
-  Call NewSet ALL.OPS.ALTERNATIVE, .EL.OP.OR, .EL.OP.XOR, .EL.LUA.OR
+  -- The set of all logical alternative operators ("|" and "&&")
+  Call NewSet ALL.OPS.ALTERNATIVE, .EL.OP.OR, .EL.OP.XOR
 
-  -- The set of all logical conjunctive operators ("&", and "and"
-  -- when Lua is active).
-  Call NewSet ALL.OPS.CONJUNCTIVE, .EL.OP.AND, .EL.LUA.AND
+  -- The set of all logical conjunctive operators ("&")
+  Call NewSet ALL.OPS.CONJUNCTIVE, .EL.OP.AND
 
-  -- The set of all logical operators (|, &&, & and \),
-  -- plus "and", "or" and "not" when Lua mode is active.
+  -- The set of all logical operators (|, &&, & and \)
   Call NewSet ALL.OPS.LOGICAL, -
-   .ALL.OPS.ALTERNATIVE, .EL.OP.AND, .EL.OP.NEGATION, -
-   .ALL.LUA_LOGICAL_OPERATORS
+   .ALL.OPS.ALTERNATIVE, .EL.OP.AND, .EL.OP.NEGATION
 
   -- The set of all comparison operators
   Call NewSet ALL.OPS.COMPARISON,       -
@@ -990,14 +963,12 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   --
   Call NewSet IGNORE_WHITESPACE_AFTER,  -
     .ALL.OPERATORS,                     - -- An operator (compound or not)
-    .ALL.LUA_LOGICAL_OPERATORS,         - -- When Lua is active: and, or, not
-    .EL.LUA.LENGTH,                     - -- When Lua is active: "#"
-    .EL.LUA.MAPS.TO,                    - -- When Lua is active: "->"
     .ALL.ASSIGNMENTS,                   - -- An (extended) assignment
     .ALL.WHITESPACE_LIKE,               - -- Previous whitespace & continuations
     .EL.END_OF_CLAUSE,                  - -- At the beginning of a clause
     .EL.DIRECTIVE_START,                - -- "::"
     .EL.LEFT_PARENTHESIS,               - -- "("
     .EL.LEFT_BRACKET,                   - -- "["
+    .EL.LEFT_CURLY_BRACKET,             - -- "["
     .EL.COLON,                          - -- A colon ":"
     .EL.COMMA                             -- A comma ","

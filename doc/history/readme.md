@@ -25,7 +25,7 @@ Version history
   <li> (Executor) Support `::OPTIONS [NO]COMMAND` and `[NO]MACROSPACE` (20251127).
   <li> (Executor) Support `X =; -- Assigns ''` (20251127).
   <li> (Executor) Support `UPPER` instructions (20251128).
-  <li> Add basic Unicode support to the tokenizer (20251128).
+  <li> Add basic Unicode support to the scanner (20251128).
   <li> (Executor) Support `/==` and `/=` operators (20251128).
   <li> (Executor) Support `^` and `¬` as a negator (20251128).
   <li> (Executor) Allow `#@$` in identifiers (20251128).
@@ -36,6 +36,9 @@ Version history
   <li> (Executor) Implement `USE [STRICT] [AUTO] NAMED` and `FORWARD NAMEDARGUMENTS` (20251130).
   <li> (Executor) Implement source literals (trailing blocks are still missing) (20251201).
   <li> Support Latin-1 encodings for `"¬"` and `"¢"` (20251202).
+  <li> **Breaking change**. `IsIgnorable` and `SetIgnorable` are substituted by a boolean
+       `ignored` attribute in the `Element` class.
+  <li> (Executor) Implement trailing blocks (20251208).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.
@@ -46,8 +49,6 @@ Version history
   <li> "elements.rex" now automatically adds ".rex" to the filename when needed (20250928).
   <li> "rxcheck.rex" now automatically adds ".rex" to the filename when needed (20250929).
   <li> Bug fix: option EARLYCHECK SIGNAL not working (<https://github.com/JosepMariaBlasco/rexx-parser/issues/18>, 20251009).
-  <li> Add experimental [Lua support](/rexx-parser/Lua/) (20251014).
-  <li> Add experimental [Lambda support](/rexx-parser/Lua/) for Lua variants (20251017).
   <li> Add support for `::OPTIONS NUMERIC [NO]INHERIT` (20251027).
   <li> Update .ALL.SYMBOLS_AND_KEYWORDS so that it has .ALL.DIRECTIVE_KEYWORDS
        as a subset, following a reflection by Rony (20251029).
@@ -195,7 +196,8 @@ Version history
   <li> **Breaking change**: .TK.xxx variables have been renamed to .EL.xxx.
   <li> **Nomenclature change**: "tokens" are renamed to "elements". A "token"
        is now a standard Rexx token. We still speak of "the tokenizer", though:
-       it now returns *elements* instead of *tokens*.
+       it now returns *elements* instead of *tokens*. (20251206: the "tokenizer"
+       has been substituted by the "scanner").
   <li> **Breaking change**: Class `Token` renamed to `Element`.
   <li> Add the `<<` method to the `Element` class.
   <li> Rename "utils/tokenizer.rex" to "utils/elements.rex".

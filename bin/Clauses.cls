@@ -73,7 +73,7 @@
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "KeywordInstructions.cls"
 ::Requires "Directives.cls"
-::Requires "Tokenizer.cls"
+::Requires "Scanner.cls"
 ::Requires "PreClauser.cls"
 ::Requires "Expressions.cls"
 
@@ -85,7 +85,7 @@
 
 ::Class Clauser Public
 
-::Attribute tokenizer
+::Attribute scanner
 ::Attribute preClauser
 
 /******************************************************************************/
@@ -93,12 +93,12 @@
 /******************************************************************************/
 
 ::Method init
-  Expose package preClauser tokenizer bufferedInstructionFragment
+  Expose package preClauser scanner bufferedInstructionFragment
 
   Use Strict Arg package
 
   preClauser = .PreClauser~new( package )
-  tokenizer  = preClauser~tokenizer
+  scanner    =  preClauser~scanner
 
   bufferedInstructionFragment = .Nil
 
@@ -245,13 +245,13 @@
       Else                          Signal 10.001
     When          .R.Directive Then
       If Source.Literal        Then Return clause
-      Else                          Signal 90.900
+      Else                          Signal 99.916
     When .Coactivity.Directive Then
       If Source.Literal        Then Return clause
-      Else                          Signal 90.900
+      Else                          Signal 99.916
     When   .Source.Literal.End Then
       If Source.Literal        Then Return clause
-      Else                          Signal 90.916
+      Else                          Signal 90.900
     Otherwise
       Internal.Error("Next.Instruction: Unexpected clause class '"clause~class"'.")
   End
@@ -274,8 +274,8 @@
 -- Unexpected "}" found
 90.900: Syntax( 90.900, firstElement, 'Unexpected "}" found' )
 
--- Unrecognized directive instruction
-90.916: Syntax( 90.916, firstElement )
+-- Unrecognized directive instruction.
+99.916: Syntax( 99.916, firstElement )
 
 /******************************************************************************/
 /* DO INSTRUCTION                                                             */
@@ -1409,7 +1409,7 @@ MessageAssignment:
   lhs           = expression
   semicolon     = expression~end
   next          = TheElementAfter( semicolon )
-  Call RemoveElement semicolon
+  semicolon~remove
   expression~end = next
   operator       = next
   If operator < .EL.OP.EQUAL Then

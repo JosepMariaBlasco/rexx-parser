@@ -42,7 +42,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -68,7 +68,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -76,7 +76,7 @@
   element = self~exprb~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -93,7 +93,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -101,7 +101,7 @@
   element = element~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -121,7 +121,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -129,7 +129,7 @@
   element = self~exprf~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -146,7 +146,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -154,7 +154,7 @@
   element = element~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -171,7 +171,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -179,7 +179,7 @@
   element = self~exprt~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -199,7 +199,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -207,7 +207,7 @@
   element = self~expru~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -227,7 +227,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -235,7 +235,7 @@
   element = self~exprw~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -254,7 +254,7 @@
   element = element~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -262,7 +262,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -318,7 +318,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -363,7 +363,7 @@
   element = element~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -371,7 +371,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -379,7 +379,7 @@
   element = self~collection~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -447,7 +447,7 @@
   element = self~exprr~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -520,7 +520,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -531,7 +531,7 @@
     -- Clone subkeyword
     element = Clone( element, stream, context )
     -- Skip ignorables
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
     -- Compile ITEM or INDEX expressions
@@ -540,7 +540,7 @@
     Else
       element = self~index~compile( element, stream, context )
     -- Skip ignorables
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
   End
@@ -549,7 +549,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -557,7 +557,7 @@
   element = self~supplier~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 

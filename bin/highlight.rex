@@ -247,7 +247,7 @@ Options:
 The 'highlight' program is part of the Rexx Parser package, and is distributed
 under the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
 
-Copyright (c) 2024, 2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
 ::END
 
 ::Resource HTML

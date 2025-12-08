@@ -634,7 +634,7 @@ Error 40.4:  Too many arguments in invocation of LEFT; maximum expected is 3.
 Additional options:
 
 - `emptyassignments`: allow empty assignments (i.e., instructions like `a = `, meaning `a = ""`).
-- `extraletters`: specify a list of characters that are to be considered letters by the tokenizer.
+- `extraletters`: specify a list of characters that are to be considered letters by the scanner.
   Please note that this can work for `"@"`, `"#"` and `"$"`, which are ASCII characters, but not for
   `"¢"`, which is Unicode `"C2A2"U`, since the Parser does not support multi-byte characters.
 

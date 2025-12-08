@@ -64,7 +64,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -72,7 +72,7 @@
   element = self~expressions~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -101,7 +101,7 @@
     -- Skip it
     element = Clone( element, stream, context )
     -- Skip ignorables
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
     element = self~case~compile( element, stream, context )
@@ -133,7 +133,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -141,7 +141,7 @@
   element = self~expressions~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 

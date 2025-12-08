@@ -19,8 +19,6 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250421    0.2b Modify InternalError to raise a HALT condition            */
 /* 20250722    0.2d Add Set.Directive.SubKeyword                              */
-/* 20251014    0.2e Add support for Lua constants and Lua table constructors  */
-/* 20251014         Add support for lambda expressions                        */
 /* 20251026    0.3a Add support for Executor <number><extra> constructs       */
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251202         Fix line no reported for syntax error 13.001              */
@@ -138,7 +136,9 @@
     Parse Value element~from With line col
   End
 
-  additional = Arg(3,"A")
+  If Arg(3)~isA(.Array) Then additional = Arg(3)
+  Else additional = Arg(3,"A")
+
   message = "Syntax error" major"."minor "at line" line
   minor = minor + 0
   code = major"."minor
@@ -186,20 +186,28 @@
 
 ::Routine TheElementAfter Public
   Use Strict Arg element, ignoreBlanks = .False
-  Loop Until \element~hasIndex(ignored)
+  Loop Until \element~ignorable
     next = element~next
     If next~isNil Then
       Internal.Error( "TheElementAfter was about to return .Nil" )
     element = next
-    If ignoreBlanks, element < .ALL.WHITESPACE_LIKE Then element~setIgnorable
+    If ignoreBlanks, element < .ALL.WHITESPACE_LIKE Then
+      element~ignorable = 1
   End
+  -- An error was detected by the scanner?
+  If element~isA( .Error.Element ) Then Signal Error
   Return element
 
+Error:
+  code       = element~code
+  additional = element~additional
+  from       = element~from
+  Call Syntax code, from, additional    -- Does not return
 --------------------------------------------------------------------------------
 
 ::Routine TheElementBefore Public
   Use Strict Arg element
-  Loop Until \prev~hasIndex(ignored)
+  Loop Until \prev~ignorable
     prev = element~prev
     If prev~isNil Then
       Internal.Error( "TheElementBefore was about to return .Nil" )
@@ -232,10 +240,10 @@
   Else              Call SetCategory keyword, .EL.KEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .ALL.WHITESPACE_LIKE Then before~setIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~ignorable = 1
 
   after  = TheElementAfter(  keyword )
-  If after  < .ALL.WHITESPACE_LIKE Then after~setIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after ~ignorable = 1
 
 --------------------------------------------------------------------------------
 
@@ -245,10 +253,10 @@
   Call SetCategory keyword, .EL.SUBKEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .ALL.WHITESPACE_LIKE Then before~setIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~ignorable = 1
 
   after  = TheElementAfter(  keyword )
-  If after  < .ALL.WHITESPACE_LIKE Then after~setIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after ~ignorable = 1
 
 --------------------------------------------------------------------------------
 
@@ -258,10 +266,10 @@
   Call SetCategory keyword, .EL.DIRECTIVE_KEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .ALL.WHITESPACE_LIKE Then before~setIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~ignorable = 1
 
   after  = TheElementAfter(  keyword )
-  If after  < .ALL.WHITESPACE_LIKE Then after~setIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after~ignorable = 1
 
 --------------------------------------------------------------------------------
 
@@ -271,10 +279,10 @@
   Call SetCategory keyword, .EL.DIRECTIVE_SUBKEYWORD
 
   before = TheElementBefore( keyword )
-  If before < .ALL.WHITESPACE_LIKE Then before~setIgnorable
+  If before < .ALL.WHITESPACE_LIKE Then before~ignorable = 1
 
   after  = TheElementAfter(  keyword )
-  If after  < .ALL.WHITESPACE_LIKE Then after~setIgnorable
+  If after  < .ALL.WHITESPACE_LIKE Then after~ignorable = 1
 
 /******************************************************************************/
 /* SetCategory -- A routine to set the category of an element                 */
@@ -316,48 +324,11 @@
 
   Return ret
 
-/******************************************************************************/
-/* ABSORBRIGHT                                                                */
-/******************************************************************************/
-
-::Routine AbsorbRight Public
-
-  Use Strict Arg element
-
-  element~to = element~next~to
-  Call RemoveElement element~next
-
-/******************************************************************************/
-/* ABSORBLEFT                                                                 */
-/******************************************************************************/
-
-::Routine AbsorbLeft Public
-
-  Use Strict Arg element
-
-  element~from = element~prev~from
-  Call RemoveElement element~prev
-
-/******************************************************************************/
-/* RemoveElement                                                              */
-/******************************************************************************/
-
-::Routine RemoveElement Public -- Remove a element from the element chain
-
-  Use Strict Arg element
-
-  left       = element~prev
-  right      = element~next
-
-  left ~next = right
-  right~prev = left
-
 --------------------------------------------------------------------------------
 -- PREPAREEXPRESSION                                                          --
 --   Performs a quick scan and sanitizing of an expression list.              --
---   It identifies and reports unbalanced parentheses and brackets            --
 --   It produces syntax errors for opening brackets preceded by whitespace,   --
---     except when Lua or Experimental options are active.                    --
+--     except when Experimental options are active.                           --
 --   It stops prescanning if one the provided keywords is found, and in this  --
 --     case, it marks the keyword as such, which automatically marks          --
 --     whitespace before and after the keyword, if any, as ignorable.         --
@@ -365,12 +336,10 @@
 --   It changes whitespace into blank concatenation operators                 --
 --   It inserts abuttal concatenation operators in the following contexts:    --
 --     + a string or symbol immediately followed by another string or symbol; --
---     (when Options Lua is not in effect:)                                   --
 --     + ")" immediately followed by "(" or a string or a symbol;             --
 --     + "]" immediately followed by "(" or a string or a symbol.             --
 --   When Executor support is active, and in the special case of constructs   --
 --     like "2i", a high-priority abuttal operator is inserted instead.       --
---     When Options Lua is in effect, the above are function calls            --
 --   It scans for variable reference terms, in the form ">var" or "<var",     --
 --     and substitutes the comparison operators for the corresponding         --
 --     reference operators.                                                   --
@@ -388,21 +357,20 @@
 
   Use Strict Arg package, begin, keywords = ""
 
-  subExpression = 0
+  subExpression      = 0
   If keywords == ")" Then Do
-    keywords      = ""
-    subExpression =  1
+    keywords         = ""
+    subExpression    =  1
   End
 
-  predecessor = .Nil
-  element     = begin
-  nesting     = Array()
+  predecessor        = .Nil
+  element            = begin
+  nesting            = Array()
 
   Loop
     Select Case element~category
       When .EL.END_OF_CLAUSE Then Leave
-      When .EL.SIMPLE_VARIABLE, -
-           .EL.LUA.FAIL, .EL.LUA.FALSE, .EL.LUA.NIL, .EL.LUA.TRUE Then Do
+      When .EL.SIMPLE_VARIABLE Then Do
         Select
           When nesting~isEmpty, IsAKeyword( element ) Then Do
             If .Options.Executor, predecessor \== .Nil, predecessor < .ALL.NUMBERS, -
@@ -435,45 +403,34 @@
         End
         If switch Then Call SwitchToReference
       End
-      -- A left parenthesis will force an abuttal check only when Options Lua
-      -- is not in effect: in Lua, they are a function call.
       When .EL.LEFT_PARENTHESIS   Then Do
         nesting~append( element )
-        If \.Options.Lua Then Call CheckAbuttal
+        Call CheckAbuttal
       End
-      -- A left bracket can be found alone when Options Lua is in effect,
-      -- as this will start a table constructor (a modified form of
-      -- an "initializer", in Dallas draft parlance, or "array
+      -- A left bracket can be found alone when experimental options
+      -- are active, as this will start a table constructor (a modified
+      -- form of an "initializer", in Dallas draft parlance, or "array
       -- initializers" in NetRexx).
       When .EL.LEFT_BRACKET Then Do
-        If \.Options.Lua, \predecessor~isNil, -
+        If \.Options.Experimental, \predecessor~isNil, -
           predecessor < .ALL.WHITESPACE_LIKE Then
           Call 35.001 "["
         nesting~append( element )
       End
-      When .EL.LUA.MAPS.TO Then Do
-        If \predecessor~isNil, predecessor < .ALL.SIMPLE_VARIABLES Then
-          Call SetCategory predecessor, .EL.LUA.LAMBDA.PARAMETER_NAME
-        next = TheElementAfter(element)
-        If next < .ALL.SIMPLE_VARIABLES, next~value == "DO" Then
-          element = Lambda.Do.Block(package, next)~end
+      -- Jump over source literals
+      When .EL.LEFT_CURLY_BRACKET Then Do
+        Call CheckAbuttal
+        predecessor = element
+        element     = predecessor~closing
+        Iterate
+      End
+      When .EL.RIGHT_CURLY_BRACKET Then Do
       End
       When .EL.RIGHT_PARENTHESIS Then Do
-        If nesting~isEmpty Then Signal 37.002
-        If nesting~lastItem~value \== "(" Then Signal 37.002
-        If .Options.Lua Then Do
-          next = TheElementAfter(element)
-          If next < .EL.LUA.MAPS.TO Then Do
-            Call SetCategory element,          .EL.LUA.LAMBDA.RIGHT_PARENTHESIS
-            Call SetCategory nesting~lastItem, .EL.LUA.LAMBDA.LEFT_PARENTHESIS
-          End
-        End
         nesting~delete( nesting~last )
         If subExpression, nesting~isEmpty Then Return
       End
       When .EL.RIGHT_BRACKET Then Do
-        If nesting~isEmpty                Then Signal 37.901
-        If nesting~lastItem~value \== "[" Then Signal 37.901
         nesting~delete( nesting~last )
       End
       When .EL.WHITESPACE, .EL.CONTINUATION Then Do
@@ -514,12 +471,12 @@ SwitchToReference:
       Call SetCategory element, .EL.OP.REFERENCE.GREATER_THAN
   End
   next = TheElementAfter( element )
-  -- Insert abuttals around symbols, strings, and Lua constants
-  If next < (.ALL.SYMBOLS_AND_STRINGS || .ALL.LUA_CONSTANTS) Then Do
+  -- Insert abuttals around symbols and strings
+  If next < .ALL.SYMBOLS_AND_STRINGS Then Do
     next2next = TheElementAfter( next )
     If next2next < (.EL.LEFT_PARENTHESIS || .ALL.STRINGS) Then
       Call InsertAfter next, .EL.OP.ABUTTAL
-    Else If next2next < (.ALL.SYMBOLS || .ALL.LUA_CONSTANTS) Then Do
+    Else If next2next < .ALL.SYMBOLS Then Do
       If nesting == "", IsAKeyword(next2next) Then Return
       Call InsertAfter next, .EL.OP.ABUTTAL
     End
@@ -534,12 +491,12 @@ CheckAbuttal:
     When predecessor < .ALL.NUMBERS, element < .ALL.SYMBOLS, -
       predecessor~to == element~from
       Then Call InsertExecutorAbuttal
-    When element < (.ALL.SYMBOLS_AND_STRINGS || .ALL.LUA_CONSTANTS ) Then Do
+    When element < .ALL.SYMBOLS_AND_STRINGS Then Do
       Select
-        When predecessor < ( .ALL.SYMBOLS_AND_STRINGS || .ALL.LUA_CONSTANTS )
-          Then Call InsertAbuttal .True
-        When predecessor < .ALL.RIGHT_BRACES
-          Then Call InsertAbuttal .True
+        When predecessor < .ALL.SYMBOLS_AND_STRINGS Then
+          Call InsertAbuttal .True
+        When predecessor < .ALL.RIGHT_BRACES        Then
+          Call InsertAbuttal .True
         Otherwise Nop
       End
     End
@@ -576,12 +533,6 @@ IsAKeyword:
 -- Square bracket "[" in position &1 on line &2
 -- requires a corresponding right square bracket "]".
 36.902: Syntax( 36.902, lastItem, pos, line )
-
--- Unmatched ")" in expression.
-37.002: Syntax( 37.002, element )
-
--- Unexpected "]".
-37.901: Syntax( 37.901, element )
 
 --------------------------------------------------------------------------------
 -- Lambda.Do.Block                                                             --
@@ -680,8 +631,8 @@ End.Clause:
   -- Apply Rexx whitespace rules
   left           = TheElementBefore( semicolon )
   right          = TheElementAfter(  semicolon )
-  If left  < .ALL.WHITESPACE_LIKE Then left ~setIgnorable
-  If right < .ALL.WHITESPACE_LIKE Then right~setIgnorable
+  If left  < .ALL.WHITESPACE_LIKE Then left ~ignorable = 1
+  If right < .ALL.WHITESPACE_LIKE Then right~ignorable = 1
 
   Return semicolon
 
@@ -709,8 +660,8 @@ End.Clause:
   -- Apply Rexx whitespace rules
   left           = TheElementBefore( semicolon )
   right          = TheElementAfter(  semicolon )
-  If left  < .ALL.WHITESPACE_LIKE Then left ~setIgnorable
-  If right < .ALL.WHITESPACE_LIKE Then right~setIgnorable
+  If left  < .ALL.WHITESPACE_LIKE Then left ~ignorable = 1
+  If right < .ALL.WHITESPACE_LIKE Then right~ignorable = 1
 
   Return semicolon
 
@@ -735,7 +686,7 @@ End.Clause:
 
   -- And ignore whitespace to its right when necessary
   next = TheElementAfter( element )
-  If next~category < .ALL.WHITESPACE_LIKE Then next~setIgnorable
+  If next~category < .ALL.WHITESPACE_LIKE Then next~ignorable = 1
 
   Return 1
 
@@ -752,21 +703,6 @@ End.Clause:
   resource_data~to       = last (Length(source[last])+1)
   resource_data~source   = source
   Return                   resource_data
-
---------------------------------------------------------------------------------
--- IgnoredData -- For ::RESOURCE directives                                   --
---------------------------------------------------------------------------------
-
-::Routine IgnoredData Public
-  Use Strict Arg source, line, start
-
-  ignored_data          = .Element~new
-  ignored_data~category = .EL.RESOURCE_IGNORED_DATA
-  ignored_data~from     = line start
-  ignored_data~to       = line (Length(source[line])+1)
-  ignored_data~source   = SubStr( source[line], start )
-  ignored_data~setIgnorable
-  Return                  ignored_data
 
 --------------------------------------------------------------------------------
 -- InsertAfter                                                                --

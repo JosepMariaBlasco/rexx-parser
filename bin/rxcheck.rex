@@ -40,7 +40,6 @@
   bifs             = 1
   debug            = 0
   itrace           = 0
-  lua              = 0
   experimental     = 0
   executor         = 0
   extraletters     = ""
@@ -83,7 +82,6 @@
            "+experimental", -
            "-exp", "+exp"  Then experimental = 1
       When "-emptyassignments", "+emptyassignments" Then emptyassignments = 1
-      When "-lua", "+lua"  Then lua      = 1
       When "-e", "+e"      Then Do
         code = file
         source = .Array~of( code )
@@ -131,7 +129,6 @@ Code:
 
   If extraletters \== "" Then Options~append(("EXTRALETTERS", extraletters))
   If emptyassignments    Then Options~append(("EMPTYASSIGNMENTS", emptyassignments))
-  If Lua                 Then Options~append(("LUA", 1))
   If experimental        Then Options~append(("EXPERIMENTAL", 1))
   If executor            Then Options~append(("EXECUTOR", 1))
 
@@ -222,7 +219,6 @@ Other options (all can be prefixed with "+" or "-"):
   -emptyassignments  Allow assignments like "var =".
   -extraletters "extra"  Allow all the characters in "extra"
                 to function as letters.
-  -lua          Enable Lua support
 
 
 Executing short code fragments:

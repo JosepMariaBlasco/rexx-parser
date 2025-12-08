@@ -624,7 +624,7 @@ Return
     "ABSTRACT", "DELEGATE", "EXTERNAL"                    -
   )
 
-  If .Options.Lua | .Options.Experimental Then Do
+  If .Options.Experimental Then Do
     allOptions[] = "EXTENDS"
     allOptions[] = "OVERRIDES"
   End
@@ -660,7 +660,7 @@ Return
         If package~inTheProlog Then Signal 99.905
         options.isClassMethod = 1
       End
-      When "EXTENDS", "OVERRIDES" Then Do -- Experimental or Lua
+      When "EXTENDS", "OVERRIDES" Then Do -- Experimental
         className = TheElementAfter( keyword )
         Call ExpectClassName className, 20.900
         options.kValue = ( nameSpace, className )
@@ -1052,6 +1052,9 @@ Done:
     If end \< .EL.END_OF_CLAUSE Then Signal 21.914
 
   End
+
+  closing = elements[1]~closing
+  If closing \== .Nil Then end = closing
 
   Return .Resource.Directive~new( package, begin, end, name, delimiter )
 

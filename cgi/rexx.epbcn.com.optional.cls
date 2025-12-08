@@ -102,7 +102,6 @@ Crumb:
 
   publications = "/publications"
 
-  lua          = "/rexx-parser/Lua"
   parser       = "/rexx-parser"
   print        = "/rexx-parser/doc/print"
   doc          = "/rexx-parser/doc"
@@ -117,10 +116,6 @@ Crumb:
   docpub       = doc"/publications"
 
   Select Case Arg(1)
-
-    -- Lua support
-
-    When Lua                       Then Return "Lua suppot"
 
     -- Tools
 

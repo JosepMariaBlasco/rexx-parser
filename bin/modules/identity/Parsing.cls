@@ -42,7 +42,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -69,7 +69,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -77,7 +77,7 @@
     -- Skip subkeyword
     element = Clone( element, stream, context )
     -- Skip ignorables
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
   End
@@ -86,7 +86,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -94,7 +94,7 @@
     -- Compile varname
     element = self~varname~compile( element, stream, context )
     -- Skip ignorables
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
   End
@@ -102,13 +102,13 @@
     -- Compile expression
     element = self~expression~compile( element, stream, context )
     -- Skip ignorables
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
     -- Skip WITH
     element = Clone( element, stream, context )
     -- Skip ignorables
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
   End
@@ -136,7 +136,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -159,13 +159,13 @@
   nTemplates = self~items
   Loop Counter c template Over self
     -- Skip ignorables
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
     If template \== .Nil Then Do
       element = template~compile( element, stream, context )
       -- Skip ignorables
-      Loop While element~isIgnorable
+      Loop While element~ignorable
         element = Clone( element, stream, context )
       End
     End
@@ -173,7 +173,7 @@
       -- Skip comma
       element = Clone( element, stream, context )
       -- Skip ignorables
-      Loop While element~isIgnorable
+      Loop While element~ignorable
         element = Clone( element, stream, context )
       End
     End
@@ -191,7 +191,7 @@
   nComponents = self~items
   Loop Counter c component Over self
     -- Skip ignorables
-    Loop While element~isIgnorable
+    Loop While element~ignorable
       element = Clone( element, stream, context )
     End
     element = component~compile( element, stream, context )
@@ -207,7 +207,7 @@
   Use Arg element, stream, context
 
   -- Skip ignorables until prefix
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -215,7 +215,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables again
-  Loop While element~isIgnorable
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 

@@ -68,7 +68,7 @@ require that the code body following them is empty.
 #### Element
 
 In the context of the Rexx Parser, an **element**,
-is any of the elements returned by the tokenizer.
+is any of the elements returned by the scanner.
 This includes standard Rexx tokens, but also
 other elements found while parsing that are not
 tokens, like whitespace and comments.

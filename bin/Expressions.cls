@@ -21,12 +21,10 @@
 /* 20250419         Fix NAry.Expression crashing on SecondPass.               */
 /* 20250421    0.2b Argument lists in function calls not working properly.    */
 /* 20250803    0.2d Add support for array terms                               */
-/* 20251014    0.2e Add optional support for Lua "and", "not" and "or", and   */
-/*                  for Lua constants "fail", "false", "nil" and "true".      */
-/* 20251017         Add support for Lua "#" and Lambdas                       */
 /* 20251126    0.3a Add support for Executor <number><rest> constructs        */
 /* 20251129         (Executor) The message name can be omitted after ~, ~~    */
 /* 20251201         (Executor) Add support for source literals                */
+/* 20251208         (Executor) Implement trailing blocks                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -60,11 +58,9 @@
  .environment ~            Message.Term  =            .Message.Term
  .environment ~      Stem.Variable.Term  =      .Stem.Variable.Term
  .environment ~             Symbol.Term  =             .Symbol.Term
- .environment ~       Lua.Constant.Term  =       .Lua.Constant.Term
  .environment ~ Variable.Reference.Term  = .Variable.Reference.Term
 
 ::Requires "BaseClassesAndRoutines.cls"
-::Requires "Tokenizer.cls"
 
 /******************************************************************************/
 /******************************************************************************/
@@ -104,10 +100,6 @@
 /*                                                                            */
 /*     expression                           -- A classic expression, or...    */
 /*     [expression] ("," [expression]) *    -- ...an array term.              */
-/*     arg1 -> expression                   -- Lambda (Lua only)              */
-/*     (arg1,...,argn) -> expression        -- Lambda (Lua only, n>= 0)       */
-/*     arg1 -> DO; instructions; END        -- Lambda (Lua only)              */
-/*     (arg1,...,argn) -> DO; instructions; END -- Lambda (Lua only, n>= 0)   */
 /*                                                                            */
 /*   A classic expression, or an array term (where trailing commas are        */
 /*   meaningful), or an argument list (where trailing commas are discarded).  */
@@ -116,9 +108,6 @@
 ::Routine Expression.List Public
 
   Use Strict Arg package, begin, terminators = "", options = ""
-
-  If begin < (.EL.LUA.LAMBDA.LEFT_PARENTHESIS || .EL.LUA.LAMBDA.PARAMETER_NAME )
-    Then Exit Lambda.Expression( package, begin, terminators )
 
   -- Logical expression lists can not have omitted expressions
   logical        = options~caselessContainsWord( "logical" )
@@ -129,13 +118,12 @@
   expressions    = Array()
   element        = begin
   trailingComma  = 0
-  stopParsing    = .EL.KEYWORD || .EL.SUBKEYWORD ||.EL.END_OF_CLAUSE
+  stopParsing    = .EL.KEYWORD || .EL.SUBKEYWORD || .EL.END_OF_CLAUSE
   terminators  ||= stopParsing
   commasFound    = 0
   end            = element              -- In case list is empty
 
   newTerminators = terminators || .EL.COMMA
-
 
   Loop While element \< .ALL.EXPRESSION_TERMINATORS
 
@@ -229,7 +217,10 @@
   If args \== .Nil Then Do
 
     -- Calculate begin
-    begin = args~firstItem~begin
+    first = args~firstItem
+    If first~isA( .Special.Character.Sequence ) Then
+      begin = first
+    Else begin = first~begin
 
     -- Calculate the number of expressions (for argument lists)
     argN = 1
@@ -255,6 +246,9 @@
   package~blockInstructionsStacks~push(.Stack~new())
   package~blockInstructionsStacks~top~push(begin)
   package~sourceLiteralStack~push(begin)
+  preClauser = package~preClauser
+  package~scannerStack~push( (preClauser~begin, preClauser~end ) )
+  preClauser~begin = begin
 
   NoEndClause    = 0
   Source.Literal = 1
@@ -274,6 +268,7 @@
         If instrNo \== 1 + coactivity Then Signal 99.900
       End
       When .End.Clause                Then Signal 10.001
+      --When .Implicit.Exit.Instruction Then Leave
       When .Source.Literal.End        Then Leave
       Otherwise Nop
     End
@@ -282,17 +277,20 @@
   End
 
   end    = instruction~end~next
+  ignoreBlanks = .True
+  If end~ignorable Then end = TheElementAfter(end, ignoreBlanks)
 
   package~sourceLiteralStack~pop
   package~blockInstructionsStacks~pop
+  old = package~scannerStack~pop
+  preClauser~begin = old[1]
+  preClauser~end   = old[2]
 
   Source.Literal = .Source.Literal~new( begin, end, instructions )
 
-  begin~Source.Literal = Source.Literal
-
   Return Source.Literal
 
--- END has no corresponding DO, LOOP, or SELECT
+-- END has no corresponding DO, LOOP, or SELECT.
 10.001: Syntax( 10.001, instruction~begin )
 
 -- EXPOSE must be the first instruction executed in a closure
@@ -300,8 +298,7 @@
   "EXPOSE must be the first instruction executed in a closure" -
 )
 
-
--- Unrecognized directive instruction
+-- Unrecognized directive instruction.
 99.916: Syntax( 99.916, begin )
 
 --------------------------------------------------------------------------------
@@ -312,78 +309,6 @@
 ::Method init
   Expose         begin  end
   Use Strict Arg begin, end, instructions
-
-/******************************************************************************/
-/* LAMBDA.EXPRESSION                                                          */
-/*   lambda_expression := argument_list "->"                                  */
-/*                        lambda_expression | expression | block              */
-/*   block             := "DO;" instructions "END"                            */
-/*   argument_list     := single_argument | "(" arguments ")"                 */
-/******************************************************************************/
-
-::Routine Lambda.Expression Public
-
-  Use Strict Arg package, begin, terminators = ""
-
-  argumentList = .Array~new() -- Array of Arrays (name, type, default_value)
-
-  -- TODO implement type and default value
-  If begin < .EL.LUA.LAMBDA.PARAMETER_NAME Then Do
-    argumentList~append( .Array~of( begin ) )
-    element = TheElementAfter(begin)
-  End
-  Else Do -- "(" -- TODO Implement types and default values
-    element = TheElementAfter(begin)
-    -- Allow "()"
-    If element < .EL.LUA.LAMBDA.RIGHT_PARENTHESIS Then Nop
-    Else Loop
-      If element \< .ALL.SIMPLE_VARIABLES Then Signal 20.900a
-      p = Verify(element~value,XRange("ALNUM")"_")
-      If p \== 0 Then Signal 20.900b
-      argumentList~append( .Array~of( element ) )
-      element = TheElementAfter(element)
-    If element < .EL.LUA.LAMBDA.RIGHT_PARENTHESIS Then Leave
-      If element \< .EL.COMMA Then Signal 35.001
-      element = TheElementAfter(element)
-    End
-    -- Skip ")"
-    element = TheElementAfter(element)
-  End
-
-  -- Now element is "->". Skip it ignoring blanks
-  element = TheElementAfter(element, .True)
-
-  If element < .EL.KEYWORD, element~value == "DO" Then Do
-    doBlock = element~Lambda.Do.Block
-    end     = doBlock~end
-    Return .Lambda.Expression~new( argumentList, doBlock, begin, end)
-  End
-
-  expression = Expression.List( package, element, terminators )
-
-  end = expression~end
-
-  Return .Lambda.Expression~new( argumentList, expression, begin, end)
-
-20.900a: Syntax( 20.900, begin, "Simple variable expected as name",
- "of lambda argument, found '"element~value"'.")
-
-20.900b: Syntax( 20.900, begin, "Lambda argument name can only contain",
- "alphanumeric characters or '_', found '"element~value[1]"'.")
-
--- Incorrect expression detected at "&1".
-35.001: Syntax( 35.001, begin, element~source )
-
---------------------------------------------------------------------------------
-
-::Class Lambda.Expression Public SubClass Rexx.Expression
-::Attribute arguments
-::Attribute expression
-::Attribute begin
-::Attribute end
-::Method init
-  Expose args    arguments  expression  begin  end
-  Use Strict Arg arguments, expression, begin, end
 
 /******************************************************************************/
 /* OR.EXPRESSION                                                              */
@@ -628,7 +553,6 @@
   If element \< .EL.OP.POWER Then Leave
 
     expressionArray~append( element )
-    -- expressionArray~append( "**" )
     element        = TheElementAfter( element )
 
   End
@@ -717,9 +641,7 @@
 --    5) A symbol                                                             --
 --    6) A literal string                                                     --
 --    Case 7), an array term, is handled elsewhere in the parser.             --
---    8) When Lua is active, a Lua constant, like                             --
---       "fail", "false", "nil" or "true"                                     --
---    9) A numeric symbol abutted to a non-numeric symbol (Executor only)     --
+--    8) A numeric symbol abutted to a non-numeric symbol (Executor only)     --
 --  See rexxref 5.1.0 1.11.1. Terms and Expressions                           --
 --------------------------------------------------------------------------------
 
@@ -742,9 +664,7 @@
 --    4) A subexpression                                                      --
 --    5) A symbol                                                             --
 --    6) A literal string                                                     --
---    7) A Lua constant term ("fail", "false", "nil" or "true"), when         --
---       Lua is active.                                                       --
---    8) A numeric symbol abutted to a non-numeric symbol (Executor only)     --
+--    7) A numeric symbol abutted to a non-numeric symbol (Executor only)     --
 --  See rexxref 5.1.0 1.11.1. Terms and Expressions                           --
 --------------------------------------------------------------------------------
 
@@ -752,7 +672,7 @@
 
   Use Strict Arg package, begin, terminators
 
-  allowInitializers = .Options.Lua | .Options.Experimental
+  allowInitializers = .Options.Experimental
 
   Select
     When begin < .EL.LEFT_CURLY_BRACKET Then
@@ -761,8 +681,6 @@
       Exit SubExpression( package, begin, terminators )
     When allowInitializers, begin < .EL.LEFT_BRACKET Then
       Exit Initializer( package, begin, terminators )
-    When begin < .ALL.LUA_CONSTANTS   Then
-      Exit Lua.Constant.Term(package, begin)
     When begin < .ALL.SYMBOLS Then Do
       symbol = begin
 
@@ -777,9 +695,6 @@
         )
       End
 
-      If Global.Option(Closures) \== "", symbol~value == "PROCEDURE" Then
-        Exit Closure(package, symbol)
-
       element = TheElementAfter( symbol )
       Select Case element~category
         -- Followed by ":"? This is a namespace-qualified symbol
@@ -788,6 +703,8 @@
         -- Followed by "("? This is a function call
         When .EL.LEFT_PARENTHESIS Then
           Exit Function.Call.Term( package, symbol, element, terminators )
+        When .EL.LEFT_CURLY_BRACKET Then
+          Exit Function.Call.Term( package, symbol, element, terminators )
         Otherwise
           Exit Symbol.Term( package, begin )
       End
@@ -795,12 +712,15 @@
     When begin < .ALL.STRINGS Then Do
       name    = begin
       element = TheElementAfter( name )
-      If element \< .EL.LEFT_PARENTHESIS Then  -- Not a function call?
-        Exit .Literal.String.Term~new( name )  -- That's a string literal
-      -- "name"([args])
-      Return Literal.String.Function.Call(   -
-        package, name, element, terminators  -
-      )
+      If element < .EL.LEFT_PARENTHESIS Then   -- A function call?
+        Return Literal.String.Function.Call(   -
+          package, name, element, terminators  -
+        )
+      If element < .EL.LEFT_CURLY_BRACKET Then -- A function call?
+        Return Literal.String.Function.Call(   -
+          package, name, element, terminators  -
+        )
+      Exit .Literal.String.Term~new( name )  -- That's a string literal
     End
     When begin < .ALL.OPS.REFERENCE Then
       Return Variable.Reference.Term( package, begin )
@@ -823,7 +743,7 @@
 /*                                                                            */
 /* INITIALIZER                                                                */
 /*                                                                            */
-/*   Parsing of extended initializers with Lua features.                      */
+/*   Parsing of extended initializers inspired by NetRexx and Lua             */
 /*                                                                            */
 /*   An "initializer" is an array expression in the Dallas report:            */
 /*     initializer := '['expression_list (']' | Msg36.n)                      */
@@ -954,14 +874,6 @@ Done:
   fields = args
 
 --------------------------------------------------------------------------------
--- CLOSURE                                                                    --
---------------------------------------------------------------------------------
-
-::Routine Closure
-
-  Use Strict Arg package, keyword -- keyword is "PROCEDURE"
-
---------------------------------------------------------------------------------
 -- ARRAY.TERM                                                        --
 --------------------------------------------------------------------------------
 
@@ -987,20 +899,31 @@ Done:
 
 ::Routine Literal.String.Function.Call
 
-  Use Strict Arg package, name, lParen, terminators
+  Use Strict Arg package, name, left, terminators
 
-  next          = TheElementAfter( lParen )  -- Where to start parsing
-  terminators   = .EL.RIGHT_PARENTHESIS      -- Terminator is ")"
+  arguments     = .Nil
+  trailingBlock = .Nil
 
-  arguments = Expression.List( package, next, terminators, "arguments" )
+  If left < .EL.LEFT_PARENTHESIS Then Do
+    next          = TheElementAfter( left )  -- Where to start parsing
+    terminators   = .EL.RIGHT_PARENTHESIS      -- Terminator is ")"
 
-  Call ExpectParenPair lParen, arguments~end
+    arguments = Expression.List( package, next, terminators, "arguments" )
+
+    Call ExpectParenPair left, arguments~end
+
+    left = arguments~end~next
+  End
+  If left < .EL.LEFT_CURLY_BRACKET Then
+    trailingBlock = Source.Literal( package, left, "" )
 
   name~invocationType = Function
 
-  package~currentBodies~top~calledRoutineNames~append( (name, arguments) )
+  package~currentBodies~top~calledRoutineNames~append( -
+    (name, arguments, trailingBlock)                   -
+  )
 
-  Exit .Function.Call.Term~new(name, arguments )
+  Exit .Function.Call.Term~new(name, arguments, trailingBlock )
 
 --------------------------------------------------------------------------------
 
@@ -1067,44 +990,15 @@ Done:
 
     element = term~end
 
-  If (element \< .ALL.OPS.MESSAGE_SEND) Then
-    If \.Options.Lua Then Return term
-    Else If element \< .EL.LEFT_PARENTHESIS  Then Return term
+  If (element \< .ALL.OPS.MESSAGE_SEND) Then Return term
 
     Select Case element~category
-      When .EL.LEFT_BRACKET, .EL.LEFT_PARENTHESIS Then   -- "[" (or "(" when Lua)
+      When .EL.LEFT_BRACKET Then
         term = Indexed.Or.Invoked.Term( package, term, element, "" )
       Otherwise term = Message.Term( package, term, element, "" )   -- "~", "~~"
     End
 
   End
-
---------------------------------------------------------------------------------
--- LUA.CONSTANT.TERM                                                          --
---------------------------------------------------------------------------------
-
-::Routine Lua.Constant.Term Public
-
-  Use Strict Arg package, symbol
-
-  Exit .Lua.Constant.Term~new( package, symbol )
-
---------------------------------------------------------------------------------
-
-::Class Lua.Constant.Term Public SubClass Rexx.Term
-::Attribute symbol
-::Attribute begin
-::Attribute end
-::Method value
-  Return self~symbol
-::Method init
-  Expose symbol begin end
-
-  Use Strict Arg package, symbol
-
-  begin = symbol
-  end   = TheElementAfter( symbol )
-
 
 --------------------------------------------------------------------------------
 -- SYMBOL.TERM                                                                --
@@ -1371,46 +1265,61 @@ Return
 
 ::Routine Function.Call.Term Public
 
-  Use Strict Arg package, name, lParen, terminators
+  Use Strict Arg package, name, left, terminators
 
-  next = TheElementAfter( lParen )
+  arguments     = .Nil
+  trailingBlock = .Nil
 
-  arguments = Expression.List(           -
-    package,                             -
-    next,                                - -- Where to begin parsing
-    .EL.RIGHT_PARENTHESIS,               - -- Terminators is ")"
-   "arguments"                           -
-  )
+  If left < .EL.LEFT_PARENTHESIS Then Do
+    next = TheElementAfter( left )
 
-  -- Ensure that this is an expression list.
-  If \arguments~isA(.Expression.List) Then Do
-    arguments = .Expression.List~new(    -
-      Array(arguments),                  -
-      arguments~begin,                   -
-      arguments~end                      -
+    arguments = Expression.List(           -
+      package,                             -
+      next,                                - -- Where to begin parsing
+      .EL.RIGHT_PARENTHESIS,               - -- Terminators is ")"
+     "arguments"                           -
     )
+
+    -- Ensure that this is an expression list.
+    If \arguments~isA(.Expression.List) Then Do
+      arguments = .Expression.List~new(    -
+        Array(arguments),                  -
+        arguments~begin,                   -
+        arguments~end                      -
+      )
+    End
+
+    Call ExpectParenPair left, arguments~end
+
+    left = arguments~end~next
   End
 
-  Call ExpectParenPair lParen, arguments~end
+  If left < .EL.LEFT_CURLY_BRACKET Then
+    trailingBlock = Source.Literal( package, left, "" )
 
   name~invocationType = Function
 
-  package~currentBodies~top~calledRoutineNames~append( (name, arguments) )
+  package~currentBodies~top~calledRoutineNames~append( -
+    (name, arguments, trailingBlock)                   -
+  )
 
-  Exit .Function.Call.Term~new( name, arguments )
+  Exit .Function.Call.Term~new( name, arguments, trailingBlock )
 
 --------------------------------------------------------------------------------
 
 ::Class Function.Call.Term Public SubClass Rexx.Term
 ::Attribute argumentList
+::Attribute trailingBlock
 ::Attribute begin
 ::Attribute end
 ::Attribute name
 ::Method init
-  Expose name argumentList begin end
-  Use Strict Arg name, argumentList
+  Expose name argumentList trailingBlock begin end
+  Use Strict Arg name, argumentList, trailingBlock
   begin = name
-  end   = TheElementAfter( argumentList~end )
+  If trailingBlock \== .Nil Then
+    end = trailingBlock~end
+  Else end   = TheElementAfter( argumentList~end )
 
 --------------------------------------------------------------------------------
 
@@ -1443,9 +1352,6 @@ Return
 --   message_term := term '['[ expression_list ] (']' | Msg36.2)              --
 -- See also rexxref 5.1.0, 1.11.4. Message Terms                              --
 --   message_term := receiver '[' [[expression] ,]* ']'                       --
---                                                                            --
--- When Lua is active, also                                                   --
---   message_term := callable '(' [[expression] ,]* ')'                       --
 --                                                                            --
 --------------------------------------------------------------------------------
 
@@ -1528,36 +1434,48 @@ Return
     next = TheElementAfter( messageName )
 
     If next < .EL.COLON Then Do
-      scope = TheElementAfter( next )
+      scope     = TheElementAfter( next )
 
       If scope \< .ALL.MESSAGE_SCOPE_ELEMENTS Then Signal 20.917
 
-     lParen = TheElementAfter( scope )
+      left = TheElementAfter( scope )
     End
-    Else lParen  = next
+    Else left   = next
   End
   Else Do
-    lParen       = messageName
-    messageName  = .Nil
+    left        = messageName
+    messageName = .Nil
   End
 
-  arguments = .Nil
-  If lParen < .EL.LEFT_PARENTHESIS Then Do
+  arguments     = .Nil
+  trailingBlock = .Nil
 
-    arguments = Expression.List(        -
-      package,                          -
-      TheElementAfter( lParen ),        - -- Where to start parsing
-     .EL.RIGHT_PARENTHESIS,             - -- Terminator is ")"
-     "arguments"                        -
+  If left < .EL.LEFT_CURLY_BRACKET Then Do
+    trailingBlock = Source.Literal( package, left, "" )
+  End
+  Else If left < .EL.LEFT_PARENTHESIS Then Do
+
+    arguments = Expression.List(      -
+      package,                        -
+      TheElementAfter( left ),        - -- Where to start parsing
+     .EL.RIGHT_PARENTHESIS,           - -- Terminator is ")"
+     "arguments"                      -
     )
 
-    Call ExpectParenPair lParen, arguments~end
+    right = arguments~end
 
+    Call ExpectParenPair left, right
+
+    If right~next < .EL.LEFT_CURLY_BRACKET Then Do
+      trailingBlock = Source.Literal( package, right~next, "" )
+    End
   End
 
-  Exit .Message.Term~new(                             -
-    receiver, operator, messageName, scope, arguments -
+  term = .Message.Term~new(                                            -
+    receiver, operator, messageName, scope, arguments, trailingBlock -
   )
+
+  Exit term
 
 -- String or symbol expected after tilde (~).
 19.909: Syntax( 19.909, messageName )
@@ -1575,14 +1493,16 @@ Return
 ::Attribute messageName
 ::Attribute scope
 ::Attribute arguments
+::Attribute trailingBlock
 ::Method init
-  Expose term operator messageName scope arguments begin end
-  Use Strict Arg term, operator, messageName, scope, arguments
+  Expose term operator messageName scope arguments trailingBlock begin end
+  Use Strict Arg term, operator, messageName, scope, arguments, trailingBlock
   begin = term~begin
 
   If messageName \== .Nil Then Call SetConstantName messageName, .METHOD.NAME
 
-  If arguments == .Nil Then
+  If trailingBlock \== .Nil Then end = trailingBlock~end
+  Else If arguments == .Nil Then
     If scope \== .Nil Then end = TheElementAfter( scope       )
     Else                   end = TheElementAfter( messageName )
   Else Do

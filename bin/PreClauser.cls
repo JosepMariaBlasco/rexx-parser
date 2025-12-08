@@ -15,15 +15,15 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20241206    0.1  First public release                                      */
-/* 20241208    0.1a Accept options arg, pass it to tokenizer                  */
+/* 20241208    0.1a Accept options arg, pass it to scanner                    */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250531    0.2c Fix issue no. 13                                          */
-/* 20251014    0.2e (Lua only) Check that Lua constants are not assigned to   */
 /* 20251127    0.3a (Executor) Allow "var == expression;"                     */
 /* 20251127         (Executor) Allow "keyword(..."                            */
 /* 20251128         (Executor) Implement UPPER instruction                    */
 /* 20251128         (Executor) Implement ::EXTENSION directive                */
 /* 20251201         (Executor) Add support for source literals                */
+/* 20251206         Use the new scanner                                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -31,14 +31,15 @@
 
 ::Class PreClauser Public
 
-::Attribute tokenizer
+::Attribute scanner
 ::Attribute begin
+::Attribute end
 
 /******************************************************************************/
 /*                                                                            */
 /* NEXTCLAUSE Method                                                          */
 /*                                                                            */
-/* The way we have written our tokenizer, a clause is always delimited by two */
+/* The way we have written our scanner, a clause is always delimited by two   */
 /* semicolons (we add one to the beginning of the source to ensure this       */
 /* happens.                                                                   */
 /*                                                                            */
@@ -65,7 +66,7 @@
 /*        name".CLAUSE",      where "name" is one of DO, LOOP, SELECT,        */
 /*                            IF, WHEN, THEN, ELSE or OTHERWISE.              */
 /*                            The expressions after IF and WHEN are prepared  */
-/*                            (see the PrepareExpression method below).       */
+/*                            (see the PrepareExpression routine).            */
 /*        name".INSTRUCTION"  for all ooRexx instructions that are            */
 /*                            not identified as clauses.                      */
 /*        "END.OF.SOURCE",    returned once, at end of source (EOS).          */
@@ -90,41 +91,44 @@
 /******************************************************************************/
 
 ::Method nextClause
-  Expose package tokenizer begin end elements instructions lastClauseWas
+  Expose package scanner begin end elements instructions lastClauseWas
 
-  -- First pass. This applies Rexx rules, as implemented by the tokenizer,
+  -- First pass. This applies Rexx rules, as implemented by the scanner,
   -- to the element sequence
 
-  next      = begin
-  directive = 0
+  next            = begin
+  directive       = 0
+  directiveMarker = .Nil
   Loop Until next < .EL.END_OF_CLAUSE
-    If next < .EL.DIRECTIVE_START Then directive = 1
-    If directive, next~prev < .EL.SIMPLE_VARIABLE Then Do
-      If \package~sourceLiteralStack~isEmpty, -
-        WordPos(next~prev~value,"R ROUTINE CO COACTIVITY") > 0 Then Do
-        Call InsertSemicolonBefore next
-        next = result
-        next = next~prev~prev -- Backtrack two elements
+    -- An error detected by the scanner
+    If next~isA( .Error.Element ) Then Signal Error
+    If next < .EL.LEFT_CURLY_BRACKET, next~closing \== .Nil Then Do
+      next = next~closing
+    End
+    Else Do
+      If next < .EL.DIRECTIVE_START Then Do
+        directive       = 1
+        directiveMarker = next
       End
-      directive = 0
+      If directive, next~prev < .EL.SIMPLE_VARIABLE Then Do
+        If \package~sourceLiteralStack~isEmpty, -
+          WordPos(next~prev~value,"R ROUTINE CO COACTIVITY") > 0 Then Do
+          Call InsertSemicolonBefore next
+          next = result
+          next = next~prev~prev -- Backtrack two elements
+        End
+        directive = 0
+      End
     End
-    If next~next == .Nil Then Do
-      tokenizer~nextElement
-      next = result
-    End
-    Else next = next~next
-    -- Insert a semicolon before "}"
-    If next < .EL.RIGHT_CURLY_BRACKET Then Do
-      If next~prev < .EL.END_OF_CLAUSE Then Leave
-      Call InsertSemicolonBefore next
-      tokenizer~nextElement
-      next = result
-      next = next~prev~prev -- Backtrack two elements
-    End
+    next = next~next
   End
 
   -- We now collect the (supposedly) non-ignorable elements in an array
   self~generateElementsArray
+
+  -- Update end marker for ::RESOURCE directives
+  If directiveMarker \== .Nil, directiveMarker~closing \== .Nil Then
+    end = directiveMarker~closing
 
   c = elements~items
 
@@ -137,7 +141,9 @@
   t1 = elements[1]
 
   -- Case 1: A "}" closing an executor source literal
-  If t1 < .EL.RIGHT_CURLY_BRACKET Then Exit self~Source.Literal.End
+  If t1 < .EL.RIGHT_CURLY_BRACKET Then Do
+    Exit self~Source.Literal.End
+  End
 
   -- Case 2: End-of-source
   If t1 < .EL.END_OF_SOURCE Then Exit self~End.Of.Source
@@ -165,12 +171,6 @@
     If t2 < .ALL.ASSIGNMENTS Then Exit self~Assignment.Instruction
   End
 
-  -- Case 7b: (Lua only) Lua constant + assignment operator? --> Error
-  If .Options.Lua, t1 < .ALL.LUA_CONSTANTS Then Do
-    If t2 < .EL.OP.STRICT.EQUAL Then Call 35.001 "=" -- Special case
-    If t2 < .ALL.ASSIGNMENTS Then Signal 31.900
-  End
-
   -- Case 5 (bis): Symbol + "[", "~" or "~~" -> Message instruction
   If t1 < .ALL.SYMBOLS, t2 < .ALL.OPS.MESSAGE_SEND Then
     Exit self~Command.Or.Message.Instruction
@@ -186,14 +186,18 @@
   -- Case 5 (ter): Command or message instruction
   Exit self~Command.Or.Message.Instruction
 
-31.900: Syntax( 31.900, t1, "Lua fail, false, nil and true cannot be assigned to")
-
 -- Incorrect expression detected at "&1".
 35.001: Syntax( 35.001, t1, Arg(1) )
 
+Error:
+  code       = next~code
+  additional = next~additional
+  from       = next~from
+  Syntax(code, from, additional)        -- Does not return
+
 /******************************************************************************/
 /* generateElementsArray collects all the a priori non-ignorable elements     */
-/*   between two semicolons and stores then in an array.                      */
+/*   between two semicolons and stores them in an array.                      */
 /*   It also updates the "end" marker                                         */
 /******************************************************************************/
 
@@ -205,7 +209,13 @@
   next = begin
   Loop Until next < .EL.RIGHT_CURLY_BRACKET
     next = TheElementAfter( next )
-  If next < .EL.END_OF_CLAUSE, next~assignment \== 1 Then Leave
+    If next < .EL.LEFT_CURLY_BRACKET, next~closing \== .Nil Then Do
+      elements~append( next )
+      next = next~closing
+      elements~append( next )
+      next = TheElementAfter( next )
+    End
+  If next < .EL.END_OF_CLAUSE, \next~assignment Then Leave
     elements~append( next )
   End
 
@@ -213,19 +223,18 @@
 
 /******************************************************************************/
 /* INIT                                                                       */
-/*   We store the argument tokenizer, and initialize it and some few sets.    */
 /*                                                                            */
 /******************************************************************************/
 
 ::Method init
-  Expose tokenizer begin lastClauseWas package  -
+  Expose scanner begin lastClauseWas package  -
     instructions clauses directives assignments
 
   Use Strict Arg package
 
-  tokenizer = .Tokenizer~new( package )
+  scanner = .Scanner~new( package )
 
-  begin = tokenizer~nextElement
+  begin = scanner~head
 
   lastClauseWas = ""
 
@@ -376,7 +385,7 @@
 
   Call SetKeyword name, .True
 
-  If elements~items > 2, elements[3]~isIgnorable Then elements~delete( 3 )
+  If elements~items > 2, elements[3]~ignorable Then elements~delete( 3 )
 
   Return self~return( name~value"."directive )
 
@@ -403,7 +412,7 @@
   Call SetKeyword keyword
 
   -- keyword + blank -> ignorable blank. Recalculate elements
-  If elements~items > 1, elements[2]~isIgnorable Then elements~delete( 2 )
+  If elements~items > 1, elements[2]~ignorable Then elements~delete( 2 )
 
   name = elements[1]~value
 
@@ -442,7 +451,9 @@ IF: WHEN:
 /******************************************************************************/
 
 ::Method Command.Or.Message.Instruction
-  Expose elements
+  Expose elements begin end
+
+--Say "====>" begin "("begin~from")" end "("end~from")"
 
   element = elements[1]
 
@@ -480,15 +491,17 @@ IF: WHEN:
 --   Determines whether an expression is a command or a message instruction,  --
 --   including an (extended) message term assignment (standard assignments    --
 --   are processed elsewhere). The expression is supposed to have been        --
---   prepared first by the PREPAREEXPRESSION method above.                    --
+--   prepared first by the PREPAREEXPRESSION routine above.                   --
 --                                                                            --
 --   In case we determine that this is a message instruction, we will insert  --
 --   a special, temporary, semicolon, with an "~assignment" attribute,        --
 --   before the assignment operator.                                          --
 --------------------------------------------------------------------------------
 
+--
 -- "Terms are literal strings, symbols, message terms and sequences,
 --  Array terms, Variable Reference terms, function calls, or subexpressions".
+--
 
 ::Routine isAMessageInstruction
 
@@ -547,7 +560,7 @@ BalanceParens:
   level = 0
   Loop Until level == 0
     Select Case element~category
-      When .EL.LEFT_PARENTHESIS Then level += 1
+      When .EL.LEFT_PARENTHESIS  Then level += 1
       When .EL.RIGHT_PARENTHESIS Then level -= 1
       Otherwise Nop
     End
@@ -559,7 +572,7 @@ BalanceBrackets:
   level = 0
   Loop Until level == 0
     Select Case element~category
-      When .EL.LEFT_BRACKET Then level += 1
+      When .EL.LEFT_BRACKET  Then level += 1
       When .EL.RIGHT_BRACKET Then level -= 1
       Otherwise Nop
     End
@@ -567,4 +580,4 @@ BalanceBrackets:
   End
   Return
 
-::Requires "Tokenizer.cls"
+::Requires "Scanner.cls"

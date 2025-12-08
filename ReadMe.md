@@ -70,8 +70,8 @@ in the corresponding copyright notices.
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.3a, refresh 20251202.
-You can download it <a href="Rexx-Parser-0.3a-20251202.zip">here</a>.
+The current release is beta 0.3a, refresh 20251208.
+You can download it <a href="Rexx-Parser-0.3a-20251208.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).

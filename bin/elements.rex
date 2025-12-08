@@ -24,7 +24,6 @@
 /* 20250426    0.2b Fix compound count, simplify REQUIRES                     */
 /* 20250606    0.2c Add --from and --to options                               */
 /* 20250928    0.2e Fix crash when no args, add .rex to file when needed      */
-/* 20251014         Add -lua, --lua options                                   */
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
 /*                                                                            */
@@ -47,7 +46,6 @@
 --------------------------------------------------------------------------------
 
   unicode      = 0
-  lua          = 0
   experimental = 0
   executor     = 0
   opFrom       = 1
@@ -68,7 +66,6 @@ ProcessOptions:
       When "-u", "--tutor", "--unicode" Then unicode = 1
       When "-e", "-exp", "--exp", "--experimental" Then experimental = 1
       When "-xtr", "--executor" Then executor = 1
-      When "-lua", "--lua" Then lua = 1
       When "--help" Then Do
         Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
         Exit 1
@@ -125,7 +122,6 @@ ProcessOptions:
   -- Parse our program, and get the first element
   Options = .Array~new
   If Unicode      Then Options~append(("UNICODE", 1))
-  If Lua          Then Options~append(("LUA", 1))
   If experimental Then Options~append(("EXPERIMENTAL", 1))
   If executor     Then Options~append(("EXECUTOR", 1))
   parser = .Rexx.Parser~new(file, source, Options)
@@ -172,7 +168,7 @@ Print:
   Parse Var   to   toLine   toCol
   Call Chunk "["Extent(element)"]"
   Call Chunk (element~isInserted)~?(" >","  ")
-  Call Chunk (element~ignored == 1)~?("X"," ")
+  Call Chunk (element~ignorable)~?("X"," ")
   Call Chunk (element~isAssigned)~?("A"," ")
   If class \== .EL.RESOURCE_DATA Then value = element~value
   Else value = "[... resource data ...]"
@@ -261,7 +257,6 @@ Options:
 -e,  --experimental Enable Experimental features (also -exp)
      --from [LINE]  Show elements starting at line LINE
      --help         Display this information
-     --lua          Enable Lua support (also -lua)
      --to   [LINE]  Stop showing elements after line LINE
      --tutor        Enable TUTOR-flavored Unicode
  -u, --unicode      Enable TUTOR-flavored Unicode
@@ -269,5 +264,5 @@ Options:
 The 'myname' program is part of the Rexx Parser package, and is distributed
 under the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
 
-Copyright (c) 2024, 2025 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
 ::End
