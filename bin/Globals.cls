@@ -969,6 +969,6 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     .EL.DIRECTIVE_START,                - -- "::"
     .EL.LEFT_PARENTHESIS,               - -- "("
     .EL.LEFT_BRACKET,                   - -- "["
-    .EL.LEFT_CURLY_BRACKET,             - -- "["
+    .EL.LEFT_CURLY_BRACKET,             - -- "{"
     .EL.COLON,                          - -- A colon ":"
     .EL.COMMA                             -- A comma ","

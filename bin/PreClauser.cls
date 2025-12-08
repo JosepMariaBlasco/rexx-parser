@@ -162,6 +162,10 @@
 
   t2 = elements[2]
 
+  If .Options.Executor, -
+      t1 < .ALL.VARIABLES_AND_KEYWORDS, -
+      t2 < .EL.LEFT_PARENTHESIS Then Exit self~Command.Or.Message.Instruction
+
   -- Case 6: Symbol or string + colon? --> A label
   If t2 < .EL.COLON , t1 < .ALL.SYMBOLS_AND_STRINGS Then Exit self~Label.Clause
 

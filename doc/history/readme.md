@@ -39,6 +39,7 @@ Version history
   <li> **Breaking change**. `IsIgnorable` and `SetIgnorable` are substituted by a boolean
        `ignored` attribute in the `Element` class.
   <li> (Executor) Implement trailing blocks (20251208).
+  <li> (Executor) Instruction() is a function call, not an instruction (20251208).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.
