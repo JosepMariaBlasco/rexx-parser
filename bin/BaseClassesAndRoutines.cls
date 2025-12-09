@@ -115,10 +115,21 @@
 
   Parse Var code major"."minor
 
+  additional = .Nil
+  If Arg(3)~isA(.Array) Then additional = Arg(3)
+  Else additional = Arg(3,"A")
+
   -- In some few cases, Arg(2) contains "line col" as a string
   If element~isA(.String) Then Parse Var element line col
 
-  -- In most cases, Arg(2) is any element in the clause in error.
+  -- If Arg(3) (or the first element in Arg(3) if Arg(3) is an array) is
+  -- an element, we use its from attribute to place the message
+  Else If additional \== .Nil, -
+         \additional~isEmpty,  -
+          additional[1]~isA(.Element) Then
+    Parse Value additional[1]~from With line col
+
+  -- In other cases, Arg(2) is an anchor, any element in the clause in error.
   -- We need to determine the location or the first element in that clause,
   -- to accurately place the error message.
   Else Do
@@ -135,9 +146,6 @@
 
     Parse Value element~from With line col
   End
-
-  If Arg(3)~isA(.Array) Then additional = Arg(3)
-  Else additional = Arg(3,"A")
 
   message = "Syntax error" major"."minor "at line" line
   minor = minor + 0
