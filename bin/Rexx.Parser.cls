@@ -358,18 +358,21 @@ CheckThatUseLocalIsValid:
 
       When       .End.Of.Source Then Leave
 
-      When  .Annotate.Directive Then Call Annotate   package, directive
-      When .Attribute.Directive Then Call Attribute  package, directive
-      When     .Class.Directive Then Call Class      package, directive
-      When  .Constant.Directive Then Call Constant   package, directive
-      When .Extension.Directive Then Call Extension  package, directive
-      When    .Method.Directive Then Call Method     package, directive
-      When   .Options.Directive Then Call Options    package, directive
-      When  .Requires.Directive Then Call Requires   package, directive
-      When  .Resource.Directive Then Call Resource   package, directive
-      When   .Routine.Directive Then Call Routine    package, directive
+      When  .Annotate.Directive  Then Call Annotate   package, directive
+      When .Attribute.Directive  Then Call Attribute  package, directive
+      When     .Class.Directive  Then Call Class      package, directive
+      When  .Constant.Directive  Then Call Constant   package, directive
+      When .Extension.Directive  Then Call Extension  package, directive
+      When    .Method.Directive  Then Call Method     package, directive
+      When   .Options.Directive  Then Call Options    package, directive
+      When  .Requires.Directive  Then Call Requires   package, directive
+      When  .Resource.Directive  Then Call Resource   package, directive
+      When   .Routine.Directive  Then Call Routine    package, directive
 
-      When  .Source.Literal.End Then Signal 90.900
+      -- These directives are only valid inside a source literal
+
+      When .Coactivity.Directive Then Signal 99.916
+      When          .R.Directive Then Signal 99.916
 
     End
 
@@ -379,7 +382,8 @@ CheckThatUseLocalIsValid:
 
   Return package
 
-90.900: Syntax( 90.900, directive~begin, 'Unexpected "}"' )
+-- Unrecognized directive instruction.
+99.916: Syntax( 99.916, directive~begin )
 
 --------------------------------------------------------------------------------
 
@@ -635,8 +639,8 @@ Return
 
 ::Attribute name      Get
 ::Attribute directive Get
-::Attribute classMethods    Get -- Different than ooRexx Class class!
-::Attribute instanceMethods Get -- Different than ooRexx Class class!
+::Attribute classMethods    Get -- Different from ooRexx Class class!
+::Attribute instanceMethods Get -- Different from ooRexx Class class!
 
 ::Method init
   Expose         name  directive body classMethods instanceMethods
@@ -705,10 +709,10 @@ Return
   Use Strict Arg package, directive
   body = Empty.Body( package, directive )
   extension = .Rexx.Extension~new( directive~name, directive, body )
-  -- package~currentClass = class
+  package~currentClass = extension
   name = Upper( directive~name~value )
   options. = directive~options.
-  directive~body = body
+  directive~body      = body
   directive~extension = extension
   package~addDirective( directive )
   Return
@@ -717,12 +721,24 @@ Return
 
 ::Class Rexx.Extension
 
-::Attribute name      Get
-::Attribute directive Get
+::Attribute name            Get
+::Attribute directive       Get
+::Attribute classMethods    Get -- Different from ooRexx Class class!
+::Attribute instanceMethods Get -- Different from ooRexx Class class!
 ::Method init
-  Expose         name  directive body
-  Use Strict Arg name, directive, body
+  Expose         name  directive body classMethods instanceMethods
 
+  Use Strict Arg name, directive, body
+  classMethods    = .StringTable~new
+  instanceMethods = .StringTable~new
+::Method addClassMethod
+  Expose classMethods
+  Use Strict Arg name, method
+  classMethods[name] = method
+::Method addInstanceMethod
+  Expose instanceMethods
+  Use Strict Arg name, method
+  instanceMethods[name] = method
 
 /******************************************************************************/
 /* METHOD                                                                     */

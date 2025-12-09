@@ -2124,6 +2124,8 @@ Done:
   continue       = .EL.COMMA || .EL.END_OF_CLAUSE
   afterEqualSign = .EL.LEFT_PARENTHESIS || .ALL.CONST_SYMBOLS || -
                    .ALL.NUMBERS         || .ALL.STRINGS
+  If .Options.Executor Then
+    afterEqualSign ||= .EL.LEFT_CURLY_BRACKET
 
   element        = keyword
 
@@ -2173,6 +2175,12 @@ Done:
             N += 1
             arguments[N] = term, subExpression
             element = subExpression~end
+          End
+          Else If element < .EL.LEFT_CURLY_BRACKET Then Do
+            literal = Source.Literal( package, element, "" )
+            N += 1
+            arguments[N] = term, literal
+            element = literal~end
           End
           Else Do
             N += 1

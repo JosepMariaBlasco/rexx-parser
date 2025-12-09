@@ -197,7 +197,7 @@ Error:
   code       = next~code
   additional = next~additional
   from       = next~from
-  Syntax(code, from, additional)        -- Does not return
+  Call Syntax code, from, additional    -- Does not return
 
 /******************************************************************************/
 /* generateElementsArray collects all the a priori non-ignorable elements     */
@@ -274,9 +274,6 @@ Error:
 
   If .Options.Executor Then Do
     directives[] = extension
-    directives[] = r
-    directives[] = co
-    directives[] = coactivity
   End
 
   -- These are pure clauses (i.e., not complete instructions).
@@ -382,10 +379,12 @@ Error:
 
   If name \< .ALL.SYMBOLS       Then Signal 20.916
 
-  If \ directives~hasItem( name~value ) Then Signal 99.916
-
-  If \ package~sourceLiteralStack~isEmpty, -
-    WordPos(name~value, "R ROUTINE CO COACTIVITY") == 0 Then Signal 99.900
+  -- If we are inside a source literal (Executor only), we only recognize
+  -- four directives
+  If \ package~sourceLiteralStack~isEmpty Then Do
+    If WordPos(name~value, "R ROUTINE CO COACTIVITY") == 0 Then Signal 99.916
+  End
+  Else If \ directives~hasItem( name~value ) Then Signal 99.916
 
   Call SetKeyword name, .True
 

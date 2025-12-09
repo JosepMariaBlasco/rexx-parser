@@ -256,24 +256,26 @@
   coactivity = 0
 
   Loop Counter instrNo
-    instruction = package~clauser~Next.Instruction( NoEndClause, Source.Literal )
+    instruction = package~clauser~Next.Instruction( -
+      NoEndClause,                                  -
+      Source.Literal                                -
+    )
     instrClass = instruction~class
     Select Case instrClass
       When .R.Directive               Then
-        If instrNo > 1                Then Signal 99.916
+        If instrNo > 1                Then Signal 99.900a
       When .Coactivity.Directive      Then
         If instrNo == 1               Then coactivity = 1
-                                      Else Signal 99.916
+                                      Else Signal 99.900a
       When .Expose.Instruction        Then Do
-        If instrNo \== 1 + coactivity Then Signal 99.900
+        If instrNo \== 1 + coactivity Then Signal 99.900b
       End
       When .End.Clause                Then Signal 10.001
-      --When .Implicit.Exit.Instruction Then Leave
       When .Source.Literal.End        Then Leave
       Otherwise Nop
     End
     instructions~append( instruction )
-    lastInstruction = instruction
+    lastInstruction =    instruction
   End
 
   end    = instruction~end~next
@@ -293,10 +295,13 @@
 -- END has no corresponding DO, LOOP, or SELECT.
 10.001: Syntax( 10.001, instruction~begin )
 
+-- Misplaced directive instruction
+99.900a: Call Syntax 99.900, instruction~begin, -
+  "Misplaced directive instruction"
+
 -- EXPOSE must be the first instruction executed in a closure
-99.900: Syntax( 99.900, instruction~begin, -
-  "EXPOSE must be the first instruction executed in a closure" -
-)
+99.900b: Call Syntax 99.900, instruction~begin, -
+  "EXPOSE must be the first instruction executed in a closure"
 
 -- Unrecognized directive instruction.
 99.916: Syntax( 99.916, begin )
