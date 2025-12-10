@@ -43,6 +43,7 @@ Version history
   <li> (Executor) Correctly handle methods attached to an `::EXTENSION` (20251209).
   <li> (Executor) Allow source literals as default values in `USE ARG` (20251209).
   <li> Make error messages placement more accurate (20251209).
+  <li> (Executor) Implement named arguments (20251210).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

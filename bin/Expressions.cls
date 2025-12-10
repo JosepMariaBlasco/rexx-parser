@@ -25,11 +25,13 @@
 /* 20251129         (Executor) The message name can be omitted after ~, ~~    */
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251208         (Executor) Implement trailing blocks                      */
+/* 20251209         (Executor) Implement named arguments                      */
 /*                                                                            */
 /******************************************************************************/
 
  .environment ~ Concatenation.Expression   = .Concatenation.Expression
  .environment ~ Expression.List            = .Expression.List
+ .environment ~ Arguments                  = .Arguments
  .environment ~ And.Expression             = .And.Expression
  .environment ~ NAry.Expression            = .NAry.Expression
  .environment ~ Addition.Expression        = .Addition.Expression
@@ -92,6 +94,167 @@
   args = arg(1, "A")
   begin = args[1]~begin
   end = args~lastItem~end
+
+/******************************************************************************/
+/* ARGUMENTS                                                                  */
+/*                                                                            */
+/* With optional support for named arguments (Executor)                       */
+/******************************************************************************/
+
+::Routine Arguments Public
+
+  Use Strict Arg package, begin, terminators = ""
+
+  positionalArguments = Array()
+  namedArguments      = Array()
+  element             = begin
+  trailingComma       = 0
+  stopParsing         = .EL.END_OF_CLAUSE
+  terminators       ||= stopParsing
+  commasFound         = 0
+  end                 = element              -- In case list is empty
+  IgnoreBlanks        = .True
+
+  newTerminators = terminators || .EL.COMMA
+
+  Loop Label Positional While element \< .ALL.EXPRESSION_TERMINATORS
+
+    If .Options.Executor, element < .EL.COLON Then Leave Positional
+
+    If .Options.Executor, element < .ALL.VAR_SYMBOLS Then Do
+      next = TheElementAfter( element )
+      If next < .EL.COLON Then Leave Positional
+    End
+
+    trailingComma = 0
+
+    Do While element < .EL.COMMA
+      commasFound = 1
+      positionalArguments~append( element )
+      element = TheElementAfter( element )
+      trailingComma = 1
+    End
+
+    end = element
+
+  If element < terminators Then Leave
+
+    trailingComma = 0
+
+    newOrExpression = Or.Expression( package, element, newTerminators )
+    element = newOrExpression~end
+    positionalArguments~append( newOrExpression )
+
+    end = element
+
+  If element \< .EL.COMMA Then Leave
+
+    positionalArguments~append( element )
+
+    element = TheElementAfter( element )
+
+    end = element
+
+    trailingComma = 1
+    commasFound = 1
+  End
+
+  If element \< (.EL.COLON || .ALL.VAR_SYMBOLS) Then Signal EndNamed
+
+  Loop Label Positional While element \< .ALL.EXPRESSION_TERMINATORS
+    If element < .EL.COLON Then Do
+      element = TheElementAfter( element )
+      If element \< .ALL.VAR_SYMBOLS Then Signal 20.900a
+      namedArguments~append( (.Nil, element) )
+      element = TheElementAfter( element, IgnoreBlanks )
+      end = element
+    End
+    Else If element < .ALL.VAR_SYMBOLS Then Do
+      name = element
+      element = TheElementAfter( element )
+      If element \< .EL.COLON Then Signal 99.900a
+      element = TheElementAfter( element )
+      If element < .EL.COMMA | element < terminators Then Do
+        namedArguments~append( (element, .Nil) )
+        end = element
+      End
+      Else Do
+        newOrExpression = Or.Expression( package, element, newTerminators )
+        end = newOrExpression~end
+        namedArguments~append( (element, newOrExpression ) )
+        element = end
+      End
+    End
+    If element \< .EL.COMMA Then Leave
+    element = TheElementAfter( element )
+  End
+
+EndNamed:
+  If element \< terminators Then Call 35.001 element
+
+  -- Can we do that when we may have named arguments afterwards?
+  Do While positionalArguments~lastItem~isA(.Element)
+    positionalArguments~delete( positionalArguments~last )
+  End
+
+  If positionalArguments~items == 0 Then
+    .Arguments~new(begin, end, .Nil, namedArguments)
+
+  Return .Arguments~new(begin, end, positionalArguments, namedArguments)
+
+-- Incorrect expression detected at "&1".
+35.001: Syntax( 35.001, element, Arg(1) )
+
+20.900a: Call Syntax 20.900, element, -
+  'Symbol expected in named argument after ":", found "'element'"'
+
+99.900a: Call Syntax 99.900, element, -
+  'Colon expected after argument name, found "'element'"'
+
+--------------------------------------------------------------------------------
+
+::Class Arguments Public SubClass Rexx.Expression
+::Attribute positionalArguments
+::Attribute namedArguments
+::Attribute begin
+::Attribute end
+::Attribute args
+::Method arg
+  Expose positionalArguments
+  Arg n, option +1
+  Select Case Arg()
+    When 0 Then Return positionalArguments~size
+    When 1 Then Return positionalArguments[n]
+    Otherwise
+      Select Case option
+        When "E" Then Return  positionalArguments~hasIndex(n)
+        When "O" Then Return \positionalArguments~hasIndex(n)
+      End
+  End
+::Method isEmpty
+  Expose args
+  Return args == .Nil
+::Method init
+  Expose namedArguments args positionalArguments begin end
+
+  Use Strict Arg begin, end, args, namedArguments
+  positionalArguments = Array()
+
+  If args == .Nil Then Return
+
+  -- Calculate begin
+  first = args~firstItem
+  If first == .Nil Then begin = end
+  Else If first~isA( .Special.Character.Sequence ) Then
+    begin = first
+  Else begin = first~begin
+
+  -- Calculate the number of positionalArguments
+  argN = 1
+  Do i = 1 To args~items
+    If args[i]~isA( .Special.Character.Sequence ) Then argN += 1
+    Else positionalArguments[argN] = args[i]
+  End
 
 /******************************************************************************/
 /* EXPRESSION LIST                                                            */
@@ -910,10 +1073,10 @@ Done:
   trailingBlock = .Nil
 
   If left < .EL.LEFT_PARENTHESIS Then Do
-    next          = TheElementAfter( left )  -- Where to start parsing
-    terminators   = .EL.RIGHT_PARENTHESIS      -- Terminator is ")"
 
-    arguments = Expression.List( package, next, terminators, "arguments" )
+    next = TheElementAfter( left )
+
+    arguments = Arguments( package, next, .EL.RIGHT_PARENTHESIS )
 
     Call ExpectParenPair left, arguments~end
 
@@ -1239,26 +1402,31 @@ Return
   symbol    = TheElementAfter( colon )
   If symbol \< .ALL.SYMBOLS Then Signal 20.923
   element = TheElementAfter( symbol )
-  If element \< .EL.LEFT_PARENTHESIS Then
+  If element \< .EL.LEFT_PARENTHESIS, element \< .EL.LEFT_CURLY_BRACKET Then
     Exit .NameSpace.Qualified.ClassName~new( nameSpace, symbol )
 
-  routineName  = symbol
-  Call SetConstantName routineName, .EXTERNAL.PACKAGE.FUNCTION.NAME
-  lParen       = element
+  arguments     = .Nil
+  trailingBlock = .Nil
 
-  next         = TheElementAfter( lParen )
+  If element < .EL.LEFT_PARENTHESIS Then Do
+    routineName  = symbol
+    Call SetConstantName routineName, .EXTERNAL.PACKAGE.FUNCTION.NAME
+    lParen       = element
 
-  arguments = Expression.List(        -
-    package,                          -
-    next,                             - -- Where to begin parsing
-   .EL.RIGHT_PARENTHESIS,             - -- Terminator is ")"
-    "arguments"                       -
-  )
+    next = TheElementAfter( lParen )
 
-  Call ExpectParenPair lParen, arguments~end
+    arguments = Arguments( package, next, .EL.RIGHT_PARENTHESIS )
 
-  Exit .NameSpace.Qualified.Function.Call~new( -
-    nameSpace, routineName, arguments          -
+    Call ExpectParenPair lParen, arguments~end
+
+    left = arguments~end~next
+  End
+
+  If element < .EL.LEFT_CURLY_BRACKET Then
+    trailingBlock = Source.Literal( package, element, "" )
+
+  Exit .NameSpace.Qualified.Function.Call~new(       -
+    nameSpace, routineName, arguments, trailingBlock -
   )
 
 -- Symbol expected as a name of namespace-qualified symbol.
@@ -1276,23 +1444,10 @@ Return
   trailingBlock = .Nil
 
   If left < .EL.LEFT_PARENTHESIS Then Do
+
     next = TheElementAfter( left )
 
-    arguments = Expression.List(           -
-      package,                             -
-      next,                                - -- Where to begin parsing
-      .EL.RIGHT_PARENTHESIS,               - -- Terminators is ")"
-     "arguments"                           -
-    )
-
-    -- Ensure that this is an expression list.
-    If \arguments~isA(.Expression.List) Then Do
-      arguments = .Expression.List~new(    -
-        Array(arguments),                  -
-        arguments~begin,                   -
-        arguments~end                      -
-      )
-    End
+    arguments = Arguments( package, next, .EL.RIGHT_PARENTHESIS )
 
     Call ExpectParenPair left, arguments~end
 
@@ -1329,13 +1484,16 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class NameSpace.Qualified.Function.Call Public SubClass Rexx.Term
+::Attribute arguments
+::Attribute trailingBlock
 ::Attribute begin
 ::Attribute end
 ::Method init
-  Expose nameSpace name argumentList begin end
-  Use Strict Arg nameSpace, name, argumentList
+  Expose nameSpace name arguments trailingBlock begin end
+  Use Strict Arg nameSpace, name, arguments, trailingBlock
   begin = nameSpace
-  end   = argumentList~end~next
+  If trailingBlock \== .Nil Then end = trailingBlock~end
+  Else                           end = arguments    ~end~next
 
 --------------------------------------------------------------------------------
 
@@ -1367,15 +1525,13 @@ Return
   -- Store parenthesis location information
   Parse Value lBracket~from With line pos
 
-  If lBracket < .EL.LEFT_BRACKET Then expect = .EL.RIGHT_BRACKET
-  Else expect = .EL.RIGHT_PARENTHESIS
+  If lBracket < .EL.LEFT_BRACKET
+    Then expect = .EL.RIGHT_BRACKET
+    Else expect = .EL.RIGHT_PARENTHESIS
 
-  arguments = Expression.List(        -
-    package,                          -
-    TheElementAfter( lBracket ),      - -- Where to start parsing
-    terminators || expect,            - -- Add "]" or ")" to terminators
-   "arguments"                        -
-  )
+  next = TheElementAfter( lBracket )
+
+  arguments = Arguments( package, next, terminators || expect )
 
   -- Expecting a closing bracket now
   If lBracket < .EL.LEFT_BRACKET Then Do
@@ -1385,7 +1541,16 @@ Return
     If arguments~end \< expect Then Signal 36.901
   End
 
-  Return .Indexed.Or.Invoked.Term~new( lBracket, receiver, arguments )
+  element = arguments~end~next
+
+  trailingBlock = .Nil
+
+  If element < .EL.LEFT_CURLY_BRACKET Then
+    trailingBlock = Source.Literal( package, element, "" )
+
+  Return .Indexed.Or.Invoked.Term~new(           -
+    lBracket, receiver, arguments, trailingBlock -
+  )
 
 -- Left parenthesis "(" in position &1 on line &2 requires
 -- a corresponding right parenthesis ")".
@@ -1401,14 +1566,16 @@ Return
 ::Attribute bracket
 ::Attribute begin
 ::Attribute end
-::Attribute term      Get
-::Attribute arguments Get
+::Attribute term          Get
+::Attribute arguments     Get
+::Attribute trailingBlock Get
 ::Method init
   Expose term arguments bracket begin end
-  Use Strict Arg bracket, term, arguments
+  Use Strict Arg bracket, term, arguments, trailingBlock
   rBracket = arguments~end
   begin    = term~begin
-  end      = TheElementAfter( rBracket )
+  If trailingBlock == .Nil Then end = TheElementAfter( rBracket )
+  Else                          end = trailingBlock~end
 
 --------------------------------------------------------------------------------
 -- Message.Term                                                               --
@@ -1460,12 +1627,9 @@ Return
   End
   Else If left < .EL.LEFT_PARENTHESIS Then Do
 
-    arguments = Expression.List(      -
-      package,                        -
-      TheElementAfter( left ),        - -- Where to start parsing
-     .EL.RIGHT_PARENTHESIS,           - -- Terminator is ")"
-     "arguments"                      -
-    )
+    next = TheElementAfter( left )
+
+    arguments = Arguments( package, next, .EL.RIGHT_PARENTHESIS )
 
     right = arguments~end
 
@@ -1474,6 +1638,7 @@ Return
     If right~next < .EL.LEFT_CURLY_BRACKET Then Do
       trailingBlock = Source.Literal( package, right~next, "" )
     End
+
   End
 
   term = .Message.Term~new(                                            -

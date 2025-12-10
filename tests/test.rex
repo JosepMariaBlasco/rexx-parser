@@ -1,4 +1,1 @@
-::Extension Object
-::Method m
-::Extension Object
-::Method m
+    forward to (result) message "run" array (self, "a", array, :namedArguments)

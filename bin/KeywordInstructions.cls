@@ -29,6 +29,7 @@
 /* 20251128    0.3a Add the UPPER instruction (e.g., for Executor)            */
 /* 20251130         (Executor) Implement USE NAMED and USE NAMED AUTO         */
 /* 20251130         (Executor) Implement FORWARD NAMEDARGUMENTS               */
+/* 20251210         (Executor) Implement named arguments                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -277,7 +278,7 @@ Done:
     Else element = next
   End
   Else element = TheElementAfter( name, ignoreBlanks )
-  Signal Arguments
+  Signal ProcessArguments
 
 GetExpression:
   Parse Value element~from With line col
@@ -298,11 +299,14 @@ GetExpression:
     element~ignorable = 1                              -- .. make ignorable..
     element = TheElementAfter( element, ignoreBlanks ) -- .. and skip.
   End
-  Signal Arguments
+  Signal ProcessArguments
 
-Arguments:
+ProcessArguments:
+
   Call PrepareExpression package, element, ""
-  arguments = Expression.List( package, element, "", "arguments" )
+
+  arguments = Arguments( package, element, .EL.END_OF_CLAUSE )
+
   element = arguments~end
   If expression~isNil Then Do
     If nameSpace == .Nil Then Do
@@ -653,9 +657,10 @@ Arguments:
       End
       When "ARRAY" Then Do
         If element \< .EL.LEFT_PARENTHESIS Then Signal 35.924
+        next = TheElementAfter( element )
         Call PrepareExpression package, element, keywords
-        expression = SubExpression( package, element )
-        element = expression~end
+        expression = Arguments( package, next, .EL.RIGHT_PARENTHESIS )
+        element = TheElementAfter(expression~end)
         options.tValue = expression
       End
       Otherwise Do

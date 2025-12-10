@@ -16,6 +16,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20251116    0.3a First version                                             */
+/* 20251209         (Executor) Implement named arguments                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -74,6 +75,26 @@
         element = Clone( element, stream, context )
       End
     End
+  End
+
+  Return element
+
+/******************************************************************************/
+/* ARGUMENTS                                                                  */
+/******************************************************************************/
+
+::Method "Arguments::Compile"
+  Use Strict Arg element, stream, context
+
+  If self~isEmpty Then Return element
+
+  Loop arg Over self~args
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+    If arg~isA( .Special.Character.Sequence ) Then
+      element = Clone( element, stream, context )
+    Else element = arg~compile( element, stream, context )
   End
 
   Return element
