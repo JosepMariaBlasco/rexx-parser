@@ -66,7 +66,7 @@
   Use Strict Arg name, source = .Nil, options = .Nil
 
   -- .Directory~of() crashes the interpreter
- .environment~Parser.Options = .Directory~new
+ .environment~Parser.Options       = .Directory~new
  .environment~Options.Experimental = 0
  .environment~Options.Executor     = 0
  .environment~Options.Unicode      = 0

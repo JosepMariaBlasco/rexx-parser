@@ -44,6 +44,8 @@ Version history
   <li> (Executor) Allow source literals as default values in `USE ARG` (20251209).
   <li> Make error messages placement more accurate (20251209).
   <li> (Executor) Implement named arguments (20251210).
+  <li> Add Executor support to elident.rex, move it to the `bin` subdirectory (20251211).
+  <li> All `.cls` files in the Executor distribution pass the `elident` test (20251211).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

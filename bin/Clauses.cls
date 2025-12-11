@@ -605,7 +605,7 @@ End:
   If name \== "" Then Do
     selectLabel = selectClause~name
     If selectLabel == .Nil  Then Signal 10.007
-    If name \== selectLabel Then Signal 10.004
+    If name \== selectLabel~value Then Signal 10.004
   End
 
   Return .Select.Instruction~new( -

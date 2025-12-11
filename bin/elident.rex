@@ -17,7 +17,8 @@
 /* 20241206    0.1  First public release                                      */
 /* 20241208    0.1a c/CLASSIC_COMMENT/STANDARD_COMMENT/                       */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
-/* 20251110    0.23 Change the name to elident.rex                            */
+/* 20251110    0.3a Change the name to elident.rex                            */
+/* 20252111         Add Executor support, move to /bin                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -26,9 +27,16 @@ Signal On Syntax
 Parse Arg args
 args = Strip( args )
 
-If args == "" | args == "--help" | args == "-?" Then Do
-  Say .Resources["HELP"]
-  Exit 1
+If args == "" Then Signal Help
+
+executor = 0
+
+Loop While args[1] == "-"
+  Parse Var args option args
+  Select Case Lower(option)
+    When "--help", "-?"       Then Signal Help
+    When "--executor", "-xtr" Then executor = 1
+  End
 End
 
 Call RetrieveFilename
@@ -41,7 +49,10 @@ source = chunk~makeArray
 -- last empty line.
 If Right(chunk,1) = "0a"X Then source~append("")
 
-parser = .Rexx.Parser~new( file, source )
+options = .Array~new
+If executor Then options~append(("EXECUTOR", 1))
+
+parser = .Rexx.Parser~new( file, source, options )
 
 currentLineNo = 1
 currentLine   = ""
@@ -62,6 +73,10 @@ Do Counter elements Until element == .Nil
 End
 
 Exit 0
+
+Help:
+  Say .Resources["HELP"]
+  Exit 1
 
 StandardComment:
   lastLine = element~to~word(1)
@@ -151,6 +166,10 @@ Check that the Rexx Parser returns a stream of elements identical to a FILE.
 
 If the only option is --help or -?, or if no arguments are present,
 then display this help and exit.
+
+Options:
+
+--executor, -xtr  Activate support for Executor language extensions
 ::END
 
 ::Requires "Rexx.Parser.cls"
