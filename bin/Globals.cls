@@ -31,6 +31,7 @@
 /* 20250808         Add support for length positional patterns                */
 /* 20251125    0.3a Add support for Executor implicit abuttal                 */
 /* 20251129         (Executor) Create elements for curly brackets             */
+/* 20251213         (Executor) Create .NAMEs for named arguments              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -621,6 +622,7 @@ SkipOverTheInternalRoutines:            -- Main code continues here
   Call NewConstant RESOURCE.DELIMITER.NAME
   Call NewConstant ROUTINE.NAME
   Call NewConstant USER.CONDITION.NAME
+  Call NewConstant ARGUMENT.NAME          -- For Executor named arguments
 
   -- Experimental names
   Call NewConstant TABLE.FIELD.NAME       -- The name of a table field
@@ -661,13 +663,16 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     EL.RIGHT_BRACKET,                 - -- "]"
     EL.LEFT_CURLY_BRACKET,            - -- "{"
     EL.RIGHT_CURLY_BRACKET              -- "}"
+
   -- We include here the ooRexx-only "::" directive start sequence.
   -- It is the only compound construct made of special characters.
   Call NewElements EL.DIRECTIVE_START
+
   -- We also include here the ellipsis construct, "...". Technically,
   -- this is an environment symbol (e.g., .environment[".."]), but, when
   -- it appears at the end of an argument list, it has a different meaning.
   Call NewElements EL.ELLIPSIS
+
   -- Dots appearing inside a compound variable tail (i.e., not the first dot,
   -- which is part of the stem name) work, in fact, as syntactical separators,
   -- like commas in an argument list, but with a different syntax (no blanks

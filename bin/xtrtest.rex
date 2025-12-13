@@ -1,3 +1,4 @@
+#!/usr/bin/env rexx
 /******************************************************************************/
 /*                                                                            */
 /* xtrtest.rex - Test all cls and rex programs in the Executor tree           */
@@ -17,17 +18,6 @@
 /* 20251211    0.3a First public release                                      */
 /*                                                                            */
 /******************************************************************************/
-
-rex. = 3
-rex.1 = "1.rex"
-rex.2 = "2.rex"
-rex.3 = "3.rex"
-
-cls. = 3
-cls.1 = "1.cls"
-cls.2 = "2.cls"
-cls.3 = "3.cls"
-
 
 -- xtrtest
 --

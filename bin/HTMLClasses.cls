@@ -26,6 +26,7 @@
 /* 20250528    0.2c Add support for detailed string highlighting              */
 /* 20250630    0.2d Add support for doc-comment subelements                   */
 /* 20250722         Add "dskw" for .EL.DIRECTIVE_SUBKEYWORD                   */
+/* 20251213         Add support for curly brackets and argument names         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -362,6 +363,8 @@ SkipOverSpecial:
   Call Special .EL.RIGHT_PARENTHESIS,            "paren"
   Call Special .EL.LEFT_BRACKET,                 "bracket"
   Call Special .EL.RIGHT_BRACKET,                "bracket"
+  Call Special .EL.LEFT_CURLY_BRACKET,           "curly"
+  Call Special .EL.RIGHT_CURLY_BRACKET,          "curly"
 
 --
 -- Directive start. Although technically this is a sequence of special
@@ -478,6 +481,7 @@ SkipOverConstant:
 -- Other constants
 
   Call Constant .ANNOTATION.NAME,                  "annotation"
+  Call Constant .ARGUMENT.NAME,                    "argument-name"
   Call Constant .BLOCK.INSTRUCTION.NAME,           "block"
   Call Constant .CLASS.NAME,                       "class"
   Call Constant .ENVIRONMENT.NAME,                 "environment"

@@ -210,6 +210,13 @@ Error:
 
   elements = Array()
 
+  If begin~next < .EL.SHEBANG Then Do
+    shebang = begin~next
+    elements[1] = shebang
+    end = shebang~next
+    Return
+  End
+
   next = begin
   Loop Until next < .EL.RIGHT_CURLY_BRACKET
     next = TheElementAfter( next )

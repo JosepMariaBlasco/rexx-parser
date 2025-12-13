@@ -172,12 +172,14 @@
     If element < .EL.COLON Then Do
       element = TheElementAfter( element )
       If element \< .ALL.VAR_SYMBOLS Then Signal 20.900a
+      Call SetConstantName element, .ARGUMENT.NAME
       namedArguments~append( (.Nil, element) )
       element = TheElementAfter( element, IgnoreBlanks )
       end = element
     End
     Else If element < .ALL.VAR_SYMBOLS Then Do
       name = element
+      Call SetConstantName name, .ARGUMENT.NAME
       element = TheElementAfter( element )
       If element \< .EL.COLON Then Signal 99.900a
       element = TheElementAfter( element )

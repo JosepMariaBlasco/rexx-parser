@@ -50,6 +50,16 @@ earlycheck
 : An array of values selecting which modalities of [early check](early-check/) will
   be active when parsing the program.
 
+executor
+: Any value us valid to activate support for the extended
+  [Executor](../../../executor) syntax,
+  although `1` is recommended and may be required in future releases.
+
+experimental
+: Any value us valid to activate support for the
+  [Experimental](../../../experimental/) features,
+  although `1` is recommended and may be required in future releases.
+
 extraLetters
 : A string specifying the extra characters to be considered as letters
   (see ANSI 5.3.2).

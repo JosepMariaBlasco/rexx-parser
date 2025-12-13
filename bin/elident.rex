@@ -1,3 +1,4 @@
+#!/usr/bin/env rexx
 /******************************************************************************/
 /*                                                                            */
 /* elident.rex - Check that a program is equal to its Element API parsing     */

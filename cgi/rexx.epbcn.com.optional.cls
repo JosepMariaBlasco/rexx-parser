@@ -215,6 +215,9 @@ Crumb:
     When doc"/utilities/erexx"     Then Return "ERexx"
     When doc"/utilities/highlight" Then Return "Highlight"
     When doc"/utilities/elements"  Then Return "Elements"
+    When doc"/utilities/elident"   Then Return "Elident"
+    When doc"/utilities/trident"   Then Return "Trident"
+    When doc"/utilities/xtrtest"   Then Return "Xtrtest"
     When doc"/unicode"             Then Return "Unicode"
 
     -- "/rexx-parser/doc/experimental"
@@ -302,6 +305,7 @@ Crumb:
               <br><a href="/rexx-parser/tests/">Tests</a>
               <br><a href="/rexx-parser/doc/todo/">To-do</a>
               <br><a href="/rexx-parser/doc/samples/">Samples</a>
+              <br><a href="/rexx-parser/doc/executor/">Executor support</a>
               <br><a href="/rexx-parser/doc/experimental/">Experimental</a>
             </div>
           </div>

@@ -61,7 +61,9 @@ Pos: Procedure                          -- A label
 ~~~
 
 The **Rexx Parser** is a full Abstract Syntax Tree (AST)
-parser for Rexx and ooRexx written by Josep Maria Blasco
+parser for [Rexx](https://en.wikipedia.org/wiki/Rexx),
+[ooRexx](https://en.wikipedia.org/wiki/Object_REXX)
+and [Executor](doc/executor/) written by Josep Maria Blasco
 &lt;<josep.maria.blasco@epbcn.com>&gt; and distributed
 under [the Apache 2.0 license](LICENSE). Some files may
 contain contributions from other authors, as attributed

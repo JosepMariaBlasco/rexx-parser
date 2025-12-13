@@ -556,9 +556,9 @@ Return 0                                -- 0: Error encountered
     Return -- Do not generate an end-of-clause
   End
 
-InsertSemicolon:
   -- No continuation? Insert an implied semicolon (EL.END_OF_CLAUSE)
 
+InsertSemicolon:
   semicolon       = .Inserted.Semicolon~new(line, col)
 
   self~append( semicolon )
