@@ -17,6 +17,7 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20251116    0.3a First version                                             */
 /* 20251209         (Executor) Implement named arguments                      */
+/* 20251212         (Executor) Implement message terms                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -86,15 +87,62 @@
 ::Method "Arguments::Compile"
   Use Strict Arg element, stream, context
 
-  If self~isEmpty Then Return element
+  namedArguments = self~namedArguments
 
+  If self~isEmpty, namedArguments~isEmpty == .Nil Then Return element
+
+  first = 1
   Loop arg Over self~args
+    first = 0
     Loop While element~ignorable
       element = Clone( element, stream, context )
     End
     If arg~isA( .Special.Character.Sequence ) Then
       element = Clone( element, stream, context )
     Else element = arg~compile( element, stream, context )
+  End
+
+  If \namedArguments~isEmpty Then Do
+    If \first Then -- Clone a comma
+      element = Clone( element, stream, context )
+    nNamed = namedArguments~items
+    Loop Counter C named Over namedArguments
+
+      Loop While element~ignorable
+        element = Clone( element, stream, context )
+      End
+
+      -- name
+      name       = named[1]
+      If name \== .Nil Then Do
+        element = name~compile( element, stream, context )
+        Loop While element~ignorable
+          element = Clone( element, stream, context )
+        End
+      End
+
+      -- ":"
+      element = Clone( element, stream, context )
+
+      Loop While element~ignorable
+        element = Clone( element, stream, context )
+      End
+
+      expression = named[2]
+      If expression \== .Nil Then Do
+        element = expression~compile( element, stream, context )
+        Loop While element~ignorable
+          element = Clone( element, stream, context )
+        End
+      End
+
+      If c < nNamed Then Do -- Clone ","
+        element = Clone( element, stream, context )
+        Loop While element~ignorable
+          element = Clone( element, stream, context )
+        End
+      End
+    End
   End
 
   Return element
@@ -194,27 +242,36 @@
 /******************************************************************************/
 
 ::Method "Function.Call.Term::Compile"
+
   Use Strict Arg element, stream, context
 
-  name         = self~name
-  argumentList = self~argumentList
+  name          = self~name
+  argumentList  = self~argumentList
+  trailingBlock = self~trailingBlock
 
   -- Name
   element = name~compile( element, stream, context )
-  -- "("
-  element = Clone( element, stream, context )
-  -- Ignorable stuff
-  Loop While element~ignorable
+
+  If argumentList \== .Nil Then Do
+    -- "("
+    element = Clone( element, stream, context )
+    -- Ignorable stuff
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+    -- Argument list
+    element = argumentList~compile( element, stream, context )
+    -- More ignorable stuff
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+    -- ")"
     element = Clone( element, stream, context )
   End
-  -- Argument list
-  element = argumentList~compile( element, stream, context )
-  -- More ignorable stuff
-  Loop While element~ignorable
-    element = Clone( element, stream, context )
+
+  If trailingBlock \== .Nil Then Do
+    element = trailingBlock~compile( element, stream, context )
   End
-  -- ")"
-  element = Clone( element, stream, context )
 
   Return element
 
@@ -258,18 +315,21 @@
 ::Method "Message.Term::Compile"
   Use Strict Arg element, stream, context
 
-  term        = self~term
-  messageName = self~messageName
-  scope       = self~scope
-  arguments   = self~arguments
+  term          = self~term
+  messageName   = self~messageName
+  scope         = self~scope
+  arguments     = self~arguments
+  trailingBlock = self~trailingBlock
 
   element = term~compile( element, stream, context )
 
-  Loop While element \== messageName
-    element = Clone( element, stream, context )
-  End
+  If messageName \== .Nil Then Do
+    Loop While element \== messageName
+      element = Clone( element, stream, context )
+    End
 
-  element = messageName~compile( element, stream, context )
+    element = messageName~compile( element, stream, context )
+  End
 
   If scope \== .Nil Then Do
     Loop While element \< .EL.COLON
@@ -292,6 +352,10 @@
       element = Clone( element, stream, context )
     End
     element = Clone( element, stream, context )
+  End
+
+  If element < .EL.LEFT_CURLY_BRACKET Then Do
+    element = trailingBlock~compile( element, stream, context )
   End
 
   Return element
@@ -387,6 +451,31 @@
   End
 
   element = term~compile( element, stream, context )
+
+  Return element
+
+/******************************************************************************/
+/* SOURCE LITERALS                                                            */
+/******************************************************************************/
+
+::Method "Source.Literal::Compile"
+
+  Use Strict Arg element, stream, context
+
+  begin        = self~begin
+  end          = self~end
+  instructions = self~instructions
+
+  element = Clone( begin,   stream, context)  -- "{" -> (inserted) ";"
+  element = Clone( element, stream, context ) -- Clone ";"
+
+  Loop instruction Over instructions
+    element = instruction~compile( element, stream, context )
+  End
+
+  Loop While element \== end
+    element = Clone( element, stream, context )
+  End
 
   Return element
 

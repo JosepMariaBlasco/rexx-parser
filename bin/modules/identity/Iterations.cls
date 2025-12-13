@@ -165,6 +165,7 @@
 --------------------------------------------------------------------------------
 
 ::Routine ToPhrase
+
   Use Strict Arg self, element, stream, context
 
   -- Clone the "TO" keyword
@@ -246,6 +247,7 @@
 --------------------------------------------------------------------------------
 
 ::Routine DoLoop.Controlled
+
   Use Strict Arg self, element, stream, context
 
   element = InitBlock( self, element, stream, context )
@@ -268,6 +270,11 @@
 
   -- Compile expri
   element = self~expri~compile( element, stream, context )
+
+  -- Skip ignorables
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
 
   Loop phrase Over self~order~makeArray(" ")
     Select Case phrase

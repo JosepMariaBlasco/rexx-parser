@@ -59,7 +59,9 @@
  .environment~             Options.Instruction =             .Options.Instruction
  .environment~                Pull.Instruction =                .Pull.Instruction
  .environment~           Procedure.Instruction =           .Procedure.Instruction
+ .environment~               Queue.Instruction =               .Queue.Instruction
  .environment~               Raise.Instruction =               .Raise.Instruction
+ .environment~               Reply.Instruction =               .Reply.Instruction
  .environment~              Return.Instruction =              .Return.Instruction
  .environment~                 Say.Instruction =                 .Say.Instruction
  .environment~              Signal.Instruction =              .Signal.Instruction
@@ -109,7 +111,7 @@
 
   Call PrepareExpression package, element, "WITH"
   expression = Expression.List( package, element )
-  options.command = expression
+  options.["EXPRESSION"] = expression
   element = expression~end
   If element < .EL.END_OF_CLAUSE Then Signal Done
   Signal With
@@ -119,8 +121,8 @@ Value:
   element = TheElementAfter( element )
 AfterValue:
   Call PrepareExpression package, element, "WITH"
-  options.value = Expression.List( package, element )
-  element = options.value~end
+  options.env_expression = Expression.List( package, element )
+  element = options.env_expression~end
   If element < .EL.END_OF_CLAUSE Then Signal Done
   Signal With
 
@@ -147,7 +149,7 @@ With:
       replaceOrAppend = element~value
       If WordPos(replaceOrAppend, "REPLACE APPEND") > 0 Then Do
         Call SetSubkeyword element
-        options.tValue.replaceOrAppend = 1
+        options.[tValue"_"replaceOrAppend] = 1
         element = TheElementAfter( element )
         If element \< .ALL.SYMBOLS Then Signal 25.933
       End
@@ -155,25 +157,26 @@ With:
     IOType = element~value
     If WordPos(IOType, "NORMAL STEM STREAM USING") == 0 Then Signal 25.933
     Call SetSubkeyword element
+    eValue = element~value
     Select Case element~value
-      When "NORMAL" Then options.tValue.normal = 1
+      When "NORMAL" Then options[tValue"_"normal] = 1
       When "STEM"   Then Do
         element = TheElementAfter( element )
         If element \< .EL.STEM_VARIABLE Then Signal 20.932
         element~setAssigned
-        options.tValue.stem = element
+        options.[tValue"_"eValue] = element
       End
       When "STREAM", "USING" Then Do
         next = TheElementAfter( element )
         If next < .EL.END_OF_CLAUSE Then Signal 35.935
         element = next
         If element < .ALL.SYMBOLS_AND_STRINGS Then
-          options.tValue.stream = element
+          options.[tValue"_"eValue] = element
         Else Do
           If element \< .EL.LEFT_PARENTHESIS Then Signal 35.001
           Call prepareExpression package, element, "INPUT OUTPUT ERROR"
           subExpression = SubExpression( package, element )
-          options.tValue.stream = subExpression
+          options.[tValue"_"eValue] = subExpression
           element = subExpression~end
           If element < .EL.END_OF_CLAUSE Then Signal Done
           Iterate
@@ -219,13 +222,26 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Address.Instruction Public SubClass Rexx.Instruction
-::Attribute begin Get
-::Attribute end   Get
-::Attribute options. Get
+::Attribute begin          Get
+::Attribute end            Get
+::Attribute environment    Get
+::Attribute expression     Get
+::Attribute env_expression Get
+::Attribute options.       Get
+
 ::Method init
-  Expose begin end options.
+  Expose begin end environment expression env_expression options.
   Use Strict Arg package, begin, end, options.
   self~init:super(package, begin, end)
+  If options.~hasIndex(environment)
+    Then environment     = options.environment
+    Else environment     = .Nil
+  If options.~hasIndex(expression)
+    Then expression      = options.expression
+    Else expression      = .Nil
+  If options.~hasIndex(env_expression)
+    Then env_expression  = options.env_expression
+    Else env_expression  = .Nil
 
 /******************************************************************************/
 /* ARG instruction                                                            */
@@ -356,6 +372,7 @@ ProcessArguments:
 ::Class NameSpace.Qualified.Call.Instruction Public SubClass Rexx.Instruction
 ::Attribute nameSpace
 ::Attribute name
+::Attribute arguments
 ::Method init
   Expose nameSpace name arguments
   Use Strict Arg package, begin, end, nameSpace , name, arguments
@@ -1215,10 +1232,10 @@ Expression:
 --------------------------------------------------------------------------------
 
 ::Class Options.Instruction Public SubClass Rexx.Instruction
-::Attribute options Get
+::Attribute expression Get
 ::Method init
-  Expose options
-  Use Strict Arg package, begin, end, options
+  Expose expression
+  Use Strict Arg package, begin, end, expression
   self~init:super( package, begin, end )
 
 /******************************************************************************/
@@ -2060,8 +2077,6 @@ Done:
 ::Routine Use.Instruction Public
   Use Strict Arg package, begin, end, elements
 
---Trace ?a
-
   USE = elements[1]
 
   strict = 0
@@ -2291,7 +2306,7 @@ NextElement:
 ::Attribute named     Get
 ::Attribute arguments Get
 ::Method init
-  Expose strict arguments
+  Expose strict auto named arguments
   Use Strict Arg package, begin, end, strict, auto, named, arguments
   self~init:super( package, begin, end )
 

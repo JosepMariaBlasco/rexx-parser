@@ -139,6 +139,13 @@
 
   If element < terminators Then Leave
 
+    If .Options.Executor, element < .EL.COLON Then Leave Positional
+
+    If .Options.Executor, element < .ALL.VAR_SYMBOLS Then Do
+      next = TheElementAfter( element )
+      If next < .EL.COLON Then Leave Positional
+    End
+
     trailingComma = 0
 
     newOrExpression = Or.Expression( package, element, newTerminators )
@@ -175,13 +182,13 @@
       If element \< .EL.COLON Then Signal 99.900a
       element = TheElementAfter( element )
       If element < .EL.COMMA | element < terminators Then Do
-        namedArguments~append( (element, .Nil) )
+        namedArguments~append( (name, .Nil) )
         end = element
       End
       Else Do
         newOrExpression = Or.Expression( package, element, newTerminators )
         end = newOrExpression~end
-        namedArguments~append( (element, newOrExpression ) )
+        namedArguments~append( (name, newOrExpression ) )
         element = end
       End
     End
@@ -474,8 +481,9 @@ EndNamed:
 ::Class Source.Literal Public SubClass Rexx.Expression
 ::Attribute begin
 ::Attribute end
+::Attribute instructions
 ::Method init
-  Expose         begin  end
+  Expose         begin  end  instructions
   Use Strict Arg begin, end, instructions
 
 /******************************************************************************/
@@ -1597,26 +1605,25 @@ Return
 
   checkMessageName = 1
   scope = .Nil
-  If .Options.Executor, messageName < .EL.LEFT_PARENTHESIS Then
+  If .Options.Executor, -
+    messageName < (.EL.LEFT_PARENTHESIS || .EL.COLON) Then
     checkMessageName = 0
 
   If checkMessageName Then Do
     If messageName \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.909
-
-    next = TheElementAfter( messageName )
-
-    If next < .EL.COLON Then Do
-      scope     = TheElementAfter( next )
-
-      If scope \< .ALL.MESSAGE_SCOPE_ELEMENTS Then Signal 20.917
-
-      left = TheElementAfter( scope )
-    End
-    Else left   = next
+    left = TheElementAfter( messageName )
   End
   Else Do
     left        = messageName
     messageName = .Nil
+  End
+
+  If left < .EL.COLON Then Do
+    scope     = TheElementAfter( left )
+
+    If scope \< .ALL.MESSAGE_SCOPE_ELEMENTS Then Signal 20.917
+
+    left = TheElementAfter( scope )
   End
 
   arguments     = .Nil
@@ -1671,14 +1678,18 @@ Return
 
   If messageName \== .Nil Then Call SetConstantName messageName, .METHOD.NAME
 
-  If trailingBlock \== .Nil Then end = trailingBlock~end
-  Else If arguments == .Nil Then
-    If scope \== .Nil Then end = TheElementAfter( scope       )
-    Else                   end = TheElementAfter( messageName )
-  Else Do
+  end = FindEnd()
+
+  Return
+
+FindEnd:
+  If trailingBlock \== .Nil Then Return trailingBlock~end
+  If arguments \== .Nil Then Do
     rParen = arguments~end
-    end = TheElementAfter( rParen )
+    Return TheElementAfter( rParen )
   End
+  If scope       \== .Nil Then Return TheElementAfter( scope )
+  If messageName \== .Nil Then Return TheElementAfter( messageName )
 
 --------------------------------------------------------------------------------
 -- VARIABLE.REFERENCE.TERM                                                    --

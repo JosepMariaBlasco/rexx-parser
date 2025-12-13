@@ -37,6 +37,8 @@
    .EL.TAKEN_CONSTANT   ||         -    -- Labels
    .EL.COLON                            -- Label colons
 
+::Requires "BaseClassesAndRoutines.cls"
+
 /******************************************************************************/
 /* CLONE -- Clone a single element                                            */
 /******************************************************************************/
@@ -77,6 +79,10 @@
   -- Clone initial end-of-clauses, whitespace, comments,
   -- doc-comments and labels
   Do While element < .SKIP.BEFORE.CLAUSE
+    If element < .EL.TAKEN_CONSTANT Then Do
+      next = TheElementAfter( element, 1 )
+      If next \< .EL.COLON Then Leave
+    End
     element = Clone( element, stream, context )
   End
 

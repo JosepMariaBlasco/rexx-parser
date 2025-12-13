@@ -16,6 +16,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20251116    0.3a First version                                             */
+/* 20251212         (Executor) Implement the ::EXTENSION directive            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -101,6 +102,27 @@
   Return element
 
 /******************************************************************************/
+/* COACTIVITY DIRECTIVE                                                       */
+/******************************************************************************/
+
+::Method "Coactivity.Directive::Compile"
+  Use Strict Arg element, stream, context
+
+  -- Clone up to "::"
+  Do While element \< .EL.DIRECTIVE_START
+    element = Clone( element, stream, context )
+  End
+
+  -- Clone everything until EOC
+  Do while element \< .EL.END_OF_CLAUSE
+    element = Clone( element, stream, context )
+  End
+
+  -- No body for ::co
+
+  Return element
+
+/******************************************************************************/
 /* CONSTANT DIRECTIVE                                                         */
 /******************************************************************************/
 
@@ -159,6 +181,29 @@
 
   -- Clone ignorables
   Do while element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  -- Compile empty code body
+  element = self~body~compile( element, stream, context )
+
+  Return element
+
+
+/******************************************************************************/
+/* EXTENSION DIRECTIVE                                                        */
+/******************************************************************************/
+
+::Method "Extension.Directive::Compile"
+  Use Strict Arg element, stream, context
+
+  -- Clone up to "::"
+  Do While element \< .EL.DIRECTIVE_START
+    element = Clone( element, stream, context )
+  End
+
+  -- Clone everything until EOC
+  Do while element \< .EL.END_OF_CLAUSE
     element = Clone( element, stream, context )
   End
 
@@ -280,6 +325,27 @@
   End
 
   Return element~next
+
+/******************************************************************************/
+/* R DIRECTIVE                                                                */
+/******************************************************************************/
+
+::Method "R.Directive::Compile"
+  Use Strict Arg element, stream, context
+
+  -- Clone up to "::"
+  Do While element \< .EL.DIRECTIVE_START
+    element = Clone( element, stream, context )
+  End
+
+  -- Clone everything until EOC
+  Do while element \< .EL.END_OF_CLAUSE
+    element = Clone( element, stream, context )
+  End
+
+  -- No body for ::r
+
+  Return element
 
 /******************************************************************************/
 /* ROUTINE DIRECTIVE                                                          */

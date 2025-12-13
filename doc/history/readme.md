@@ -46,6 +46,8 @@ Version history
   <li> (Executor) Implement named arguments (20251210).
   <li> Add Executor support to elident.rex, move it to the `bin` subdirectory (20251211).
   <li> All `.cls` files in the Executor distribution pass the `elident` test (20251211).
+  <li> All `.cls` files in the Executor distribution pass the `trident` test (20251213).
+  <li> (Executor) Add a new `xtrtest` utility (20251213).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

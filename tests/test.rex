@@ -1,1 +1,2 @@
-    forward to (result) message "run" array (self, "a", array, :namedArguments)
+Call Rexx:XX a,b,{x}, c:d
+

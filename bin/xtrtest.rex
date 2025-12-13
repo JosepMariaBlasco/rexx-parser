@@ -18,17 +18,42 @@
 /*                                                                            */
 /******************************************************************************/
 
+rex. = 3
+rex.1 = "1.rex"
+rex.2 = "2.rex"
+rex.3 = "3.rex"
+
+cls. = 3
+cls.1 = "1.cls"
+cls.2 = "2.cls"
+cls.3 = "3.cls"
+
+
 -- xtrtest
 --
 -- Usage: cd to a directory in the Executor tree and run it
+--
 -- The script will stop when an error is encountered
+--
 -- See the list of exceptions below
+--
 
 Call SysFileTree "*.cls",cls, so
 
+Exception. = 0
+
+-- Add exceptions here
+
 Loop i = 1 To cls.0
+  name = FileSpec("N",cls.i)
+  If exception.name Then Iterate
+
   Say "Checking" cls.i"..."
+  Say "--> Elements"
   Call ElIdent "-xtr" cls.i
+  If result \== 0 Then Exit 1
+  Say "--> Tree"
+  Call TrIdent "-xtr" cls.i
   If result \== 0 Then Exit 1
 End
 
@@ -63,6 +88,10 @@ Loop i = 1 To rex.0
   If exception.name Then Iterate
 
   Say "Checking" rex.i"..."
+  Say "--> Elements"
   Call ElIdent "-xtr" rex.i
+  If result \== 0 Then Exit 1
+  Say "--> Tree"
+  Call TrIdent "-xtr" rex.i
   If result \== 0 Then Exit 1
 End

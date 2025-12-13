@@ -161,7 +161,7 @@ Syntax:
   Exit
 
 ::Resource HELP
-Usage: ident [OPTION]... [FILE]
+Usage: elident [OPTION]... [FILE]
 Check that the Rexx Parser returns a stream of elements identical to a FILE.
 
 If the only option is --help or -?, or if no arguments are present,

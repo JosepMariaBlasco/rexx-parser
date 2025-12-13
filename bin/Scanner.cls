@@ -523,7 +523,7 @@ Return 0                                -- 0: Error encountered
 /******************************************************************************/
 
 ::Method endOfLine
-  Expose line lines col tail
+  Expose line lines col len tail
 
   -- Either this is an implied semicolon, or a continuation char.
   -- Both continuations and semicolons eat blanks at both sides, and
@@ -531,6 +531,7 @@ Return 0                                -- 0: Error encountered
   -- (think of "A <eol>" -> "A<generated ;>)
 
   previous = tail
+
   Do While previous~ignorable
     previous = TheElementBefore( previous )
   End
@@ -538,6 +539,10 @@ Return 0                                -- 0: Error encountered
     previous~ignorable = 1
     previous = TheElementBefore( previous )
   End
+
+  -- Edge case: if this is a null line, we have to insert a semicolon
+  -- unconditionally
+  If len = 0, col = 1 Then Signal InsertSemicolon
 
   -- Continuations in the last source line are not accepted as such
   -- by the ANSI standard (see 6.2.2.1), but are happily processed by
@@ -551,6 +556,7 @@ Return 0                                -- 0: Error encountered
     Return -- Do not generate an end-of-clause
   End
 
+InsertSemicolon:
   -- No continuation? Insert an implied semicolon (EL.END_OF_CLAUSE)
 
   semicolon       = .Inserted.Semicolon~new(line, col)

@@ -22,19 +22,32 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20250707    0.2d First version                                             */
 /* 20251110    0.2e Rename to "trident.rex" (was "clonetree")                 */
+/* 20251211    0.3a Implement Executor support                                */
 /*                                                                            */
 /******************************************************************************/
 
   Signal On Syntax
 
-  Parse Arg filename
+  Parse Arg args
 
-  filename = Strip(filename)
+  args = Strip(args)
 
-  fullPath = .context~package~findProgram(filename)
+  If args == "" Then Signal Help
+
+  executor = 0
+
+  Loop While args[1] == "-"
+    Parse Var args option args
+    Select Case Lower(option)
+      When "--help", "-?"       Then Signal Help
+      When "--executor", "-xtr" Then executor = 1
+    End
+  End
+
+  fullPath = .context~package~findProgram(args)
 
   If fullPath == .Nil Then Do
-    Say "File '"filename"' does not exist."
+    Say "File '"args"' does not exist."
     Exit 1
   End
 
@@ -46,8 +59,11 @@
   If Right(chunk,1) == "0a"X Then source~append("")
   Call Stream fullPath, "C", "Close"
 
+  options = .Array~new
+  If executor Then options~append(("EXECUTOR", 1))
+
   -- Parse our program
-  parser = .Rexx.Parser~new(fullPath, source)
+  parser = .Rexx.Parser~new(fullPath, source, options)
 
   package = parser~package
 
@@ -100,6 +116,20 @@ Syntax:
   Say "Error" major"."minor": " ANSI.ErrorText(code, additional~additional)
 
   Exit -major
+
+--------------------------------------------------------------------------------
+
+::Resource HELP
+Usage: trident [OPTION]... [FILE]
+Check that the identity compiler returns a perfect copy of a program.
+
+If the only option is --help or -?, or if no arguments are present,
+then display this help and exit.
+
+Options:
+
+--executor, -xtr  Activate support for Executor language extensions
+::END
 
 --------------------------------------------------------------------------------
 

@@ -35,6 +35,93 @@
 /******************************************************************************/
 
 /******************************************************************************/
+/* ADDRESS INSTRUCTIONS                                                       */
+/******************************************************************************/
+
+::Method "Address.Instruction::compile"
+  Use Strict Arg element, stream, context
+
+  -- Look for ADDRESS keyword
+  element = PrepareClause( element, stream, context )
+
+  -- Clone it
+  element = Clone( element, stream, context )
+
+  -- Clone ignorables
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  If self~environment \== .Nil Then Do
+    element = self~environment~compile( element, stream, context )
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+    If self~expression \== .Nil Then Do
+      element = self~expression~compile( element, stream, context )
+      Loop While element~ignorable
+        element = Clone( element, stream, context )
+      End
+    End
+  End
+
+  If self~env_expression \== .Nil Then Do
+    If element < .EL.SUBKEYWORD Then Do -- VALUE
+      element = Clone( element, stream, context )
+      Loop While element~ignorable
+        element = Clone( element, stream, context )
+      End
+    End
+    element = self~env_expression~compile( element, stream, context )
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+  End
+
+  If element < .EL.END_OF_CLAUSE Then Return element
+
+  -- WITH
+  element = Clone( element, stream, context )
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  options. = self~options.
+
+  Loop While element \< .EL.END_OF_CLAUSE
+    -- INPUT, OUTPUT, ERROR
+    redir = element~value
+    element = Clone( element, stream, context )
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+
+    If WordPos(element~value, "APPEND REPLACE") Then Do
+      element = Clone( element, stream, context )
+      Loop While element~ignorable
+        element = Clone( element, stream, context )
+      End
+    End
+
+    option = element~value
+    element = Clone( element, stream, context )
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+
+    If option \== "NORMAL" Then Do
+      element = options.[redir"_"option]~compile( element, stream, context )
+      Loop While element~ignorable
+        element = Clone( element, stream, context )
+      End
+    End
+
+  End
+
+  Return element
+
+
+/******************************************************************************/
 /* ASSIGNMENT INSTRUCTIONS                                                    */
 /******************************************************************************/
 
@@ -74,6 +161,7 @@
 /******************************************************************************/
 
 ::Method "Call.Instruction::compile"
+
   Use Strict Arg element, stream, context
 
   -- Look for CALL keyword
@@ -198,6 +286,7 @@
 /******************************************************************************/
 
 ::Method "Command.Instruction::compile"
+
   Use Strict Arg element, stream, context
 
   -- Skip to expression start
@@ -355,7 +444,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables until ON or OFF
-  Loop While element \< .EL.END_OF_CLAUSE
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -363,7 +452,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element \< .EL.END_OF_CLAUSE
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -374,7 +463,7 @@
   element = Clone( element, stream, context )
 
   -- Skip ignorables
-  Loop While element \< .EL.END_OF_CLAUSE
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -382,7 +471,7 @@
   element = self~expression~compile( element, stream, context )
 
   -- Skip ignorables
-  Loop While element \< .EL.END_OF_CLAUSE
+  Loop While element~ignorable
     element = Clone( element, stream, context )
   End
 
@@ -650,6 +739,35 @@
   Return element
 
 /******************************************************************************/
+/* OPTIONS INSTRUCTIONS                                                       */
+/******************************************************************************/
+
+::Method "Options.Instruction::compile"
+  Use Strict Arg element, stream, context
+
+  -- Look for OPTIONS keyword
+  element = PrepareClause( element, stream, context )
+
+  -- Skip OPTIONS
+  element = Clone( element, stream, context )
+
+  -- Skip ignorables
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  expression = self~expression
+
+  -- Compile expression
+  element = expression~compile( element, stream, context )
+  -- Skip until EOC
+  Loop While element \< .EL.END_OF_CLAUSE
+    element = Clone( element, stream, context )
+  End
+
+  Return element
+
+/******************************************************************************/
 /* PROCEDURE INSTRUCTIONS                                                     */
 /******************************************************************************/
 
@@ -677,6 +795,37 @@
   element = PrepareClause( element, stream, context )
 
   -- Skip PUSH
+  element = Clone( element, stream, context )
+
+  -- Skip ignorables
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  expression = self~expression
+
+  If expression \== .Nil Then Do
+    -- Compile expression
+    element = expression~compile( element, stream, context )
+    -- Skip until EOC
+    Loop While element \< .EL.END_OF_CLAUSE
+      element = Clone( element, stream, context )
+    End
+  End
+
+  Return element
+
+/******************************************************************************/
+/* QUEUE INSTRUCTIONS                                                         */
+/******************************************************************************/
+
+::Method "Queue.Instruction::compile"
+  Use Strict Arg element, stream, context
+
+  -- Look for QUEUE keyword
+  element = PrepareClause( element, stream, context )
+
+  -- Skip QUEUE
   element = Clone( element, stream, context )
 
   -- Skip ignorables
@@ -765,6 +914,37 @@
     End
     -- Skip ignorables
     Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+  End
+
+  Return element
+
+/******************************************************************************/
+/* REPLY INSTRUCTIONS                                                         */
+/******************************************************************************/
+
+::Method "Reply.Instruction::compile"
+  Use Strict Arg element, stream, context
+
+  -- Look for REPLY keyword
+  element = PrepareClause( element, stream, context )
+
+  -- Skip REPLY
+  element = Clone( element, stream, context )
+
+  -- Skip ignorables
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  expression = self~expression
+
+  If expression \== .Nil Then Do
+    -- Compile expression
+    element = expression~compile( element, stream, context )
+    -- Skip until EOC
+    Loop While element \< .EL.END_OF_CLAUSE
       element = Clone( element, stream, context )
     End
   End
@@ -1037,6 +1217,26 @@
 
   -- Do we expect STRICT?
   If self~strict Then Do
+    -- Skip over it
+    element = Clone( element, stream, context )
+    -- Skip ignorables
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+  End
+
+  -- Do we expect AUTO?
+  If self~auto Then Do
+    -- Skip over it
+    element = Clone( element, stream, context )
+    -- Skip ignorables
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+  End
+
+  -- Do we expect NAMED?
+  If self~named Then Do
     -- Skip over it
     element = Clone( element, stream, context )
     -- Skip ignorables
