@@ -115,6 +115,8 @@ End
     res[index] = fun~(self[index])      -- 'fun~(args)' is Executor's way to call 'fun'
   End
   Return res
+
+::Requires "extension/extensions.cls"
 ```
 
 ### Compatibility with Classic Rexx

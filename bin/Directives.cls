@@ -815,7 +815,13 @@ Return
       When WordPos(tValue, conditions) > 0 Then Do
         condition = tValue
         If element \< .ALL.SYMBOLS Then Signal 20.929
-        If WordPos( element~value, "CONDITION SYNTAX") == 0 Then Signal 25.927
+        If tValue = "NOVALUE" Then Do
+          -- ::OPTIONS NOVALUE ERROR is deprecated (rexxref B.2.3) but it should work.
+          If WordPos( element~value, "CONDITION SYNTAX ERROR") == 0 Then Signal 25.927
+        End
+        Else Do
+          If WordPos( element~value, "CONDITION SYNTAX") == 0 Then Signal 25.927
+        End
         options.condition = element~value
         Call Set.Directive.SubKeyword element
         element = TheElementAfter( element )

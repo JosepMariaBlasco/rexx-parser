@@ -96,7 +96,7 @@
       element = Clone( element, stream, context )
     End
 
-    If WordPos(element~value, "APPEND REPLACE") Then Do
+    If WordPos(element~value, "APPEND REPLACE") > 0 Then Do
       element = Clone( element, stream, context )
       Loop While element~ignorable
         element = Clone( element, stream, context )
@@ -1169,6 +1169,7 @@
       End
       element = self~expression~compile( element, stream, context )
     End
+    When self~expression == .Nil Then Nop
     Otherwise -- Expression
       element = self~expression~compile( element, stream, context )
   End

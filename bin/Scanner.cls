@@ -38,6 +38,7 @@
 /* 20251202         Fix line no reported for syntax error 13.001              */
 /* 20251202         Support Latin-1 encodings for ¬ and ¢                     */
 /* 20251203         Rename to Scanner.cls                                     */
+/* 20251214         Allow "AA"X as "¬", like ooRexx does                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -176,11 +177,13 @@
     special       ||= "{}"
   -- Special Characters; "~" moved to operator
   not               = "\"                            -- ANSI 6.2.2.3
+  not             ||= "AAAC"X                        -- See rexxref 1.10.4.6
   If .Options.Executor Then
     not           ||= "^¬"
   operator_only     = "+-%|&=><\"                    -- ANSI 6.2.2.4
+  operator_only   ||= "AAAC"X                        -- See rexxref 1.10.4.6
   If .Options.Executor Then
-    operator_only ||= "^¬" || "AC"X     -- "AC"X is Latin-1 for "¬"
+    operator_only ||= "^¬"
   -- See Rexxref 5.10, 1.11.3. Parentheses and Operator Precedence
   operator_only   ||= "~"
   operator_or_other = "/*"                           -- ANSI 6.2.2.5
@@ -283,24 +286,25 @@ Return
 --------------------------------------------------------------------------------
 
   ClassOfOperatorChar = .StringTable~of( -
-    ("&", .EL.OP.AND              ),     -
-    ("=", .EL.OP.EQUAL            ),     -
-    (">", .EL.OP.GREATER_THAN     ),     -
-    ("<", .EL.OP.LOWER_THAN       ),     -
-    ("-", .EL.OP.MINUS            ),     -
-    ("\", .EL.OP.NEGATION         ),     -
-    ("+", .EL.OP.PLUS             ),     -
-    ("~", .EL.OP.MESSAGE          ),     -
-    ("|", .EL.OP.OR               ),     -
-    ("%", .EL.OP.INTEGER_DIVISION ),     -
-    ("/", .EL.OP.DIVISION         ),     -
-    ("*", .EL.OP.MULTIPLICATION   )      -
+    ("&",   .EL.OP.AND              ),     -
+    ("=",   .EL.OP.EQUAL            ),     -
+    (">",   .EL.OP.GREATER_THAN     ),     -
+    ("<",   .EL.OP.LOWER_THAN       ),     -
+    ("-",   .EL.OP.MINUS            ),     -
+    ("\",   .EL.OP.NEGATION         ),     -
+    ("+",   .EL.OP.PLUS             ),     -
+    ("~",   .EL.OP.MESSAGE          ),     -
+    ("|",   .EL.OP.OR               ),     -
+    ("%",   .EL.OP.INTEGER_DIVISION ),     -
+    ("/",   .EL.OP.DIVISION         ),     -
+    ("*",   .EL.OP.MULTIPLICATION   ),     -
+    ("AC"X, .EL.OP.NEGATION         ),     - -- Latin-1 ¬
+    ("AA"X, .EL.OP.NEGATION         )      - -- ooRexx ¬ too
   )
 
   If .Options.Executor Then Do
     ClassOfOperatorChar["^"  ] = .EL.OP.NEGATION
     ClassOfOperatorChar["¬"  ] = .EL.OP.NEGATION
-    ClassOfOperatorChar["AC"X] = .EL.OP.NEGATION -- Latin-1 ¬
   End
 
 --------------------------------------------------------------------------------
@@ -344,6 +348,22 @@ Return
     ("//" , .EL.OP.REMAINDER               )  -
   )
 
+  -- "AA"X as a negator
+  compoundOperator["AA"X"=="] = .EL.OP.STRICT.NOT_EQUAL
+  compoundOperator["AA"X"=" ] = .EL.OP.NOT_EQUAL
+  compoundOperator["AA"X">" ] = .EL.OP.NOT_GREATER_THAN
+  compoundOperator["AA"X"<" ] = .EL.OP.NOT_LOWER_THAN
+  compoundOperator["AA"X"<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
+  compoundOperator["AA"X">>"] = .EL.OP.STRICT.NOT_GREATER_THAN
+
+  -- "AC"X as a negator
+  compoundOperator["AC"X"=="] = .EL.OP.STRICT.NOT_EQUAL
+  compoundOperator["AC"X"=" ] = .EL.OP.NOT_EQUAL
+  compoundOperator["AC"X">" ] = .EL.OP.NOT_GREATER_THAN
+  compoundOperator["AC"X"<" ] = .EL.OP.NOT_LOWER_THAN
+  compoundOperator["AC"X"<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
+  compoundOperator["AC"X">>"] = .EL.OP.STRICT.NOT_GREATER_THAN
+
   If .Options.Executor Then Do
     -- TSO/E negations
     compoundOperator["/=="]     = .EL.OP.STRICT.NOT_EQUAL
@@ -362,13 +382,6 @@ Return
     compoundOperator["¬<" ]     = .EL.OP.NOT_LOWER_THAN
     compoundOperator["¬<<"]     = .EL.OP.STRICT.NOT_LOWER_THAN
     compoundOperator["¬>>"]     = .EL.OP.STRICT.NOT_GREATER_THAN
-    -- "AC"X as a negator
-    compoundOperator["AC"X"=="] = .EL.OP.STRICT.NOT_EQUAL
-    compoundOperator["AC"X"=" ] = .EL.OP.NOT_EQUAL
-    compoundOperator["AC"X">" ] = .EL.OP.NOT_GREATER_THAN
-    compoundOperator["AC"X"<" ] = .EL.OP.NOT_LOWER_THAN
-    compoundOperator["AC"X"<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
-    compoundOperator["AC"X">>"] = .EL.OP.STRICT.NOT_GREATER_THAN
  End
 
   ClassOfSpecialChar =                        -

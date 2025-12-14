@@ -1097,7 +1097,9 @@ Done:
 
   name~invocationType = Function
 
-  package~currentBodies~top~calledRoutineNames~append( -
+  -- When evaluating calculated constants, there is no active body. TODO
+  body = package~currentBodies~top
+  If body \== .Nil Then body~calledRoutineNames~append( -
     (name, arguments, trailingBlock)                   -
   )
 
@@ -1127,6 +1129,11 @@ Done:
 
   lParen = begin
 
+  next   = TheElementAfter( lParen )
+
+  If next < .EL.RIGHT_PARENTHESIS Then Signal 35.001
+
+
   subExpression = Expression.List(   -
     package,                         -
     TheElementAfter( begin ),        - -- Where to begin parsing
@@ -1143,6 +1150,9 @@ Done:
   Call ExpectParenPair lParen, rParen
 
   Return .SubExpression~new( lParen, subExpression, rParen )
+
+-- Incorrect expression detected at "&1".
+35.001: Syntax( 35.001, begin, lParen )
 
 --------------------------------------------------------------------------------
 
@@ -1198,7 +1208,8 @@ Done:
 
   -- Change the element category of variable symbols to reflect whether
   -- they are local or instance variables.
-  If symbol < .EL.SIMPLE_VARIABLE Then Do
+  -- TODO thisBody can be .Nil when parsing calculated ::CONSTANTs
+  If symbol < .EL.SIMPLE_VARIABLE, thisBody \== .Nil Then Do
     locals        = thisBody~locals
     If \locals~hasIndex( varName ) Then locals[ varName ] = varSource
     exposed       = thisBody~exposed
@@ -1469,7 +1480,9 @@ Return
 
   name~invocationType = Function
 
-  package~currentBodies~top~calledRoutineNames~append( -
+  -- When evaluating calculated constants, there is no active body. TODO
+  body = package~currentBodies~top
+  If body \== .Nil Then body~calledRoutineNames~append( -
     (name, arguments, trailingBlock)                   -
   )
 
@@ -1494,6 +1507,8 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class NameSpace.Qualified.Function.Call Public SubClass Rexx.Term
+::Attribute nameSpace
+::Attribute name
 ::Attribute arguments
 ::Attribute trailingBlock
 ::Attribute begin
@@ -1508,6 +1523,8 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class NameSpace.Qualified.ClassName Public SubClass Rexx.Term
+::Attribute nameSpace
+::Attribute className
 ::Attribute begin
 ::Attribute end
 ::Method init

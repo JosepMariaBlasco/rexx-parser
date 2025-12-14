@@ -386,6 +386,91 @@
   Return element
 
 /******************************************************************************/
+/* NAMESPACE QUALIFIED CLASSNAME                                              */
+/******************************************************************************/
+
+::Method "Namespace.Qualified.Classname::Compile"
+  Use Strict Arg element, stream, context
+
+  classname     = self~classname
+  nameSpace     = self~nameSpace
+
+  -- Namespace
+  element = nameSpace~compile( element, stream, context )
+
+  -- Ignorable stuff
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  -- ":"
+  element = Clone( element, stream, context )
+
+  -- Ignorable stuff
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  -- Class name
+  element = classname~compile( element, stream, context )
+
+  Return element
+
+/******************************************************************************/
+/* NAMESPACE QUALIFIED FUNCTION CALLS                                         */
+/******************************************************************************/
+
+::Method "Namespace.Qualified.Function.Call::Compile"
+  Use Strict Arg element, stream, context
+
+  name          = self~name
+  nameSpace     = self~nameSpace
+  arguments     = self~arguments
+  trailingBlock = self~trailingBlock
+
+  -- Namespace
+  element = nameSpace~compile( element, stream, context )
+
+  -- Ignorable stuff
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  -- ":"
+  element = Clone( element, stream, context )
+
+  -- Ignorable stuff
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  -- Name
+  element = name~compile( element, stream, context )
+
+  If arguments \== .Nil Then Do
+    -- "("
+    element = Clone( element, stream, context )
+    -- Ignorable stuff
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+    -- Argument list
+    element = arguments~compile( element, stream, context )
+    -- More ignorable stuff
+    Loop While element~ignorable
+      element = Clone( element, stream, context )
+    End
+    -- ")"
+    element = Clone( element, stream, context )
+  End
+
+  If trailingBlock \== .Nil Then Do
+    element = trailingBlock~compile( element, stream, context )
+  End
+
+  Return element
+
+/******************************************************************************/
 /* OR EXPRESSIONS                                                             */
 /******************************************************************************/
 

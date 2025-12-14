@@ -181,9 +181,11 @@
 
   If t1 < .ALL.VARIABLES_AND_KEYWORDS, instructions~hasItem( t1~value ) Then Do
     -- Case 4 (bis): keyword instructions
+    /*
     -- Special case: "address()" -> 35.1
     If \.Options.Executor, t1~next < .EL.LEFT_PARENTHESIS Then
       Call 35.001 "("
+    */
     Exit self~Keyword.Clause
   End
 

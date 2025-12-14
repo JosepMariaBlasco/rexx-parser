@@ -159,7 +159,7 @@ With:
     Call SetSubkeyword element
     eValue = element~value
     Select Case element~value
-      When "NORMAL" Then options[tValue"_"normal] = 1
+      When "NORMAL" Then options.[tValue"_"normal] = 1
       When "STEM"   Then Do
         element = TheElementAfter( element )
         If element \< .EL.STEM_VARIABLE Then Signal 20.932
@@ -1958,6 +1958,7 @@ Expression:
 /******************************************************************************/
 
 ::Routine Trace.Instruction Public
+
   Use Strict Arg package, begin, end, elements
 
   TRACE = elements[1]
@@ -2592,7 +2593,7 @@ GetASymbol:
       End
       When element < .ALL.STRINGS Then
         template~append(element)
-      When element < .ALL.NUMBERS Then Do
+      When element < .ALL.SYMBOLS Then Do
         If \DataType(element~value,"I") Then Signal 26.004
         template~append(element)
       End

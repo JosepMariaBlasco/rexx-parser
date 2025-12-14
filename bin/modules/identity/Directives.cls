@@ -133,6 +133,7 @@
   Do While element \< .EL.DIRECTIVE_START
     element = Clone( element, stream, context )
   End
+  element = Clone( element, stream, context )
 
   -- Clone ignorables
   Do while element~ignorable

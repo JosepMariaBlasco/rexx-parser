@@ -52,6 +52,7 @@ Version history
   <li> Start documenting [Executor](../executor/) support (20251213).
   <li> Finish documenting [Executor](../executor/) support. Executor support
        should be complete at this point (20251214).
+  <li> Add `"AA"X` and `"AC"X` as negators (see rexxref 1.10.4.6. Operator Characters) (20251214).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.
