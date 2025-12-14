@@ -4,7 +4,8 @@ Executor support
 --------------------------
 
 [Executor](https://github.com/jlfaucher/executor) is
-a dialect of ooRexx featuring an important and very
+a dialect of ooRexx designed by [jlfaucher](https://github.com/jlfaucher) and
+featuring an important and very
 interesting set of extensions to the language. The
 Rexx Parser implements full, optional, support for the parsing of
 ooRexx programs that contains Executor enhancements.
@@ -37,7 +38,7 @@ Namely,
 + [The `xtrtest` utility](../utilities/xtrtest/) has been specifically created
   to test the working of the Rexx Parser when handling Executor programs.
 
-Here are some examples of Executor features in action. For the full details,
+Here are some (non-exhaustive) examples of Executor features in action. For the full details,
 please refer to the
 [Executor GitHub repository](https://github.com/jlfaucher/executor)
 and to the
@@ -46,10 +47,9 @@ and to the
 ### Modifications to the scanner
 
 ```rexx {executor}
--- Executor parses "2i" as a number ("2") followed by
--- (concatenated to) a symbol ("i"):
+-- Executor parses "2i" as a number ("2") followed by (concatenated to) a symbol ("i"):
 
-x = 2i
+x = 3 + 2i
 ```
 
 ### New `::EXTENSION` directive
@@ -74,4 +74,77 @@ Touch: Procedure
   Use Named Arg x, y
   Say "(" || x", "y")"
 Return
+```
+
+### Source literals and code blocks
+
+```rexx {executor}
+--
+-- Note: Executor already includes a "map" method for Arrays. This sample
+-- defines a "map" extension method to show how source literals work.
+--
+
+double     = {Use Arg x; x+x}           -- A routine that doubles its argument
+square     = {Use Arg x; x*x}           -- A routine that squares its argument
+
+vector     = .Array~of(1,2,3)           -- A one-dimensional array
+res        = vector~map(square)         -- Square it...
+Loop index Over res~allIndexes          -- ...and print it.
+  Say index":" res[index]
+End
+
+array      = .Array~new                 -- A two-dimensional array...
+array[1,2] = 15                         -- ...sparsely populated
+array[2,1] = 25
+res        = array~map(double)          -- Let's double it, ...
+Loop index Over res~allIndexes          -- ...and print it.
+  Call CharOut ,"["
+  Loop n = 1 To index~items
+    Call CharOut , index[n]
+    If n < index~items Then Call CharOut ,", "
+  End
+  Call CharOut ,"]: "
+  Say res[index]
+End
+
+::Extension Array                       -- Extending the (predefined) Array class
+::Method Map                            -- This method is second order...
+  Use Strict Arg fun                    -- ...as its argument is itself a routine.
+  res = .Array~new
+  Do index Over self~allIndexes         -- 'allIndexes' is agnostic regarding dimensionality
+    res[index] = fun~(self[index])      -- 'fun~(args)' is Executor's way to call 'fun'
+  End
+  Return res
+```
+
+### Compatibility with Classic Rexx
+
+```rexx {executor}
+-- Allow "^" and "¬", in addition to "\", to express negation
+
+Say 1 \= 1                              -- 0
+Say 1 ^= 1                              -- 0
+Say 1 ¬= 1                              -- 0
+
+-- Both Latin-1 "¬" ("AC"X) and UTF-8 "¬" ("C2 AC"X) are accepted
+
+--------------------------------------------------------------------------------
+
+-- Allow "#", "@", "$" and "¢" as letters when forming symbols
+
+#2 = "ab"
+Say #2 #2                               -- "ab ab"
+
+-- Both Latin-1 "¢" ("A2"X) and UTF-8 "¢" ("C2A2"X) are accepted
+
+--------------------------------------------------------------------------------
+
+-- Allow "Symbol =" in assignments (assigns the null string)
+
+V =
+Say V~length V~class                    -- 0 The String class
+
+--------------------------------------------------------------------------------
+
+-- (Others)
 ```

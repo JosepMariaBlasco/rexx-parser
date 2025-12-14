@@ -31,6 +31,12 @@ User Guide
   - [The Element API](guide/elementapi/)
   - [The Tree API](guide/treeapi/)
 
+Variants
+--------
+
+- [Executor support](executor/)
+- [Experimental features](experimental/)
+
 Utilities and samples
 ---------------------
 

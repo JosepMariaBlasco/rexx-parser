@@ -171,7 +171,7 @@
 
   .rx-str , .rx-bstr, .rx-xstr,         /* Classic Rexx strings               */
   .rx-ystr, .rx-pstr, .rx-gstr, .rx-tstr, .rx-ustr { /* TUTOR Unicode strings */
-    color: #f01b0c;                     /* the inner part of the string       */
+    color: #64b02a;                     /* the inner part of the string       */
     &.rx-ssuf            {color: #0ff;} /* String suffix                      */
     &.rx-oquo, &.rx-cquo {color: #ff0;} /* Quotes                             */
   }

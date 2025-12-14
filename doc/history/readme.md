@@ -49,7 +49,9 @@ Version history
   <li> All `.cls` files in the Executor distribution pass the `trident` test (20251213).
   <li> (Executor) Add a new `xtrtest` utility (20251213).
   <li> Document the `elident`, `trident` and `xtrtest` utilities (20251213).
-  <li> Start to document the [Executor](../executor/) support (20251213).
+  <li> Start documenting [Executor](../executor/) support (20251213).
+  <li> Finish documenting [Executor](../executor/) support. Executor support
+       should be complete at this point (20251214).
 <tr><td>20250831<td>0.2e<td>
 <ul>
   <li> Continue refactoring to refine the Tree API.

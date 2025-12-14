@@ -3,7 +3,7 @@ Trident
 
 ----------------
 
-Trident is a self-consistency utility.
+Trident ("TRee IDENtity") is a self-consistency utility.
 It checks that a program is identical to the its own parse Tree.
 
 Usage

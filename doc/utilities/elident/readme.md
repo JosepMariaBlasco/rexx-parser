@@ -3,7 +3,7 @@ Elident
 
 ----------------
 
-Elident is a self-consistency utility.
+Elident ("ELement IDENTity") is a self-consistency utility.
 It checks that a program is identical to the concatenation
 of the values of all its parsed elements.
 
