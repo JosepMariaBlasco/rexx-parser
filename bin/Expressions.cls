@@ -1257,9 +1257,17 @@ Return
   Use Strict Arg package, variable, inExpose
 
   thisBody      = package~currentBodies~top
-  exposed       = thisBody~exposed
-  useLocal      = thisBody~useLocal
-  locals        = thisBody~locals
+  -- TODO Calculated constants don't have a body
+  If thisbody == .Nil Then Do
+    exposed     = .Nil
+    useLocal    = .Nil
+    locals      = .Nil
+  End
+  Else Do
+    exposed     = thisBody~exposed
+    useLocal    = thisBody~useLocal
+    locals      = thisBody~locals
+  End
 
   Parse Value variable~from With line col
   sourceLine    = package~source[line]
@@ -1273,7 +1281,8 @@ Return
   stemClass = StemClass()
 
   Parse Value variable~source With stemSource"."
-  If \locals~hasIndex( stemName ) Then locals[ stemName ] = stemSource"."
+  If locals \== .Nil, \locals~hasIndex( stemName ) Then
+    locals[ stemName ] = stemSource"."
 
   Select Case stemClass
     When .EL.STEM_VARIABLE         Then variableClass =         .EL.COMPOUND_VARIABLE
@@ -1308,7 +1317,8 @@ Return
 
 StemClass:
   If inExpose Then Return .EL.EXPOSED_STEM_VARIABLE
-  If \exposed~isEmpty Then Do        -- This body starts with EXPOSE
+  -- If this body starts with EXPOSE
+  If exposed \== .Nil, \exposed~isEmpty Then Do
     If  exposed ~hasItem( stemName ) Then Return .EL.EXPOSED_STEM_VARIABLE
   End
   Else If useLocal \ == .Nil Then Do -- This body starts with USE LOCAL
@@ -1326,9 +1336,11 @@ AddFragment:
   If fragment == "" Then Return
   Select
     When DataType(fragment, "Variable") Then Do
-      If \locals~hasIndex( fragment ) Then locals[ fragment ] = fragmentSource
+      If locals \== .Nil, \locals~hasIndex( fragment ) Then
+        locals[ fragment ] = fragmentSource
       partClass = .EL.SIMPLE_VARIABLE
       Select
+        When exposed == .Nil Then Nop
         When exposed~hasItem( Upper(fragment) ) Then
           partClass = .EL.EXPOSED_SIMPLE_VARIABLE
         When exposed~isEmpty Then Do

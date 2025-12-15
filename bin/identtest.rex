@@ -38,6 +38,8 @@
 Parse Lower Arg args
 args = Space(Strip(args))
 
+SysFileTreeOptions = "FSO"
+
 elements  = 1
 tree      = 1
 
@@ -65,7 +67,7 @@ If Executor Then option = "-xtr"
 Else             option = ""
 
 If cls Then Do
-  Call SysFileTree "*.cls", "cls", so
+  Call SysFileTree "*.cls", "cls", SysFileTreeOptions
 
   Exception. = 0
 
@@ -86,7 +88,7 @@ If cls Then Do
 End
 
 If rexx Then Do
-  Call SysFileTree "*.rex", "rex", so
+  Call SysFileTree "*.rex", "rex", SysFileTreeOptions
 
   Exception. = 0
 
@@ -110,8 +112,11 @@ If rexx Then Do
     "include_conversion_to_wtf16be.rex include_conversion_to_wtf16le.rex include_conversion_to_wtf8.rex"                     -
     "main_concatenation.rex main_conversion.rex"
 
-  -- test/trunk
+  -- test/trunk (SVN)
   exceptions ||=  " tmpTest_ExternalCode_Compiled.rex tmpTest_ExternalCode_CompiledAndEncoded.rex"
+
+  -- samples/ (ooRexx installations)
+  exceptions ||=  " MSInternetExplorer_search.rex"
 
   -- Experimental features of the Rexx Parser
   exceptions ||=  " extends.rex tables.rex"
@@ -135,7 +140,7 @@ If rexx Then Do
 End
 
 If testGroup Then Do
-  Call SysFileTree "*.testgroup", "testgroup", so
+  Call SysFileTree "*.testgroup", "testgroup", SysFileTreeOptions
 
   Exception. = 0
 

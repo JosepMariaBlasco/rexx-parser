@@ -1164,7 +1164,7 @@ Done:
         Parse Value spec~value With one two three four
         -- Note: we only check a few things here.
         If Pos(Upper(one), "LIBRARY REGISTERED") == 0 Then Signal 99.917
-        If four \== ""                                Then Signal 99.917
+        If four \= ""                                 Then Signal 99.917
         keyword = TheElementAfter( spec, ignoreBlanks )
      End
     End
