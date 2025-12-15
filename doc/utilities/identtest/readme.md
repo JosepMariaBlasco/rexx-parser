@@ -57,7 +57,7 @@ First `cd` to the root of the Executor files, and then run
 [rexx] identtest -xtr
 ```
 
-### Perform a self-test of the ooress test/trunk files
+### Perform a self-test of the oorexx test/trunk files
 
 First `cd` to the ooRexx `test/trunk` directory, and then run
 
