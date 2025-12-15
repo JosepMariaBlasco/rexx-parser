@@ -8,6 +8,9 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20251215<td>0.4a<td>
+<ul>
+  <li> Jump release level to mark full Executor support (20251215).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting
