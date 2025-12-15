@@ -26,6 +26,9 @@ Namely,
 + Rexx fenced code blocks can use Executor syntax by using the `executor` option
   on the first fence line of the code block.
 
++ [The `identtest` utility](../utilities/identtest/) includes support for Executor. You
+  can activate it by using the `-xtr` or `-executor` options.
+
 + [The `highlight` utility](../utilities/highlight/) includes support for Executor. You
   can activate it by using the `-xtr` or `--executor` options.
 
@@ -35,8 +38,6 @@ Namely,
 + [The `rxcheck` utility](../utilities/rxcheck/) includes support for Executor. You
   can activate it by using the `-xtr` or `-executor` options.
 
-+ [The `xtrtest` utility](../utilities/xtrtest/) has been specifically created
-  to test the working of the Rexx Parser when handling Executor programs.
 
 Here are some (non-exhaustive) examples of Executor features in action. For the full details,
 please refer to the

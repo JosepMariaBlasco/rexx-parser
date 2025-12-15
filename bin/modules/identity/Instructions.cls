@@ -902,7 +902,17 @@
       When "ADDITIONAL" Then
         element = self~additional ~compile( element, stream, context )
       When "ARRAY" Then
-        element = self~array      ~compile( element, stream, context )
+        If self~array = "" Then Do -- ARRAY ()
+          -- Clone "("
+          element = Clone( element, stream, context )
+          Loop While element~ignorable
+            element = Clone( element, stream, context )
+          End
+          -- Clone ")"
+          element = Clone( element, stream, context )
+        End
+        Else
+          element = self~array    ~compile( element, stream, context )
       When "DESCRIPTION" Then
         element = self~description~compile( element, stream, context )
       When "EXIT" Then

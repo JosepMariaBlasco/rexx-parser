@@ -91,7 +91,7 @@ StandardComment:
   currentLine ||= SubStr( source[currentLineNo], start )
   Call ChangeLine
   currentLineNo = lastLine
-  currentLine   = source[currentLineNo]
+  currentLine   = source[currentLineNo][1, end - 1]
 Return
 
 ResourceData:

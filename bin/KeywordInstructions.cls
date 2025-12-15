@@ -1533,7 +1533,13 @@ Option.Array:
   additional = .True
   Call NextElement
   If element \< .EL.LEFT_PARENTHESIS Then Signal 35.924
-  options.["ARRAY"] = Expression()
+  next = TheElementAfter(element)
+  -- ARRAY () is allowed by the syntax
+  If next < .EL.RIGHT_PARENTHESIS Then Do
+    options.["ARRAY"] = ""
+    element = TheElementAfter(next)
+  End
+  Else options.["ARRAY"] = Expression()
   Return
 
 Option.Description:
@@ -1575,10 +1581,8 @@ Expression:
   Else If element \< .EL.LEFT_PARENTHESIS Then Signal 35.001
   Else Do
     Call PrepareExpression package, element, options~makeArray~makeString("L"," ")
-    -- Call NextElement -- Consume the "("
     expression = SubExpression( package, element, .EL.RIGHT_PARENTHESIS )
     element = expression~end
-    -- Call NextElement -- Consume the ")"
     Return expression
   End
 

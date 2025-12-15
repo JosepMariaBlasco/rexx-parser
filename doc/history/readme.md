@@ -11,6 +11,11 @@ Version history
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).
+  <li> Rename `xtrtest.rex` to `identtest.rex`, and extend it so that it
+       can self-check the Rexx Parser, the Executor sources, and the
+       ooRexx tests. This program contains a superset of the older
+       utility `idents.rex`, which has been removed from this release
+       (20251215).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

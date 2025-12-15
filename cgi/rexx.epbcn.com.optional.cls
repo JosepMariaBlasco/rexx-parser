@@ -217,7 +217,7 @@ Crumb:
     When doc"/utilities/elements"  Then Return "Elements"
     When doc"/utilities/elident"   Then Return "Elident"
     When doc"/utilities/trident"   Then Return "Trident"
-    When doc"/utilities/xtrtest"   Then Return "Xtrtest"
+    When doc"/utilities/identtest" Then Return "Identtest"
     When doc"/unicode"             Then Return "Unicode"
 
     -- "/rexx-parser/doc/experimental"

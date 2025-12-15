@@ -1,6 +1,8 @@
 Consistency tests
 =================
 
+See also the documentation for the [Identtest.rex](../doc/utilities/identtest/) utility program.
+
 -----------------------------------
 
 Error handling: [`errors.rex`](errors.rex)
@@ -41,39 +43,6 @@ under Windows, or
 
 ```
 rexx tests/errors
-```
-
-under Linux.
-
-Self-parsing: [`idents.rex`](idents.rex)
-----------------------------------------
-
-The Rexx Parser includes two small programs called
-[`elident.rex`](elident.rex) and
-[`trident.rex`](trident.rex), located in the
-[`tests`](.) subdirectory. They take a file name
-as an argument; the contents of the file
-is parsed and accesed using the Element API (elident)
-or the Tree API (trident),
-and the source file is compared to parsed result.
-The programs return 0
-when the comparison succeeds, and 1 otherwise.
-
-The [`idents.rex`](idents.rex) utility, located in the same subdirectory,
-builds over `elident.rex` and `trident.rex`, and it checks that the results of
-parsing `Rexx.Parser.cls` and all the files
-in the [`cls`](/rexx-parser/bin/) subdirectory are identical to their own scanning.
-
-To run `idents.rex`, change to the Rexx Parser directory, and run
-
-```
-tests\idents
-```
-
-under Windows, or
-
-```
-rexx tests/idents
 ```
 
 under Linux.

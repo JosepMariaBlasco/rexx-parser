@@ -17,11 +17,13 @@ All the utilities are located in the `bin` subdirectory.
   ooRexx, and executes them.
 - [**Highlight**](highlight/) - A [sample utility program](highlight/)
   that displays a highlighted program.
+- [**Identtest**](identtest/) - [A self-consistency tool](identtest/) designed to
+  run a series of self-consistency checks against the Rexx Parser source
+  tree, it also allows to check that [Executor](../executor/) features work as intended,
+  and to test against the ooRexx test tree.
 - [**RxCheck**](rxcheck/) - A [utility program](rxcheck/)
   that runs the parser with a selectable number of
   early check options enabled.
 - [**Trident**](trident/) - [A small self-consistency tool](trident/) that checks
   that a program is identical its own parse tree.
-- [**Xtrtest**](xtrtest/) - [A self-consistency tool](xtrtest/) designed to
-  verify that [Executor](../executor/) features work as intended.
 
