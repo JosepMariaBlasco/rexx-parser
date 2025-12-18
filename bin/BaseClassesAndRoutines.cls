@@ -341,7 +341,7 @@ Error:
 --     case, it marks the keyword as such, which automatically marks          --
 --     whitespace before and after the keyword, if any, as ignorable.         --
 --   It inserts an implied semicolon before the "THEN" keyword.               --
---   It changes whitespace into blank concatenation operators                 --
+--   It changes whitespace into blank concatenation operators when necessary  --
 --   It inserts abuttal concatenation operators in the following contexts:    --
 --     + a string or symbol immediately followed by another string or symbol; --
 --     + ")" immediately followed by "(" or a string or a symbol;             --

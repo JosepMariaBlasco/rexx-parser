@@ -16,6 +16,10 @@ Version history
        ooRexx tests. This program contains a superset of the older
        utility `idents.rex`, which has been removed from this release
        (20251215).
+  <li> Improve the parser so that it recognizes message instructions
+       starting with an instruction keyword (20251218).
+  <li> Enhance `identtest.res` so that it processes all the files
+       in the net-oo-rexx distribution (20251218).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

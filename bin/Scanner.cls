@@ -39,6 +39,7 @@
 /* 20251202         Support Latin-1 encodings for ¬ and ¢                     */
 /* 20251203         Rename to Scanner.cls                                     */
 /* 20251214         Allow "AA"X as "¬", like ooRexx does                      */
+/* 20251215         Ensure that (,) and [,] are paired _inside_ a clause      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -113,7 +114,8 @@
     lastEndOfClause            -        -- To check for ::RESOURCES
     bracketStack               -        -- Stack of "(","[","{"
     StandardDocCommentsAllowed -        --
-    MarkdownDocCommentsAllowed          --
+    MarkdownDocCommentsAllowed -        --
+    clauseNumber                        --
 
   Use Strict Arg package                -- The package we are scanning
   source = package~source               -- An array of lines
@@ -122,6 +124,7 @@
   col    = 1                            -- Current column number
   If lines > 0 Then
     len  = Length(source[1])            -- Length of current line
+  clauseNumber = 0
 
   BOS = .Inserted.Semicolon~new(1, 1)   -- We will insert a semicolon at BOS
   lastEndOfClause = BOS
@@ -421,6 +424,7 @@ Return
     ( "**=", .EL.ASG.POWER            )  -
   )
 
+
 /******************************************************************************/
 /*                                                                            */
 /* Build.Element.Chain                                                        */
@@ -432,8 +436,8 @@ Return
   Expose package source line col len lines head tail ElementStartedBy -
     BOS stopScanning
 
-  head = BOS                            -- First element is always BOS
-  tail = head                           -- We have only one element now
+  head           = BOS                  -- First element is always BOS
+  tail           = head                 -- We have only one element now
 
   -- Process shebangs
   If line == 1, line <= lines, col == 1, source[line][1,2] == "#!" Then
@@ -536,7 +540,7 @@ Return 0                                -- 0: Error encountered
 /******************************************************************************/
 
 ::Method endOfLine
-  Expose line lines col len tail
+  Expose line lines col len tail /* bracketStack */ clauseNumber
 
   -- Either this is an implied semicolon, or a continuation char.
   -- Both continuations and semicolons eat blanks at both sides, and
@@ -572,6 +576,30 @@ Return 0                                -- 0: Error encountered
   -- No continuation? Insert an implied semicolon (EL.END_OF_CLAUSE)
 
 InsertSemicolon:
+
+/*
+  -- Ensure that braces (parentheses and brackets) are paired
+  -- _inside_ a clause. Although some semicolons may be inserted
+  -- by the parser at higher levels of parsing, for example
+  -- before and after a THEN keyword, these keywords
+  -- are not recognized as such when they are found
+  -- inside a brace pair, and therefore the following code
+  -- (plus an additional check when a realsemicolon is encountered)
+  -- should be enough to guarantee that parentheses and square bracket
+  -- pairs occur inside a clause.
+
+  If \bracketStack~isEmpty Then Do
+    element = bracketStack~top
+    Select Case element~value
+      When "{" Then Nop -- Inside a source literal
+      When "(" Then Nop -- Signal 37.002
+      When "[" Then Nop -- Signal 37.901
+    End
+  End
+
+*/
+
+  clauseNumber   += 1
   semicolon       = .Inserted.Semicolon~new(line, col)
 
   self~append( semicolon )
@@ -585,6 +613,16 @@ InsertSemicolon:
   self~checkResource
 
 Return
+
+/*
+-- Unexpected ")"
+37.002: self~error( 37.002, element)
+Return
+
+-- Unexpected "]"
+37.901: self~error( 37.901, element)
+Return
+*/
 
 --------------------------------------------------------------------------------
 -- checkResource                                                              --
@@ -1230,7 +1268,7 @@ Return
 /******************************************************************************/
 
 ::Method Special.Character.Sequence
-  Expose line col tail ClassOfSpecialChar bracketStack
+  Expose line col tail ClassOfSpecialChar bracketStack clauseNumber
 
   Arg ch
 
@@ -1253,51 +1291,72 @@ Return
     predecessor = TheElementBefore( predecessor )
   End
 
-
   -- See that brackets are correctly paired
   Select Case element~category
-    When .EL.LEFT_PARENTHESIS Then Do
+    When .EL.LEFT_PARENTHESIS, .EL.LEFT_BRACKET Then Do
+      element~clauseNumber = clauseNumber
       bracketStack~push( element )
-      Return
-    End
-    When .EL.RIGHT_PARENTHESIS Then Do
-      -- See that "(" and ")" are paired
-      If bracketStack~isEmpty           Then Signal 37.002
-      If bracketStack~top~value \== "(" Then Signal 37.002
-      bracketStack~top~closing = element
-      bracketStack~pop
-      Return
-    End
-    When .EL.LEFT_BRACKET Then Do
-      bracketStack~push( element )
-      Return
-    End
-    When .EL.RIGHT_BRACKET Then Do
-      -- See that "[" and "]" are paired
-      If bracketStack~isEmpty           Then Signal 37.901
-      If bracketStack~top~value \== "[" Then Signal 37.901
-      bracketStack~top~closing = element
-      bracketStack~pop
       Return
     End
     When .EL.LEFT_CURLY_BRACKET Then Do
+      element~clauseNumber = clauseNumber
       bracketStack~push( element )
       -- Add an extra semicolon after "{"
       Parse Value element~to With line col
       self~append(.Inserted.Semicolon~new(line, col))
       Return
     End
-  -- Add an extra semicolon before "}"
+    When .EL.RIGHT_PARENTHESIS Then Do
+      -- See that "(" and ")" are paired
+      If bracketStack~isEmpty           Then Signal 37.002
+      If bracketStack~top~value \== "(" Then Signal 37.002
+      element~clauseNumber = clauseNumber
+      bracketStack~top~closing = element
+      bracketStack~pop
+      Return
+    End
+    When .EL.RIGHT_BRACKET Then Do
+      -- See that "[" and "]" are paired
+      If bracketStack~isEmpty           Then Signal 37.901
+      If bracketStack~top~value \== "[" Then Signal 37.901
+      element~clauseNumber = clauseNumber
+      bracketStack~top~closing = element
+      bracketStack~pop
+      Return
+    End
     When .EL.RIGHT_CURLY_BRACKET Then Do
       -- See that "{" and "}" are paired
       If bracketStack~isEmpty           Then Signal 37.900
       If bracketStack~top~value \== "{" Then Signal 37.900
+      element~clauseNumber = clauseNumber
       bracketStack~top~closing = element
       bracketStack~pop
       -- Add an extra semicolon before "}"
       Parse Value element~to With line col
       self~insertBefore(element, .Inserted.Semicolon~new(line, col))
       Return
+    End
+    When .EL.END_OF_CLAUSE Then Do
+      clauseNumber += 1
+      -- Ensure that braces (parentheses and brackets) are paired
+      -- _inside_ a clause. Although some semicolons may be inserted
+      -- by the parser at higher levels of parsing, for example
+      -- before and after a THEN keyword, these keywords
+      -- are not recognized as such when they are found
+      -- inside a brace pair, and therefore the following code
+      -- (plus an additional check for inserted semicolons)
+      -- should be enough to guarantee that parentheses and square bracket
+      -- pairs occur inside a clause.
+      If \bracketStack~isEmpty Then Do
+        save = element
+          element = bracketStack~top
+          Select Case element~value
+            When "{" Then Nop -- Inside a source literal
+            When "(" Then Signal 37.002
+            When "[" Then Signal 37.901
+          End
+        element = save
+      End
     End
     Otherwise Nop
   End

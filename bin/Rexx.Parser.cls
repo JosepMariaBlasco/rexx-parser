@@ -215,6 +215,8 @@ CheckThatUseLocalIsValid:
 
 ::Class Code.Body SubClass Block.Instruction
 
+::Constant tree "instructions"
+
 ::Attribute labels              -- All non trace-only labels
 ::Attribute clauses             -- All clauses
 ::Attribute exposed             -- Explicitly EXPOSEd variables
@@ -251,7 +253,7 @@ CheckThatUseLocalIsValid:
   labels              = .StringTable~new
   clauses             = Array()
   calledRoutineNames  = Array()
-  instructions        = Array()
+  instructions        = .Instruction.List~new()
   exposed             = Set()
   useLocal            = .Nil
   classMethod         = .False
@@ -349,6 +351,7 @@ CheckThatUseLocalIsValid:
   -- The package prolog is the first code body
   prolog = Code.Body( package, .Nil )
   package~addProlog( .Rexx.Routine~new("", prolog, .Nil ) )
+  package~begin = prolog~begin
 
   Loop
 
@@ -377,6 +380,8 @@ CheckThatUseLocalIsValid:
     End
 
   End
+
+  package~end = directive~end
 
   Call SecondPass package
 
@@ -410,6 +415,10 @@ CheckThatUseLocalIsValid:
 ::Attribute blockInstructionsStacks -- Stack of stacks of active block instructions
 ::Attribute sourceLiteralStack      -- Stack of active source literals
 ::Attribute scannerStack            --
+::Attribute begin
+::Attribute end
+
+::Constant tree "prolog"
 
 ::Method firstElement -- Convenient shortcut
   Return self~prolog~body~begin
@@ -886,12 +895,19 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class Rexx.Routine
+::Attribute begin     Get
 ::Attribute body      Get
+::Attribute end       Get
 ::Attribute name      Get
 ::Attribute directive Get
+::Constant tree "directive body"
 ::Method init
-  Expose         name  body  directive
+  Expose         name  body  directive begin end
   Use Strict Arg name, body, directive
+  If directive \== .Nil
+    Then begin = directive~begin
+    Else begin = body~begin
+  end = body~end
 
 --------------------------------------------------------------------------------
 -- Common routine: check that a directive body is empty (i.e., it consists    --

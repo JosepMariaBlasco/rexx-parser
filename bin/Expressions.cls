@@ -290,7 +290,11 @@ EndNamed:
   expressions    = Array()
   element        = begin
   trailingComma  = 0
-  stopParsing    = .EL.KEYWORD || .EL.SUBKEYWORD || .EL.END_OF_CLAUSE
+  stopParsing    =       -
+       .EL.KEYWORD       -
+    || .EL.SUBKEYWORD    -
+    || .EL.END_OF_CLAUSE -
+    || .ALL.ASSIGNMENTS
   terminators  ||= stopParsing
   commasFound    = 0
   end            = element              -- In case list is empty
@@ -1238,6 +1242,7 @@ Return
 ::Attribute symbol
 ::Attribute begin
 ::Attribute end
+::Constant tree "symbol"
 ::Method value
   Return self~symbol
 ::Method init
@@ -1702,6 +1707,7 @@ Return
 ::Attribute scope
 ::Attribute arguments
 ::Attribute trailingBlock
+::Constant tree "term operator messagename arguments"
 ::Method init
   Expose term operator messageName scope arguments trailingBlock begin end
   Use Strict Arg term, operator, messageName, scope, arguments, trailingBlock

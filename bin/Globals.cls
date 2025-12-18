@@ -901,10 +901,7 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     EL.ASG.EQUAL                          -- "=", in an assignment position
 
   -- The set of all assignment sequences.
-  -- We need .EL.OP.EQUAL here: when we find that it is part
-  -- of an assignment, we will mutate it to .EL.ASG.EQUAL.
   Call NewSet ALL.ASSIGNMENTS,          -
-   .EL.OP.EQUAL,                        -
    .EL.ASG.EQUAL,                       -
    .EL.ASG.PLUS,                        -
    .EL.ASG.MINUS,                       -

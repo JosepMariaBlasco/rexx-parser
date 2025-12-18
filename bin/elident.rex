@@ -20,6 +20,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20251110    0.3a Change the name to elident.rex                            */
 /* 20252111         Add Executor support, move to /bin                        */
+/* 20252118         Add TUTOR support                                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -31,12 +32,15 @@ args = Strip( args )
 If args == "" Then Signal Help
 
 executor = 0
+unicode  = 0
 
 Loop While args[1] == "-"
   Parse Var args option args
   Select Case Lower(option)
-    When "--help", "-?"       Then Signal Help
-    When "--executor", "-xtr" Then executor = 1
+    When "--help", "-?"               Then Signal Help
+    When "--executor", "-xtr"         Then executor = 1
+    When "-u", "--tutor", "--unicode" Then unicode = 1
+    Otherwise Signal InvalidOption
   End
 End
 
@@ -52,6 +56,7 @@ If Right(chunk,1) = "0a"X Then source~append("")
 
 options = .Array~new
 If executor Then options~append(("EXECUTOR", 1))
+If unicode  Then options~append(("UNICODE", 1))
 
 parser = .Rexx.Parser~new( file, source, options )
 
@@ -74,6 +79,10 @@ Do Counter elements Until element == .Nil
 End
 
 Exit 0
+
+InvalidOption:
+  Say "Invalid option '"option"'."
+  Exit 1
 
 Help:
   Say .Resources["HELP"]

@@ -343,6 +343,7 @@
   Call Test.Error 47.002,  "Loop; Nop; X: End"
   Call Test.Error 47.002,  "Loop; X: Nop; End"
   Call Test.Error 47.003,  "If 1 Then; X: Nop"
+
   Call Test.Error 47.004,  "Select;    When 1 Then; X: Nop;                             End"
   Call Test.Error 47.004,  "Select;    When 1 Then     Nop;    When 1     Then; X: Nop; End"
   Call Test.Error 47.004,  "Select; X: When 1 Then     Nop;                             End"

@@ -1,5 +1,1 @@
-
-::Class C
-
-::Constant C ( (mask.Soft_Dotted                  , "00000200"X))
-
+("RXTRACE_PARSING=ON rexx" filename "2>&1")~pipe(.system | .all["DOTSYMBOL"] | .inject {lastWord = item~word(item~words); parse var lastWord 'token="' dotSymbol '"'; dotSymbol} | .sort "mem" | .take "first" {dataflow["sort"]~item} | .do {say item})

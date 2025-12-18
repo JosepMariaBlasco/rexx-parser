@@ -68,6 +68,7 @@
  .environment~             Select.Instruction =             .Select.Instruction
 
  .environment~              Block.Instruction =              .Block.Instruction
+ .environment~               Instruction.List =               .Instruction.List
  .environment~             Source.Literal.End =             .Source.Literal.End
 
 ::Requires "BaseClassesAndRoutines.cls"
@@ -594,8 +595,9 @@ Otherwise:
                                       Then currentBody~signature = .Nil
       When .Parse.Instruction Then If next~variant == "ARG"
                                       Then currentBody~signature = .Nil
-      Otherwise otherwiseSequence~append( next )
+      Otherwise Nop
     End
+    otherwiseSequence~append( next )
     last = next
   End
 
@@ -1399,22 +1401,12 @@ Option:    Return options.[         Upper(Arg(1))]
 
   element = expression~end
 
-  If element~assignment \== 1 Then Signal Message.Instruction
-
--- The IsAMessageInstruction routine will have inserted
--- a dummy semicolon to  facilitate parsing. We will remove it now.
+  If element \< .ALL.ASSIGNMENTS Then Signal Message.Instruction
 
 MessageAssignment:
-  elements[1]~setAssigned
-  lhs           = expression
-  semicolon     = expression~end
-  next          = TheElementAfter( semicolon )
-  semicolon~remove
-  expression~end = next
-  operator       = next
-  If operator < .EL.OP.EQUAL Then
-    Call SetCategory operator, .EL.ASG.EQUAL
-  element          = TheElementAfter( operator )
+  lhs      = expression
+  operator = element
+  element  = TheElementAfter( operator )
   If element < .EL.END_OF_CLAUSE Then Signal 35.001
   rhs = Expression.List( package, element )
   -- In this context, an expression list is an array term.
@@ -1635,6 +1627,16 @@ Done:
 
 ::Class Block.Instruction Public SubClass Rexx.Instruction
 ::Constant isBlockInstruction 1
+
+/******************************************************************************/
+/* An instruction list is an array with some additional methods               */
+/******************************************************************************/
+
+::Class Instruction.List Public SubClass Array
+::Method begin
+  Return self[1]~begin
+::Method end
+  Return self~lastItem~end
 
 /******************************************************************************/
 /* Methods common to Do.Instruction and Loop.Instruction                      */

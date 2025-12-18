@@ -90,9 +90,11 @@
 
 ::Attribute assigned
 
---
+-- An approximate value. It is used to determine if an opening brace is
+-- (incorrectly) paired with a closing brace in another clause.
+::Attribute clauseNumber
 
-::Attribute assignment                  -- Used by PrepareExpression
+--
 
 ::Method init
   Expose next prev from to category subcategory source value -
@@ -109,7 +111,6 @@
   value       = ""
   assigned    = 0
   ignorable   = 0
-  assignment  = 0
   closing     = .Nil
 
 ::Method isAssigned

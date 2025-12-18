@@ -1032,7 +1032,7 @@
 
   -- Select.Clause will call PrepareClause
 
-  element = self~selectClause~compile( element, stream, context )
+   element = self~selectClause~compile( element, stream, context )
 
   Do WhenThenInstruction Over self~whenThenInstructions
     whenClause      = WhenThenInstruction[1]

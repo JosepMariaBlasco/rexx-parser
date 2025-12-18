@@ -23,6 +23,7 @@
 /* 20250707    0.2d First version                                             */
 /* 20251110    0.2e Rename to "trident.rex" (was "clonetree")                 */
 /* 20251211    0.3a Implement Executor support                                */
+/* 20252118         Add TUTOR support                                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -35,12 +36,15 @@
   If args == "" Then Signal Help
 
   executor = 0
+  unicode  = 0
 
   Loop While args[1] == "-"
     Parse Var args option args
     Select Case Lower(option)
       When "--help", "-?"       Then Signal Help
       When "--executor", "-xtr" Then executor = 1
+      When "-u", "--tutor", "--unicode" Then unicode = 1
+      Otherwise Signal InvalidOption
     End
   End
 
@@ -61,6 +65,7 @@
 
   options = .Array~new
   If executor Then options~append(("EXECUTOR", 1))
+  If unicode  Then options~append(("UNICODE",  1))
 
   -- Parse our program
   parser = .Rexx.Parser~new(fullPath, source, options)
@@ -93,6 +98,10 @@
 
   -- We are done
   Exit 0
+
+InvalidOption:
+  Say "Invalid option '"option"'."
+  Exit 1
 
 Syntax:
 

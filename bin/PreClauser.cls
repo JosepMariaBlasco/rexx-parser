@@ -24,6 +24,7 @@
 /* 20251128         (Executor) Implement ::EXTENSION directive                */
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251206         Use the new scanner                                       */
+/* 20251218         Support message instructions starting with a keyword      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -135,62 +136,82 @@
   -- Now the clause begins at 'begin' and ends at 'end', and it has
   -- exactly 'c' non ignorable elements in between.
 
-  -- Case 0: Null clauses
+  ------------------------------------------------------------------------------
+  -- 0. No tokens: that's a null clause                                       --
+  ------------------------------------------------------------------------------
+
   If c == 0 Then Exit self~Null.Clause
 
-  t1 = elements[1]
+  ------------------------------------------------------------------------------
+  -- 1. In some cases, the first token lets us decide the clause type         --
+  ------------------------------------------------------------------------------
 
-  -- Case 1: A "}" closing an executor source literal
-  If t1 < .EL.RIGHT_CURLY_BRACKET Then Do
-    Exit self~Source.Literal.End
+  t1    = elements[1]
+  t1Cat = t1~category
+
+  isAKeyword = 0
+  If t1 < .ALL.VARIABLES_AND_KEYWORDS Then
+    isAKeyword = instructions~hasItem( t1~value )
+
+  -- Keyword instructions followed by whitespace
+  If c > 1 Then Do
+    t2 = elements[2]
+    -- Very frequent case
+    If isAKeyword, t2 < .ALL.WHITESPACE_LIKE Then Exit self~Keyword.Clause
+  End
+  Else Do -- c == 1
+    Select
+      When isAKeyword Then Exit self~Keyword.Clause
+      When t1Cat == .EL.RIGHT_CURLY_BRACKET Then Exit self~Source.Literal.End
+      When t1Cat == .EL.END_OF_SOURCE Then Exit self~End.Of.Source
+      Otherwise Exit self~Command.Instruction
+    End
   End
 
-  -- Case 2: End-of-source
-  If t1 < .EL.END_OF_SOURCE Then Exit self~End.Of.Source
+  -- Directives
+  If t1Cat == .EL.DIRECTIVE_START Then Exit self~directive
 
-  -- Case 3: "::" --> A directive
-  If t1 < .EL.DIRECTIVE_START Then Exit self~directive
+  -- Case 1.2: The End-of-source marker
+  If t1Cat == .EL.END_OF_SOURCE Then Exit self~End.Of.Source
 
-  -- Only a non-ignorable element in the clause
-  If c == 1 Then Do
-    -- Case 4: A keyword? It's a keyword instruction
-    If t1 < .ALL.VARIABLES_AND_KEYWORDS, instructions~hasItem( t1~value ) Then
-      Exit self~Keyword.Clause
-    -- Case 5: Not a keyword? A command or message instruction
-    Exit self~Command.Or.Message.Instruction
-  End
+  ------------------------------------------------------------------------------
+  -- 2. OK, we have at least two tokens in the elements array.                --
+  --                                                                          --
+  -- Try to catch first all the cases which can be determined by inspecting   --
+  -- the first two tokens                                                     --
+  ------------------------------------------------------------------------------
 
   t2 = elements[2]
-
-  If .Options.Executor, -
-      t1 < .ALL.VARIABLES_AND_KEYWORDS, -
-      t2 < .EL.LEFT_PARENTHESIS Then Exit self~Command.Or.Message.Instruction
 
   -- Case 6: Symbol or string + colon? --> A label
   If t2 < .EL.COLON , t1 < .ALL.SYMBOLS_AND_STRINGS Then Exit self~Label.Clause
 
   -- Case 7: Symbol + assignment operator? --> An assignment
   If t1 < .ALL.SYMBOLS Then Do
+    -- ooRexx catches "a == b" and flags it, in the case that this was intended
+    -- to be "a = b". Executor removes this limitation.
     If \.Options.Executor, t2 < .EL.OP.STRICT.EQUAL Then Call 35.001 "=="
+    If t2 < .EL.OP.EQUAL Then Call SetCategory t2, .EL.ASG.EQUAL
     If t2 < .ALL.ASSIGNMENTS Then Exit self~Assignment.Instruction
+    If isAKeyword, t2 < .ALL.WHITESPACE_LIKE Then Exit self~Keyword.Clause
   End
 
   -- Case 5 (bis): Symbol + "[", "~" or "~~" -> Message instruction
   If t1 < .ALL.SYMBOLS, t2 < .ALL.OPS.MESSAGE_SEND Then
-    Exit self~Command.Or.Message.Instruction
+    Exit self~Message.Instruction
 
-  If t1 < .ALL.VARIABLES_AND_KEYWORDS, instructions~hasItem( t1~value ) Then Do
-    -- Case 4 (bis): keyword instructions
-    /*
-    -- Special case: "address()" -> 35.1
-    If \.Options.Executor, t1~next < .EL.LEFT_PARENTHESIS Then
-      Call 35.001 "("
-    */
-    Exit self~Keyword.Clause
-  End
+  unprepared = .False
+  If IsAMessageInstruction(t1, unprepared) Then Exit self~Message.Instruction
+
+  If .Options.Executor, -
+    t1 < .ALL.VARIABLES_AND_KEYWORDS, -
+    t2 < .EL.LEFT_PARENTHESIS Then Exit self~Command.Instruction
+
+  -- Case 4 (bis): keyword instructions
+  If isAKeyword Then Exit self~Keyword.Clause
 
   -- Case 5 (ter): Command or message instruction
-  Exit self~Command.Or.Message.Instruction
+  Exit self~Command.Instruction
 
 -- Incorrect expression detected at "&1".
 35.001: Syntax( 35.001, t1, Arg(1) )
@@ -228,7 +249,7 @@ Error:
       elements~append( next )
       next = TheElementAfter( next )
     End
-  If next < .EL.END_OF_CLAUSE, \next~assignment Then Leave
+  If next < .EL.END_OF_CLAUSE Then Leave
     elements~append( next )
   End
 
@@ -459,26 +480,36 @@ IF: WHEN:
   Signal Done
 
 /******************************************************************************/
-/* COMMAND OR MESSAGE INSTRUCTION                                             */
+/* MESSAGE INSTRUCTION                                                        */
 /******************************************************************************/
 
-::Method Command.Or.Message.Instruction
+::Method Message.Instruction
   Expose elements begin end
-
---Say "====>" begin "("begin~from")" end "("end~from")"
 
   element = elements[1]
 
   Call PrepareExpression package, element
 
-  messageInstruction = IsAMessageInstruction( element )
+  self~generateElementsArray
+
+  Return self~return( Message )
+
+/******************************************************************************/
+/* COMMAND                                                                    */
+/******************************************************************************/
+
+::Method Command.Instruction
+  Expose elements begin end
+
+  element = elements[1]
+
+  Call PrepareExpression package, element
 
   -- Regen element and end, because PrepareExpression and IsAMessageInstruction
   -- may have changed some elements.
   self~generateElementsArray
 
-  If messageInstruction Then Return self~return( Message )
-  Else                       Return self~return( Command )
+  Return self~return( Command )
 
 /******************************************************************************/
 /* LABEL                                                                      */
@@ -503,11 +534,7 @@ IF: WHEN:
 --   Determines whether an expression is a command or a message instruction,  --
 --   including an (extended) message term assignment (standard assignments    --
 --   are processed elsewhere). The expression is supposed to have been        --
---   prepared first by the PREPAREEXPRESSION routine above.                   --
---                                                                            --
---   In case we determine that this is a message instruction, we will insert  --
---   a special, temporary, semicolon, with an "~assignment" attribute,        --
---   before the assignment operator.                                          --
+--   prepared first by the PREPAREEXPRESSION routine.                         --
 --------------------------------------------------------------------------------
 
 --
@@ -517,9 +544,11 @@ IF: WHEN:
 
 ::Routine isAMessageInstruction
 
-  Use Strict Arg element
+  Use Strict Arg element, prepared = .True
 
   notAMessageInstruction = 0
+
+  braceStack = .Stack~new
 
   -- Subexpressions
   -- Parentheses balancing has been checked by PREPAREEXPRESSION
@@ -534,8 +563,14 @@ IF: WHEN:
     Signal ExpectMessageOperator
   End
   -- Variable reference terms
-  If element < .ALL.OPS.REFERENCE Then Do
+  If prepared, element < .ALL.OPS.REFERENCE Then Do
     element = TheElementAfter( element )
+    element = TheElementAfter( element )
+    Signal ExpectMessageOperator
+  End
+  If \prepared, element < (.EL.OP.LOWER_THAN || .EL.OP.GREATER_THAN) Then Do
+    element = TheElementAfter( element )
+    If element \< .ALL.REFERENCED_SYMBOLS Then Return 0
     element = TheElementAfter( element )
     Signal ExpectMessageOperator
   End
@@ -560,27 +595,29 @@ ExpectMessageOperator:
       If element < .EL.LEFT_PARENTHESIS Then Call BalanceParens
     End
     If element < .EL.END_OF_CLAUSE Then Return 1
-    If element < .ALL.ASSIGNMENTS Then Do
-      -- Insert a temporary semicolon and return 1
-      Call InsertSemicolonBefore element
-      element~prev~assignment = 1
-      Return 1
-    End
+    If element < .EL.OP.EQUAL Then
+      Call SetCategory element, .EL.ASG.EQUAL
+    If element < .ALL.ASSIGNMENTS Then Return 1
   End
 
 BalanceParens:
-  level = 0
-  Loop Until level == 0
-    Select Case element~category
-      When .EL.LEFT_PARENTHESIS  Then level += 1
-      When .EL.RIGHT_PARENTHESIS Then level -= 1
-      Otherwise Nop
-    End
-    element = TheElementAfter( element )
+  If element~closing \== .Nil Then Do
+    closing = element~closing
+    element = TheElementAfter(closing)
+    Return
   End
-  Return
+  Parse Value element~from With line col
+-- Left parenthesis "(" in position &1 on line &2 requires
+-- a corresponding right parenthesis ")".
+36.901: Syntax( 36.901, element, col, line)
 
 BalanceBrackets:
+  If element~closing \== .Nil Then Do
+    closing = element~closing
+    element = TheElementAfter(closing)
+    Return
+  End
+  -- TODO: raise an error
   level = 0
   Loop Until level == 0
     Select Case element~category
