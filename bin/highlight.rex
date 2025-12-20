@@ -28,6 +28,7 @@
 /* 20251029    0.2e Change .stdin to .input (thanks, Rony!)                   */
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
+/* 20251220    0.4a Disallow -xtr, etc when .md, .html, .htm                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -188,15 +189,23 @@ Exit
 
 ProcessSource:
   -- Markdown? Process the fenced code blocks and display the result
-  If file~caselessEndsWith(".md") Then Return FencedCode( fn, source )
+  If file~caselessEndsWith(".md") Then Signal Fenced
 
   -- HTML? Process the fenced code blocks and display the result
   If file~caselessEndsWith(".html") | file~caselessEndsWith(".htm") Then
-    Return FencedCode( fn, source )
+    Signal Fenced
 
   -- Assume it's Rexx
   hl =  .Highlighter~new(fn, source, options.)
 Return hl~parse( patch )
+
+Fenced:
+  If options.executor | options.experimental | options.unicode Then Do
+    Say "None of -xtr, -exp, -u, --executor, --experimental, --unicode or --tutor"-
+      "can be specified for files with an extension of" FileSpec("E",file)"."
+    Exit 1
+  End
+  Return FencedCode( fn, source )
 
 
 AllowQuotes:

@@ -20,6 +20,8 @@ Version history
        starting with an instruction keyword (20251218).
   <li> Enhance `identtest.res` so that it processes all the files
        in the net-oo-rexx distribution (20251218).
+  <li> `highlight.rex`: disallow `-xtr`, `-exp` and `-u` for
+       fenced code blocks (20251220).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting
