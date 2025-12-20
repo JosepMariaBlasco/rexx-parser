@@ -1641,9 +1641,13 @@ Return
 
   checkMessageName = 1
   scope = .Nil
-  If .Options.Executor, -
-    messageName < (.EL.LEFT_PARENTHESIS || .EL.COLON) Then
-    checkMessageName = 0
+  If .Options.Executor Then Do
+    If messageName < (          -
+      .EL.LEFT_PARENTHESIS   || -
+      .EL.LEFT_CURLY_BRACKET || -
+      .EL.COLON) Then
+      checkMessageName = 0
+  End
 
   If checkMessageName Then Do
     If messageName \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.909
