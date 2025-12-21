@@ -323,6 +323,17 @@
 
   element = term~compile( element, stream, context )
 
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
+  -- ~ or ~~
+  element = Clone( element, stream, context )
+
+  Loop While element~ignorable
+    element = Clone( element, stream, context )
+  End
+
   If messageName \== .Nil Then Do
     Loop While element \== messageName
       element = Clone( element, stream, context )
