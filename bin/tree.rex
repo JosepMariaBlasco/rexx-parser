@@ -32,6 +32,7 @@
   unicode      = 0
   experimental = 0
   executor     = 0
+  itrace       = 0
   indent       = 2
 
   Parse Arg args
@@ -43,6 +44,7 @@
     Select Case Lower(option)
       When "-u", "--tutor", "--unicode" Then unicode = 1
       When "-e", "-exp", "--exp", "--experimental" Then experimental = 1
+      When "-it", "--itrace"    Then itrace = 1
       When "-xtr", "--executor" Then executor = 1
       When "--help" Then Signal Help
       Otherwise Signal BadOption
@@ -100,18 +102,7 @@ Syntax:
     Say "Error" co~code "in" co~program", line" co~position":"
     Raise Propagate
   End
-
-  additional = Condition("A")
-  Say additional[1]":"
-  line = Additional~lastItem~position
-  Say Right(line,6) "*-*" source[line]
-  Say Copies("-",80)
-  Say co~stackFrames~makeArray
-  additional = additional~lastItem
-
-  Raise Syntax (additional~code) Additional (additional~additional)
-
-  Exit
+  Exit ErrorHandler( fullPath, source, co, itrace)
 
 --------------------------------------------------------------------------------
 -- Print                                                                      --
@@ -219,6 +210,7 @@ Extra:
 --------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"
+::Requires "ErrorHandler.cls"
 ::Requires "modules/print/print.cls"    -- Helps in debugging
 
 ::Resource Help end "::End"
@@ -230,6 +222,7 @@ Options:
 -xtr,--executor     Enable support for Executor
 -e,  --experimental Enable Experimental features (also -exp)
      --help         Display this information
+-it, --itrace       Print internal traceback on error
      --tutor        Enable TUTOR-flavored Unicode
  -u, --unicode      Enable TUTOR-flavored Unicode
 

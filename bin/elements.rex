@@ -26,6 +26,7 @@
 /* 20250928    0.2e Fix crash when no args, add .rex to file when needed      */
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
+/* 20251221    0.4a Add --itrace option, improve error messages               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -49,6 +50,7 @@
   experimental = 0
   executor     = 0
   opFrom       = 1
+  itrace       = 0
   opTo         = "*"
 
   Parse Arg file
@@ -66,6 +68,7 @@ ProcessOptions:
       When "-u", "--tutor", "--unicode" Then unicode = 1
       When "-e", "-exp", "--exp", "--experimental" Then experimental = 1
       When "-xtr", "--executor" Then executor = 1
+      When "-it", "--itrace"    Then itrace = 1
       When "--help" Then Do
         Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
         Exit 1
@@ -109,7 +112,7 @@ ProcessOptions:
   -- Print a nice prolog
   Say myName".rex run on" Date() "at" Time()
   Say
-  Say "Examining" Strip(Arg(1))"..."
+  Say "Examining" fullPath"..."
   Say
   Say "Elements marked '>' are inserted by the parser."
   Say "Elements marked 'X' are ignorable."
@@ -228,16 +231,22 @@ Syntax:
     Say "Error" co~code "in" co~program", line" co~position":"
     Raise Propagate
   End
-
   additional = Condition("A")
-  Say additional[1]":"
-  line = Additional~lastItem~position
+  section = additional~section(2)
+  extra = Additional~lastItem
+  line  = extra~position
+  code  = extra~code
+  Parse Var code major"."minor
   Say Right(line,6) "*-*" source[line]
-  Say Copies("-",80)
-  Say co~stackFrames~makeArray
-  additional = additional~lastItem
+  Say "Error" major "in" fullpath", line" line": " ErrorText(major)
+  Say "Error" code": " Ansi.ErrorText( code, section )
 
-  Raise Syntax (additional~code) Additional (additional~additional)
+  If itrace Then Do
+    Say
+    Say "Trace follows:"
+    Say Copies("-",80)
+    Say co~stackFrames~makeArray
+  End
 
   Exit
 
@@ -246,6 +255,7 @@ Syntax:
 --------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"
+::Requires "ANSI.ErrorText.cls"
 ::Requires "modules/print/print.cls"
 ::Resource Help end "::End"
 Usage: myName [options] FILE
@@ -257,6 +267,7 @@ Options:
 -e,  --experimental Enable Experimental features (also -exp)
      --from [LINE]  Show elements starting at line LINE
      --help         Display this information
+-it, --itrace       Print internal traceback on error
      --to   [LINE]  Stop showing elements after line LINE
      --tutor        Enable TUTOR-flavored Unicode
  -u, --unicode      Enable TUTOR-flavored Unicode

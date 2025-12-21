@@ -1,6 +1,6 @@
 A line
 
-```rexx {executor}
+```rexx
     ::class RoutineDoer
     ::method YM
     f = self

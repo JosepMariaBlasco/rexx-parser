@@ -33,6 +33,7 @@ is a Rexx file, it is highlighted accordingly.
 `-xtr`, `--executor`                                    Enable support for Executor
 `-e`, `-exp`, `--experimental`                          Enable Experimental features
 `-h`, `--html`                                          Select HTML highlighting
+`-it`, `--itrace`                                       Print internal traceback on error
 `-l`, `--latex`                                         Select LaTeX highlighting
 `--noprolog`                                            Don't print a prolog
 `-n`, `--numberlines`&nbsp;&nbsp;                       Print line numbers

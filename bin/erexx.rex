@@ -18,6 +18,7 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20251113    0.3a First version                                             */
 /* 20251127         Add support for Executor                                  */
+/* 20251221    0.4a Add --itrace option, improve error messages               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -28,10 +29,13 @@
 
   list     = 0
   executor = 0
+  itrace   = 0
 
   Loop Counter n i = 1 By 1 While i <= nArgs, .SysCArgs[i][1] == "-"
     Select Case lower(.SysCArgs[i])
       When "-l"         Then list     = 1
+      When "-it"        Then itrace = 1
+      When "--itrace"   Then itrace = 1
       When "-xtr"       Then executor = 1
       When "--executor" Then executor = 1
       Otherwise Call ShowHelp
@@ -96,36 +100,26 @@
   -- We are done
   Exit result
 
-Syntax:
-
-  co = condition("O")
-  If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
-    Raise Propagate
-  End
-
-  additional = Condition("A")
-  additional = additional~lastItem
-  line = additional~position
-  code = additional~code
-  additional~additional
-  Parse Var code major"."minor
-  minor = 0 + minor
-  Say Right(line,6) "*-*" source[line]
-  Say "Error" major "running" fullPath "line" line": " ErrorText(major)
-  minor = 0 + minor
-  Say "Error" major"."minor": " ANSI.ErrorText(code, additional~additional)
-
-  Exit -major
-
 ShowHelp:
   Say .Resources~help
   Exit 1
 
 --------------------------------------------------------------------------------
+-- Standard Rexx Parser error handler                                         --
+--------------------------------------------------------------------------------
+
+Syntax:
+  co = condition("O")
+  If co~code \== 98.900 Then Do
+    Say "Error" co~code "in" co~program", line" co~position":"
+    Raise Propagate
+  End
+  Exit ErrorHandler( fullpath, source, co, itrace)
+
+--------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"                      -- The Parser
-::Requires "ANSI.ErrorText.cls"                   -- Rexx error messages
+::Requires "ErrorHandler.cls"                     -- Standard error handling
 ::Requires "modules/print/print.cls"              -- Helps in debug
 ::Requires "modules/identity/compile.cls"         -- The Identity compiler
 ::Requires "modules/identity/Clauses.cls"
@@ -184,7 +178,9 @@ program.
 
 Options:
 
-  -l         Print the translated program and exit
-  -xtr       Activate Executor support
-  --executor Activate Executor support
+  -l          Print the translated program and exit
+  -it         Print internal trace on error
+  --itrace    Print internal trace on error
+  -xtr        Activate Executor support
+  --executor  Activate Executor support
 ::END

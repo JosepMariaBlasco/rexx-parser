@@ -143,44 +143,19 @@ Code:
   Exit
 
 Syntax:
-
   co = condition("O")
   If co~code \== 98.900 Then Do
     Say "Error" co~code "in" co~program", line" co~position":"
     Raise Propagate
   End
-
-  additional = Condition("A")
-  Say additional[1]":"
-  --line = Additional~lastItem~position
-  --Say Right(line,6) "*-*" source[line]
-  additional = additional~lastItem
-  line = additional~position
-  code = additional~code
-  additional~additional
-  Parse Var code major"."minor
-  minor = 0 + minor
-  Say Right(line,6) "*-*" source[line]
-  Say "Error" major "running" fullPath "line" line": " ErrorText(major)
-  minor = 0 + minor
-  Say "Error" major"."minor": " ANSI.ErrorText(code, additional~additional)
-
-  If itrace Then Do
-    Say
-    Say Copies("-",80)
-    Say "Internal traceback follows"
-    Say Copies("-",80)
-    Say co~stackFrames~makeArray~makeString("L",.endOfLine)
-  End
-
-  Exit -major
+  Exit ErrorHandler( fullPath, source, co, itrace)
 
 Help:
   Say .Resources~Help
   Exit 1
 
 ::Requires "Rexx.Parser.cls"
-::Requires "ANSI.ErrorText.cls"
+::Requires "ErrorHandler.cls"
 ::Requires "modules/print/print.cls"
 
 ::Resource help

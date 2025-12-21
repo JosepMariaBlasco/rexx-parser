@@ -17,6 +17,7 @@ Options
 -------
 
 ---------------------------------- ------------------------------
+`-it`, `--itrace`                  Print internal traceback on error
 `-xtr`, `--executor`&nbsp;&nbsp;   Enable Executor support
 `-?`, `--help`                     Display this information
 ---------------------------------- ------------------------------

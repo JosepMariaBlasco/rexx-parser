@@ -206,27 +206,24 @@ Return
 
   Return output
 
--- This is the standard condition handler for the Rexx parser
-
 Syntax:
   co = condition("O")
   If co~code \== 98.900 Then Do
     Say "Error" co~code "in" co~program", line" co~position":"
     Raise Propagate
   End
-  br = (.Parser.Options~hasIndex(html) == "1")~?("<br>",.endOfLine)
 
   additional = Condition("A")
-  Say additional[1]":"
+  message = additional[1]
   line = Additional~lastItem~position
-  Say Right(line,6) "*-*" source[line]
-  Say Copies("-",80)
-  Say co~stackFrames~makeArray~makeString("L",br)
   additional = additional~lastItem
+  additional~name = name
+  additional~position = line
+  additional~sourceline = source[line]
+  save = additional
+  additional~additional~append(save)
 
   Raise Syntax (additional~code) Additional (additional~additional)
-
-  Exit
 
 /******************************************************************************/
 /* PRINT -- Process an element: tag it appropriately and append it            */

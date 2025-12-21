@@ -24,6 +24,7 @@
 /* 20251110    0.2e Rename to "trident.rex" (was "clonetree")                 */
 /* 20251211    0.3a Implement Executor support                                */
 /* 20252118         Add TUTOR support                                         */
+/* 20251221    0.4a Add --itrace option, improve error messages               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -37,16 +38,20 @@
 
   executor = 0
   unicode  = 0
+  itrace   = 0
 
   Loop While args[1] == "-"
     Parse Var args option args
     Select Case Lower(option)
-      When "--help", "-?"       Then Signal Help
-      When "--executor", "-xtr" Then executor = 1
+      When "--help", "-?"               Then Signal Help
+      When "--itrace", "-it"            Then itrace = 1
+      When "--executor", "-xtr"         Then executor = 1
       When "-u", "--tutor", "--unicode" Then unicode = 1
       Otherwise Signal InvalidOption
     End
   End
+
+  If args = "" Then Signal Help
 
   fullPath = .context~package~findProgram(args)
 
@@ -103,34 +108,28 @@ InvalidOption:
   Say "Invalid option '"option"'."
   Exit 1
 
-Syntax:
+Help:
+  Say .Resources["HELP"]
+  Exit 1
 
+--------------------------------------------------------------------------------
+-- Standard Rexx Parser error handler                                         --
+--------------------------------------------------------------------------------
+
+Syntax:
   co = condition("O")
   If co~code \== 98.900 Then Do
     Say "Error" co~code "in" co~program", line" co~position":"
     Raise Propagate
   End
-
-  additional = Condition("A")
-  Say additional[1]":"
-  additional = additional~lastItem
-  line = additional~position
-  code = additional~code
-  additional~additional
-  Parse Var code major"."minor
-  minor = 0 + minor
-  Say Right(line,6) "*-*" source[line]
-  Say "Error" major "running" fullPath "line" line": " ErrorText(major)
-  minor = 0 + minor
-  Say "Error" major"."minor": " ANSI.ErrorText(code, additional~additional)
-
-  Exit -major
+  Exit ErrorHandler( fullpath, source, co, itrace)
 
 --------------------------------------------------------------------------------
 
 ::Resource HELP
+elident -- Verify if the identity compiler returns a perfect copy of a program.
+
 Usage: trident [OPTION]... [FILE]
-Check that the identity compiler returns a perfect copy of a program.
 
 If the only option is --help or -?, or if no arguments are present,
 then display this help and exit.
@@ -138,12 +137,13 @@ then display this help and exit.
 Options:
 
 --executor, -xtr  Activate support for Executor language extensions
+--itrace, -it     Print internal trace on error
 ::END
 
 --------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"
-::Requires "ANSI.ErrorText.cls"
+::Requires "ErrorHandler.cls"
 ::Requires "modules/print/print.cls"    -- Helps in debug
 
 ::Requires "modules/identity/compile.cls"         -- The Identity compiler

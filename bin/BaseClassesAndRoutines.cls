@@ -147,7 +147,7 @@
     Parse Value element~from With line col
   End
 
-  message = "Syntax error" major"."minor "at line" line
+  message = "Error" major "running INSTORE line" line":" ErrorText(major+0)
   minor = minor + 0
   code = major"."minor
   If additional~items > 0 Then Do
@@ -155,11 +155,13 @@
       If additional[i]~isA(.Element) Then
         additional[i] = additional[i]~value
     End
+/*
     message ||= ". Additional:"
     Do i = 1 To additional~items
       If i > 1 Then message ||= ","
       message ||= " "i": '"additional[i]"'"
     End
+*/
   End
   directory = .Directory~of( -
     ("CODE",code), ("ADDITIONAL", additional~makeArray), ("POSITION", line) -

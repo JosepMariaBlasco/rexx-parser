@@ -22,6 +22,7 @@ Version history
        in the net-oo-rexx distribution (20251218).
   <li> `highlight.rex`: disallow `-xtr`, `-exp` and `-u` for
        fenced code blocks (20251220).
+  <li> Improve error reporting (20251221).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

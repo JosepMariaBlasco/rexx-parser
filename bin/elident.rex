@@ -21,6 +21,7 @@
 /* 20251110    0.3a Change the name to elident.rex                            */
 /* 20252111         Add Executor support, move to /bin                        */
 /* 20252118         Add TUTOR support                                         */
+/* 20251221    0.4a Add --itrace option, improve error messages               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -33,16 +34,20 @@ If args == "" Then Signal Help
 
 executor = 0
 unicode  = 0
+itrace   = 0
 
 Loop While args[1] == "-"
   Parse Var args option args
   Select Case Lower(option)
     When "--help", "-?"               Then Signal Help
     When "--executor", "-xtr"         Then executor = 1
+    When "-it", "--itrace"            Then itrace = 1
     When "-u", "--tutor", "--unicode" Then unicode = 1
     Otherwise Signal InvalidOption
   End
 End
+
+If args = "" Then Signal Help
 
 Call RetrieveFilename
 
@@ -148,7 +153,9 @@ RetrieveFilename:
 
 Return
 
--- This is the standard condition handler for the Rexx parser
+--------------------------------------------------------------------------------
+-- Standard Rexx Parser error handler                                         --
+--------------------------------------------------------------------------------
 
 Syntax:
   co = condition("O")
@@ -156,23 +163,12 @@ Syntax:
     Say "Error" co~code "in" co~program", line" co~position":"
     Raise Propagate
   End
-  br = (.Parser.options~hasIndex( html ) == "1")~?("<br>",.endOfLine)
-
-  additional = Condition("A")
-  Say additional[1]":"
-  line = Additional~lastItem~position
-  Say Right(line,6) "*-*" source[line]
-  Say Copies("-",80)
-  Say co~stackFrames~makeArray~makeString("L",br)
-  additional = additional~lastItem
-
-  Raise Syntax (additional~code) Additional (additional~additional)
-
-  Exit
+  Exit ErrorHandler( file, source, co, itrace)
 
 ::Resource HELP
+elident -- Checks that the Parser' stream of elements is identical to a FILE.
+
 Usage: elident [OPTION]... [FILE]
-Check that the Rexx Parser returns a stream of elements identical to a FILE.
 
 If the only option is --help or -?, or if no arguments are present,
 then display this help and exit.
@@ -180,6 +176,8 @@ then display this help and exit.
 Options:
 
 --executor, -xtr  Activate support for Executor language extensions
+--itrace, -it     Print internal trace on error
 ::END
 
 ::Requires "Rexx.Parser.cls"
+::Requires "ErrorHandler.cls"

@@ -204,7 +204,7 @@
     If end > lines Then Exit MissingEndMarker()
 
     -- Get the highligthed version of our code block
-    highlighted = ProcessACodeBlock( source, start, end, options. )
+    highlighted = ProcessACodeBlock( filename, source, start, end, options. )
 
     -- Up to line (start-1) there is nothing to change
     processed~appendAll( source~section( 1, start - 1 ) )
@@ -345,7 +345,7 @@ BadOptions:
 --------------------------------------------------------------------------------
 
 ::Routine ProcessACodeBlock
-  Use Strict Arg source, start, end, options.
+  Use Strict Arg filename, source, start, end, options.
 
   -- Process patch files, if any
   patches = .Nil
@@ -368,12 +368,12 @@ BadOptions:
     array = chars~makeArray
     -- Compensate for makearray definition
     If chars~endsWith("0a"x) Then array~append("")
+    highligthter = .Highlighter~new(options.["SOURCE"], array, options.)
   End
   Else Do
     array = source~section( start + 1, end - start - 1)
+    highligthter = .Highlighter~new(filename "[lines "start"-"end"]", array, options.)
   End
-
-  highligthter = .Highlighter~new("", array, options.)
 
   Return highligthter~parse( patches )
 

@@ -21,6 +21,7 @@ Options
 `-xtr`, `--executor`               Enable Executor support
 `--from [LINE]`                    Show elements starting at line LINE
 `--help`                           Display this information
+`-it`, `--itrace`                  Print internal traceback on error
 `--to   [LINE]`                    Stop showing elements after line LINE
 `--tutor`                          Enable TUTOR-flavored Unicode
 `-u`, `--unicode`                  Enable TUTOR-flavored Unicode

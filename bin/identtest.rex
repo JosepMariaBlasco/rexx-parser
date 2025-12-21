@@ -18,6 +18,7 @@
 /* 20251211    0.3a First public release                                      */
 /* 20251215    0.4a Add toggles for Executor support, .TestGroup files        */
 /*                  Change name to identtest (thanks, JLF!)                   */
+/* 20251221         Add --itrace option, improve error messages               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -42,12 +43,14 @@ SysFileTreeOptions = "FSO"
 
 elements  = 1
 tree      = 1
+itrace    = 0
 
 executor  = 0
 
 Loop option Over args~makeArray(" ")
   Select Case option
     When "--help", "-h",         "-?" Then Signal Help
+    When "--itrace",            "-it" Then itrace = 1
     When "--executor",         "-xtr" Then executor  = 1
     When "--noelements",        "-ne" Then elements  = 0
     When "--notree",            "-nt" Then tree      = 0
@@ -107,7 +110,7 @@ Loop filename Over exceptions~makeArray(" ")
   exception.extension.filename = 1
 End
 
--- Exceptions for .tesgroup
+-- Exceptions for .testgroup
 ----------------------
 
 exceptions = "PARSE.testGroup"
@@ -129,23 +132,24 @@ Loop filename Over exceptions~makeArray(" ")
   exception.extension.filename = 1
 End
 
-
 Loop extension Over extensions~makeArray(" ")
   extension = Upper(extension)
   Call SysFileTree "*."extension, "TREE", SysFileTreeOptions
-  If extension == "RXU" Then tutor? = "-u" option
-  Else tutor? = option
-  options = Strip(tutor?)
+  If extension == "RXU" Then options? = "-u" option
+  Else options? = option
+  options? = Strip(options?)
+  If itrace Then options? = "-it" options?
+  options? = Strip(options?)
   Loop i = 1 To tree.0
     name = FileSpec("N",tree.i)
     If exception.extension.name Then Iterate
 
     Say "Checking" tree.i"..."
     Say "--> Elements"
-    Call ElIdent options tree.i
+    Call ElIdent options? tree.i
     If result \== 0 Then Exit 1
     Say "--> Tree"
-    Call TrIdent options tree.i
+    Call TrIdent options? tree.i
     If result \== 0 Then Exit 1
   End
 End
@@ -165,6 +169,7 @@ Usage:
 Options:
   --help,          -h -? Display this help
   --executor,       -xtr Support Executor syntax
+  --itrace,          -it Print internal traceback on error
   --noelements,      -ne Don't run the elident test
   --notree,          -nt Don't run the trident test
 ::End

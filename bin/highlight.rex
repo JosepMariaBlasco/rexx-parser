@@ -29,8 +29,11 @@
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
 /* 20251220    0.4a Disallow -xtr, etc when .md, .html, .htm                  */
+/* 20251221         Add --itrace option, improve error messages               */
 /*                                                                            */
 /******************************************************************************/
+
+Signal On Syntax
 
 Parse Arg fn
 
@@ -107,6 +110,7 @@ If op[1] \== "-" | fn == "-" Then Leave
     Iterate
   End
   Select Case Lower(op)
+    When "-it", "--itrace"     Then options.itrace      =  1
     When "-h", "--html"        Then options.mode        =  HTML
     When "-l", "--latex"       Then options.mode        =  LaTeX
     When "-n", "--numberlines" Then options.numberlines = .True
@@ -196,7 +200,7 @@ ProcessSource:
     Signal Fenced
 
   -- Assume it's Rexx
-  hl =  .Highlighter~new(fn, source, options.)
+  hl =  .Highlighter~new(file, source, options.)
 Return hl~parse( patch )
 
 Fenced:
@@ -205,8 +209,7 @@ Fenced:
       "can be specified for files with an extension of" FileSpec("E",file)"."
     Exit 1
   End
-  Return FencedCode( fn, source )
-
+  Return FencedCode( file, source )
 
 AllowQuotes:
   q = value[1]
@@ -221,10 +224,30 @@ Natural:
   Say "Invalid value" Arg(1)"."
   Exit 1
 
+Syntax:
+  co         = condition("O")
+  additional = Condition("A")
+  extra = additional~lastitem
+  line  = extra~position
+  Parse Value co~code With major"."minor
+  Say Right(line,6) "*-*" extra~sourceline
+  Say "Error" major "in" extra~name", line" line": " ErrorText(major)
+  Say "Error" co~code": " Ansi.ErrorText( co~code, additional )
+
+  If options.itrace Then Do
+    Say
+    Say "Trace follows:"
+    Say Copies("-",80)
+    Say co~stackFrames~makeArray
+  End
+
+Exit -major
+
 --------------------------------------------------------------------------------
 
 ::Requires "Highlighter.cls"
 ::Requires "FencedCode.cls"
+::Requires "ANSI.ErrorText.cls"
 
 ::Resource Help
 Usage: highlight [OPTIONS] FILE

@@ -30,6 +30,7 @@ Options
 ---------------------------------------- ----------------------------
 `--help`, `-h`, `-?`                     Display this help
 `--executor`, `-xtr`                     Support Executor syntax
+`-it`, `--itrace`                        Print internal traceback on error
 `--testgroup`, `-tg`                     Analyze `.testgroup` files
 `--noelements`, `-ne`                    Don't run the elident test
 `--notree`, `-nt`                        Don't run the trident test
