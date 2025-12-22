@@ -23,6 +23,8 @@ Version history
   <li> `highlight.rex`: disallow `-xtr`, `-exp` and `-u` for
        fenced code blocks (20251220).
   <li> Improve error reporting (20251221).
+  <li> Allow ```` ```executor ```` in fenced code blocks, as an equivalent to
+       ```` ```rexx ```` with an attribute of `{executor}` (20251222).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

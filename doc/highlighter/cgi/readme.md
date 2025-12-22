@@ -36,7 +36,7 @@ about CGI in [this Apache tutorial](https://httpd.apache.org/docs/trunk/en/howto
                                                        ▼
                                    ╔═══════════════════╧════════════════════╗
                                    ║  <b><i><a href="/rexx-parser/bin/FencedCode.cls">bin/FencedCode.cls</a></i></b>                    ║
-                              (2)  ║    • Processes Rexx  code blocks       ║
+                              (2)  ║    • Processes Rexx code blocks        ║
                                    ║    • Produces standard Markdown        ║
                                    ╚═══════════════════╤════════════════════╝
                                                        ▼
@@ -63,7 +63,7 @@ Such a workflow has a number of advantages:
 
 + Your web pages are written in Markdown. Markdown is much easier to write,
   learn, teach, remember and maintain than HTML/CSS + a framework like Bootstrap.
-+ Nevertheless, Since we are using Bootstrap as the underlying framework
++ Nevertheless, since we are using Bootstrap as the underlying framework
   plus Pandoc to translate the Markdown sources to HTML, we can always resort to
   use Bootstrap-enriched HTML+CSS in our Markdown files when we really need it,
   almost without limitations (GitHub Markdown, on the other hand, is very aggresive

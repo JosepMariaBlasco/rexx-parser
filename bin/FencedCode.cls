@@ -27,6 +27,7 @@
 /* 20250706    0.2d Add support for detailed doc-comment highlighting         */
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
+/* 20251222    0.4a Add support for ```executor                               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -60,6 +61,9 @@
 --   "rexx" and before the left brace are optional.
 --
 --     ```rexx {attributes}
+--
+-- [202511222] "executor" is also accepted as a language tag.
+-- ```executor {attributes} is equivalent to ```rexx {executor attributes}
 --
 -- Optional attributes:
 --   Attributes are name=value pairs, separated by whitespace. When a value
@@ -150,10 +154,14 @@
 
   -- Forms to start a code block we are interested in
   OK.            = 0
-  OK.["rexx"   ] = 1 -- "~~~rexx", and no attributes
-  OK.["rexx "  ] = 1 -- "~~~rexx <attributes>"
-  OK.["rexx{"  ] = 1 -- "~~~rexx{<attributes>}"
-  OK.["rexx"tab] = 1 -- "~~~rexx<tab><attributes>"
+  OK.["rexx"   ] = 1     -- "~~~rexx", and no attributes
+  OK.["rexx "  ] = 1     -- "~~~rexx <attributes>"
+  OK.["rexx{"  ] = 1     -- "~~~rexx{<attributes>}"
+  OK.["rexx"tab] = 1     -- "~~~rexx<tab><attributes>"
+  OK.["executor"   ] = 1 -- "~~~executor", and no attributes
+  OK.["executor "  ] = 1 -- "~~~executor <attributes>"
+  OK.["executor{"  ] = 1 -- "~~~executor{<attributes>}"
+  OK.["executor"tab] = 1 -- "~~~executor<tab><attributes>"
 
   processed = .Array~new
 
@@ -177,20 +185,28 @@
     -- Allow whitespace after ``` or ~~~.
     attributes = Strip( attributes )
 
-    -- It was not "rexx ", "rexx<tab>" or "rexx{<something>" after all.
-    -- We should skip the whole code block, because it may contain
-    -- rexx blocks inside (with less twiddles or backticks).
-    If \attributes~startsWith("rexx") | \OK.[ attributes[1,5] ] Then Do
-      Loop
-        lineNo += 1
-        If lineNo > source~items Then Exit MissingEndMarker()
-        line = source[lineNo]
-        If line == marker Then Iterate Outer
+    executor = 0
+    Select
+      When attributes~startsWith("rexx"),     OK.[ attributes[1,5] ] Then Nop
+      When attributes~startsWith("executor"), OK.[ attributes[1,9] ] Then
+        executor = 1
+      -- It was not "rexx " ("executor ", etc.), "rexx<tab>"
+      -- or "rexx{<something>" after all.
+      -- We should skip the whole code block, because it may contain
+      -- rexx blocks inside (with less twiddles or backticks).
+      Otherwise Do
+        Loop
+          lineNo += 1
+          If lineNo > source~items Then Exit MissingEndMarker()
+          line = source[lineNo]
+          If line == marker Then Iterate Outer
+        End
       End
     End
 
     -- Parse code block parameters
     options. = ParseOptions( filename, attributes, defaultStyle )
+    If executor Then Options.["EXECUTOR"] = 1
 
     -- Look for the end marker
     start  = lineNo
@@ -255,8 +271,9 @@ MissingEndMarker:
   -- Store the file path, for source=, patchfile=, etc.
   Options.path        = .File~new( filename )~parent
 
-  -- Skip "rexx" and strip blanks
-  options = Strip( SubStr(options,5) )
+  -- Skip "rexx" or "executor" and strip blanks
+  If options[1] == "r" Then options = Strip( SubStr(options,5) )
+  Else                      options = Strip( SubStr(options,9) )
 
   -- No options? We are done
   If options == "" Then Return options.

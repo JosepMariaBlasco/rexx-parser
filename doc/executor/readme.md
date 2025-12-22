@@ -23,8 +23,10 @@ Namely,
 + [The `elident` utility](../utilities/elident/) includes support for Executor. You
   can activate it by using the `-xtr` or `--executor` options.
 
-+ Rexx fenced code blocks can use Executor syntax by using the `executor` option
-  on the first fence line of the code block.
++ Rexx fenced code blocks can use Executor syntax by using the `executor` attribute
+  on the first fence of the code block. Or you can simply use "executor" as
+  your language id, but take into account that other sites (like GitHub) will
+  not recognize it.
 
 + [The `identtest` utility](../utilities/identtest/) includes support for Executor. You
   can activate it by using the `-xtr` or `-executor` options.
