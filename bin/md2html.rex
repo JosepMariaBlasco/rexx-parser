@@ -30,8 +30,9 @@ End
 
 Parse Arg args
 
-args = Strip(args)
+args    = Strip(args)
 cssbase = ""
+jsbase  = ""
 
 Loop While args[1] == "-"
   Parse Var args option args
@@ -39,6 +40,9 @@ Loop While args[1] == "-"
     When "-h", "-?", "--help" Then Signal Help
     When "-c", "--css" Then Do
       Parse Var args cssbase args
+    End
+    When "-j", "--js" Then Do
+      Parse Var args jsbase args
     End
     Otherwise Do
       Say "Invalid option '"option"'."
@@ -77,10 +81,11 @@ End
 If cssbase = "" Then Do
   cssdir = .File~new(destination"/css")
   If cssdir~exists, cssdir~isDirectory Then cssbase = "file:///"cssdir~absolutePath
-  If cssbase = "" Then Do
-    Say "No css base location."
-    Exit 1
-  End
+End
+
+If jsbase = "" Then Do
+  jsdir = .File~new(destination"/js")
+  If jsdir~exists, jsdir~isDirectory Then jsbase = "file:///"jsdir~absolutePath
 End
 
 fullSource = .File~new(source)~absolutePath
@@ -125,6 +130,7 @@ TemplateFound:
   chunk = CharIn( try, 1, Chars(try) )
   Call Stream try, "C", "Close"
   chunk = ChangeStr("%cssbase%",chunk,cssbase)
+  chunk = ChangeStr("%jsbase%",chunk,jsbase)
   template1 = chunk~makeArray
   template = .Array~new
   Loop line Over template1
@@ -187,7 +193,7 @@ Loop i = 1 To md.0
     End
   End
   Say Time("Long") "Processing" file"..."
-  Call ProcessFile file, newDir, md.i, template, cssbase
+  Call ProcessFile file, newDir, md.i, template, cssbase, jsbase
   processed += 1
   If result \== 0 Then Exit result
 End
@@ -204,10 +210,9 @@ Help:
 --------------------------------------------------------------------------------
 
 ::Routine ProcessFile
-  Use Strict Arg file, directory, sourceFn, template, cssbase
+  Use Strict Arg file, directory, sourceFn, template, cssbase, jsbase
 
   filename = file~absolutePath
-  target   = directory"/index.html"     -- Where to place the result
   stream   = .Stream~new(file)
   source   = stream~arrayIn             -- The .md file to translate
   stream~close
@@ -223,12 +228,20 @@ Help:
   --   browsers).                                                             --
   ------------------------------------------------------------------------------
 
-  Select Case FileSpec("Name",file)
+  -- slides.md and article.md have their own style
+  targetName = "index"
+  ownStyle   = ""
+  name       = FileSpec("Name",filename)
+  Select Case name
     When "slides.md"  Then ownStyle = "slides"
     When "article.md" Then ownStyle = "article"
-    Otherwise              ownStyle = ""
+    When "readme.md"  Then Nop
+    Otherwise
+      targetName = Left(name, Length(name) - 3) -- Remove ".md"
   End
-  extraStyle = Stream(file".css","c","Q exists")
+  target   = directory"/"targetName".html" -- Where to place the result
+
+  extraStyle = Stream(filename".css","Command","Query Exists")
   If extraStyle \== "" Then Do
     p = LastPos(.File~separator,extraStyle)
     extraStyle = SubStr(extraStyle,p+1)
@@ -270,9 +283,9 @@ Help:
         Do line Over contents
           res~append( line )
         End
-      When line = "%header%"        Then Call OptionalCall PageHeader, res, title
-      When line = "%footer%"        Then Call OptionalCall PageFooter, res
-      When line = "%sidebar%"       Then Call OptionalCall Sidebar,    res
+      When line = "%header%"        Then Call OptionalCall Header,  res, title
+      When line = "%footer%"        Then Call OptionalCall Footer,  res
+      When line = "%sidebar%"       Then Call OptionalCall Sidebar, res
       When line = "%contentheader%" Then Call OptionalCall ContentHeader, filename
       When line = "%extrastyle%"    Then
         If extraStyle \== "" Then
@@ -355,13 +368,15 @@ The destination directory defaults to the current directory.
 Options:
 
 -?             Display this help
--c    cssbase  Where to locate the css files
---css cssbase  Where to locate the css files
+-c    cssbase  Where to locate the CSS files
+--css cssbase  Where to locate the CSS files
 -h             Display this help
 --help         Display this help
+-j    jsbase   Where to locate the JavaScript files
+--js  jsbase   Where to locate the JavaScript files
 
-cssbase defaults to a "css" subdirectory in the destination directory,
-when one exists. Otherwise, specifying either "-c" or "--css" is mandatory.
+cssbase and jsbase default to "css" and "js" subdirectories
+in the destination directory, when they exist.
 ::End
 
 ::Requires "FencedCode.cls"

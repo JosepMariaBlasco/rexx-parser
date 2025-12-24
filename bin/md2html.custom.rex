@@ -24,7 +24,7 @@
 -- Page header -- Displays a top menu, a logo, and the page title             --
 --------------------------------------------------------------------------------
 
-::Routine md2html.PageHeader Public
+::Routine md2html.Header Public
 
   Use Arg array, title
 
@@ -40,7 +40,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="/" aria-label="REXX">
+          <a class="navbar-brand" href="https://rexx.epbcn.com/" aria-label="REXX">
             <span class="micrologo"><b style="color:#ad564a">EP<span style="color:#f57a69">BCN / Rexx</span></b></span>
           </a>
         </div>
@@ -97,6 +97,7 @@
               <br><a href="https://rexx.epbcn.com/rexx-parser/doc/history/">History</a>
               <br><a href="https://rexx.epbcn.com/rexx-parser/tests/">Tests</a>
               <br><a href="https://rexx.epbcn.com/rexx-parser/doc/todo/">To-do</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/utilities/">Utilities</a>
               <br><a href="https://rexx.epbcn.com/rexx-parser/doc/samples/">Samples</a>
               <br><a href="https://rexx.epbcn.com/rexx-parser/doc/executor/">Executor support</a>
               <br><a href="https://rexx.epbcn.com/rexx-parser/doc/experimental/">Experimental</a>
@@ -108,7 +109,7 @@
 -- Page footer                                                                --
 --------------------------------------------------------------------------------
 
-::Routine md2html.PageFooter Public
+::Routine md2html.Footer Public
 
   Use Arg array
 

@@ -83,7 +83,7 @@ First steps
   Total: 9 elements and 0 compound symbol elements examined.
   </pre>
 
-+ You can now browse [the Rexx Highligther](/rexx-parser/doc/highlighter/) page,
++ You can now browse [the utilities page](/rexx-parser/doc/utilities/),
   if you please, where you will find several new programs to run.
 + If you want to implement your own Rexx highlighter (recommended! :)),
   you will find a nice utility to do so in the

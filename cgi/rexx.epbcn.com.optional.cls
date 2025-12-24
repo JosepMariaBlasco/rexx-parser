@@ -305,6 +305,7 @@ Crumb:
               <br><a href="/rexx-parser/doc/history/">History</a>
               <br><a href="/rexx-parser/tests/">Tests</a>
               <br><a href="/rexx-parser/doc/todo/">To-do</a>
+              <br><a href="/rexx-parser/doc/utilities/">Utilities</a>
               <br><a href="/rexx-parser/doc/samples/">Samples</a>
               <br><a href="/rexx-parser/doc/executor/">Executor support</a>
               <br><a href="/rexx-parser/doc/experimental/">Experimental</a>
