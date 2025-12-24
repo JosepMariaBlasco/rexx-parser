@@ -42,9 +42,13 @@ Utilities and samples
 
 - [Utilities](utilities/)
   - [Elements](utilities/elements/)
-  - [Highlight](utilities/highlight/)
-  - [RxCheck](utilities/rxcheck/)
+  - [ElIdent](utilities/elident/)
   - [ERexx](utilities/erexx/)
+  - [Highlight](utilities/highlight/)
+  - [IdentTest](utilities/identtest/)
+  - [md2html](utilities/md2html/)
+  - [RxCheck](utilities/rxcheck/)
+  - [TrIdent](utilities/trident/)
 - [Sample programs](samples/)
 
 The Rexx Highlighter

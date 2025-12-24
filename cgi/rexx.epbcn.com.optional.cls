@@ -216,6 +216,7 @@ Crumb:
     When doc"/utilities/highlight" Then Return "Highlight"
     When doc"/utilities/elements"  Then Return "Elements"
     When doc"/utilities/elident"   Then Return "Elident"
+    When doc"/utilities/md2html"   Then Return "Md2html"
     When doc"/utilities/trident"   Then Return "Trident"
     When doc"/utilities/identtest" Then Return "Identtest"
     When doc"/unicode"             Then Return "Unicode"

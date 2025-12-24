@@ -341,7 +341,9 @@ Error:
 /* ASSIGNMENT instructions                                                    */
 /******************************************************************************/
 
-::Method Assignment.Instruction; Return self~return( Assignment.Instruction )
+::Method Assignment.Instruction
+
+  Return self~return( Assignment.Instruction )
 
 /******************************************************************************/
 /* SOURCE LITERAL END                                                         */

@@ -1432,7 +1432,6 @@ Return
 --------------------------------------------------------------------------------
 
 ::Routine Namespace.Qualified.Symbol Public
-
   Use Strict Arg package, nameSpace, colon
 
   Call SetConstantName nameSpace, .NAMESPACE.NAME
@@ -1456,8 +1455,6 @@ Return
     arguments = Arguments( package, next, .EL.RIGHT_PARENTHESIS )
 
     Call ExpectParenPair lParen, arguments~end
-
-    left = arguments~end~next
   End
 
   If element < .EL.LEFT_CURLY_BRACKET Then
@@ -1535,7 +1532,7 @@ Return
   Use Strict Arg nameSpace, name, arguments, trailingBlock
   begin = nameSpace
   If trailingBlock \== .Nil Then end = trailingBlock~end
-  Else                           end = arguments    ~end~next
+  Else end = TheElementAfter(arguments~end)
 
 --------------------------------------------------------------------------------
 

@@ -214,7 +214,7 @@ Exit
 
   Do line Over template
     Select
-      When line = "%title%"         Then Say  title
+      When line = "%title%"         Then Say title
       When line = "%header%"        Then Call OptionalCall PageHeader, title
       When line = "%contents%"      Then Do line Over contents; Say line; End
       When line = "%footer%"        Then Call OptionalCall PageFooter

@@ -21,6 +21,8 @@ All the utilities are located in the `bin` subdirectory.
   run a series of self-consistency checks against the Rexx Parser source
   tree, it also allows to check that [Executor](../executor/) features work as intended,
   and to test against the ooRexx test tree.
+- [**md2html**](md2html/) - A batch [utility program](md2html/)
+  to transform a set of Markdown files to HTML.
 - [**RxCheck**](rxcheck/) - A [utility program](rxcheck/)
   that runs the parser with a selectable number of
   early check options enabled.
