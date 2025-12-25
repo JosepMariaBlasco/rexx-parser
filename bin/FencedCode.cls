@@ -56,6 +56,8 @@
 -- * The word "rexx" has to follow "```" or "~~~", with or without
 --   intervening blanks or tabs. Code blocks that are not marked with "rexx"
 --   will not be processed by this routine.
+-- * Please note that "rexx" has to be written in lowercase (i.e., "Rexx" or
+--   "REXX" are not recognized).
 -- * If you want to specify additional attributes, you may do so by enclosing
 --   them between braces after the "rexx" marker. Blanks and/or tabs after
 --   "rexx" and before the left brace are optional.

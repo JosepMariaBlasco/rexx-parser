@@ -36,7 +36,9 @@ by their highlighted versions.
 + You cannot start with <code>```</code> and end with <code>~~~</code>, or viceversa.
 + The word `rexx` has to follow the backtick or twiddle marker, with or without
   intervening blanks or tabs. Code blocks that are not marked with `rexx`
-  will not be processed by this routine.
+  will not be processed by this routine. Please note that you should
+  specify "rexx" exactly as shown, i.e., all in lowercase letters. This means
+  that other variants, like "Rexx" or "REXX", will not be recognized.
 + If you want to specify additional attributes, you may do so by enclosing
   them between braces after the `rexx` marker. Blanks and/or tabs after
   `rexx` and before the left brace are optional.

@@ -33,11 +33,13 @@ Parse Arg args
 args    = Strip(args)
 cssbase = ""
 jsbase  = ""
+itrace  = 0
 
 Loop While args[1] == "-"
   Parse Var args option args
   Select Case Lower(option)
     When "-h", "-?", "--help" Then Signal Help
+    When "-it", "--itrace" Then itrace = 1
     When "-c", "--css" Then Do
       Parse Var args cssbase args
     End
@@ -186,20 +188,19 @@ Loop i = 1 To md.0
     End
   End
   Else Do
-    Say "Creating directory '"new"'..."
+    Say Time("Long") "Creating directory '"new"'..."
     If \newDir~makeDirs Then Do
       Say "Directory creation failed. Aborting..."
       Exit 1
     End
   End
   Say Time("Long") "Processing" file"..."
-  Call ProcessFile file, newDir, md.i, template, cssbase, jsbase
+  Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, itrace
   processed += 1
-  If result \== 0 Then Exit result
 End
 
 Say Copies("-",80)
-Say "Processed" processed "files, took" Time("E") "seconds."
+Say Time("Long") "Processed" processed "files, took" Time("E") "seconds."
 
 Exit
 
@@ -210,9 +211,11 @@ Help:
 --------------------------------------------------------------------------------
 
 ::Routine ProcessFile
-  Use Strict Arg file, directory, sourceFn, template, cssbase, jsbase
+  Use Strict Arg file, directory, sourceFn, template, cssbase, jsbase, itrace
 
   filename = file~absolutePath
+  name     = FileSpec("Name",filename)
+  If md2html.Exception(name) Then Return 0
   stream   = .Stream~new(file)
   source   = stream~arrayIn             -- The .md file to translate
   stream~close
@@ -231,7 +234,6 @@ Help:
   -- slides.md and article.md have their own style
   targetName = "index"
   ownStyle   = ""
-  name       = FileSpec("Name",filename)
   Select Case name
     When "slides.md"  Then ownStyle = "slides"
     When "article.md" Then ownStyle = "article"
@@ -253,7 +255,32 @@ Help:
 
   defaultTheme = "dark"
 
+  Signal On Syntax Name IndividualFileFailed
+
   source = FencedCode( filename, source, defaultTheme )
+
+  Signal Off Syntax
+  Signal AllWentWell
+IndividualFileFailed:
+  co         = condition("O")
+  additional = Condition("A")
+  extra = additional~lastitem
+  line  = extra~position
+  Parse Value co~code With major"."minor
+  Say Right(line,6) "*-*" extra~sourceline
+  Say "Error" major "in" extra~name", line" line": " ErrorText(major)
+  Say "Error" co~code": " Ansi.ErrorText( co~code, additional )
+
+  If itrace Then Do
+    Say
+    Say "Trace follows:"
+    Say Copies("-",80)
+    Say co~stackFrames~makeArray
+  End
+
+  Exit
+
+AllWentWell: Nop
 
   ------------------------------------------------------------------------------
   -- We now call pandoc. It will transform markdown into html by default      --
@@ -351,10 +378,10 @@ OptionalCall: Procedure
   Signal On Syntax Name OptionalRoutineMissing
   routineName = "md2html."Arg(1)
   Call (routineName) Arg(2), Arg(3), Arg(4)
-  Return
+  Return result
 OptionalRoutineMissing:
   code = Condition("O")~code
-  If code == 43.1, Condition("A")[1] = routineName Then Return
+  If code == 43.1, Condition("A")[1] = routineName Then Return result
 Raise Propagate
 
 ::Resource Help End "::End"
@@ -367,16 +394,16 @@ The destination directory defaults to the current directory.
 
 Options:
 
--?             Display this help
--c    cssbase  Where to locate the CSS files
---css cssbase  Where to locate the CSS files
--h             Display this help
---help         Display this help
--j    jsbase   Where to locate the JavaScript files
---js  jsbase   Where to locate the JavaScript files
+-?                         Display this help
+-c cssbase, --css cssbase  Where to locate the CSS files
+-h, --help                 Display this help
+-it, --itrace              Print internal traceback on error
+-j jsbase, --js jsbase     Where to locate the JavaScript files
 
 cssbase and jsbase default to "css" and "js" subdirectories
 in the destination directory, when they exist.
 ::End
 
+::Requires "ANSI.ErrorText.cls"
+::Requires "ErrorHandler.cls"
 ::Requires "FencedCode.cls"

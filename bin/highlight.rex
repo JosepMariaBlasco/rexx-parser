@@ -257,24 +257,25 @@ in FILE and highlight them. Otherwise, we assume that this is a Rexx file,
 and we highlight it directly.
 
 Options:
-  -a, --ansi               Select ANSI mode
-      --css                Include links to css files (HTML only)
-      --doccomments=detailed|block Select highlighting level for doc-comments
+  -a,  --ansi               Select ANSI mode
+       --css                Include links to css files (HTML only)
+       --doccomments=detailed|block Select highlighting level for doc-comments
   -xtr,--executor          Enable support for Executor
   -e, -exp, --experimental Enable Experimental features
-  -h, --html               Select HTML mode
-  -l, --latex              Select LaTeX mode
-      --noprolog           Do not print a prolog (LaTeX only)
-  -n, --numberlines        Print line numbers
-      --patch="PATCHES"    Apply semicolon-separated PATCHES
-      --patchfile=FILE     Load patches from FILE
-      --pad=N              Pad doc-comments and ::resources to N characters
-      --prolog             Print a prolog (LaTeX only)
-      --startFrom=N        Start line numbers at N
-  -s, --style=STYLE        Use "rexx-STYLE.css" (default is "dark")
-      --tutor              Enable TUTOR-flavored Unicode
-  -u, --unicode            Enable TUTOR-flavored Unicode
-  -w, --width=N            Ensure that all lines have width >= N (ANSI only)
+  -h,  --html               Select HTML mode
+  -it, --itrace             Printing internal traceback on error
+  -l,  --latex              Select LaTeX mode
+       --noprolog           Do not print a prolog (LaTeX only)
+  -n,  --numberlines        Print line numbers
+       --patch="PATCHES"    Apply semicolon-separated PATCHES
+       --patchfile=FILE     Load patches from FILE
+       --pad=N              Pad doc-comments and ::resources to N characters
+       --prolog             Print a prolog (LaTeX only)
+       --startFrom=N        Start line numbers at N
+  -s,  --style=STYLE        Use "rexx-STYLE.css" (default is "dark")
+       --tutor              Enable TUTOR-flavored Unicode
+  -u,  --unicode            Enable TUTOR-flavored Unicode
+  -w,  --width=N            Ensure that all lines have width >= N (ANSI only)
 
 The 'highlight' program is part of the Rexx Parser package, and is distributed
 under the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).

@@ -18,6 +18,11 @@
 /*                                                                            */
 /******************************************************************************/
 
+pkgLocal = .Context~package~local
+pkgLocal~Exception = .Stem~new     -- Will be used by md2html.Exception below
+.Exception[] = 0
+.Exception["test_fenced_code_blocks.md"] = 1
+
 -- This set of routines is provided AS A SAMPLE ONLY.
 
 --------------------------------------------------------------------------------
@@ -131,3 +136,11 @@
         </div>
       </div>
 ::END
+
+--------------------------------------------------------------------------------
+-- Exceptions (files that should not be processed)                            --
+--------------------------------------------------------------------------------
+
+::Routine md2html.Exception Public
+
+  Return .Exception[Arg(1)]

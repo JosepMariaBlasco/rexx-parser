@@ -28,6 +28,8 @@ Options
 <code>--css <em>cssbase</em></code>             Where to locate the css files
 `-h`                                            Display this help
 `--help`                                        Display this help
+`-it`                                           Print internal traceback on error
+`--itrace`                                      Print internal traceback on error
 <code>-j    <em>jsbase</em></code>              Where to locate the JavaScript files
 <code>--js  <em>jsbase</em></code>              Where to locate the JavaScript files
 ----------------------------------------------- ------------------------------
@@ -148,6 +150,11 @@ is as follows (all parts except the page contents are optional):
 The `md2html`
 processor attempts a call to each of these routines
 in the following contexts:
+
+`Md2html.Exception`
+: Called every time a file is processed. Arg(1) is the filename (including
+  the extension). Should return `1` when a file should _not_ be processed,
+  and `0` otherwise.
 
 `Md2html.Header`
 : Called whenever a `%header%` marker is found in the `default.md2html` file.
