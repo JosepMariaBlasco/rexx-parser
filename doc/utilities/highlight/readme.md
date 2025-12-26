@@ -47,6 +47,18 @@ is a Rexx file, it is highlighted accordingly.
 `-w`, <code>--width=<em>n</em></code>                   Ensure that lines have width <em>n</em> (ANSI only)
 ------------------------------------------------------- ------------------------------
 
+\
+
+
+**Note**: Several of the options below
+(`-exp`, `-s`, `-u`, `-xtr`, `--executor`, `--experimental`,
+`--unicode`, `--style` or `--tutor`)
+do not make sense when highlighting files
+containing fenced code blocks, like
+Markdown or HTML files. In these cases,
+you should use [the desired attributes](../../highlighter/fencedcode/)
+in each of the ```` ```rexx ```` or ```` ```executor ```` fences.
+
 #### -a, --ansi {#ansi}
 
 Selects [ANSI highlighting](../../highlighter/ansi/)
@@ -74,6 +86,9 @@ statement, block tags or tag values, receive their own, separated
 styling; when "block" is specified, all the doc-comment as a whole
 gets a single style.
 
+#### --executor {#executor}
+
+Enables support for JLF's Executor extensions.
 
 #### -e, -exp, --experimental {#exp}
 
@@ -150,7 +165,7 @@ Ensure that lines have a minimum width of _n_ characters
 
 See also [--ansi](#ansi).
 
-#### -xtr, --executor {#xtr}
+#### -xtr {#xtr}
 
 Enables support for JLF's Executor extensions.
 

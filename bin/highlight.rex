@@ -221,7 +221,7 @@ Return hl~parse( patch )
 Fenced:
   If styleSpecified | options.executor | options.experimental | options.unicode Then Do
    .Error~Say( Copies("-",80) )
-   .Error~Say( "None of -exp, -s, -u, -xtr, --executor, --experimental, --unicode --style" )
+   .Error~Say( "None of -exp, -s, -u, -xtr, --executor, --experimental, --unicode, --style" )
    .Error~Say( "or --tutor can be specified for files with an extension of" FileSpec("E",file)"." )
    .Error~Say( "Please use attributes in your fenced code blocks instead." )
    .Error~Say( "See https://rexx.epbcn.com/rexx-parser/doc/highlighter/fencedcode/" )
