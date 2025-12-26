@@ -23,6 +23,7 @@
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251202         Fix line no reported for syntax error 13.001              */
 /* 20251226    0.4a Send error messages to .error, not .output                */
+/* 20251226         Add support for "=" and "==" at end of expression         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -380,7 +381,11 @@ Error:
 
   Loop
     Select Case element~category
-      When .EL.END_OF_CLAUSE Then Leave
+      -- Final versions of "=" and "==" in Executor are only generated
+      -- just before an EOC.
+      When .EL.END_OF_CLAUSE,              -
+           .EL.EXECUTOR.FINAL.EQUAL,       -
+           .EL.EXECUTOR.FINAL.DOUBLE.EQUAL Then Leave
       When .EL.SIMPLE_VARIABLE Then Do
         Select
           When nesting~isEmpty, IsAKeyword( element ) Then Do

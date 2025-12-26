@@ -33,6 +33,7 @@
 /* 20251129         (Executor) Create elements for curly brackets             */
 /* 20251213         (Executor) Create .NAMEs for named arguments              */
 /* 20251226    0.4a Send error messages to .error, not .output                */
+/* 20251226         Add support for "=" and "==" at end of expression         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -924,6 +925,18 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     .EL.ASG.CONCATENATION,              -
     .EL.ASG.XOR,                        -
     .EL.ASG.POWER
+
+  ------------------------------------------------------------------------------
+  -- Executor "=" and "==" at the end of a (no)command expression             --
+  ------------------------------------------------------------------------------
+
+  Call NewElements EL.EXECUTOR.FINAL.EQUAL, EL.EXECUTOR.FINAL.DOUBLE.EQUAL
+
+  Call NewSet ALL.EXECUTOR.PREFINAL, .EL.OP.EQUAL, .EL.OP.STRICT.EQUAL
+
+  Call NewSet ALL.EXECUTOR.FINAL,       -
+    .EL.EXECUTOR.FINAL.EQUAL,           -
+    .EL.EXECUTOR.FINAL.DOUBLE.EQUAL
 
   ------------------------------------------------------------------------------
   -- Continuation characters                                                  --

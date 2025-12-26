@@ -26,6 +26,7 @@
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251208         (Executor) Implement trailing blocks                      */
 /* 20251209         (Executor) Implement named arguments                      */
+/* 20251226    0.4a Add support for "=" and "==" at end of expression         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -290,11 +291,14 @@ EndNamed:
   expressions    = Array()
   element        = begin
   trailingComma  = 0
-  stopParsing    =       -
-       .EL.KEYWORD       -
-    || .EL.SUBKEYWORD    -
-    || .EL.END_OF_CLAUSE -
-    || .ALL.ASSIGNMENTS
+  stopParsing    =                     -
+       .EL.KEYWORD                     -
+    || .EL.SUBKEYWORD                  -
+    || .EL.END_OF_CLAUSE               -
+    || .ALL.ASSIGNMENTS                -
+    || .EL.EXECUTOR.FINAL.EQUAL        -
+    || .EL.EXECUTOR.FINAL.DOUBLE.EQUAL
+
   terminators  ||= stopParsing
   commasFound    = 0
   end            = element              -- In case list is empty
@@ -347,14 +351,20 @@ EndNamed:
     End
   End
 
+  final = .Nil
+  If .Options.Executor, end < .ALL.EXECUTOR.FINAL Then Do
+    final = end
+    end   = TheElementAfter( end )
+  End
+
   Select Case expressions~items
-    When 0 Then Return .Expression.List~new(.Nil, begin, end)
+    When 0 Then Return .Expression.List~new(.Nil, begin, end, final)
     -- Only one expression and no commas? --> A classic expression
     When 1 Then If \logical, \commasFound Then Return expressions[1]
     Otherwise Nop
   End
 
-  Return .Expression.List~new(expressions, begin, end)
+  Return .Expression.List~new(expressions, begin, end, final)
 
 -- Incorrect expression detected at "&1".
 35.001: Syntax( 35.001, element, Arg(1) )
@@ -369,6 +379,7 @@ EndNamed:
 ::Attribute expressions
 ::Attribute begin
 ::Attribute end
+::Attribute final
 ::Attribute args
 ::Method arg
   Expose expressions
@@ -386,8 +397,8 @@ EndNamed:
   Expose args
   Return args == .Nil
 ::Method init
-  Expose args expressions begin end
-  Use Strict Arg args, begin, end
+  Expose args expressions begin end final
+  Use Strict Arg args, begin, end, final
   expressions = Array()
 
   If args \== .Nil Then Do

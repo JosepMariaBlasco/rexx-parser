@@ -25,6 +25,7 @@
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251206         Use the new scanner                                       */
 /* 20251218         Support message instructions starting with a keyword      */
+/* 20251226    0.4a Add support for "=" and "==" at end of expression         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -251,6 +252,15 @@ Error:
     End
   If next < .EL.END_OF_CLAUSE Then Leave
     elements~append( next )
+  End
+
+  -- In Executor, mark final "=" and "==".
+  If .Options.Executor,  -
+    \elements~isEmpty, elements~lastitem < .ALL.EXECUTOR.PREFINAL Then Do
+    lastitem = elements~lastitem
+    If lastitem < .EL.OP.EQUAL
+      Then Call SetCategory lastitem, .EL.EXECUTOR.FINAL.EQUAL
+      Else Call SetCategory lastitem, .EL.EXECUTOR.FINAL.DOUBLE.EQUAL
   End
 
   end = next
@@ -507,8 +517,8 @@ IF: WHEN:
 
   Call PrepareExpression package, element
 
-  -- Regen element and end, because PrepareExpression and IsAMessageInstruction
-  -- may have changed some elements.
+  -- Regen element and end, because PrepareExpression may have
+  -- changed some elements.
   self~generateElementsArray
 
   Return self~return( Command )
