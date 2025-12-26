@@ -123,8 +123,10 @@ If .File~new(try)~exists Then Signal TemplateFound
 
 -- 4) Look in the directory where this program resides
 
-try = mydir||template
-If .File~new(try)~exists Then Signal TemplateFound
+try = .context~package~findProgram(template)
+-- Check that this is really the file we are looking for
+-- (could be default.md2html.rex or default.md2html.cls...)
+If FileSpec("Name",try) == template Then Signal TemplateFound
 
 .Error~Say( "Could not find file 'default.md2html'. Aborting." )
 Exit 1
