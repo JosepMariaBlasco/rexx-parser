@@ -28,6 +28,7 @@ Options
 `-h`, `--help`                                                                    Display this help
 `-it`, `--itrace`                                                                 Print internal traceback on error
 <code>-j <em>jsbase</em></code>, <code>--js  <em>jsbase</em></code>               Where to locate the JavaScript files
+<code>-p <em>path</em></code>, <code>--path  <em>path</em></code>                 First path to search for `default.md2html` and `md2html.custom.rex`
 --------------------------------------------------------------------------------- ------------------------------
 
 \
@@ -97,7 +98,8 @@ menus or sidebars.
 
 A sample `md2html.custom.rex` is distributed with the Rexx Parser.
 To allow for maximum customization, the md2html utility looks for
-`md2html.custom.rex` first in the current directory,
+`md2html.custom.rex` first in path specified by the `-p` or `--path` options,
+if present, then in the current directory,
 then in the destination directory, then in the
 source directory, and finally using the standard Rexx search order
 for external files.

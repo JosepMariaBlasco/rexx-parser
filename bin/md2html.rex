@@ -14,6 +14,8 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20241222    0.4a First public release                                      */
 /* 20251226         Send error messages to .error, not .output                */
+/* 20251226         Unify searches for default.md2html & md2html.custom.rex   */
+/* 20251226         Implement --path option                                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -35,6 +37,7 @@ args    = Strip(args)
 cssbase = ""
 jsbase  = ""
 itrace  = 0
+path    = ""
 
 Loop While args[1] == "-"
   Parse Var args option args
@@ -43,6 +46,13 @@ Loop While args[1] == "-"
     When "-it", "--itrace" Then itrace = 1
     When "-c", "--css" Then Do
       Parse Var args cssbase args
+    End
+    When "-p", "--path" Then Do
+      Parse Var args path args
+      If path == "" Then Do
+       .Error~Say( "Missing path after '"option"' option." )
+        Exit 1
+      End
     End
     When "-j", "--js" Then Do
       Parse Var args jsbase args
@@ -106,6 +116,12 @@ End
 
 template = "default.md2html"
 
+-- 0) If --path has been specified, look there
+If path \== "" Then Do
+  try = path"/"template
+  If .File~new(try)~exists Then Signal TemplateFound
+End
+
 -- 1) Look in the current directory
 
 try = Directory()"/"template
@@ -121,7 +137,7 @@ If .File~new(try)~exists Then Signal TemplateFound
 try = fullsource"/"template
 If .File~new(try)~exists Then Signal TemplateFound
 
--- 4) Look in the directory where this program resides
+-- 4) Use the normal Rexx external search order
 
 try = .context~package~findProgram(template)
 -- Check that this is really the file we are looking for
@@ -153,6 +169,12 @@ TemplateFound:
 
 custom = "md2html.custom.rex"
 
+-- 0) If --path has been specified, look there
+If path \== "" Then Do
+  try = path"/"custom
+  If .File~new(try)~exists Then Signal CustomFound
+End
+
 -- 1) Look in the current directory
 
 try = Directory()"/"custom
@@ -168,11 +190,12 @@ If .File~new(try)~exists Then Signal CustomFound
 try = fullsource"/"custom
 If .File~new(try)~exists Then Signal CustomFound
 
--- Use the normal Rexx external search order
+-- 4) Use the normal Rexx external search order
 
 try = custom
 
-CustomFound: Call (try)
+CustomFound:
+  Call (try)
 
 prefixLength = Length(fullSource) + 2
 
@@ -426,6 +449,7 @@ Options:
 -h, --help                 Display this help
 -it, --itrace              Print internal traceback on error
 -j jsbase, --js jsbase     Where to locate the JavaScript files
+-p path, --path path e     Search path for default.md2html and md2html.custom.rex
 
 cssbase and jsbase default to "css" and "js" subdirectories
 in the destination directory, when they exist.
