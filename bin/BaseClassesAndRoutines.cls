@@ -22,6 +22,7 @@
 /* 20251026    0.3a Add support for Executor <number><extra> constructs       */
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251202         Fix line no reported for syntax error 13.001              */
+/* 20251226    0.4a Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -179,10 +180,10 @@
 
 ::Routine Internal.Error Public
   Use Strict Arg text
-  Say Copies("-",80)
-  Say "Internal error:"
-  Say "  "text
-  Say Copies("-",80)
+ .Error~Say( Copies("-",80)    )
+ .Error~Say( "Internal error:" )
+ .Error~Say( "  "text          )
+ .Error~Say( Copies("-",80)    )
   Raise HALT
 
 /******************************************************************************/

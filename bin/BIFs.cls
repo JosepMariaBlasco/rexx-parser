@@ -17,6 +17,7 @@
 /* 20250414    0.2  First version                                             */
 /* 20250421    0.2b Major rewrite, add BIF early checking                     */
 /* 20251116    0.3a Add support for the new GC BIF                            */
+/* 20251226    0.4a Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -258,7 +259,7 @@
 Exit
 
 InternalError:
-  Say "Internal error in BIFs definitions:" Arg(1)"."
+ .Error~Say( "Internal error in BIFs definitions:" Arg(1)"." )
   Raise Halt
 
 /******************************************************************************/

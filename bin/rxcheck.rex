@@ -26,6 +26,7 @@
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
 /* 20251129         -e option does not need quotes now                        */
+/* 20251226    0.4a Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -91,17 +92,23 @@
       When "-extraletters", "+extraletters" Then Do
         c = file[1]
         If Pos(c,"'""") == 0 Then Do
-          Say "The -extraletters option must be immediately followed by a quoted set of letters."
+         .Error~Say(                                                    -
+           "The -extraletters option must be immediately followed"      -
+           "by a quoted set of letters."                                -
+          )
           Exit 1
         End
         Parse Var file (c)extraletters(c)file
         If extraletters == "" Then Do
-          Say "No extra letters found found after '-extraletters' option."
+         .Error~Say(                                                    -
+           "No extra letters found found after '-extraletters' option." -
+          )
         End
       End
-      Otherwise
-        Say "Invalid option '"option"'."
+      Otherwise Do
+       .Error~Say( "Invalid option '"option"'." )
         Exit 1
+      End
     End
   End
 
@@ -110,7 +117,7 @@
   fullPath = .context~package~findProgram(file)
 
   If fullPath == .Nil Then Do
-    Say "File '"file"' does not exist."
+   .Error~Say( "File '"file"' does not exist." )
     Exit 1
   End
 
@@ -145,7 +152,7 @@ Code:
 Syntax:
   co = condition("O")
   If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
+   .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
   Exit ErrorHandler( fullPath, source, co, itrace)

@@ -30,6 +30,7 @@
 /* 20251125         Add support for Executor                                  */
 /* 20251220    0.4a Disallow -xtr, etc when .md, .html, .htm                  */
 /* 20251221         Add --itrace option, improve error messages               */
+/* 20251226         Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -67,7 +68,7 @@ If op[1] \== "-" | fn == "-" Then Leave
       When "--pad"             Then options.pad         = Natural(value)
       When "--doccomments"     Then Do
         If WordPos(value,"detailed block") == 0 Then Do
-          Say "Invalid value '"value"'."
+         .Error~Say( "Invalid value '"value"'." )
           Exit 1
         End
         options.doccomments   = value
@@ -80,12 +81,12 @@ If op[1] \== "-" | fn == "-" Then Leave
       When "--patchfile"       Then Do
         Call AllowQuotes
         If value = "" Then Do
-          Say "Invalid option '"op"'."
+         .Error~Say( "Invalid option '"op"'." )
           Exit 1
         End
         file = Stream(value,"C", "Q Exists")
         If file == "" Then Do
-          Say "File '"value"' not found."
+         .Error~Say( "File '"value"' not found." )
           Exit 1
         End
         value = CharIn( file, 1, Chars(file) )~makeArray
@@ -93,7 +94,7 @@ If op[1] \== "-" | fn == "-" Then Leave
         patch = .StylePatch~of( value )
       End
       Otherwise Do
-        Say "Invalid option '"op"'."
+       .Error~Say( "Invalid option '"op"'." )
         Exit 1
       End
     End
@@ -123,7 +124,7 @@ If op[1] \== "-" | fn == "-" Then Leave
     When "--noprolog"          Then options.prolog      = 0
     When "--prolog"            Then options.prolog      = 1
     Otherwise Do
-      Say "Invalid option '"op"'."
+     .Error~Say( "Invalid option '"op"'." )
       Exit 1
     End
   End
@@ -145,7 +146,7 @@ Else Do
   If """'"~contains( c ) Then Do
     Parse Var fn (c)fn2(c)extra
     If extra \== "" Then Do
-      Say "Invalid filename '"fn"'."
+     .Error~Say( "Invalid filename '"fn"'." )
       Exit 1
     End
     fn = fn2
@@ -154,7 +155,7 @@ Else Do
   -- Check that the file exists
   file = Stream(fn, 'c', 'q exists')
   If file == "" Then Do
-    Say "File '"fn"' not found."
+   .Error~Say( "File '"fn"' not found." )
     Exit 1
   End
 
@@ -205,8 +206,8 @@ Return hl~parse( patch )
 
 Fenced:
   If options.executor | options.experimental | options.unicode Then Do
-    Say "None of -xtr, -exp, -u, --executor, --experimental, --unicode or --tutor"-
-      "can be specified for files with an extension of" FileSpec("E",file)"."
+   .Error~Say( "None of -xtr, -exp, -u, --executor, --experimental, --unicode or --tutor"-
+      "can be specified for files with an extension of" FileSpec("E",file)"." )
     Exit 1
   End
   Return FencedCode( file, source )
@@ -221,7 +222,7 @@ AllowQuotes:
 
 Natural:
   If DataType(Arg(1),"W"), Arg(1) >= 0 Then Return Arg(1)
-  Say "Invalid value" Arg(1)"."
+ .Error~Say( "Invalid value" Arg(1)"." )
   Exit 1
 
 Syntax:
@@ -230,15 +231,15 @@ Syntax:
   extra = additional~lastitem
   line  = extra~position
   Parse Value co~code With major"."minor
-  Say Right(line,6) "*-*" extra~sourceline
-  Say "Error" major "in" extra~name", line" line": " ErrorText(major)
-  Say "Error" co~code": " Ansi.ErrorText( co~code, additional )
+ .Error~Say( Right(line,6) "*-*" extra~sourceline                            )
+ .Error~Say( "Error" major "in" extra~name", line" line": " ErrorText(major) )
+ .Error~Say( "Error" co~code": " Ansi.ErrorText( co~code, additional )       )
 
   If options.itrace Then Do
-    Say
-    Say "Trace follows:"
-    Say Copies("-",80)
-    Say co~stackFrames~makeArray
+   .Error~Say
+   .Error~Say( "Trace follows:"         )
+   .Error~Say( Copies("-",80)           )
+   .Error~Say( co~stackFrames~makeArray )
   End
 
 Exit -major

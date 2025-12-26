@@ -13,6 +13,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20241222    0.4a First public release                                      */
+/* 20251226         Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -24,7 +25,7 @@ mydir  = FileSpec("Location",name)
 
 Address COMMAND "pandoc -v" With Output Stem Discard. Error Stem Discard.
 If rc \== 0 Then Do
-  Say myself "needs a working version of pandoc. Aborting..."
+ .Error~Say( myself "needs a working version of pandoc. Aborting..." )
   Exit 1
 End
 
@@ -47,7 +48,7 @@ Loop While args[1] == "-"
       Parse Var args jsbase args
     End
     Otherwise Do
-      Say "Invalid option '"option"'."
+     .Error~Say( "Invalid option '"option"'." )
       Exit 1
     End
   End
@@ -58,23 +59,23 @@ Parse Var args source destination
 If source = "" Then Signal Help
 
 If \SysFileExists(source) Then Do
-  Say "Source directory '"source"' does not exist."
+ .Error~Say( "Source directory '"source"' does not exist." )
   Exit 1
 End
 
 If \SysIsFileDirectory(source) Then Do
-  Say "'"source"' is not a directory."
+ .Error~Say( "'"source"' is not a directory." )
   Exit 1
 End
 
 If destination = "" Then destination = Directory()
 Else Do
   If \SysFileExists(destination) Then Do
-    Say "Destination directory '"destination"' does not exist."
+   .Error~Say( "Destination directory '"destination"' does not exist." )
     Exit 1
   End
   If \SysIsFileDirectory(destination) Then Do
-    Say "'"destination"' is not a directory."
+   .Error~Say( "'"destination"' is not a directory." )
     Exit 1
   End
   destination = .File~new(destination)~absolutePath
@@ -125,7 +126,7 @@ If .File~new(try)~exists Then Signal TemplateFound
 try = mydir||template
 If .File~new(try)~exists Then Signal TemplateFound
 
-Say "Could not find file 'default.md2html'. Aborting."
+.Error~Say( "Could not find file 'default.md2html'. Aborting." )
 Exit 1
 
 TemplateFound:
@@ -183,14 +184,14 @@ Loop i = 1 To md.0
   new    = newDir~absolutePath          -- Normalize name
   If newDir~exists Then Do
     If \newdir~isDirectory Then Do
-      Say "'"new"' already exists, but it is not a directory. Aborting."
+     .Error~Say( "'"new"' already exists, but it is not a directory. Aborting." )
       Exit 1
     End
   End
   Else Do
     Say Time("Long") "Creating directory '"new"'..."
     If \newDir~makeDirs Then Do
-      Say "Directory creation failed. Aborting..."
+     .Error~Say( "Directory creation failed. Aborting..." )
       Exit 1
     End
   End
@@ -215,7 +216,11 @@ Help:
 
   filename = file~absolutePath
   name     = FileSpec("Name",filename)
-  If md2html.Exception(name) Then Return 0
+  Call OptionalCall Exception, name
+  If result \== "RESULT", result Then Do
+    Say Time("Long") "--> Skipped."
+    Return 0
+  End
   stream   = .Stream~new(file)
   source   = stream~arrayIn             -- The .md file to translate
   stream~close
@@ -223,30 +228,51 @@ Help:
   res      = .Array~new                 -- Will hold the final result
 
   ------------------------------------------------------------------------------
-  -- See if an accompanying extra style .css file exists                      --
-  --   This is is a file with the same name as the cgi, with ".css" added at  --
-  --   the end. It is useful for specifying variables that are file-dependent,--
-  --   like the running header and footer (this should be done with the       --
-  --   string-set property, but it is not properly implemented in the major   --
-  --   browsers).                                                             --
+  -- See if the name needs translation                                        --
   ------------------------------------------------------------------------------
 
-  -- slides.md and article.md have their own style
-  targetName = "index"
-  ownStyle   = ""
-  Select Case name
-    When "slides.md"  Then ownStyle = "slides"
-    When "article.md" Then ownStyle = "article"
-    When "readme.md"  Then Nop
-    Otherwise
-      targetName = Left(name, Length(name) - 3) -- Remove ".md"
-  End
-  target   = directory"/"targetName".html" -- Where to place the result
+  Call OptionalCall TranslatedName, name
+  If result \== "RESULT", result \== .Nil
+    Then targetName = result
+    Else targetName = Left(name, Length(name) - 3)
 
-  extraStyle = Stream(filename".css","Command","Query Exists")
-  If extraStyle \== "" Then Do
-    p = LastPos(.File~separator,extraStyle)
-    extraStyle = SubStr(extraStyle,p+1)
+  ------------------------------------------------------------------------------
+  -- Compute the extension                                                    --
+  ------------------------------------------------------------------------------
+
+  Call OptionalCall Extension
+  If result \== "RESULT"
+    Then extension = result
+    Else extension = "html"
+
+  ------------------------------------------------------------------------------
+  -- Construct the target filename                                            --
+  ------------------------------------------------------------------------------
+
+  target   = directory"/"targetName"."extension -- Where to place the result
+
+  ------------------------------------------------------------------------------
+  -- See if the name is associated to a filename-specific style               --
+  ------------------------------------------------------------------------------
+
+  Call OptionalCall FilenameSpecificStyle, name
+  If result \== "RESULT", result \== .Nil
+    Then filenameSpecificStyle = result
+    Else filenameSpecificStyle = ""
+
+  ------------------------------------------------------------------------------
+  -- See if an accompanying print style .css file exists                      --
+  --   This is is a file with the same name as the .md file, with ".css"      --
+  --   added at the end, as an extra extension. It is useful for specifying   --
+  --   variables that are file-dependent, like the running header and footer  --
+  --   (it should be possible to be done with the string-set property, but it --
+  --   is not properly implemented in the major browsers).                    --
+  ------------------------------------------------------------------------------
+
+  printstyle = Stream(filename".css","Command","Query Exists")
+  If printstyle \== "" Then Do
+    p = LastPos(.File~separator,printstyle)
+    printstyle = SubStr(printstyle,p+1)
   End
 
   ------------------------------------------------------------------------------
@@ -267,15 +293,15 @@ IndividualFileFailed:
   extra = additional~lastitem
   line  = extra~position
   Parse Value co~code With major"."minor
-  Say Right(line,6) "*-*" extra~sourceline
-  Say "Error" major "in" extra~name", line" line": " ErrorText(major)
-  Say "Error" co~code": " Ansi.ErrorText( co~code, additional )
+ .Error~Say( Right(line,6) "*-*" extra~sourceline                            )
+ .Error~Say( "Error" major "in" extra~name", line" line": " ErrorText(major) )
+ .Error~Say( "Error" co~code": " Ansi.ErrorText( co~code, additional )       )
 
   If itrace Then Do
-    Say
-    Say "Trace follows:"
-    Say Copies("-",80)
-    Say co~stackFrames~makeArray
+   .Error~Say
+   .Error~Say( "Trace follows:"         )
+   .Error~Say( Copies("-",80)           )
+   .Error~Say( co~stackFrames~makeArray )
   End
 
   Exit
@@ -314,16 +340,15 @@ AllWentWell: Nop
       When line = "%footer%"        Then Call OptionalCall Footer,  res
       When line = "%sidebar%"       Then Call OptionalCall Sidebar, res
       When line = "%contentheader%" Then Call OptionalCall ContentHeader, filename
-      When line = "%extrastyle%"    Then
-        If extraStyle \== "" Then
-          res~append(                                  -
-            "    <link rel='stylesheet' media='print'" -
-            "href='"cssbase"/"extraStyle"'>"           -
-          )
-      When line = "%ownstyle%"      Then
-        If ownStyle \== ""   Then
+      When line = "%printstyle%"    Then
+        If printstyle \== "" Then
           res~append(                                                       -
-            "    <link rel='stylesheet' href='"cssbase"/"ownstyle".css'>"   -
+            "    <link rel='stylesheet' media='print' href='"printstyle"'>" -
+          )
+      When line = "%filenameSpecificStyle%"      Then
+        If filenameSpecificStyle \== ""   Then
+          res~append(                                                       -
+            "    <link rel='stylesheet' href='"cssbase"/"filenameSpecificStyle".css'>"   -
           )
       Otherwise res~append( line )
     End
@@ -366,7 +391,7 @@ Hack:
   targetStream = .Stream~new(target)
   targetStream~open("Write Replace")
   If result \== "READY:" Then Do
-    Say "Error opening" target", " result
+   .Error~Say( "Error opening" target", " result )
     Exit 1
   End
   targetStream~charOut(res~makeString)

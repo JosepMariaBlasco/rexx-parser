@@ -18,6 +18,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                  Binary directory is now "bin" instead of "cls"            */
 /* 20250416    0.2a Add BIF early checks                                      */
+/* 20251226    0.4a Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -53,12 +54,12 @@ Call Stream revision,"c","Close"
 
 Say "Processing error messages at Rexx revision" revision"."
 If revision \== .RexxInfo~revision Then Do
-  Say "-------------------------------------"
-  Say "ERROR: revision levels are different!"
-  Say "-------------------------------------"
-  Say "Resource revision level:"  revision
-  Say "Rexx revision          :" .RexxInfo~revision
-  Say "-------------------------------------"
+ .Error~Say( "-------------------------------------"       )
+ .Error~Say( "ERROR: revision levels are different!"       )
+ .Error~Say( "-------------------------------------"       )
+ .Error~Say( "Resource revision level:"  revision          )
+ .Error~Say( "Rexx revision          :" .RexxInfo~revision )
+ .Error~Say( "-------------------------------------"       )
   Exit 1
 End
 
@@ -87,14 +88,14 @@ If major > 99 Then Leave
       ~changeStr("<dq/>",'"')~changeStr("&gt;",'>')~changeStr("&lt;",'<')         -
       ~changeStr("&apos;","'")
     If Pos("&",text) > 0 Then Do
-      Say "Unexpected '&' in message text" major"."minor":"
-      Say text
+     .Error~Say( "Unexpected '&' in message text" major"."minor":" )
+     .Error~Say( text )
       Exit
     End
     Do While Pos("<Sub ",Text) >  0
       Parse var text before"<Sub" 'position="'position'"' "/>"after
       If \DataType(position, "W") Then Do
-        Say "Position in text of" major"."minor "is not an integer."
+       .Error~Say( "Position in text of" major"."minor "is not an integer." )
         Exit
       End
       text = before"&"position||after
@@ -142,9 +143,9 @@ Do i = 1 To files~items
       End
       message = Strip(message,"T")
       If message.major.minor \== message Then Do
-        Say "Code" major"."minor":"
-        Say "rexxmsg message: '"message.major.minor"'"
-        Say "Parser  message: '"message"'"
+       .Error~Say( "Code" major"."minor":"                    )
+       .Error~Say( "rexxmsg message: '"message.major.minor"'" )
+       .Error~Say( "Parser  message: '"message"'"             )
         Exit
       End
     End
@@ -164,12 +165,12 @@ Do i = 1 To files~items
   Parse value files[i] With major"."minor"."
   major = major + 0
   Drop source.major.minor
-Say "Processing" file"..."
--- Second pass not implemented yet & some interpreter bugs
-If file~startsWith("47.003.else.clause.rex")   Then Iterate -- BUG
-If file~startsWith("47.003.then.clause.rex")   Then Iterate -- BUG
-If file~startsWith("47.004.then.clause.1.rex") Then Iterate -- BUG
-If file~startsWith("47.004.then.clause.n.rex") Then Iterate -- BUG
+  Say "Processing" file"..."
+  -- Second pass not implemented yet & some interpreter bugs
+  If file~startsWith("47.003.else.clause.rex")   Then Iterate -- BUG
+  If file~startsWith("47.003.then.clause.rex")   Then Iterate -- BUG
+  If file~startsWith("47.004.then.clause.1.rex") Then Iterate -- BUG
+  If file~startsWith("47.004.then.clause.n.rex") Then Iterate -- BUG
   file = dir || sep || files[i]
   If \ file~caselessEndsWith(".rex") Then Iterate
   Call ProcessFile file, files[i]
@@ -186,7 +187,6 @@ If source.~allIndexes~items > 0 Then Do
 End
 
 ::Routine ProcessFile
-
 
   Use Arg file
 
@@ -206,32 +206,34 @@ Parser:
 
   -- Should produce a syntax error
   package = .Rexx.Parser~new(file,source,options)~package
-  Say
-  Say "Expected syntax error on file" file", but parser returned normally."
-  Say "File content follows:"
-  Say "----------"
-  Say CharIn(file,1,Chars(file))~makeArray
-  Say "----------"
-  Say "Aborting."
+ .Error~Say
+ .Error~Say(                                                             -
+   "Expected syntax error on file" file", but parser returned normally." -
+  )
+ .Error~Say( "File content follows:" )
+ .Error~Say( "----------" )
+ .Error~Say( CharIn(file,1,Chars(file))~makeArray )
+ .Error~Say( "----------" )
+ .Error~Say( "Aborting." )
   Exit -1
 
 Rexx:
   Signal On Syntax Name Syntax2
   Call (file)
 
-  Say
-  Say "Expected syntax error on file" file", but Rexx returned normally."
-  Say "File content follows:"
-  Say "----------"
-  Say CharIn(file,1,Chars(file))~makeArray
-  Say "----------"
-  Say "Aborting."
+ .Error~Say
+ .Error~Say( "Expected syntax error on file" file", but Rexx returned normally." )
+ .Error~Say( "File content follows:" )
+ .Error~Say( "----------" )
+ .Error~Say( CharIn(file,1,Chars(file))~makeArray )
+ .Error~Say( "----------" )
+ .Error~Say( "Aborting." )
   Exit -1
 
 Syntax1:
   co = condition("O")
   If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
+   .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
 
@@ -252,7 +254,8 @@ Syntax2:
   If line2 == .Nil Then Do
     line2      = co~stackFrames[1]~line
     traceLine2 = co~stackFrames[1]~traceLine
-    Do i = 2 To co~stackFrames~items While traceLine2~contains("(no source available)")
+    Do i = 2 To co~stackFrames~items -
+        While traceLine2~contains("(no source available)")
       line2      = co~stackFrames[i]~line
       traceLine2 = co~stackFrames[i]~traceLine
     End
@@ -264,36 +267,36 @@ Syntax2:
     If additional~items > 2 Then Do
       Do i = 1 To co~additional~items
         If co~additional[i] \== additional[i+1] Then Do
-          Say "Processing file" file "failed!"
-          Say "Parser additional" i": '"additional[i+1]"'"
-          Say "Rexx   additional" i": '"co~additional[i]"'"
+         .Error~Say( "Processing file" file "failed!" )
+         .Error~Say( "Parser additional" i": '"additional[i+1]"'" )
+         .Error~Say( "Rexx   additional" i": '"co~additional[i]"'" )
           Return -1
         End
       End
     End
     Parse Var code1 cmajor"."cminor
     If major \= cmajor Then Do
-      Say "Processing file" file "failed!"
-      Say "File name   (major):" major
-      Say "Parse error (major):" cmajor
+     .Error~Say( "Processing file" file "failed!" )
+     .Error~Say( "File name   (major):" major     )
+     .Error~Say( "Parse error (major):" cmajor    )
       Return -1
     End
     If minor \= cminor Then Do
-      Say "Processing file" file "failed!"
-      Say "File name   (minor):" minor
-      Say "Parse error (minor):" cminor
+     .Error~Say( "Processing file" file "failed!" )
+     .Error~Say( "File name   (minor):" minor     )
+     .Error~Say( "Parse error (minor):" cminor    )
       Return -1
     End
     Return 0
   End
-  Say "Processing file" file "failed!"
+ .Error~Say( "Processing file" file "failed!" )
   If line1 \== line2 Then Do
-    Say "Parser line:" line1
-    Say "Rexx   line:" line2
+   .Error~Say( "Parser line:" line1 )
+   .Error~Say( "Rexx   line:" line2 )
   End
   If code1 \= code2 Then Do
-    Say "Parser code:" code1
-    Say "Rexx   code:" code2
+   .Error~Say( "Parser code:" code1 )
+   .Error~Say( "Rexx   code:" code2 )
   End
   Return -1
 

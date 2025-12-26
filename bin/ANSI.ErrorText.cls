@@ -638,7 +638,7 @@
     Return .ANSI.ErrorText.Secondary[major"."minor]
   End
   If minor == "" Then Do
-    Say "Routine ANSI.ErrorText called with substitutions but no minor error code."
+   .Error~Say( "Routine ANSI.ErrorText called with substitutions but no minor error code." )
     Raise HALT
   End
   message = .ANSI.ErrorText.Secondary[major"."minor]

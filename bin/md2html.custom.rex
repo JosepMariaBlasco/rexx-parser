@@ -19,11 +19,28 @@
 /******************************************************************************/
 
 pkgLocal = .Context~package~local
-pkgLocal~Exception = .Stem~new     -- Will be used by md2html.Exception below
+
+-- .Exception will be used by md2html.Exception below
+pkgLocal~Exception = .Stem~new
 .Exception[] = 0
 .Exception["test_fenced_code_blocks.md"] = 1
 
--- This set of routines is provided AS A SAMPLE ONLY.
+-- .TranslateFilename will be used by md2html.TranslateFilename below
+pkgLocal~TranslateFilename = .Stem~new
+.TranslateFilename[] = .Nil             -- .Nil means no change
+.TranslateFilename["readme.md"] = "index" -- Note: index has no extension
+
+-- .FilenameSpecificStyle will be used by md2html.FilenameSpecificStyle below
+pkgLocal~FilenameSpecificStyle = .Stem~new
+.FilenameSpecificStyle[] = ""             -- .Nil means no change
+.FilenameSpecificStyle["article.md"] = "article"
+.FilenameSpecificStyle["slides.md" ] = "slides"
+
+-- Output files will have this extension. See md2html.Extension
+pkgLocal~Extension = "html"
+
+-- The following set of routines is provided AS A SAMPLE ONLY.
+-- You will have to customize them (and default.m2html) for your own needs.
 
 --------------------------------------------------------------------------------
 -- Page header -- Displays a top menu, a logo, and the page title             --
@@ -144,3 +161,27 @@ pkgLocal~Exception = .Stem~new     -- Will be used by md2html.Exception below
 ::Routine md2html.Exception Public
 
   Return .Exception[Arg(1)]
+
+--------------------------------------------------------------------------------
+-- Extension the output HTML files will have                                  --
+--------------------------------------------------------------------------------
+
+::Routine md2html.Extension Public
+
+  Return .Extension
+
+--------------------------------------------------------------------------------
+-- Returns the translated filename                                            --
+--------------------------------------------------------------------------------
+
+::Routine md2html.TranslateFilename Public
+
+  Return .TranslateFilename[Arg(1)]     -- .Nil when no change
+
+--------------------------------------------------------------------------------
+-- Returns the translated filename                                            --
+--------------------------------------------------------------------------------
+
+::Routine md2html.FilenameSpecificStyle Public
+
+  Return .FilenameSpecificStyle[Arg(1)] -- A boolean

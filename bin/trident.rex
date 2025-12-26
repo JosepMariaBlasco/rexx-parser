@@ -25,6 +25,7 @@
 /* 20251211    0.3a Implement Executor support                                */
 /* 20252118         Add TUTOR support                                         */
 /* 20251221    0.4a Add --itrace option, improve error messages               */
+/* 20251226         Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -56,7 +57,7 @@
   fullPath = .context~package~findProgram(args)
 
   If fullPath == .Nil Then Do
-    Say "File '"args"' does not exist."
+   .Error~Say( "File '"args"' does not exist." )
     Exit 1
   End
 
@@ -105,7 +106,7 @@
   Exit 0
 
 InvalidOption:
-  Say "Invalid option '"option"'."
+ .Error~Say( "Invalid option '"option"'." )
   Exit 1
 
 Help:
@@ -119,7 +120,7 @@ Help:
 Syntax:
   co = condition("O")
   If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
+   .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
   Exit ErrorHandler( fullpath, source, co, itrace)

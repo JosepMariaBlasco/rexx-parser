@@ -16,6 +16,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20251215    0.4a First public release                                      */
+/* 20251226         Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -57,7 +58,7 @@
   fullPath = .context~package~findProgram(filename)
 
   If fullPath == .Nil Then Do
-    Say "File '"filename"' does not exist."
+   .Error~Say( "File '"filename"' does not exist." )
     Exit 1
   End
 
@@ -81,7 +82,7 @@
 --------------------------------------------------------------------------------
 
 BadOption:
-  Say "Invalid option '"Upper(option)"'."
+ .Error~Say( "Invalid option '"Upper(option)"'." )
   Exit 1
 
 --------------------------------------------------------------------------------
@@ -99,7 +100,7 @@ Help:
 Syntax:
   co = condition("O")
   If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
+   .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
   Exit ErrorHandler( fullPath, source, co, itrace)

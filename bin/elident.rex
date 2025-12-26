@@ -22,6 +22,7 @@
 /* 20252111         Add Executor support, move to /bin                        */
 /* 20252118         Add TUTOR support                                         */
 /* 20251221    0.4a Add --itrace option, improve error messages               */
+/* 20251226         Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -86,7 +87,7 @@ End
 Exit 0
 
 InvalidOption:
-  Say "Invalid option '"option"'."
+ .Error~Say( "Invalid option '"option"'." )
   Exit 1
 
 Help:
@@ -117,7 +118,7 @@ Return
 ChangeLine:
   Do While elementLine > currentLineNo
     If source[currentLineNo] \== currentLine Then Do
-      Say "Difference found in line number" currentLineNo":"
+      Say( "Difference found in line number" currentLineNo":" )
       Say "Source line is '"source[currentLineNo]"',"
       Say "Parsed line is '"currentLine"'."
       Exit 1
@@ -134,7 +135,7 @@ RetrieveFilename:
     Parse Var args +1 fileName (c) extra
     extra = Strip( extra )
     If extra \== "" Then Do
-      Say "Unrecognized parameter '"extra"'."
+     .Error~Say( "Unrecognized parameter '"extra"'." )
       Exit 1
     End
   End
@@ -146,7 +147,7 @@ RetrieveFilename:
     If \ fileName~caselessEndsWith(".rex") Then
       file = Stream(fileName".rex","c","query exists")
     If file = "" Then Do
-      Say "File '"fileName"' not found."
+     .Error~Say( "File '"fileName"' not found." )
       Exit 1
     End
   End
@@ -160,7 +161,7 @@ Return
 Syntax:
   co = condition("O")
   If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
+   .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
   Exit ErrorHandler( file, source, co, itrace)

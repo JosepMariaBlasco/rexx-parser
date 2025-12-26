@@ -1,3 +1,22 @@
+/******************************************************************************/
+/*                                                                            */
+/* Test.Parser.cls                                                            */
+/* ===============                                                            */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20251226    0.4a Send error messages to .error, not .output                */
+/*                                                                            */
+/******************************************************************************/
 
   If .environment~Parser.Test.SimpleErrors == .Nil Then
      .environment~Parser.Test.SimpleErrors = 0
@@ -9,7 +28,7 @@
   rexxMsg = myDir".."sep"bin"sep"resources"sep"rexxmsg.xml"
   file = Stream(rexxMsg,"c","Query exists")
   If file == "" Then Do
-    Say "Internal error: file '"rexxMsg"' does not exist."
+   .Error~Say( "Internal error: file '"rexxMsg"' does not exist." )
     Raise Halt
   End
 
@@ -31,15 +50,15 @@
         ~changeStr("<dq/>",'"')~changeStr("&gt;",'>')~changeStr("&lt;",'<')         -
         ~changeStr("&apos;","'")
       If Pos("&",text) > 0 Then Do
-        Say "Unexpected '&' in message text" major"."minor":"
-        Say text
-        Exit
+       .Error~Say( "Unexpected '&' in message text" major"."minor":" )
+       .Error~Say( text )
+        Exit 1
       End
       Do While Pos("<Sub ",Text) >  0
         Parse var text before"<Sub" 'position="'position'"' "/>"after
         If \DataType(position, "W") Then Do
-          Say "Position in text of" major"."minor "is not an integer."
-          Exit
+         .Error~Say( "Position in text of" major"."minor "is not an integer." )
+          Exit 1
         End
         text = before"&"position||after
       End
@@ -104,14 +123,16 @@
 
   package = .Package~new("Compiled", string) -- Should trap
 
-  Say "A SYNTAX error" code "was expected when interpreting the following code line," -
-    "but the ooRexx interpreter produced none:"
-  Say "     1 *-* "string
+ .Error~Say(                                                             -
+    "A SYNTAX error" code "was expected when interpreting"               -
+    "the following code line, but the ooRexx interpreter produced none:" -
+  )
+ .Error~Say( "     1 *-* "string )
 
   caller = .context~stackFrames[2]
 
-  Say "This test originated from" caller~name "at line" caller~line":"
-  Say caller~traceLine
+ .Error~Say( "This test originated from" caller~name "at line" caller~line":" )
+ .Error~Say( caller~traceLine )
 
   Raise Halt
 
@@ -134,22 +155,24 @@ PackageCreationTrapped:
 
   package = .Rexx.Parser~new("",string,options)~package
 
-  Say "A SYNTAX error" code "was expected when parsing the following code line," -
-    "but the Rexx Parser produced none:"
-  Say "     1 *-* "string
+ .Error~Say(                                                     -
+   "A SYNTAX error" code "was expected when parsing"             -
+   "the following code line, but the Rexx Parser produced none:" -
+  )
+ .Error~Say( "     1 *-* "string )
 
   caller = .context~stackFrames[2]
 
-  Say "This test originated from" caller~name "at line" caller~line":"
-  Say caller~traceLine
+ .Error~Say( "This test originated from" caller~name "at line" caller~line":" )
+ .Error~Say( caller~traceLine )
 
   Raise Halt
 
 ParserSyntax:
-  co               = Condition("O")
+  co = Condition("O")
 
   If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
+   .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
 
@@ -174,23 +197,25 @@ ParserSyntax:
   Return 1
 
 DumpAdditional:
-  Say Arg(1)
+ .Error~Say( Arg(1) )
   Do i = 1 To Max(parserAdditional~items, interpreterAdditional~items)
-    Say "Parser[     "i"] = '"parserAdditional[i]"'"
-    Say "Interpreter["i"] = '"interpreterAdditional[i]"'"
-    Say
+   .Error~Say( "Parser[     "i"] = '"parserAdditional[i]"'" )
+   .Error~Say( "Interpreter["i"] = '"interpreterAdditional[i]"'" )
+   .Error~Say
   End
   Call Failed 4, "Additional arrays differ."
 
 Failed:
-  Say Arg(2)
-  Say "     1 *-* "string
+ .Error~Say( Arg(2)              )
+ .Error~Say( "     1 *-* "string )
 
   caller = .context~stackFrames[Arg(1)]
 
 /*
-  Say "This test originated from" caller~name "at line" caller~line":"
-  Say caller~traceLine
+ .Error~Say(                                                        -
+   "This test originated from" caller~name "at line" caller~line":" -
+  )
+ .Error~Say( caller~traceLine )
 */
 
   Raise Halt
@@ -206,7 +231,6 @@ Failed:
 ::Routine Test.OK Public
 
  .environment~Parser.Test.OK += 1
-
 
   Use Strict Arg source
 
@@ -227,13 +251,13 @@ PackageCreationTrapped:
 
   Parse Value co~code With major"."minor
 
-  Say caller~traceLine
-  Say "Error" major":" ErrorText(major)
-  Say "Error" major"."minor "running" caller~name "line" caller~line":"
-  Say co~message
-  Say ""
-  Say "This error happened when compiling:"
-  Say executing
+ .Error~Say( caller~traceLine )
+ .Error~Say( "Error" major":" ErrorText(major) )
+ .Error~Say( "Error" major"."minor "running" caller~name "line" caller~line":" )
+ .Error~Say( co~message )
+ .Error~Say( "" )
+ .Error~Say( "This error happened when compiling:" )
+ .Error~Say( executing )
 
   Raise HALT
 
@@ -253,7 +277,7 @@ Syntax:
 
   co = condition("O")
   If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
+   .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
 
@@ -268,12 +292,12 @@ Syntax:
   additional = additional~lastItem
   Parse Value additional~code With major"."minor
 
-  Say caller~traceLine
-  Say "Error" major":" ErrorText(major)
-  Say "Error" major"."minor "running" caller~name "line" caller~line":" .errorText(major"."minor, additional~additional)
-  Say ""
-  Say "This error happened when executing:"
-  Say executing
+ .Error~Say( caller~traceLine )
+ .Error~Say( "Error" major":" ErrorText(major) )
+ .Error~Say( "Error" major"."minor "running" caller~name "line" caller~line":" .errorText(major"."minor, additional~additional) )
+ .Error~Say( "" )
+ .Error~Say( "This error happened when executing:" )
+ .Error~Say( executing )
 
   Raise HALT
 

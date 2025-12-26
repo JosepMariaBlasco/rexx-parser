@@ -26,6 +26,7 @@ Version history
   <li> Allow ```` ```executor ```` in fenced code blocks, as an equivalent to
        ```` ```rexx ```` with an attribute of `{executor}` (20251222).
   <li> New [md2html](../utilities/md2html/) utility (20251224).
+  <li> Send error messages to .error, not .output (20251226).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

@@ -34,6 +34,7 @@
 /* 20250630         Add support for doc-comment subelements                   */
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
+/* 20251226    0.4a Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -86,7 +87,7 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
   If options. == .Nil Then Options. = 0
 
   If options.[] \== 0 Then Do
-    Say ">>> Default value for options argument to Highlighter~new is not 0. <<<"
+   .Error~Say( ">>> Default value for options argument to Highlighter~new is not 0. <<<" )
     Raise Halt
   End
 
@@ -209,7 +210,7 @@ Return
 Syntax:
   co = condition("O")
   If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
+   .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
 

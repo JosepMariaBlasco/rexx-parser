@@ -16,6 +16,7 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20250426    0.2b Initial release                                           */
 /* 20250602    0.2c Take into account substitution position                   */
+/* 20251226    0.4a Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -68,8 +69,8 @@
         ~changeStr("&gt;",'>')~changeStr("&lt;",'<')   -
         ~changeStr("&apos;","'")
       If Pos("&",text) > 0 Then Do
-        Say "Unexpected '&' in message text" major"."minor":"
-        Say text
+       .Error~Say( "Unexpected '&' in message text" major"."minor":" )
+       .Error~Say( text                                              )
         Exit 1
       End
       Do While Pos("<Sub ",Text) >  0
@@ -77,16 +78,16 @@
         Parse var text before"<Sub" things "/>"after
         Parse var things 'position="'position'"'
         If \DataType(position, "W") Then Do
-          Say "Position in text of" major"."minor "is not an integer."
+         .Error~Say( "Position in text of" major"."minor "is not an integer." )
           Exit 1
         End
         Parse var things 'name="'name'"'
         If name = "" Then Do
-          Say "Name not found for" major"."minor"."
+         .Error~Say( "Name not found for" major"."minor"." )
           Exit 1
         End
         If position = "" Then Do
-          Say "Position not found for" major"."minor"."
+         .Error~Say( "Position not found for" major"."minor"." )
           Exit 1
         End
         text = before"<"position":"name">"after
@@ -108,7 +109,7 @@
   Say '    Return .ANSI.ErrorText.Secondary[major"."minor]'
   Say '  End'
   Say '  If minor == "" Then Do'
-  Say '    Say "Routine ANSI.ErrorText called with substitutions but no minor error code."'
+  Say '   .Error~Say( "Routine ANSI.ErrorText called with substitutions but no minor error code." )'
   Say '    Raise HALT'
   Say '  End'
   Say '  message = .ANSI.ErrorText.Secondary[major"."minor]'

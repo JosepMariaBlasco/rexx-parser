@@ -14,7 +14,8 @@
 /*                                                                            */
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
-/* 20251221    0.4a  First public release                                      */
+/* 20251221    0.4a  First public release                                     */
+/* 20251226          Send error messages to .error, not .output               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -27,15 +28,15 @@
   line  = extra~position
   code  = extra~code
   Parse Var code major"."minor
-  Say Right(line,6) "*-*" source[line]
-  Say "Error" major "in" name", line" line": " ErrorText(major)
-  Say "Error" code": " Ansi.ErrorText( code, section )
+ .Error~Say(  Right(line,6) "*-*" source[line]                         )
+ .Error~Say( "Error" major "in" name", line" line": " ErrorText(major) )
+ .Error~Say( "Error" code": " Ansi.ErrorText( code, section )          )
 
   If itrace Then Do
-    Say
-    Say "Trace follows:"
-    Say Copies("-",80)
-    Say co~stackFrames~makeArray
+   .Error~Say
+   .Error~Say( "Trace follows:"         )
+   .Error~Say( Copies("-",80)           )
+   .Error~Say( co~stackFrames~makeArray )
   End
 
   Exit - major

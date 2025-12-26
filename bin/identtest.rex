@@ -19,6 +19,7 @@
 /* 20251215    0.4a Add toggles for Executor support, .TestGroup files        */
 /*                  Change name to identtest (thanks, JLF!)                   */
 /* 20251221         Add --itrace option, improve error messages               */
+/* 20251226         Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -54,9 +55,10 @@ Loop option Over args~makeArray(" ")
     When "--executor",         "-xtr" Then executor  = 1
     When "--noelements",        "-ne" Then elements  = 0
     When "--notree",            "-nt" Then tree      = 0
-    Otherwise
-      Say "Invalid option '"option"'."
+    Otherwise Do
+     .Error~Say( "Invalid option '"option"'." )
       Exit 1
+    End
   End
 End
 

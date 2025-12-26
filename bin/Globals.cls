@@ -32,6 +32,7 @@
 /* 20251125    0.3a Add support for Executor implicit abuttal                 */
 /* 20251129         (Executor) Create elements for curly brackets             */
 /* 20251213         (Executor) Create .NAMEs for named arguments              */
+/* 20251226    0.4a Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -167,7 +168,7 @@ Synonym:
 Return
 
 Halt:
-  Say Arg(1)
+ .Error~Say( Arg(1) )
   Raise Halt
 
 --------------------------------------------------------------------------------

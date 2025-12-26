@@ -17,6 +17,7 @@
 /* 20250103    0.1f First public release                                      */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /*                  Move "resources" dir under "bin"                          */
+/* 20251226         Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -34,12 +35,18 @@ UnicodeData =  Stream(UnicodeData, "c", "query exists")
 NameAliases =  Stream(NameAliases, "c", "query exists")
 
 If UnicodeData == "" Then Do
-  Say "File UnicodeData-15.0.0.txt not found in the 'bin/resources' subdirectory."
+ .Error~Say(                               -
+   "File UnicodeData-15.0.0.txt not found" -
+   "in the 'bin/resources' subdirectory."  -
+  )
   Raise Halt
 End
 
 If NameAliases == "" Then Do
-  Say "File NameAliases-15.0.0.txt not found in 'bin/resources' subdirectory."
+ .Error~Say(                               -
+   "File NameAliases-15.0.0.txt not found" -
+   "in 'bin/resources' subdirectory."      -
+  )
   Raise Halt
 End
 

@@ -19,6 +19,7 @@
 /* 20251113    0.3a First version                                             */
 /* 20251127         Add support for Executor                                  */
 /* 20251221    0.4a Add --itrace option, improve error messages               */
+/* 20251226         Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -56,8 +57,8 @@
     fullPath = .context~package~findProgram(filename".erx")
 
   If fullPath == .Nil Then Do
-    Say "Error 3:  Failure during initialization."
-    Say "Error 3.901:  Failure during initialization: Program "filename" was not found."
+   .Error~Say( "Error 3:  Failure during initialization." )
+   .Error~Say( "Error 3.901:  Failure during initialization: Program "filename" was not found." )
     Exit -3
   End
 
@@ -111,7 +112,7 @@ ShowHelp:
 Syntax:
   co = condition("O")
   If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
+   .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
   Exit ErrorHandler( fullpath, source, co, itrace)

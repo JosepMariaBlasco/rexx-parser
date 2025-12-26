@@ -59,7 +59,7 @@
 [*STYLES*]
     <link rel='stylesheet' href='%cssbase%/markdown.css'>
 -- Optionally load a filename-specific style
-    %ownstyle%
+    %filenameSpecificStyle%
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
@@ -67,7 +67,7 @@
 -- as the one being processed but with an additional extension of .css is found.
 -- For example, if readme.md is being processed and a file called readme.md.css
 -- is found in the same directory, a reference to it will be inserted here.
-    %extrastyle%
+    %printstyle%
     <!--[if lt IE 9]>
       <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>

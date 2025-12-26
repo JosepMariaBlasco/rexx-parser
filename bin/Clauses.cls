@@ -22,6 +22,7 @@
 /* 20251017    0.2e Add support for Lambdas                                   */
 /* 20251017    0.3a Add support for Executor "V=;"                            */
 /* 20251201         (Executor) Add support for source literals                */
+/* 20251226    0.4a Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -141,7 +142,7 @@
 
   -- This should not happen. It is here for debug purposes.
   If routine == .Nil Then Do
-    Say "Routine '"name"' not found!"
+   .Error~Say( "Routine '"name"' not found!" )
     Raise HALT
   End
 

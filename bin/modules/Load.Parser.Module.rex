@@ -20,6 +20,7 @@
 /*                  method.                                                   */
 /* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250714    0.2d Add 'override' parameter                                  */
+/* 20251226    0.4a Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -67,12 +68,12 @@ Do name Over methods
   If Pos("::", name) == 0 Then Iterate
   Parse Var name class"::"method
   If .environment[ class ] == .Nil Then Do
-    Say "Internal error! Class" class "not found."
+   .Error~Say( "Internal error! Class" class "not found." )
     Raise Halt
   End
   theClass = .environment[ class ]
   If \override, HasMethod( theClass, method ) Then Do
-    Say "Internal error! Method" method "already defined in class" class"."
+   .Error~Say( "Internal error! Method" method "already defined in class" class"." )
     Raise Halt
   End
   theClass ~ define( method, methods[ name ] )

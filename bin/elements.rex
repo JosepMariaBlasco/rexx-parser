@@ -27,6 +27,7 @@
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
 /* 20251221    0.4a Add --itrace option, improve error messages               */
+/* 20251226         Send error messages to .error, not .output                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -55,10 +56,7 @@
 
   Parse Arg file
 
-  If file = "" Then Do
-    Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
-    Exit 1
-  End
+  If file = "" Then Signal Help
 
 ProcessOptions:
   Parse Var file option file
@@ -69,15 +67,13 @@ ProcessOptions:
       When "-e", "-exp", "--exp", "--experimental" Then experimental = 1
       When "-xtr", "--executor" Then executor = 1
       When "-it", "--itrace"    Then itrace = 1
-      When "--help" Then Do
-        Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
-        Exit 1
-      End
+      When "--help" Then Signal Help
       When "--from" Then opFrom = Integer()
       When "--to"   Then opTo   = Integer()
-      Otherwise
-        Say "Invalid option '"option"'."
+      Otherwise Do
+       .Error~Say( "Invalid option '"option"'." )
         Exit 1
+      End
     End
     Signal ProcessOptions
   End
@@ -96,7 +92,7 @@ ProcessOptions:
   fullPath = .context~package~findProgram(file)
 
   If fullPath == .Nil Then Do
-    Say "File '"file"' does not exist."
+   .Error~Say( "File '"file"' does not exist." )
     Exit 1
   End
 
@@ -147,10 +143,16 @@ ProcessOptions:
 
 --------------------------------------------------------------------------------
 
+Help:
+  Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
+  Exit 1
+
+--------------------------------------------------------------------------------
+
 Integer:
   Parse Var file n file
   If \DataType(n,"W") | n <= 0 Then Do
-    Say "Positive whole number expected, found '"n"'."
+   .Error~Say( "Positive whole number expected, found '"n"'." )
     Exit 1
   End
   Return n
@@ -158,7 +160,7 @@ Integer:
 --------------------------------------------------------------------------------
 
 BadArgument:
-  Say "Incorrect file specification:" file
+ .Error~Say( "Incorrect file specification:" file )
   Exit 1
 
 --------------------------------------------------------------------------------
@@ -184,7 +186,7 @@ Print:
     If element < .ALL.COMPOUND_VARIABLES Then Call Compound
   End
   If value == .Nil Then Do
-    Say "Unexpected .Nil value for element condition."
+   .Error~Say( "Unexpected .Nil value for element condition." )
     Exit 1
   End
 Return
@@ -228,7 +230,7 @@ Return
 Syntax:
   co = condition("O")
   If co~code \== 98.900 Then Do
-    Say "Error" co~code "in" co~program", line" co~position":"
+   .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
   additional = Condition("A")
@@ -237,18 +239,18 @@ Syntax:
   line  = extra~position
   code  = extra~code
   Parse Var code major"."minor
-  Say Right(line,6) "*-*" source[line]
-  Say "Error" major "in" fullpath", line" line": " ErrorText(major)
-  Say "Error" code": " Ansi.ErrorText( code, section )
+ .Error~Say( Right(line,6) "*-*" source[line] )
+ .Error~Say( "Error" major "in" fullpath", line" line": " ErrorText(major) )
+ .Error~Say( "Error" code": " Ansi.ErrorText( code, section ) )
 
   If itrace Then Do
-    Say
-    Say "Trace follows:"
-    Say Copies("-",80)
-    Say co~stackFrames~makeArray
+   .Error~Say
+   .Error~Say( "Trace follows:" )
+   .Error~Say( Copies("-",80) )
+   .Error~Say( co~stackFrames~makeArray )
   End
 
-  Exit
+  Exit -major
 
 --------------------------------------------------------------------------------
 -- Help text                                                                  --
