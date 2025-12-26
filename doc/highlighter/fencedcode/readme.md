@@ -81,6 +81,11 @@ Define the class prefix used for HTML classes. Default is "rx-".
 Determines how taken constants (strings or symbols taken as a
 constant) will be highlighted.
 
+#### `executor` {#executor}
+
+Allows executor extensions in the code block.
+
+
 #### <code>extraletters=<em>string</em></code> {#extraletters}
 
 Allows all characters in *string* to be part of identifiers.

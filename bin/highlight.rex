@@ -31,6 +31,7 @@
 /* 20251220    0.4a Disallow -xtr, etc when .md, .html, .htm                  */
 /* 20251221         Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
+/* 20251226         Don't allow -s or --style for .md, improve error msgs     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -54,6 +55,7 @@ Else                   options.mode = HTML
 -- Process user options, if any
 
 patch = .Nil
+styleSpecified = 0
 
 Loop
   Parse var fn op value rest
@@ -63,7 +65,10 @@ If op[1] \== "-" | fn == "-" Then Leave
     Parse Var op op"="value
     Select Case Lower(op)
       When "--startfrom"       Then options.startFrom   = Natural(value)
-      When "--style"           Then options.style       = value
+      When "--style"           Then Do
+        options.style  = value
+        styleSpecified = 1
+      End
       When "--width"           Then options.width       = Natural(value)
       When "--pad"             Then options.pad         = Natural(value)
       When "--doccomments"     Then Do
@@ -102,7 +107,10 @@ If op[1] \== "-" | fn == "-" Then Leave
   End
   gotAValue = 1
   Select Case Lower(op)
-    When "-s"                  Then options.style       = value
+    When "-s"                  Then Do
+      options.style  = value
+      styleSpecified = 1
+    End
     When "-w"                  Then options.width       = Natural(value)
     Otherwise gotAValue = 0
   End
@@ -211,9 +219,12 @@ ProcessSource:
 Return hl~parse( patch )
 
 Fenced:
-  If options.executor | options.experimental | options.unicode Then Do
-   .Error~Say( "None of -xtr, -exp, -u, --executor, --experimental, --unicode or --tutor"-
-      "can be specified for files with an extension of" FileSpec("E",file)"." )
+  If styleSpecified | options.executor | options.experimental | options.unicode Then Do
+   .Error~Say( Copies("-",80) )
+   .Error~Say( "None of -exp, -s, -u, -xtr, --executor, --experimental, --unicode --style" )
+   .Error~Say( "or --tutor can be specified for files with an extension of" FileSpec("E",file)"." )
+   .Error~Say( "Please use attributes in your fenced code blocks instead." )
+   .Error~Say( "See https://rexx.epbcn.com/rexx-parser/doc/highlighter/fencedcode/" )
     Exit 1
   End
   Return FencedCode( file, source )
