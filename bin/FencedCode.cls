@@ -156,14 +156,16 @@
 
   -- Forms to start a code block we are interested in
   OK.            = 0
-  OK.["rexx"   ] = 1     -- "~~~rexx", and no attributes
-  OK.["rexx "  ] = 1     -- "~~~rexx <attributes>"
-  OK.["rexx{"  ] = 1     -- "~~~rexx{<attributes>}"
-  OK.["rexx"tab] = 1     -- "~~~rexx<tab><attributes>"
-  OK.["executor"   ] = 1 -- "~~~executor", and no attributes
-  OK.["executor "  ] = 1 -- "~~~executor <attributes>"
-  OK.["executor{"  ] = 1 -- "~~~executor{<attributes>}"
-  OK.["executor"tab] = 1 -- "~~~executor<tab><attributes>"
+  OK.["rexx"   ] = 1                    -- "~~~rexx", and no attributes
+  OK.["rexx "  ] = 1                    -- "~~~rexx <attributes>"
+  OK.["rexx{"  ] = 1                    -- "~~~rexx{<attributes>}"
+  OK.["rexx"tab] = 1                    -- "~~~rexx<tab><attributes>"
+  OK.["executor"   ] = 1                -- "~~~executor", and no attributes
+  OK.["executor "  ] = 1                -- "~~~executor <attributes>"
+  OK.["executor{"  ] = 1                -- "~~~executor{<attributes>}"
+  OK.["executor"tab] = 1                -- "~~~executor<tab><attributes>"
+
+  accum     = 0                         -- Accumulates read lines
 
   processed = .Array~new
 
@@ -201,7 +203,7 @@
           lineNo += 1
           If lineNo > source~items Then Exit MissingEndMarker()
           line = source[lineNo]
-          If line == marker Then Iterate Outer
+          If Strip(line,"T") == marker Then Iterate Outer
         End
       End
     End
@@ -214,7 +216,7 @@
     start  = lineNo
     lines  = source~items
     end    = start + 1
-    Loop While end <= lines, source[end] \== marker
+    Loop While end <= lines, Strip(source[end],"T") \== marker
       end += 1
     End
 
@@ -222,7 +224,7 @@
     If end > lines Then Exit MissingEndMarker()
 
     -- Get the highligthed version of our code block
-    highlighted = ProcessACodeBlock( filename, source, start, end, options. )
+    highlighted = ProcessACodeBlock( filename, source, start, end, accum, options. )
 
     -- Up to line (start-1) there is nothing to change
     processed~appendAll( source~section( 1, start - 1 ) )
@@ -232,6 +234,8 @@
 
     -- Now update our source...
     source = source~section( end + 1 )
+    -- ... and the accumulated line count ...
+    accum += end
     -- ... and update lineNo (remembering that LOOP will add 1 to it)
     lineNo = 0
 
@@ -364,7 +368,7 @@ BadOptions:
 --------------------------------------------------------------------------------
 
 ::Routine ProcessACodeBlock
-  Use Strict Arg filename, source, start, end, options.
+  Use Strict Arg filename, source, start, end, accum, options.
 
   -- Process patch files, if any
   patches = .Nil
@@ -391,7 +395,8 @@ BadOptions:
   End
   Else Do
     array = source~section( start + 1, end - start - 1)
-    highligthter = .Highlighter~new(filename "[lines "start"-"end"]", array, options.)
+    newFN = filename "[lines "||(start+accum)"-"||(end+accum)"]"
+    highligthter = .Highlighter~new(newFN, array, options.)
   End
 
   Return highligthter~parse( patches )

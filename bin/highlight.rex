@@ -131,6 +131,11 @@ If op[1] \== "-" | fn == "-" Then Leave
   fn = Strip(value rest)
 End
 
+If options.css, options.mode \== "HTML" Then Do
+ .Error~Say( "The --css option cannot be used in" options.mode "mode." )
+  Exit 1
+End
+
 -- We need an argument
 If fn = "" Then Do
   Say .Resources[Help]
@@ -153,8 +158,9 @@ Else Do
   End
 
   -- Check that the file exists
-  file = Stream(fn, 'c', 'q exists')
-  If file == "" Then Do
+
+  file = .Context~package~findProgram(fn)
+  If file == .Nil Then Do
    .Error~Say( "File '"fn"' not found." )
     Exit 1
   End
@@ -232,7 +238,18 @@ Syntax:
   line  = extra~position
   Parse Value co~code With major"."minor
  .Error~Say( Right(line,6) "*-*" extra~sourceline                            )
- .Error~Say( "Error" major "in" extra~name", line" line": " ErrorText(major) )
+  -- Try to reconstruct the line number if we have enough information
+  name = extra~name
+  majorMessagePrinted = 0
+  If Right(name,1) == "]" Then Do
+    Parse Var name name1" [lines "start"-"end"]"
+    If name == name1" [lines "start"-"end"]" Then Do
+      majorMessagePrinted = 1
+     .Error~Say( "Error" major "in" name1", line" (start+line)": " ErrorText(major) )
+    End
+  End
+  If \majorMessagePrinted Then
+   .Error~Say( "Error" major "in" extra~name", line" line": " ErrorText(major) )
  .Error~Say( "Error" co~code": " Ansi.ErrorText( co~code, additional )       )
 
   If options.itrace Then Do
