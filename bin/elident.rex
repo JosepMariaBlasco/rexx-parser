@@ -23,75 +23,92 @@
 /* 20252118         Add TUTOR support                                         */
 /* 20251221    0.4a Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
+/* 20251227         Use .SysCArgs when available                              */
 /*                                                                            */
 /******************************************************************************/
 
-Signal On Syntax
+  Signal On Syntax
 
-Parse Arg args
-args = Strip( args )
+  package =  .context~package
 
-If args == "" Then Signal Help
+  myName  =   package~name
+  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
+  myHelp  = ChangeStr(                                         -
+   "myName",                                                   -
+   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
+    myName)
+  Parse Source . how .
+  If how == "COMMAND", .SysCArgs \== .Nil
+    Then args = .SysCArgs
+    Else args = ArgArray(Arg(1))
 
-executor = 0
-unicode  = 0
-itrace   = 0
+  executor = 0
+  unicode  = 0
+  itrace   = 0
 
-Loop While args[1] == "-"
-  Parse Var args option args
-  Select Case Lower(option)
-    When "--help", "-?"               Then Signal Help
-    When "--executor", "-xtr"         Then executor = 1
-    When "-it", "--itrace"            Then itrace = 1
-    When "-u", "--tutor", "--unicode" Then unicode = 1
-    Otherwise Signal InvalidOption
+ProcessOptions:
+  If args~items == 0 Then Signal Help
+
+  option = args[1]
+  args~delete(1)
+
+  If option[1] == "-" Then Do
+    Select Case Lower(option)
+      When "--help", "-?"               Then Signal Help
+      When "--executor", "-xtr"         Then executor = 1
+      When "-it", "--itrace"            Then itrace = 1
+      When "-u", "--tutor", "--unicode" Then unicode = 1
+      Otherwise Call Error "Invalid option '"option"'."
+    End
+    Call ProcessOptions
   End
-End
 
-If args = "" Then Signal Help
+  If args~items > 0 Then Call Error "Invalid argument '"args[1]"'."
 
-Call RetrieveFilename
+  file = option
 
--- Read the whole file into an array
-chunk = CharIn(file,1,Chars(file))
-Call Stream file,"c","close"
-source = chunk~makeArray
--- Makearray has a funny definition that ignores a possible
--- last empty line.
-If Right(chunk,1) = "0a"X Then source~append("")
+  fullPath = .context~package~findProgram(file)
 
-options = .Array~new
-If executor Then options~append(("EXECUTOR", 1))
-If unicode  Then options~append(("UNICODE", 1))
+  If fullPath == .Nil Then Call Error "File '"file"' does not exist."
 
-parser = .Rexx.Parser~new( file, source, options )
+  -- Read the whole file into an array
+  chunk = CharIn(fullPath,1,Chars(fullPath))
+  Call Stream fullPath,"c","close"
+  source = chunk~makeArray
+  -- Makearray has a funny definition that ignores a possible
+  -- last empty line.
+  If Right(chunk,1) = "0a"X Then source~append("")
 
-currentLineNo = 1
-currentLine   = ""
+  options = .Array~new
+  If executor Then options~append(("EXECUTOR", 1))
+  If unicode  Then options~append(("UNICODE", 1))
 
-element = parser~firstElement -- Same as parser~package~prolog~body~begin
-Do Counter elements Until element == .Nil
-  If element~from \== element~to Then Do
-    category = element~category
-    elementLine  = element~from~word(1)
-    If      elementLine > currentLineNo          Then Call ChangeLine
-    If      category == .EL.STANDARD_COMMENT     Then Call StandardComment
-    Else If category == .EL.DOC_COMMENT          Then Call StandardComment
-    Else If category == .EL.DOC_COMMENT_MARKDOWN Then Call StandardComment
-    Else If category == .EL.RESOURCE_DATA        Then Call ResourceData
-    Else    currentLine ||= element~source
+  parser = .Rexx.Parser~new( file, source, options )
+
+  currentLineNo = 1
+  currentLine   = ""
+
+  element = parser~firstElement -- Same as parser~package~prolog~body~begin
+  Do Counter elements Until element == .Nil
+    If element~from \== element~to Then Do
+      category = element~category
+      elementLine  = element~from~word(1)
+      If      elementLine > currentLineNo          Then Call ChangeLine
+      If      category == .EL.STANDARD_COMMENT     Then Call StandardComment
+      Else If category == .EL.DOC_COMMENT          Then Call StandardComment
+      Else If category == .EL.DOC_COMMENT_MARKDOWN Then Call StandardComment
+      Else If category == .EL.RESOURCE_DATA        Then Call ResourceData
+      Else    currentLine ||= element~source
+    End
+    element = element~next
   End
-  element = element~next
-End
 
-Exit 0
-
-InvalidOption:
- .Error~Say( "Invalid option '"option"'." )
-  Exit 1
+  Exit 0
 
 Help:
-  Say .Resources["HELP"]
+  Say .Resources[Help]~makeString        -
+    ~caselessChangeStr("myName", myName) -
+    ~caselessChangeStr("myHelp", myHelp)
   Exit 1
 
 StandardComment:
@@ -128,31 +145,11 @@ ChangeLine:
   End
 Return
 
-RetrieveFilename:
-  c = args[1]
-  -- Quoted filenames
-  If ( '"' || "'" )~contains( c ) Then Do
-    Parse Var args +1 fileName (c) extra
-    extra = Strip( extra )
-    If extra \== "" Then Do
-     .Error~Say( "Unrecognized parameter '"extra"'." )
-      Exit 1
-    End
-  End
-  Else fileName = args
+--------------------------------------------------------------------------------
 
-  -- Try the file name as-is first, then add ".rex" at the end
-  file = Stream(fileName,"c","query exists")
-  If file = "" Then Do
-    If \ fileName~caselessEndsWith(".rex") Then
-      file = Stream(fileName".rex","c","query exists")
-    If file = "" Then Do
-     .Error~Say( "File '"fileName"' not found." )
-      Exit 1
-    End
-  End
-
-Return
+Error:
+ .Error~Say(Arg(1))
+  Exit 1
 
 --------------------------------------------------------------------------------
 -- Standard Rexx Parser error handler                                         --
@@ -167,18 +164,28 @@ Syntax:
   Exit ErrorHandler( file, source, co, itrace)
 
 ::Resource HELP
-elident -- Checks that the Parser' stream of elements is identical to a FILE.
+myname -- Checks that the Parser' stream of elements is identical to a FILE.
 
-Usage: elident [OPTION]... [FILE]
+Usage: myname [OPTION]... [FILE]
 
 If the only option is --help or -?, or if no arguments are present,
 then display this help and exit.
 
 Options:
 
---executor, -xtr  Activate support for Executor language extensions
---itrace, -it     Print internal trace on error
+-it, --itrace           Print internal trace on error
+-u, --tutor, --unicode  Enable TUTOR-flavored Unicode
+-xtr, --executor        Activate support for Executor language extensions
+
+The 'myname' program is part of the Rexx Parser package,
+see https://rexx.epbcn.com/rexx-parser/. It is distributed under
+the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
+
+Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+
+See myHelp for details.
 ::END
 
 ::Requires "Rexx.Parser.cls"
+::Requires "BaseClassesAndRoutines.cls"
 ::Requires "ErrorHandler.cls"

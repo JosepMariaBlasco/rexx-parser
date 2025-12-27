@@ -44,7 +44,7 @@ x = (+10)                     -- Fails. Reported by JLF. Fixed on 20250419.
 -- Control variable no accepted in LEAVE and ITERATE.                         --
 --------------------------------------------------------------------------------
 
--- Reported by JLF. Fixed on 20254019.
+-- Reported by JLF. Fixed on 20250419.
 
 Do i = 1 To n
   If condition Then Leave   i
@@ -62,8 +62,8 @@ End
 
 Do Label out i = 1 By 1
   Select
-    When 1 Then Leave   Out  -- Traps. Reported by JLF. Fixed on 20254019.
-    When 1 Then Iterate Out  -- Traps. Reported by JLF. Fixed on 20254019.
+    When 1 Then Leave   Out  -- Traps. Reported by JLF. Fixed on 20250419.
+    When 1 Then Iterate Out  -- Traps. Reported by JLF. Fixed on 20250419.
   End
 End
 
@@ -71,20 +71,20 @@ End
 -- Test that SIGNAL to an _existing_ label works.                             --
 --------------------------------------------------------------------------------
 
-Signal ExistingLabel -- Was failing. Reported by JLF. Fixed on 20254019.
+Signal ExistingLabel -- Was failing. Reported by JLF. Fixed on 20250419.
 ExistingLabel: Nop
 
 --------------------------------------------------------------------------------
 -- Test that different expressions are correctly checked inside BIFs.         --
 --------------------------------------------------------------------------------
 
-Say sign(x - y)      -- Was crashing. Reported by JLF. Fixed on 20254019.
+Say sign(x - y)      -- Was crashing. Reported by JLF. Fixed on 20250419.
 Say sign(x y)
 
 --------------------------------------------------------------------------------
 -- TRACE needs special handling because of the "?" prefix.                    --
 --------------------------------------------------------------------------------
 
-Call Trace "?a"      -- Was failing. Reported by JLF. Fixed on 20254019.
+Call Trace "?a"      -- Was failing. Reported by JLF. Fixed on 20250419.
 
 

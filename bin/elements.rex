@@ -28,6 +28,7 @@
 /* 20251125         Add support for Executor                                  */
 /* 20251221    0.4a Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
+/* 20251227         Use .SysCArgs when available                              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -42,6 +43,14 @@
 
   myName  =   package~name
   Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
+  myHelp  = ChangeStr(                                         -
+   "myName",                                                   -
+   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
+    myName)
+  Parse Source . how .
+  If how == "COMMAND", .SysCArgs \== .Nil
+    Then args = .SysCArgs
+    Else args = ArgArray(Arg(1))
 
 --------------------------------------------------------------------------------
 -- Main program                                                               --
@@ -54,47 +63,35 @@
   itrace       = 0
   opTo         = "*"
 
-  Parse Arg file
-
-  If file = "" Then Signal Help
-
 ProcessOptions:
-  Parse Var file option file
+  If args~items == 0 Then Signal Help
+
+  option = args[1]
+  args~delete(1)
 
   If option[1] == "-" Then Do
     Select Case Lower(option)
-      When "-u", "--tutor", "--unicode" Then unicode = 1
-      When "-e", "-exp", "--exp", "--experimental" Then experimental = 1
+      When "-u", "--tutor", -
+        "--unicode"             Then unicode = 1
+      When "-e", "-exp", "--exp", -
+        "--experimental"        Then experimental = 1
       When "-xtr", "--executor" Then executor = 1
       When "-it", "--itrace"    Then itrace = 1
-      When "--help" Then Signal Help
-      When "--from" Then opFrom = Integer()
-      When "--to"   Then opTo   = Integer()
-      Otherwise Do
-       .Error~Say( "Invalid option '"option"'." )
-        Exit 1
-      End
+      When "--help"             Then Signal Help
+      When "--from"             Then opFrom = Integer()
+      When "--to"               Then opTo   = Integer()
+      Otherwise Call Error "Invalid option '"option"'."
     End
     Signal ProcessOptions
   End
-  Else file = option file
 
-  file = Strip(file)
+  If args~items > 0 Then Call Error "Invalid argument '"args[1]"'."
 
-  -- Filename may contain blanks
-  c = file[1]
-  If """'"~contains(c) Then Do
-    If \file~endsWith(c) Then Signal BadArgument
-    file = SubStr(file,2,Length(file)-2)
-    If file~contains(c)  Then Signal BadArgument
-  End
+  file = option
 
   fullPath = .context~package~findProgram(file)
 
-  If fullPath == .Nil Then Do
-   .Error~Say( "File '"file"' does not exist." )
-    Exit 1
-  End
+  If fullPath == .Nil Then Call Error "File '"file"' does not exist."
 
   -- We need to compute the source separately to properly handle syntax errors
   source = CharIn(fullPath,1,Chars(fullPath))~makeArray
@@ -143,25 +140,33 @@ ProcessOptions:
 
 --------------------------------------------------------------------------------
 
+Error:
+ .Error~Say(Arg(1))
+  Exit 1
+
+--------------------------------------------------------------------------------
+
 Help:
-  Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
+  Say .Resources[Help]~makeString        -
+    ~caselessChangeStr("myName", myName) -
+    ~caselessChangeStr("myHelp", myHelp)
   Exit 1
 
 --------------------------------------------------------------------------------
 
 Integer:
-  Parse Var file n file
-  If \DataType(n,"W") | n <= 0 Then Do
-   .Error~Say( "Positive whole number expected, found '"n"'." )
-    Exit 1
+  n = ""
+  If args~items > 0 Then Do
+    n = args[1]
+    args~delete(1)
   End
-  Return n
+  If DataType(n,"W"), n > 0 Then Return n
+  Call Error "Positive whole number expected, found '"n"'."
 
 --------------------------------------------------------------------------------
 
 BadArgument:
- .Error~Say( "Incorrect file specification:" file )
-  Exit 1
+  Call Error "Incorrect file specification:" file
 
 --------------------------------------------------------------------------------
 
@@ -185,10 +190,8 @@ Print:
     Say " ( A" CategoryName(element~category)")"
     If element < .ALL.COMPOUND_VARIABLES Then Call Compound
   End
-  If value == .Nil Then Do
-   .Error~Say( "Unexpected .Nil value for element condition." )
-    Exit 1
-  End
+  If value == .Nil Then
+    Call Error "Unexpected .Nil value for element condition."
 Return
 
 --------------------------------------------------------------------------------
@@ -258,11 +261,12 @@ Syntax:
 
 ::Requires "Rexx.Parser.cls"
 ::Requires "ANSI.ErrorText.cls"
+::Requires "BaseClassesAndRoutines.cls"
 ::Requires "modules/print/print.cls"
 ::Resource Help end "::End"
-Usage: myName [options] FILE
+myname - Transform a file into its constituent elements and list them
 
-Transform FILE into a list of elements and list them.
+Usage: myName [options] FILE
 
 Options:
 -xtr,--executor     Enable support for Executor
@@ -274,8 +278,11 @@ Options:
      --tutor        Enable TUTOR-flavored Unicode
  -u, --unicode      Enable TUTOR-flavored Unicode
 
-The 'myname' program is part of the Rexx Parser package, and is distributed
-under the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
+The 'myname' program is part of the Rexx Parser package,
+see https://rexx.epbcn.com/rexx-parser/. It is distributed under
+the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
 
 Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+
+See myhelp for details.
 ::End

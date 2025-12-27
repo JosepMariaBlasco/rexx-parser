@@ -26,40 +26,54 @@
 /* 20252118         Add TUTOR support                                         */
 /* 20251221    0.4a Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
+/* 20251227         Use .SysCArgs when available                              */
 /*                                                                            */
 /******************************************************************************/
 
   Signal On Syntax
 
-  Parse Arg args
+  package =  .context~package
 
-  args = Strip(args)
-
-  If args == "" Then Signal Help
+  myName  =   package~name
+  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
+  myHelp  = ChangeStr(                                         -
+   "myName",                                                   -
+   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
+    myName)
+  Parse Source . how .
+  If how == "COMMAND", .SysCArgs \== .Nil
+    Then args = .SysCArgs
+    Else args = ArgArray(Arg(1))
 
   executor = 0
   unicode  = 0
   itrace   = 0
 
-  Loop While args[1] == "-"
-    Parse Var args option args
+ProcessOptions:
+  If args~items == 0 Then Signal Help
+
+  option = args[1]
+  args~delete(1)
+
+  If option[1] == "-" Then Do
     Select Case Lower(option)
       When "--help", "-?"               Then Signal Help
       When "--itrace", "-it"            Then itrace = 1
       When "--executor", "-xtr"         Then executor = 1
       When "-u", "--tutor", "--unicode" Then unicode = 1
-      Otherwise Signal InvalidOption
+      Otherwise Call Error "Invalid option '"option"'."
     End
+    Signal ProcessOptions
   End
 
-  If args = "" Then Signal Help
+  file = option
 
-  fullPath = .context~package~findProgram(args)
+  If args~items > 0 Then Call Error "Unexpected argument '"args[1]"'."
 
-  If fullPath == .Nil Then Do
-   .Error~Say( "File '"args"' does not exist." )
-    Exit 1
-  End
+  fullPath = .context~package~findProgram(file)
+
+  If fullPath == .Nil Then
+    Call Error "File '"file"' does not exist."
 
   -- We need to compute the source separately to properly handle syntax errors
   chunk = CharIn(fullPath,1,Chars(fullPath))
@@ -105,12 +119,18 @@
   -- We are done
   Exit 0
 
-InvalidOption:
- .Error~Say( "Invalid option '"option"'." )
+--------------------------------------------------------------------------------
+
+Error:
+ .Error~Say(Arg(1))
   Exit 1
 
+--------------------------------------------------------------------------------
+
 Help:
-  Say .Resources["HELP"]
+  Say .Resources[Help]~makeString        -
+    ~caselessChangeStr("myName", myName) -
+    ~caselessChangeStr("myHelp", myHelp)
   Exit 1
 
 --------------------------------------------------------------------------------
@@ -124,22 +144,6 @@ Syntax:
     Raise Propagate
   End
   Exit ErrorHandler( fullpath, source, co, itrace)
-
---------------------------------------------------------------------------------
-
-::Resource HELP
-elident -- Verify if the identity compiler returns a perfect copy of a program.
-
-Usage: trident [OPTION]... [FILE]
-
-If the only option is --help or -?, or if no arguments are present,
-then display this help and exit.
-
-Options:
-
---executor, -xtr  Activate support for Executor language extensions
---itrace, -it     Print internal trace on error
-::END
 
 --------------------------------------------------------------------------------
 
@@ -184,3 +188,27 @@ Options:
   Else                 self[self~last] ||= string
 
   written = 1
+
+--------------------------------------------------------------------------------
+
+::Resource HELP
+myname -- Verify if the identity compiler returns a perfect copy of a program.
+
+Usage: myname [OPTION]... [FILE]
+
+If the only option is --help or -?, or if no arguments are present,
+then display this help and exit.
+
+Options:
+
+--executor, -xtr  Activate support for Executor language extensions
+--itrace, -it     Print internal trace on error
+
+The 'myname' program is part of the Rexx Parser package,
+see https://rexx.epbcn.com/rexx-parser/. It is distributed under
+the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
+
+Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+
+See myhelp for details.
+::END

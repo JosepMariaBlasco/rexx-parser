@@ -17,7 +17,7 @@ into a standard ooRexx program and then runs this program.
 ## options
 
 ---------------------------------- ----------------------
-`-it`, `--itrace`                  Print internal traceback on error
 `-l`                               Print the translated program and exit immediately
+`-it`, `--itrace`                  Print internal traceback on error
 `-xtr`, `--executor`&nbsp;&nbsp;   Enable Executor support
 ---------------------------------- ----------------------

@@ -17,6 +17,7 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20251215    0.4a First public release                                      */
 /* 20251226         Send error messages to .error, not .output                */
+/* 20251227         Use .SysCArgs when available                              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -24,11 +25,18 @@
   -- Errors returned by the parser require special handling
   Signal On Syntax
 
-  -- Retrieve our own name
   package =  .context~package
+
   myName  =   package~name
   Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
-
+  myHelp  = ChangeStr(                                         -
+   "myName",                                                   -
+   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
+    myName)
+  Parse Source . how .
+  If how == "COMMAND", .SysCArgs \== .Nil
+    Then args = .SysCArgs
+    Else args = ArgArray(Arg(1))
 
   unicode      = 0
   experimental = 0
@@ -36,24 +44,27 @@
   itrace       = 0
   indent       = 2
 
-  Parse Arg args
+ProcessOptions:
+  If args~items == 0 Then Signal Help
 
-  args = Strip(args)
+  option = args[1]
+  args~delete(1)
 
-  Loop While args[1] == "-"
-    Parse Var args option args
+  If option[1] == "-" Then Do
     Select Case Lower(option)
       When "-u", "--tutor", "--unicode" Then unicode = 1
       When "-e", "-exp", "--exp", "--experimental" Then experimental = 1
       When "-it", "--itrace"    Then itrace = 1
       When "-xtr", "--executor" Then executor = 1
       When "--help" Then Signal Help
-      Otherwise Signal BadOption
+      Otherwise Call Error "Invalid option '"option"'."
     End
+    Signal ProcessOptions
   End
 
-  filename = args
-  If filename == "" Then Signal Help
+  If args~items > 0 Then Call Error "Unexpected argument '"args[1]"'."
+
+  filename = option
 
   fullPath = .context~package~findProgram(filename)
 
@@ -78,11 +89,11 @@
   Exit
 
 --------------------------------------------------------------------------------
--- Bad option                                                                 --
+-- Common error routine                                                       --
 --------------------------------------------------------------------------------
 
-BadOption:
- .Error~Say( "Invalid option '"Upper(option)"'." )
+Error:
+ .Error~Say(Arg(1))
   Exit 1
 
 --------------------------------------------------------------------------------
@@ -90,7 +101,9 @@ BadOption:
 --------------------------------------------------------------------------------
 
 Help:
-  Say .Resources[Help]~makeString~caselessChangeStr("myName", myName)
+  Say .Resources[Help]~makeString        -
+    ~caselessChangeStr("myName", myName) -
+    ~caselessChangeStr("myHelp", myHelp)
   Exit 1
 
 --------------------------------------------------------------------------------
@@ -227,8 +240,11 @@ Options:
      --tutor        Enable TUTOR-flavored Unicode
  -u, --unicode      Enable TUTOR-flavored Unicode
 
-The 'myname' program is part of the Rexx Parser package, and is distributed
-under the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
+The 'myname' program is part of the Rexx Parser package,
+see https://rexx.epbcn.com/rexx-parser/. It is distributed under
+the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
 
 Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+
+See myhelp for details.
 ::End

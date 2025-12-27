@@ -17,11 +17,12 @@ Usage
 Options
 -------
 
----------------------------------- ------------------------------
-`-it`, `--itrace`                  Print internal traceback on error
-`-xtr`, `--executor`&nbsp;&nbsp;   Enable Executor support
-`-?`, `--help`                     Display this information
----------------------------------- ------------------------------
+---------------------------------------- ------------------------------
+`-it`, `--itrace`                        Print internal traceback on error
+`-u`, `--tutor`, `--unicode`&nbsp;&nbsp; Enable TUTOR-flavored Unicode
+`-xtr`, `--executor`                     Enable Executor support
+`-?`, `--help`                           Display this information
+---------------------------------------- ------------------------------
 
 Program source
 --------------

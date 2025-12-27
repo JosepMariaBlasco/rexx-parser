@@ -16,136 +16,146 @@
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251226         Unify searches for default.md2html & md2html.custom.rex   */
 /* 20251226         Implement --path option                                   */
+/* 20251227         Use .SysCArgs when available                              */
 /*                                                                            */
 /******************************************************************************/
 
-Call Time R
+  Call Time R
 
-name = .context~package~name
-myself = FileSpec("Name"    ,name)
-mydir  = FileSpec("Location",name)
+  package =  .context~package
 
-Address COMMAND "pandoc -v" With Output Stem Discard. Error Stem Discard.
-If rc \== 0 Then Do
- .Error~Say( myself "needs a working version of pandoc. Aborting..." )
-  Exit 1
-End
+  myName  =   package~name
+  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
+  myHelp  = ChangeStr(                                         -
+   "myName",                                                   -
+   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
+    myName)
+  Parse Source . how .
+  If how == "COMMAND", .SysCArgs \== .Nil
+    Then args = .SysCArgs
+    Else args = ArgArray(Arg(1))
+  myself = FileSpec("Name"    ,name)
+  mydir  = FileSpec("Location",name)
 
-Parse Arg args
+  ------------------------------------------------------------------------------
+  -- Ensure that we have access to pandoc                                     --
+  ------------------------------------------------------------------------------
 
-args    = Strip(args)
-cssbase = ""
-jsbase  = ""
-itrace  = 0
-path    = ""
+  Address COMMAND "pandoc -v" With Output Stem Discard. Error Stem Discard.
+  If rc \== 0 Then
+    Call Error myself "needs a working version of pandoc. Aborting..."
 
-Loop While args[1] == "-"
-  Parse Var args option args
-  Select Case Lower(option)
-    When "-h", "-?", "--help" Then Signal Help
-    When "-it", "--itrace" Then itrace = 1
-    When "-c", "--css" Then Do
-      Parse Var args cssbase args
+  cssbase = ""
+  jsbase  = ""
+  itrace  = 0
+  path    = ""
+
+ProcessOptions:
+
+  Loop While args~size > 0, args[1][1] == "-"
+    option = args[1]
+    args~delete(1)
+
+    Select Case Lower(option)
+      When "-h", "-?", "--help" Then Signal Help
+      When "-it", "--itrace" Then itrace = 1
+      When "-c", "--css" Then Do
+        If args~size == 0 Then
+          Call Error "Missing base directory after '"option"' option."
+        cssbase = args[1]
+        args~delete(1)
+      End
+      When "-p", "--path" Then Do
+        If args~size == 0 Then
+          Call Error "Missing path after '"option"' option."
+        path = args[1]
+        args~delete(1)
+      End
+      When "-j", "--js" Then Do
+        If args~size == 0 Then
+          Call Error "Missing base directory after '"option"' option."
+        jsbase = args[1]
+        args~delete(1)
+      End
+      Otherwise Call Error "Invalid option '"option"'."
     End
-    When "-p", "--path" Then Do
-      Parse Var args path args
-      If path == "" Then Do
-       .Error~Say( "Missing path after '"option"' option." )
-        Exit 1
+  End
+
+  Select Case args~items
+    When 0 Then Call Error "Source directory is missing."
+    When 1,2 Then Do
+      source = args[1]
+      If \SysFileExists(source) Then
+        Call Error "Source directory '"source"' does not exist."
+      If \SysIsFileDirectory(source) Then
+        Call Error "'"source"' is not a directory."
+      If args~items == 1 Then destination = Directory()
+      Else Do
+        destination = args[1]
+        If \SysFileExists(destination) Then
+          Call Error "Destination directory '"destination"' does not exist."
+        If \SysIsFileDirectory(destination) Then
+          Call Error "'"destination"' is not a directory."
+        destination = .File~new(destination)~absolutePath
       End
     End
-    When "-j", "--js" Then Do
-      Parse Var args jsbase args
-    End
-    Otherwise Do
-     .Error~Say( "Invalid option '"option"'." )
-      Exit 1
-    End
+    Otherwise Call Error "Unexpected argument '"args[3]"'."
   End
-  args = Strip(args)
-End
 
-Parse Var args source destination
-If source = "" Then Signal Help
-
-If \SysFileExists(source) Then Do
- .Error~Say( "Source directory '"source"' does not exist." )
-  Exit 1
-End
-
-If \SysIsFileDirectory(source) Then Do
- .Error~Say( "'"source"' is not a directory." )
-  Exit 1
-End
-
-If destination = "" Then destination = Directory()
-Else Do
-  If \SysFileExists(destination) Then Do
-   .Error~Say( "Destination directory '"destination"' does not exist." )
-    Exit 1
+  If cssbase = "" Then Do
+    cssdir = .File~new(destination"/css")
+    If cssdir~exists, cssdir~isDirectory Then cssbase = "file:///"cssdir~absolutePath
   End
-  If \SysIsFileDirectory(destination) Then Do
-   .Error~Say( "'"destination"' is not a directory." )
-    Exit 1
+
+  If jsbase = "" Then Do
+    jsdir = .File~new(destination"/js")
+    If jsdir~exists, jsdir~isDirectory Then jsbase = "file:///"jsdir~absolutePath
   End
-  destination = .File~new(destination)~absolutePath
-End
 
-If cssbase = "" Then Do
-  cssdir = .File~new(destination"/css")
-  If cssdir~exists, cssdir~isDirectory Then cssbase = "file:///"cssdir~absolutePath
-End
+  fullSource = .File~new(source)~absolutePath
 
-If jsbase = "" Then Do
-  jsdir = .File~new(destination"/js")
-  If jsdir~exists, jsdir~isDirectory Then jsbase = "file:///"jsdir~absolutePath
-End
+  Call SysFileTree fullSource"/*.md", "md.", "FOS"
 
-fullSource = .File~new(source)~absolutePath
+  If md.0 == 0 Then Do
+    Say "No .md files found in '"source"'. Nothing to do."
+    Exit 0
+  End
 
-Call SysFileTree fullSource"/*.md", "md.", "FOS"
+  --
+  -- Load default.md2html, a template to drive the .md to .html translation process.
+  --
 
-If md.0 == 0 Then Do
-  Say "No .md files found in '"source"'. Nothing to do."
-  Exit
-End
+  template = "default.md2html"
 
---
--- Load default.md2html, a template to drive the .md to .html translation process.
---
+  -- 0) If --path has been specified, look there
+  If path \== "" Then Do
+    try = path"/"template
+    If .File~new(try)~exists Then Signal TemplateFound
+  End
 
-template = "default.md2html"
+  -- 1) Look in the current directory
 
--- 0) If --path has been specified, look there
-If path \== "" Then Do
-  try = path"/"template
+  try = Directory()"/"template
   If .File~new(try)~exists Then Signal TemplateFound
-End
 
--- 1) Look in the current directory
+  -- 2) Look in the destination directory
 
-try = Directory()"/"template
-If .File~new(try)~exists Then Signal TemplateFound
+  try = destination"/"template
+  If .File~new(try)~exists Then Signal TemplateFound
 
--- 2) Look in the destination directory
+  -- 3) Look in the source directory
 
-try = destination"/"template
-If .File~new(try)~exists Then Signal TemplateFound
+  try = fullsource"/"template
+  If .File~new(try)~exists Then Signal TemplateFound
 
--- 3) Look in the source directory
+  -- 4) Use the normal Rexx external search order
 
-try = fullsource"/"template
-If .File~new(try)~exists Then Signal TemplateFound
+  try = .context~package~findProgram(template)
+  -- Check that this is really the file we are looking for
+  -- (could be default.md2html.rex or default.md2html.cls...)
+  If FileSpec("Name",try) == template Then Signal TemplateFound
 
--- 4) Use the normal Rexx external search order
-
-try = .context~package~findProgram(template)
--- Check that this is really the file we are looking for
--- (could be default.md2html.rex or default.md2html.cls...)
-If FileSpec("Name",try) == template Then Signal TemplateFound
-
-.Error~Say( "Could not find file 'default.md2html'. Aborting." )
-Exit 1
+  Call Error "Could not find file 'default.md2html'. Aborting."
 
 TemplateFound:
   chunk = CharIn( try, 1, Chars(try) )
@@ -158,80 +168,87 @@ TemplateFound:
     If line[1,2] \== "--" Then template~append(line)
   End
 
---
--- Call md2html.custom.rex. This will have the side effect to load a set
--- of optional routines. You can customize the translation process by placing
--- a modified version of md2html.custom.rex in the current directory, in
--- the destination directory, in the source directory, or in a place
--- accesible by the Rexx external program search order (in that order
--- of precedence).
---
+  --
+  -- Call md2html.custom.rex. This will have the side effect to load a set
+  -- of optional routines. You can customize the translation process by placing
+  -- a modified version of md2html.custom.rex in the current directory, in
+  -- the destination directory, in the source directory, or in a place
+  -- accesible by the Rexx external program search order (in that order
+  -- of precedence).
+  --
 
-custom = "md2html.custom.rex"
+  custom = "md2html.custom.rex"
 
--- 0) If --path has been specified, look there
-If path \== "" Then Do
-  try = path"/"custom
+  -- 0) If --path has been specified, look there
+
+  If path \== "" Then Do
+    try = path"/"custom
+    If .File~new(try)~exists Then Signal CustomFound
+  End
+
+  -- 1) Look in the current directory
+
+  try = Directory()"/"custom
   If .File~new(try)~exists Then Signal CustomFound
-End
 
--- 1) Look in the current directory
+  -- 2) Look in the destination directory
 
-try = Directory()"/"custom
-If .File~new(try)~exists Then Signal CustomFound
+  try = destination"/"custom
+  If .File~new(try)~exists Then Signal CustomFound
 
--- 2) Look in the destination directory
+  -- 3) Look in the source directory
 
-try = destination"/"custom
-If .File~new(try)~exists Then Signal CustomFound
+  try = fullsource"/"custom
+  If .File~new(try)~exists Then Signal CustomFound
 
--- 3) Look in the source directory
+  -- 4) Use the normal Rexx external search order
 
-try = fullsource"/"custom
-If .File~new(try)~exists Then Signal CustomFound
+  try = custom
 
--- 4) Use the normal Rexx external search order
+  CustomFound:
+    Call (try)
 
-try = custom
+  prefixLength = Length(fullSource) + 2
 
-CustomFound:
-  Call (try)
+  processed = 0
 
-prefixLength = Length(fullSource) + 2
-
-processed = 0
-
-Loop i = 1 To md.0
-  file   = .File~new(md.i)
-  dir    = SubStr(file~parent, prefixLength)
-  new    = destination"/"dir            -- Windows accepts "/"
-  newDir = .File~new(new)
-  new    = newDir~absolutePath          -- Normalize name
-  If newDir~exists Then Do
-    If \newdir~isDirectory Then Do
-     .Error~Say( "'"new"' already exists, but it is not a directory. Aborting." )
-      Exit 1
+  Loop i = 1 To md.0
+    file   = .File~new(md.i)
+    dir    = SubStr(file~parent, prefixLength)
+    new    = destination"/"dir            -- Windows accepts "/"
+    newDir = .File~new(new)
+    new    = newDir~absolutePath          -- Normalize name
+    If newDir~exists Then Do
+      If \newdir~isDirectory Then
+        Call Error "'"new"' already exists, but it is not a directory. Aborting."
     End
-  End
-  Else Do
-    Say Time("Long") "Creating directory '"new"'..."
-    If \newDir~makeDirs Then Do
-     .Error~Say( "Directory creation failed. Aborting..." )
-      Exit 1
+    Else Do
+      Say Time("Long") "Creating directory '"new"'..."
+      If \newDir~makeDirs Then
+        Call Error "Directory creation failed. Aborting..."
     End
+    Say Time("Long") "Processing" file"..."
+    Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, itrace
+    processed += 1
   End
-  Say Time("Long") "Processing" file"..."
-  Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, itrace
-  processed += 1
-End
 
-Say Copies("-",80)
-Say Time("Long") "Processed" processed "files, took" Time("E") "seconds."
+  Say Copies("-",80)
+  Say Time("Long") "Processed" processed "files, took" Time("E") "seconds."
 
-Exit
+  Exit
+
+--------------------------------------------------------------------------------
+
+Error:
+ .Error~Say(Arg(1))
+  Exit 1
+
+--------------------------------------------------------------------------------
 
 Help:
-  Say .Resources~help
+  Say .Resources[Help]~makeString        -
+    ~caselessChangeStr("myName", myName) -
+    ~caselessChangeStr("myHelp", myHelp)
   Exit 1
 
 --------------------------------------------------------------------------------
@@ -435,9 +452,9 @@ OptionalRoutineMissing:
 Raise Propagate
 
 ::Resource Help End "::End"
-md2html -- Markdown to HTML conversion tool
+myname -- Markdown to HTML conversion tool
 
-Usage: [rexx] md2html OPTIONS source [destination]
+Usage: [rexx] myname OPTIONS source [destination]
 
 "source" and "destination" should be existing directories.
 The destination directory defaults to the current directory.
@@ -453,8 +470,17 @@ Options:
 
 cssbase and jsbase default to "css" and "js" subdirectories
 in the destination directory, when they exist.
+
+The 'myname' program is part of the Rexx Parser package,
+see https://rexx.epbcn.com/rexx-parser/. It is distributed under
+the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
+
+Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+
+See myhelp for details.
 ::End
 
 ::Requires "ANSI.ErrorText.cls"
+::Requires "BaseClassesAndRoutines.cls"
 ::Requires "ErrorHandler.cls"
 ::Requires "FencedCode.cls"

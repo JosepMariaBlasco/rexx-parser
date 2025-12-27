@@ -20,36 +20,50 @@
 /* 20251127         Add support for Executor                                  */
 /* 20251221    0.4a Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
+/* 20251227         Use .SysCArgs when available                              */
 /*                                                                            */
 /******************************************************************************/
 
   Signal On Syntax
 
-  nArgs = .SysCArgs~items
-  If nArgs == 0 Then Call ShowHelp
+  package =  .context~package
+
+  myName  =   package~name
+  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
+  myHelp  = ChangeStr(                                         -
+   "myName",                                                   -
+   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
+    myName)
+  Parse Source . how .
+  If how == "COMMAND", .SysCArgs \== .Nil
+    Then args = .SysCArgs
+    Else args = ArgArray(Arg(1))
 
   list     = 0
   executor = 0
   itrace   = 0
 
-  Loop Counter n i = 1 By 1 While i <= nArgs, .SysCArgs[i][1] == "-"
-    Select Case lower(.SysCArgs[i])
+ProcessOptions:
+  If args~items == 0 Then Signal Help
+
+  option = args[1]
+  args~delete(1)
+
+  If option[1] == "-" Then Do
+    Select Case lower(option)
       When "-l"         Then list     = 1
       When "-it"        Then itrace = 1
       When "--itrace"   Then itrace = 1
       When "-xtr"       Then executor = 1
       When "--executor" Then executor = 1
-      Otherwise Call ShowHelp
+      Otherwise Call Error "Invalid option '"option"'."
     End
+    Call ProcessOptions
   End
 
-  n = n + 1
-  If n > nArgs Then Call ShowHelp
-  filename = .SysCArgs[n]
+  filename = option
 
-  moreArgs = .SysCArgs~section(n+1)~makeString("L"," ")
-
-  filename = Strip(filename)
+  moreArgs = args~makeString("L"," ")
 
   fullPath = .context~package~findProgram(filename)
 
@@ -101,8 +115,10 @@
   -- We are done
   Exit result
 
-ShowHelp:
-  Say .Resources~help
+Help:
+  Say .Resources[Help]~makeString        -
+    ~caselessChangeStr("myName", myName) -
+    ~caselessChangeStr("myHelp", myHelp)
   Exit 1
 
 --------------------------------------------------------------------------------
@@ -120,6 +136,7 @@ Syntax:
 --------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"                      -- The Parser
+::Requires "BaseClassesAndRoutines.cls"           -- For ArgArray et al
 ::Requires "ErrorHandler.cls"                     -- Standard error handling
 ::Requires "modules/print/print.cls"              -- Helps in debug
 ::Requires "modules/identity/compile.cls"         -- The Identity compiler
@@ -168,20 +185,26 @@ Syntax:
 --------------------------------------------------------------------------------
 
 ::Resource Help
-erexx -- Run a Rexx program with Experimental features
+myname -- Run a Rexx program with Experimental features
 
 Usage:
-  erexx [OPTIONS] [FILE]
+  myname [OPTIONS] [FILE]
 
-Runs the Rexx Parser against FILE, compiles
-the Experimental features, and runs the resulting
-program.
+Runs the Rexx Parser against FILE, compiles the Experimental features,
+and runs the resulting program.
 
 Options:
 
-  -l          Print the translated program and exit
-  -it         Print internal trace on error
-  --itrace    Print internal trace on error
-  -xtr        Activate Executor support
-  --executor  Activate Executor support
+  -l                Print the translated program and exit
+  -it, --itrace     Print internal trace on error
+  -xtr, --executor  Activate Executor support
+
+
+The 'myname' program is part of the Rexx Parser package,
+see https://rexx.epbcn.com/rexx-parser/. It is distributed under
+the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
+
+Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+
+See myhelp for details.
 ::END

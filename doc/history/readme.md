@@ -29,6 +29,7 @@ Version history
   <li> Send error messages to .error, not .output (<https://github.com/JosepMariaBlasco/rexx-parser/issues/27>) (20251226).
   <li> Unify searches for `default.md2html` and `md2html.custom.rex` (20251226).
   <li> Add `--path` option to `md2html` (<https://github.com/JosepMariaBlasco/rexx-parser/issues/27>) (20251226).
+  <li> Use .SysCArgs when available (20251227).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

@@ -32,179 +32,138 @@
 /* 20251221         Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251226         Don't allow -s or --style for .md, improve error msgs     */
+/* 20251227         Use .SysCArgs when available                              */
 /*                                                                            */
 /******************************************************************************/
 
-Signal On Syntax
+  Signal On Syntax
 
-Parse Arg fn
+  package =  .context~package
 
--- Remember how we were called
-Parse Source . how myself
-myPath = FileSpec("Location",myself)
-sep = .File~separator
+  myName  =   package~name
+  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
+  myHelp  = ChangeStr(                                         -
+   "myName",                                                   -
+   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
+    myName)
+  Parse Source . how .
+  If how == "COMMAND", .SysCArgs \== .Nil
+    Then args = .SysCArgs
+    Else args = ArgArray(Arg(1))
 
--- We will store our processed options in a stem
-options. = 0
+  -- We will store our processed options in a stem
+  options. = 0
 
--- Set default mode to ANSI if called from the command line...
-If how == Command Then options.mode = ANSI
--- ...otherwise, assume HTML.
-Else                   options.mode = HTML
+  -- Set default mode to ANSI if called from the command line...
+  If how == "COMMAND"
+    Then options.mode = ANSI
+    -- ...otherwise, assume HTML.
+    Else options.mode = HTML
 
--- Process user options, if any
+  myPath = FileSpec("Location",myself)
+  sep = .File~separator
+  patch = .Nil
+  styleSpecified = 0
 
-patch = .Nil
-styleSpecified = 0
+ProcessOptions:
+  If args~items == 0 Then Signal Help
 
-Loop
-  Parse var fn op value rest
-If op[1] \== "-" | fn == "-" Then Leave
-  If op~contains("=") Then Do
-    fn = Strip(value rest)
-    Parse Var op op"="value
-    Select Case Lower(op)
-      When "--startfrom"       Then options.startFrom   = Natural(value)
-      When "--style"           Then Do
-        options.style  = value
-        styleSpecified = 1
-      End
-      When "--width"           Then options.width       = Natural(value)
-      When "--pad"             Then options.pad         = Natural(value)
-      When "--doccomments"     Then Do
-        If WordPos(value,"detailed block") == 0 Then Do
-         .Error~Say( "Invalid value '"value"'." )
-          Exit 1
+  option = args[1]
+  args~delete(1)
+
+  If option[1] == "-" Then Do
+    If option~contains("=") Then Do
+      Parse Var option option"="value
+      Select Case Lower(option)
+        When "--startfrom"       Then options.startFrom   = Natural(value)
+        When "-s", "--style"     Then Do
+          options.style  = value
+          styleSpecified = 1
         End
-        options.doccomments   = value
-      End
-      When "--patch"           Then Do
-        Call AllowQuotes
-        If value = "" Then patch = .Nil
-        Else patch = .StylePatch~of( value )
-      End
-      When "--patchfile"       Then Do
-        Call AllowQuotes
-        If value = "" Then Do
-         .Error~Say( "Invalid option '"op"'." )
-          Exit 1
+        When "-w", "--width"     Then options.width       = Natural(value)
+        When "--pad"             Then options.pad         = Natural(value)
+        When "--doccomments"     Then Do
+          If WordPos(value,"detailed block") == 0 Then
+            Call Error "Invalid value for --doccomments '"value"'."
+          options.doccomments   = value
         End
-        file = Stream(value,"C", "Q Exists")
-        If file == "" Then Do
-         .Error~Say( "File '"value"' not found." )
-          Exit 1
+        When "--patch"           Then Do
+          If value = "" Then patch = .Nil
+          Else patch = .StylePatch~of( value )
         End
-        value = CharIn( file, 1, Chars(file) )~makeArray
-        Call Stream file, "C", "Close"
-        patch = .StylePatch~of( value )
+        When "--patchfile"       Then Do
+          If value = "" Then Call Error "Invalid option '"option"'."
+          file = Stream(value,"C", "Q Exists")
+          If file == "" Then Call "File '"value"' not found."
+          value = CharIn( file, 1, Chars(file) )~makeArray
+          Call Stream file, "C", "Close"
+          patch = .StylePatch~of( value )
+        End
+        Otherwise Call Error "Invalid option '"op"'."
       End
-      Otherwise Do
-       .Error~Say( "Invalid option '"op"'." )
-        Exit 1
+    End
+    Else Do -- No "=" in option
+      Select Case Lower(option)
+        When "-it", "--itrace"     Then options.itrace      =  1
+        When "-h", "--html"        Then options.mode        =  HTML
+        When "-l", "--latex"       Then options.mode        =  LaTeX
+        When "-n", "--numberlines" Then options.numberlines = .True
+        When "-a", "--ansi"        Then options.mode        =  ANSI
+        When "-e", "-exp", "--experimental" Then options.experimental = 1
+        When "-xtr", "--executor"  Then options.executor    = 1
+        When "--css"               Then options.css         = 1
+        When "--tutor"             Then options.unicode     = 1
+        When "-u", "--unicode"     Then options.unicode     = 1
+        When "--noprolog"          Then options.prolog      = 0
+        When "--prolog"            Then options.prolog      = 1
+        Otherwise Call Error "Invalid option '"option"'."
       End
     End
-    Iterate
+    Signal ProcessOptions
   End
-  gotAValue = 1
-  Select Case Lower(op)
-    When "-s"                  Then Do
-      options.style  = value
-      styleSpecified = 1
+
+  If options.css, options.mode \== "HTML" Then
+    Call Error "The --css option cannot be used in" options.mode "mode."
+
+  If args~items > 0 Then Call Error "Invalid argument '"args[1]"'."
+
+  file = option
+
+  If file == "-" Then source = .Input~arrayIn
+  Else Do
+    fullPath = .context~package~findProgram(file)
+    If fullPath == .Nil Then Call Error "File '"file"' does not exist."
+    source = CharIn(fullPath,1,Chars(fullPath))~makeArray
+    Call Stream fullPath,"c","close"
+  End
+
+  If Options.css == 0 Then Do
+    Say ProcessSource()
+    Exit
+  End
+
+  -- Pick selected style
+  If Options.style == 0 Then mystyle = "dark"
+  Else                       mystyle = Options.style
+
+  -- A possible copy could reside in our rexx-parser installation
+  cssPath = ChangeStr("\",mypath".."sep"css"sep"rexx-"mystyle".css","/")
+  -- A possible copy could reside in the current directory
+  local   = Stream(Directory()||sep"rexx-"mystyle".css","c","query exists")
+
+  Do line Over .Resources[HTML]
+    Select Case line
+      When "[*CSS*]" Then Do
+        Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-"mystyle".css'></link>"
+        Say  "    <link rel='stylesheet' href='file:///"cssPath"'></link>"
+        If local \== "" Then Say  "    <link rel='stylesheet' href='rexx-"mystyle".css'></link>"
+      End
+      When "[*CONTENTS*]" Then Say ProcessSource()
+      Otherwise Say line
     End
-    When "-w"                  Then options.width       = Natural(value)
-    Otherwise gotAValue = 0
-  End
-  If gotAValue Then Do
-    fn = rest
-    Iterate
-  End
-  Select Case Lower(op)
-    When "-it", "--itrace"     Then options.itrace      =  1
-    When "-h", "--html"        Then options.mode        =  HTML
-    When "-l", "--latex"       Then options.mode        =  LaTeX
-    When "-n", "--numberlines" Then options.numberlines = .True
-    When "-a", "--ansi"        Then options.mode        =  ANSI
-    When "-e", "-exp", "--experimental" Then options.experimental = 1
-    When "-xtr", "--executor"  Then options.executor    = 1
-    When "--css"               Then options.css         = 1
-    When "--tutor"             Then options.unicode     = 1
-    When "-u", "--unicode"     Then options.unicode     = 1
-    When "--noprolog"          Then options.prolog      = 0
-    When "--prolog"            Then options.prolog      = 1
-    Otherwise Do
-     .Error~Say( "Invalid option '"op"'." )
-      Exit 1
-    End
-  End
-  fn = Strip(value rest)
-End
-
-If options.css, options.mode \== "HTML" Then Do
- .Error~Say( "The --css option cannot be used in" options.mode "mode." )
-  Exit 1
-End
-
--- We need an argument
-If fn = "" Then Do
-  Say .Resources[Help]
-  Exit 1
-End
-
-If fn == "-" Then source = .Input~ArrayIn
-Else Do
-
-  -- Process filenames containing blanks
-  fn = Strip(fn)
-  c  = fn[1]
-  If """'"~contains( c ) Then Do
-    Parse Var fn (c)fn2(c)extra
-    If extra \== "" Then Do
-     .Error~Say( "Invalid filename '"fn"'." )
-      Exit 1
-    End
-    fn = fn2
   End
 
-  -- Check that the file exists
-
-  file = .Context~package~findProgram(fn)
-  If file == .Nil Then Do
-   .Error~Say( "File '"fn"' not found." )
-    Exit 1
-  End
-
-  -- Load the whole file in the "source" array
-  source = CharIn(file,1,Chars(file))~makeArray
-  Call Stream file,"c","close"
-End
-
-If Options.css == 0 Then Do
-  Say ProcessSource()
   Exit
-End
-
--- Pick selected style
-If Options.style == 0 Then mystyle = "dark"
-Else                       mystyle = Options.style
-
--- A possible copy could reside in our rexx-parser installation
-cssPath = ChangeStr("\",mypath".."sep"css"sep"rexx-"mystyle".css","/")
--- A possible copy could reside in the current directory
-local   = Stream(Directory()||sep"rexx-"mystyle".css","c","query exists")
-
-Do line Over .Resources[HTML]
-  Select Case line
-    When "[*CSS*]" Then Do
-      Say  "    <link rel='stylesheet' href='https://rexx.epbcn.com/rexx-parser/css/rexx-"mystyle".css'></link>"
-      Say  "    <link rel='stylesheet' href='file:///"cssPath"'></link>"
-      If local \== "" Then Say  "    <link rel='stylesheet' href='rexx-"mystyle".css'></link>"
-    End
-    When "[*CONTENTS*]" Then Say ProcessSource()
-    Otherwise Say line
-  End
-End
-
-Exit
 
 ProcessSource:
   -- Markdown? Process the fenced code blocks and display the result
@@ -224,23 +183,19 @@ Fenced:
    .Error~Say( "None of -exp, -s, -u, -xtr, --executor, --experimental, --unicode, --style" )
    .Error~Say( "or --tutor can be specified for files with an extension of" FileSpec("E",file)"." )
    .Error~Say( "Please use attributes in your fenced code blocks instead." )
-   .Error~Say( "See https://rexx.epbcn.com/rexx-parser/doc/highlighter/fencedcode/" )
+   .Error~Say( "See https://rexx.epbcn.com/rexx-parser/doc/highlighter/fencedcode/ for details" )
     Exit 1
   End
   Return FencedCode( file, source )
 
-AllowQuotes:
-  q = value[1]
-  If """'"~contains( q ) Then Do
-    fn = value fn
-    Parse Var fn (q)value(q)fn
-  End
-  Return
-
 Natural:
-  If DataType(Arg(1),"W"), Arg(1) >= 0 Then Return Arg(1)
- .Error~Say( "Invalid value" Arg(1)"." )
-  Exit 1
+  n = Arg(1)
+  If args~items > 0 Then Do
+    n = args[1]
+    args~delete(1)
+  End
+  If DataType(n,"W"), n > 0 Then Return n
+  Call Error "Positive whole number expected, found '"n"'."
 
 Syntax:
   co         = condition("O")
@@ -274,12 +229,28 @@ Exit -major
 
 --------------------------------------------------------------------------------
 
+Error:
+ .Error~Say(Arg(1))
+  Exit 1
+
+--------------------------------------------------------------------------------
+
+Help:
+  Say .Resources[Help]~makeString        -
+    ~caselessChangeStr("myName", myName) -
+    ~caselessChangeStr("myHelp", myHelp)
+  Exit 1
+
+--------------------------------------------------------------------------------
+
 ::Requires "Highlighter.cls"
 ::Requires "FencedCode.cls"
 ::Requires "ANSI.ErrorText.cls"
 
 ::Resource Help
-Usage: highlight [OPTIONS] FILE
+myname - Highlight a Rexx program, or a file containing Rexx programs
+
+Usage: myname [OPTIONS] FILE
 
 If FILE has a .md or .html extension, process all Rexx fenced code blocks
 in FILE and highlight them. Otherwise, we assume that this is a Rexx file,
@@ -289,8 +260,8 @@ Options:
   -a,  --ansi               Select ANSI mode
        --css                Include links to css files (HTML only)
        --doccomments=detailed|block Select highlighting level for doc-comments
-  -xtr,--executor          Enable support for Executor
-  -e, -exp, --experimental Enable Experimental features
+  -xtr,--executor           Enable support for Executor
+  -e, -exp, --experimental  Enable Experimental features
   -h,  --html               Select HTML mode
   -it, --itrace             Printing internal traceback on error
   -l,  --latex              Select LaTeX mode
@@ -306,10 +277,13 @@ Options:
   -u,  --unicode            Enable TUTOR-flavored Unicode
   -w,  --width=N            Ensure that all lines have width >= N (ANSI only)
 
-The 'highlight' program is part of the Rexx Parser package, and is distributed
-under the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
+The 'myname' program is part of the Rexx Parser package,
+see https://rexx.epbcn.com/rexx-parser/. It is distributed under
+the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
 
 Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+
+See myhelp for details.
 ::END
 
 ::Resource HTML

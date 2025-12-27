@@ -27,12 +27,24 @@
 /* 20251125         Add support for Executor                                  */
 /* 20251129         -e option does not need quotes now                        */
 /* 20251226    0.4a Send error messages to .error, not .output                */
+/* 20251227         Use .SysCArgs when available                              */
 /*                                                                            */
 /******************************************************************************/
 
-  Parse Arg file
+  package =  .context~package
 
-  If file = "" Then Signal Help
+  myName  =   package~name
+  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
+  myHelp  = ChangeStr(                                         -
+   "myName",                                                   -
+   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
+    myName)
+  Parse Source . how .
+  If how == "COMMAND", .SysCArgs \== .Nil
+    Then args = .SysCArgs
+    Else args = ArgArray(Arg(1))
+
+  If args~items == 0 Then Signal Help
 
   signal           = 1
   guard            = 1
@@ -45,8 +57,10 @@
   executor         = 0
   extraletters     = ""
   emptyassignments = 0
-  Do While "+-"~contains(Left(file,1))
-    Parse Var file option file
+
+  Loop While args~items > 0, "+-"~contains(Left(args[1],1))
+    option = args[1]
+    args~delete(1)
     Select Case Lower(option)
       When "-?", "-help", "--help" Then Signal Help
       When "-all" Then Do
@@ -82,44 +96,34 @@
       When "-experimental", -
            "+experimental", -
            "-exp", "+exp"  Then experimental = 1
-      When "-emptyassignments", "+emptyassignments" Then emptyassignments = 1
+      When "-emptyassignments", -
+        "+emptyassignments" Then emptyassignments = 1
       When "-e", "+e"      Then Do
-        code = file
+        code   = args~makeString("L", " ")
         source = .Array~of( code )
         fullPath = "INSTORE"
         Signal code
       End
       When "-extraletters", "+extraletters" Then Do
-        c = file[1]
-        If Pos(c,"'""") == 0 Then Do
-         .Error~Say(                                                    -
-           "The -extraletters option must be immediately followed"      -
-           "by a quoted set of letters."                                -
-          )
-          Exit 1
-        End
-        Parse Var file (c)extraletters(c)file
-        If extraletters == "" Then Do
-         .Error~Say(                                                    -
-           "No extra letters found found after '-extraletters' option." -
-          )
-        End
+        If args~size ==  0 Then
+          Call "Missing set of letters after '"option"' option."
+        extraletters = args[1]
+        args~delete(1)
       End
-      Otherwise Do
-       .Error~Say( "Invalid option '"option"'." )
-        Exit 1
-      End
+      Otherwise Call Error "Invalid option '"option"'."
     End
   End
 
-  file = Strip(file)
+  Select Case args~items
+    When 0 Then Signal Help
+    When 1 Then file = args[1]
+    Otherwise Call Error "Unexpected argument '"args[2]"'."
+  End
 
   fullPath = .context~package~findProgram(file)
 
-  If fullPath == .Nil Then Do
-   .Error~Say( "File '"file"' does not exist." )
-    Exit 1
-  End
+  If fullPath == .Nil Then
+    Call Error "File '"file"' does not exist."
 
   source = CharIn(fullPath, 1, Chars(fullPath))~makeArray
   Call Stream fullPath, 'c', 'close'
@@ -157,20 +161,32 @@ Syntax:
   End
   Exit ErrorHandler( fullPath, source, co, itrace)
 
-Help:
-  Say .Resources~Help
+--------------------------------------------------------------------------------
+
+Error:
+ .Error~Say(Arg(1))
   Exit 1
+
+--------------------------------------------------------------------------------
+
+Help:
+  Say .Resources[Help]~makeString        -
+    ~caselessChangeStr("myName", myName) -
+    ~caselessChangeStr("myHelp", myHelp)
+  Exit 1
+
+--------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"
 ::Requires "ErrorHandler.cls"
 ::Requires "modules/print/print.cls"
 
 ::Resource help
-rxcheck -- Parse a program or a short code fragment
+myname -- Parse a program or a short code fragment
 
 Usage:
-  rxcheck [OPTIONS] FILE
-  rxcheck [OPTIONS] -e "REXX CODE"
+  myname [OPTIONS] FILE
+  myname [OPTIONS] -e "REXX CODE"
 
 Runs the Rexx Parser against FILE or the supplied REXX CODE.
 By default, the parser perform a series of early checks,
@@ -209,4 +225,12 @@ Executing short code fragments:
                 This has to be the last argument.
 
 All toggles except "debug" are active by default
+
+The 'myname' program is part of the Rexx Parser package,
+see https://rexx.epbcn.com/rexx-parser/. It is distributed under
+the Apache 2.0 License (https://www.apache.org/licenses/LICENSE-2.0).
+
+Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
+
+See myhelp for details.
 ::END

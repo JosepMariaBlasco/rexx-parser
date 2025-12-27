@@ -24,17 +24,18 @@
 /* 20251202         Fix line no reported for syntax error 13.001              */
 /* 20251226    0.4a Send error messages to .error, not .output                */
 /* 20251226         Add support for "=" and "==" at end of expression         */
+/* 20251227         Add ArgArray routine                                      */
 /*                                                                            */
-/******************************************************************************/
-
-/******************************************************************************/
-/* A Rexx Clause                                                              */
 /******************************************************************************/
 
  .environment~Lambda.Do.Block  = .Lambda.Do.Block
  .environment~Rexx.Clause      = .Rexx.Clause
  .environment~Rexx.Directive   = .Rexx.Directive
  .environment~Rexx.Instruction = .Rexx.Instruction
+
+/******************************************************************************/
+/* A Rexx Clause                                                              */
+/******************************************************************************/
 
 ::Class Rexx.Clause Public
 
@@ -82,6 +83,75 @@
 
 ::Class Rexx.Directive Public SubClass Rexx.Clause
 ::Attribute body
+
+/******************************************************************************/
+/* ArgArray                                                                   */
+/******************************************************************************/
+
+-- Transform a command-like subroutine call arguments into a
+-- .SysCArgs-compatible array.
+--
+-- Note that we don't accept escapes or escaped quotes.
+
+::Routine ArgArray Public
+  Parse Arg arg
+  arg          = Strip(arg)
+  array        = .Array~new
+
+  thisArg      = ""
+  insideQuotes = 0
+  backslashCount  = 0
+
+  Loop i = 1 To Length(arg)
+    c = arg[i]
+    Select Case c
+      When "\" Then Do
+         backslashCount  = 0
+         Loop Counter c While arg[i] == "\"
+           backslashCount += 1
+           i += 1
+         End
+
+         If arg[i] == '"' Then Do -- '\...\"'
+           thisArg ||= Copies("\", backslashCount % 2)
+           If backslashCount // 2 == 0
+             Then insideQuotes = \ insideQuotes
+             Else thisArg ||= '"'
+         End
+         Else thisArg ||= Copies("\", backslashCount)arg[i]
+      End
+      -- A quote that doesn't follow an escape character
+      When '"' Then Do
+        If i > 1, arg[i-1] == '"' Then thisArg ||= '"'
+        insideQuotes = \ insideQuotes
+      End
+      -- Process whitespace
+      When " ", "09"X Then Do
+        Select
+          -- Inside quotes? This is part of the argument
+          When insideQuotes Then thisArg ||= c
+          -- Not inside quotes? Whitespace ends the argument
+          When thisArg \== "" Then Call GotAnArgument
+          -- Between arguments? Simply skip whitespace
+          Otherwise Nop
+        End
+      End
+      -- All other characters
+      Otherwise Do
+        thisArg   ||= c
+      End
+    End
+  End
+
+  -- We might need to add the last argument to the array
+  If thisArg \== "" Then array~append(thisArg)
+
+  Return array
+
+GotAnArgument:
+  array~append(thisArg)
+  thisArg = ""
+Return
 
 /******************************************************************************/
 /* Basic and common routines                                                  */
