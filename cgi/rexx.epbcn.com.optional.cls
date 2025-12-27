@@ -233,6 +233,7 @@ Crumb:
     -- "/rexx-parser/doc/highlighter"
 
     When dochl                     Then Return "Highlighter"
+    When dochl"/predefined-styles" Then Return "Predefined styles"
     When dochl"/cgi"               Then Return "CGI"
     When dochl"/css"               Then Return "CSS support"
     When dochl"/paged-media"       Then Return "CSS Paged Media"

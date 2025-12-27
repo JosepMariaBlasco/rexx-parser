@@ -104,7 +104,10 @@ rexx-vim-dark-torte.css
 --------------------------       ------------------------------
 \
 
-These files have been curated and adapted by Rony Flatscher.
+These files have been kindly curated and adapted by Rony Flatscher (thanks!).
+You can take a look at the whole palette of predefined styles
+[here](predefined-styles) (as of 20251227).
+
 
 You can select a style by using the `style=` attribute on a
 [Rexx fenced code block](fencedcode/), or the
