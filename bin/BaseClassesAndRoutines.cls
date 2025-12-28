@@ -420,7 +420,7 @@ Error:
 
 ::Routine PrepareExpression Public
 
-  Use Strict Arg package, begin, keywords = ""
+  Use Strict Arg package, begin, keywords = "", checkForAssignment = .False
 
   subExpression      = 0
   If keywords == ")" Then Do

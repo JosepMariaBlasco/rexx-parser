@@ -153,3 +153,11 @@ Say V~length V~class                    -- 0 The String class
 
 -- (Others)
 ```
+
+### Special features
+
+```rexx {executor}
+    a = 1                               -- An assignment
+Say a = 1                               -- A comparison
+    a =                                 -- Special notation used by ooRexxShell
+```

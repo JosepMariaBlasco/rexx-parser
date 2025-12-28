@@ -1393,7 +1393,6 @@ Option:    Return options.[         Upper(Arg(1))]
 
 ::Routine Message Public
   Use Strict Arg package, begin, end, elements
-
   ignoreBlanks = .True
 
   element = TheElementAfter( begin )
@@ -1407,6 +1406,8 @@ Option:    Return options.[         Upper(Arg(1))]
   If element \< .ALL.ASSIGNMENTS Then Signal Message.Instruction
 
 MessageAssignment:
+  If element < .EL.OP.EQUAL Then
+    Call SetCategory element, .EL.ASG.EQUAL
   lhs      = expression
   operator = element
   element  = TheElementAfter( operator )

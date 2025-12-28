@@ -197,12 +197,8 @@
     If isAKeyword, t2 < .ALL.WHITESPACE_LIKE Then Exit self~Keyword.Clause
   End
 
-  -- Case 5 (bis): Symbol + "[", "~" or "~~" -> Message instruction
-  If t1 < .ALL.SYMBOLS, t2 < .ALL.OPS.MESSAGE_SEND Then
+  If IsAMessageInstruction(t1) Then
     Exit self~Message.Instruction
-
-  unprepared = .False
-  If IsAMessageInstruction(t1, unprepared) Then Exit self~Message.Instruction
 
   If .Options.Executor, -
     t1 < .ALL.VARIABLES_AND_KEYWORDS, -
@@ -260,7 +256,14 @@ Error:
     lastitem = elements~lastitem
     If lastitem < .EL.OP.EQUAL
       Then Call SetCategory lastitem, .EL.EXECUTOR.FINAL.EQUAL
-      Else Call SetCategory lastitem, .EL.EXECUTOR.FINAL.DOUBLE.EQUAL
+      Else Do -- "=="
+        second = lastItem~next
+        Loop While second \< .EL.OP.STRICT.EQUAL
+          second = second~next
+        End
+        Call SetCategory lastitem, .EL.EXECUTOR.FINAL.DOUBLE.EQUAL
+        Call SetCategory second,   .EL.EXECUTOR.FINAL.DOUBLE.EQUAL
+      End
   End
 
   end = next
@@ -500,7 +503,8 @@ IF: WHEN:
 
   element = elements[1]
 
-  Call PrepareExpression package, element
+  checkForAssignment = .True
+  Call PrepareExpression package, element,,checkForAssignment
 
   self~generateElementsArray
 
@@ -545,8 +549,7 @@ IF: WHEN:
 -- ISAMESSAGEINSTRUCTION                                                      --
 --   Determines whether an expression is a command or a message instruction,  --
 --   including an (extended) message term assignment (standard assignments    --
---   are processed elsewhere). The expression is supposed to have been        --
---   prepared first by the PREPAREEXPRESSION routine.                         --
+--   are processed elsewhere).                                                --
 --------------------------------------------------------------------------------
 
 --
@@ -556,14 +559,12 @@ IF: WHEN:
 
 ::Routine isAMessageInstruction
 
-  Use Strict Arg element, prepared = .True
+  Use Strict Arg element
 
   notAMessageInstruction = 0
 
-  braceStack = .Stack~new
-
   -- Subexpressions
-  -- Parentheses balancing has been checked by PREPAREEXPRESSION
+  -- Parentheses balancing has been checked by the prescanner
   If element < .EL.LEFT_PARENTHESIS Then Do
     Call BalanceParens
     Signal ExpectMessageOperator
@@ -574,13 +575,7 @@ IF: WHEN:
     If element < .EL.LEFT_PARENTHESIS Then Call BalanceParens
     Signal ExpectMessageOperator
   End
-  -- Variable reference terms
-  If prepared, element < .ALL.OPS.REFERENCE Then Do
-    element = TheElementAfter( element )
-    element = TheElementAfter( element )
-    Signal ExpectMessageOperator
-  End
-  If \prepared, element < (.EL.OP.LOWER_THAN || .EL.OP.GREATER_THAN) Then Do
+  If element < (.EL.OP.LOWER_THAN || .EL.OP.GREATER_THAN) Then Do
     element = TheElementAfter( element )
     If element \< .ALL.REFERENCED_SYMBOLS Then Return 0
     element = TheElementAfter( element )
