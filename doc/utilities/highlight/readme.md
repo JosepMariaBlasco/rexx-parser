@@ -29,7 +29,7 @@ is a Rexx file, it is highlighted accordingly.
 ------------------------------------------------------- ------------------------------
 `-a`, `--ansi`                                          Select ANSI SGR terminal highlighting
 `--css`                                                 Include links to css files (HTML only)
-`--doccomments=detailed|block`&nbsp;&nbsp;              Select highlighting level for doc-comments
+`--doccomments detailed|block`&nbsp;&nbsp;              Select highlighting level for doc-comments
 `-xtr`, `--executor`                                    Enable support for Executor
 `-e`, `-exp`, `--experimental`                          Enable Experimental features
 `-h`, `--html`                                          Select HTML highlighting
@@ -38,13 +38,13 @@ is a Rexx file, it is highlighted accordingly.
 `--noprolog`                                            Don't print a prolog
 `-n`, `--numberlines`&nbsp;&nbsp;                       Print line numbers
 `--patch=`<code><em>patches</em></code>                 Apply the semicolon-separated list of *patches*.
-`--patchfile=`<code><em>file</em></code>                Apply the patches contained in *file*.
+`--patchfile` <code><em>file</em></code>                Apply the patches contained in *file*.
 `--prolog`                                              Print a prolog (LaTeX driver only)
-`--startFrom=`<code><em>n</em></code>                   Start line numbers at *n*.
-`-s`, `--style=`<code><em>style</em></code>             Use the <code>rexx-<em>style</em>.css</code> style sheet
+`--startFrom` <code><em>n</em></code>                   Start line numbers at *n*.
+`-s` , `--style` <code><em>style</em></code>             Use the <code>rexx-<em>style</em>.css</code> style sheet
 `--tutor`                                               Enable TUTOR-flavored Unicode
 `-u` , `--unicode`                                      Enable TUTOR-flavored Unicode
-`-w`, <code>--width=<em>n</em></code>                   Ensure that lines have width <em>n</em> (ANSI only)
+`-w`, `--width` <code>=<em>n</em></code>                Ensure that lines have width <em>n</em> (ANSI only)
 ------------------------------------------------------- ------------------------------
 
 \
@@ -79,7 +79,7 @@ in the current directory.
 development in RAD scenarios, not a way to generate distribution-ready
 or production files.
 
-#### --doccomments=[detailed|block]
+#### --doccomments [detailed|block]
 
 Select the highlighting level for doc-comments. When "detailed" is specified
 (the default), some sub-elements of doc-comments, like the summary
@@ -87,7 +87,7 @@ statement, block tags or tag values, receive their own, separated
 styling; when "block" is specified, all the doc-comment as a whole
 gets a single style.
 
-#### --default=<em>attributes</em> {#default}
+#### --default <em>attributes</em> {#default}
 
 Specifies the default attributes to be applied to all the highlighted
 code blocks.
@@ -105,7 +105,7 @@ by the Parser.
 
 Selects [HTML highlighting](../../highlighter/html/).
 
-See also [--css](#css).
+See also [--css] (#css).
 
 #### -l, --latex {#latex}
 
@@ -123,13 +123,13 @@ Print line numbers.
 
 See also [--startFrom](#startFrom).
 
-#### --patch="_patches_"
+#### --patch "_patches_"
 
 Apply the semicolon-separated list of patches.
 
 See also [--patchFile](#patchFile).
 
-#### --patchFile=_file_
+#### --patchFile _file_
 
 Apply the patches contained in _file_.
 
@@ -141,13 +141,13 @@ Print a prolog (LaTeX driver only).
 
 See also [--latex](#latex) and [--noprolog](#noprolog).
 
-#### --startFrom=_n_
+#### --startFrom _n_
 
 Start numbering lines at line _n_.
 
 See also [--numberlines](#numberlines)
 
-#### -s, --style=_style_
+#### -s, --style _style_
 
 Use the <code>rexx-<em>style</em>.css</code> style sheet.
 The default is `rexx-dark.css`.
@@ -164,7 +164,7 @@ Enable TUTOR-flavored Unicode.
 
 See also [--tutor](#tutor).
 
-#### -w, --width=_n_
+#### -w, --width _n_
 
 Ensure that lines have a minimum width of _n_ characters
 (ANSI highlighting only).
@@ -182,7 +182,7 @@ Enables support for JLF's Executor extensions.
 The following command
 
 <pre>
-highlight --css --style=<em>mystyle</em> sample.html
+highlight --css --style <em>mystyle</em> sample.html
 </pre>
 
 could generate the following `head` section:

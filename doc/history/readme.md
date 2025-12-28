@@ -34,6 +34,8 @@ Version history
   <li> [Executor] Allow `"="` and `"=="` at the end of expressions occurring
        in command instructions (20251228).
   <li> New `--default` option for `highlight.rex` and `md2html.rex` (20251228).
+  <li> **Breaking change**: Options which have values in `highligh.rex`
+       now use `-option value` instead of `-option=value` (20251228).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

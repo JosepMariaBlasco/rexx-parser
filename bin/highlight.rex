@@ -68,70 +68,76 @@
   patch               = .Nil
   styleSpecified      = 0
 
-ProcessOptions:
-  If args~items == 0 Then Signal Help
+  Loop While args~size > 0, args[1][1] == "-"
+    option = args[1]
+    args~delete(1)
 
-  option = args[1]
-  args~delete(1)
-
-  If option[1] == "-" Then Do
-    If option~contains("=") Then Do
-      Parse Var option option"="value
-      Select Case Lower(option)
-        When "--startfrom"       Then options.startFrom   = Natural(value)
-        When "-s", "--style"     Then Do
-          options.style  = value
-          styleSpecified = 1
-        End
-        When "-w", "--width"     Then options.width       = Natural(value)
-        When "--pad"             Then options.pad         = Natural(value)
-        When "--default"         Then options.default     = value
-        When "--doccomments"     Then Do
-          If WordPos(value,"detailed block") == 0 Then
-            Call Error "Invalid value for --doccomments '"value"'."
-          options.doccomments   = value
-        End
-        When "--patch"           Then Do
-          If value = "" Then patch = .Nil
-          Else patch = .StylePatch~of( value )
-        End
-        When "--patchfile"       Then Do
-          If value = "" Then Call Error "Invalid option '"option"'."
-          file = Stream(value,"C", "Q Exists")
-          If file == "" Then Call "File '"value"' not found."
-          value = CharIn( file, 1, Chars(file) )~makeArray
-          Call Stream file, "C", "Close"
-          patch = .StylePatch~of( value )
-        End
-        Otherwise Call Error "Invalid option '"option"'."
+    Select Case Lower(option)
+      When "--startfrom"       Then options.startFrom   = Natural(value)
+      When "-s", "--style"     Then Do
+        If args~size == 0 Then
+          Call Error "Missing style after '"option"' option."
+        options.style = args[1]
+        args~delete(1)
+        styleSpecified = 1
       End
-    End
-    Else Do -- No "=" in option
-      Select Case Lower(option)
-        When "-it", "--itrace"     Then options.itrace      =  1
-        When "-h", "--html"        Then options.mode        =  HTML
-        When "-l", "--latex"       Then options.mode        =  LaTeX
-        When "-n", "--numberlines" Then options.numberlines = .True
-        When "-a", "--ansi"        Then options.mode        =  ANSI
-        When "-e", "-exp", "--experimental" Then options.experimental = 1
-        When "-xtr", "--executor"  Then options.executor    = 1
-        When "--css"               Then options.css         = 1
-        When "--tutor"             Then options.unicode     = 1
-        When "-u", "--unicode"     Then options.unicode     = 1
-        When "--noprolog"          Then options.prolog      = 0
-        When "--prolog"            Then options.prolog      = 1
-        Otherwise Call Error "Invalid option '"option"'."
+      When "-w", "--width"     Then options.width       = Natural(value)
+      When "--pad"             Then options.pad         = Natural(value)
+      When "--default"         Then Do
+        If args~size == 0 Then
+          Call Error "Missing attributes after '"option"' option."
+        options.default = args[1]
+        args~delete(1)
       End
+      When "--doccomments"     Then Do
+        If args~size == 0 Then
+          Call Error "Missing value after '"option"' option."
+        value = args[1]
+        args~delete(1)
+        If WordPos(value,"detailed block") == 0 Then
+          Call Error "Invalid value for --doccomments: '"value"'."
+        options.doccomments = value
+      End
+      When "--patch"           Then Do
+        If args~size == 0 Then
+          Call Error "Missing value after '"option"' option."
+        patch = .StylePatch~of( args[1] )
+        args~delete(1)
+      End
+      When "--patchfile"       Then Do
+        If args~size == 0 Then
+          Call Error "Missing value after '"option"' option."
+        value = args[1]
+        args~delete(1)
+        file = Stream(value,"C", "Q Exists")
+        If file == "" Then Call Error "File '"value"' not found."
+        value = CharIn( file, 1, Chars(file) )~makeArray
+        Call Stream file, "C", "Close"
+        patch = .StylePatch~of( value )
+        args~delete(1)
+      End
+      When "-it", "--itrace"     Then options.itrace      =  1
+      When "-h", "--html"        Then options.mode        =  HTML
+      When "-l", "--latex"       Then options.mode        =  LaTeX
+      When "-n", "--numberlines" Then options.numberlines = .True
+      When "-a", "--ansi"        Then options.mode        =  ANSI
+      When "-e", "-exp", "--experimental" Then options.experimental = 1
+      When "-xtr", "--executor"  Then options.executor    = 1
+      When "--css"               Then options.css         = 1
+      When "--tutor"             Then options.unicode     = 1
+      When "-u", "--unicode"     Then options.unicode     = 1
+      When "--noprolog"          Then options.prolog      = 0
+      When "--prolog"            Then options.prolog      = 1
+      Otherwise Call Error "Invalid option '"option"'."
     End
-    Signal ProcessOptions
   End
 
   If options.css, options.mode \== "HTML" Then
     Call Error "The --css option cannot be used in" options.mode "mode."
 
-  If args~items > 0 Then Call Error "Invalid argument '"args[1]"'."
+  If args~items > 1 Then Call Error "Invalid argument '"args[2]"'."
 
-  file = option
+  file = args[1]
 
   If file == "-" Then source = .Input~arrayIn
   Else Do
@@ -194,16 +200,15 @@ Fenced:
   Return FencedCode( file, source,,  options. )
 
 Natural:
-  n = Arg(1)
-  If args~items > 0 Then Do
-    n = args[1]
-    args~delete(1)
-  End
+  If args~size == 0 Then
+    Call Error "Missing number after '"option"' option."
+  n = args[1]
+  args~delete(1)
   If DataType(n,"W"), n > 0 Then Return n
-  Call Error "Positive whole number expected, found '"n"'."
+  Call Error "Positive whole number expected after '"option"', found '"n"'."
 
 Syntax:
---Trace ?a
+Trace ?a
   co         = condition("O")
   additional = Condition("A")
   extra = additional~lastitem
