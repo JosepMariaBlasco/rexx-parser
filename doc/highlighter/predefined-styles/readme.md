@@ -11,8 +11,9 @@ Rony Flatscher.
 The following palette is created from a single base file
 by using the `source=` option and rotating the style.
 
-We have activated support for Executor extensions and for TUTOR-flavored
-Unicode to be able to showcase several of the possibilities of the highlighter.
+We have activated support for [Executor extensions](../../executor)
+and for [TUTOR-flavored Unicode](../../unicode)
+to be able to showcase several of the possibilities of the highlighter.
 
 \
 

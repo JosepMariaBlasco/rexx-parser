@@ -43,7 +43,7 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
   style     = Options.style
 
   -- No patch? A simple div will do.
-  If patch == .Nil Then Do
+  If patch~getpatch[!Tag2Attr]~isEmpty Then Do
     self~Say( '<div class="highlight-rexx-'style'">' )
   End
   -- We have a patch. We will emit an inline style, indexed to our
