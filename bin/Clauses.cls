@@ -766,7 +766,9 @@ NoLabels:
 
   -- The command expression has been prepared by the preclauser
 
-  expression = Expression.List( package, element )
+  executorCommand = Copies(executorCommand,.Options.Executor)
+
+  expression = Expression.List( package, element,, executorCommand)
 
   Return .Command.Instruction~new( package, begin, end, expression )
 

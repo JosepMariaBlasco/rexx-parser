@@ -283,20 +283,24 @@ EndNamed:
   Use Strict Arg package, begin, terminators = "", options = ""
 
   -- Logical expression lists can not have omitted expressions
-  logical        = options~caselessContainsWord( "logical" )
+  logical         = options~caselessContainsWord( "logical" )
 
   -- Argument lists don't count final commas, contrary to array terms
-  arguments      = options~caselessContainsWord( "arguments" )
+  arguments       = options~caselessContainsWord( "arguments" )
 
-  expressions    = Array()
-  element        = begin
-  trailingComma  = 0
-  stopParsing    =                     -
-       .EL.KEYWORD                     -
-    || .EL.SUBKEYWORD                  -
-    || .EL.END_OF_CLAUSE               -
-    || .ALL.ASSIGNMENTS                -
-    || .EL.EXECUTOR.FINAL.EQUAL        -
+  -- Executor commands can end in "=" or "=="
+  executorCommand = options~caselessContainsWord( "executorcommand" )
+
+  expressions     = Array()
+  element         = begin
+  trailingComma   = 0
+  stopParsing     =                        -
+       .EL.KEYWORD                         -
+    || .EL.SUBKEYWORD                      -
+    || .EL.END_OF_CLAUSE                   -
+    || .ALL.ASSIGNMENTS
+  If executorCommand Then stopParsing ||=  -
+       .EL.EXECUTOR.FINAL.EQUAL            -
     || .EL.EXECUTOR.FINAL.DOUBLE.EQUAL
 
   terminators  ||= stopParsing
