@@ -31,6 +31,8 @@ Version history
   <li> Add `--path` option to `md2html` (<https://github.com/JosepMariaBlasco/rexx-parser/issues/27>) (20251226).
   <li> Use .SysCArgs when available (20251227).
   <li> Add a palette of predefined highlighter styles (thanks Rony and JLF!) (20251227).
+  <li> [Executor] Allow `"="` and `"=="` at the end of expressions occurring
+       in command instructions (20251228).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

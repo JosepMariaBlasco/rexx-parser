@@ -150,7 +150,7 @@
 
 ::Routine FencedCode Public
 
-  Use Strict Arg filename, source, defaultStyle = "dark"
+  Use Strict Arg filename, source, defaultStyle = "dark", defaultOptions. = 0
 
   tab = "09"X
 
@@ -209,6 +209,13 @@
     End
 
     -- Parse code block parameters
+    If defaultOptions.["ATTRIBUTES"] \== "" Then Do
+      Parse Var attributes prefix"{"rest
+      If rest == "" Then
+        attributes ||= " {"defaultOptions.["ATTRIBUTES"]"}"
+      Else
+        attributes = prefix"{"defaultOptions.["ATTRIBUTES"] rest
+    End
     options. = ParseOptions( filename, attributes, defaultStyle )
     If executor Then Options.["EXECUTOR"] = 1
 

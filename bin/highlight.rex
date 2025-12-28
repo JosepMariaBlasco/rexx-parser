@@ -33,6 +33,7 @@
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251226         Don't allow -s or --style for .md, improve error msgs     */
 /* 20251227         Use .SysCArgs when available                              */
+/* 20251228         Add support for command-line attributes                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -60,10 +61,12 @@
     -- ...otherwise, assume HTML.
     Else options.mode = HTML
 
-  myPath = FileSpec("Location",myself)
-  sep = .File~separator
-  patch = .Nil
-  styleSpecified = 0
+  options.attributes  = ""
+
+  myPath              = FileSpec("Location",myself)
+  sep                 = .File~separator
+  patch               = .Nil
+  styleSpecified      = 0
 
 ProcessOptions:
   If args~items == 0 Then Signal Help
@@ -82,6 +85,7 @@ ProcessOptions:
         End
         When "-w", "--width"     Then options.width       = Natural(value)
         When "--pad"             Then options.pad         = Natural(value)
+        When "--attributes"      Then options.attributes          = value
         When "--doccomments"     Then Do
           If WordPos(value,"detailed block") == 0 Then
             Call Error "Invalid value for --doccomments '"value"'."
@@ -182,11 +186,11 @@ Fenced:
    .Error~Say( Copies("-",80) )
    .Error~Say( "None of -exp, -s, -u, -xtr, --executor, --experimental, --unicode, --style" )
    .Error~Say( "or --tutor can be specified for files with an extension of" FileSpec("E",file)"." )
-   .Error~Say( "Please use attributes in your fenced code blocks instead." )
+   .Error~Say( "Please use --attributes or specific attributes in your fenced code blocks instead." )
    .Error~Say( "See https://rexx.epbcn.com/rexx-parser/doc/highlighter/fencedcode/ for details" )
     Exit 1
   End
-  Return FencedCode( file, source )
+  Return FencedCode( file, source,,  options. )
 
 Natural:
   n = Arg(1)
@@ -198,6 +202,7 @@ Natural:
   Call Error "Positive whole number expected, found '"n"'."
 
 Syntax:
+--Trace ?a
   co         = condition("O")
   additional = Condition("A")
   extra = additional~lastitem

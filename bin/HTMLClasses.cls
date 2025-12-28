@@ -366,6 +366,16 @@ SkipOverSpecial:
   Call Special .EL.LEFT_CURLY_BRACKET,           "curly"
   Call Special .EL.RIGHT_CURLY_BRACKET,          "curly"
 
+
+--
+-- Executor final "=" and "==" in command instruction expressions
+--
+-- We handle them as special characters so that they can be highlighted
+-- differently from assignment and comparison operator tokens.
+
+  Call Special .EL.EXECUTOR.FINAL.EQUAL,         "xtr-final-equal"
+  Call Special .EL.EXECUTOR.FINAL.DOUBLE.EQUAL,  "xtr-final-double-equal"
+
 --
 -- Directive start. Although technically this is a sequence of special
 -- characters, we assign a new class using "Assign" instead of "Special",
