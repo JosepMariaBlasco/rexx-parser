@@ -336,7 +336,18 @@ IndividualFileFailed:
   line  = extra~position
   Parse Value co~code With major"."minor
  .Error~Say( Right(line,6) "*-*" extra~sourceline                            )
- .Error~Say( "Error" major "in" extra~name", line" line": " ErrorText(major) )
+   -- Try to reconstruct the line number if we have enough information
+  name = extra~name
+  majorMessagePrinted = 0
+  If Right(name,1) == "]" Then Do
+    Parse Var name name1" [lines "start"-"end"]"
+    If name == name1" [lines "start"-"end"]" Then Do
+      majorMessagePrinted = 1
+     .Error~Say( "Error" major "in" name1", line" (start+line)": " ErrorText(major) )
+    End
+  End
+  If \majorMessagePrinted Then
+   .Error~Say( "Error" major "in" extra~name", line" line": " ErrorText(major) )
  .Error~Say( "Error" co~code": " Ansi.ErrorText( co~code, additional )       )
 
   If itrace Then Do

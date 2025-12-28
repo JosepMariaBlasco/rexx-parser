@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang='en'>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+Consistency tests
+    </title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    
+    <link rel='stylesheet' href='/markdown.css'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
+    <!--[if lt IE 9]>
+      <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class='container bg-white' lang='en'>
+      <nav class="navbar navbar-inverse x-header">
+        <div class='navbar-header'>
+          <button type='button' class='navbar-toggle' data-toggle='collapse' data-target='#menuREXX'>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="https://rexx.epbcn.com/" aria-label="REXX">
+            <span class="micrologo"><b style="color:#ad564a">EP<span style="color:#f57a69">BCN / Rexx</span></b></span>
+          </a>
+        </div>
+        <div class="collapse navbar-collapse" id="menuREXX">
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="https://rexx.epbcn.com/software/">SOFTWARE</a></li>
+            <li><a href="https://rexx.epbcn.com/publications/">PUBLICATIONS</a></li>
+            <li><a href="https://rexx.epbcn.com/symposium/">SYMPOSIA</a></li>
+            <li><a href="https://rexx.epbcn.com/epbcn/">EPBCN</a></li>
+            <li><a href="https://rexx.epbcn.com/josep-maria-blasco/">ABOUT ME</a></li>
+          </ul>
+        </div>
+      </nav>
+      <div class="row">
+        <div>
+          <h1>The Rexx-Parser</h1>
+        </div>
+      </div>
+      <br>
+      <div class='row'>
+        <div class='col-md-9'>
+          <div class='content'>
+<h1 id="consistency-tests">Consistency tests</h1>
+<p>See also the documentation for the <a
+href="../doc/utilities/identtest/">Identtest.rex</a> utility
+program.</p>
+<hr />
+<h2 id="error-handling-errors.rex">Error handling: <a
+href="errors.rex"><code>errors.rex</code></a></h2>
+<p><a href="errors.rex">This program</a> resides in the <a
+href="."><code>tests</code></a> directory. It depends on two files
+located in the <a
+href="/rexx-parser/bin/resources"><code>bin/resources</code></a>
+directory: <code>rexxmsg.xml</code>, which is part of the ooRexx source
+tree (you can find it at <code>main/trunk/interpreter/messages</code>),
+and <code>revision</code>, which contains the revision number of the
+<code>rexxmsg.xml</code> file.</p>
+<p>The program executes the following tests:</p>
+<ol type="1">
+<li>Compare the version number contained in the <code>revision</code>
+file with the current ooRexx version number, and stop if they are not
+identical</li>
+<li>Inspect the source files of the Rexx Parser, locate all the calls to
+the <code>Syntax</code> routine, and verify that the label and the
+arguments are the same, that they are integers, and that the message
+stored in the Parser is identical to the message stored in
+<code>rexxmsg.xml</code>.</li>
+<li>For every syntax error that the parser is able to detect, run a
+program that produces exactly this error, and then compare the output
+produced by the ooRexx interpreter. Stop if the errors produced are not
+completely identical.</li>
+</ol>
+<p>When <code>errors.rex</code> completes without errors, you can be
+sure that the syntax errors detected by the Rexx Parser are identical to
+the errors detected by (the current version of) the ooRexx
+interpreter.</p>
+<p>To run <code>errors.rex</code>, change to the Rexx Parser directory,
+and run</p>
+<pre><code>tests\errors</code></pre>
+<p>under Windows, or</p>
+<pre><code>rexx tests/errors</code></pre>
+<p>under Linux.</p>
+          </div>
+        </div>
+        <div class="col-md-3 text-center text-larger">
+          <div class='panel panel-default sidebar'>
+            <div class='panel-heading'>
+               <b>The Rexx Parser</b>
+            </div>
+            <div class='panel-body text-left'>
+                  <a href="https://rexx.epbcn.com/rexx-parser/#download">Download</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/">Documentation</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/glossary/">Glossary</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/highlighter/">Highlighter</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/history/">History</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/tests/">Tests</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/todo/">To-do</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/utilities/">Utilities</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/samples/">Samples</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/executor/">Executor support</a>
+              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/experimental/">Experimental</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr class="before-footer">
+      <div class="panel panel-default footer">
+        <div class="panel-heading text-center">
+          <small>Copyright &copy; 1992&ndash;2025,
+             <a href="https://www.epbcn.com/">EPBCN</a> &amp; <a href="https://rexx.epbcn.com/josep-maria-blasco/">Josep Maria Blasco</a>.
+             This site is powered by <a href="https://sourceforge.net/projects/oorexx/">ooRexx</a> and
+             <a href="https://rexx.epbcn.com/software/rexxhttp/">RexxHttp</a>.
+          </small>
+        </div>
+      </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  </body>
+</html>

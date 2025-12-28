@@ -100,27 +100,10 @@
 
   thisArg      = ""
   insideQuotes = 0
-  backslashCount  = 0
 
   Loop i = 1 To Length(arg)
     c = arg[i]
     Select Case c
-      When "\" Then Do
-         backslashCount  = 0
-         Loop Counter c While arg[i] == "\"
-           backslashCount += 1
-           i += 1
-         End
-
-         If arg[i] == '"' Then Do -- '\...\"'
-           thisArg ||= Copies("\", backslashCount % 2)
-           If backslashCount // 2 == 0
-             Then insideQuotes = \ insideQuotes
-             Else thisArg ||= '"'
-         End
-         Else thisArg ||= Copies("\", backslashCount)arg[i]
-      End
-      -- A quote that doesn't follow an escape character
       When '"' Then Do
         If i > 1, arg[i-1] == '"' Then thisArg ||= '"'
         insideQuotes = \ insideQuotes
