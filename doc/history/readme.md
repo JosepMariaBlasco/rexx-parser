@@ -33,6 +33,7 @@ Version history
   <li> Add a palette of predefined highlighter styles (thanks Rony and JLF!) (20251227).
   <li> [Executor] Allow `"="` and `"=="` at the end of expressions occurring
        in command instructions (20251228).
+  <li> New `--default` option for `highlight.rex` and `md2html.rex` (20251228).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

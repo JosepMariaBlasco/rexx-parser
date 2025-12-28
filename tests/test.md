@@ -1,5 +1,3 @@
-Una paloma blanca
+```rexx
+a=
 ```
-a==
-```
-a los ojos me miró

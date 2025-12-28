@@ -33,7 +33,7 @@
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251226         Don't allow -s or --style for .md, improve error msgs     */
 /* 20251227         Use .SysCArgs when available                              */
-/* 20251228         Add support for command-line attributes                   */
+/* 20251228         Add support for --default                                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -61,7 +61,7 @@
     -- ...otherwise, assume HTML.
     Else options.mode = HTML
 
-  options.attributes  = ""
+  options.default     = ""
 
   myPath              = FileSpec("Location",myself)
   sep                 = .File~separator
@@ -85,7 +85,7 @@ ProcessOptions:
         End
         When "-w", "--width"     Then options.width       = Natural(value)
         When "--pad"             Then options.pad         = Natural(value)
-        When "--attributes"      Then options.attributes          = value
+        When "--default"         Then options.default     = value
         When "--doccomments"     Then Do
           If WordPos(value,"detailed block") == 0 Then
             Call Error "Invalid value for --doccomments '"value"'."
@@ -103,7 +103,7 @@ ProcessOptions:
           Call Stream file, "C", "Close"
           patch = .StylePatch~of( value )
         End
-        Otherwise Call Error "Invalid option '"op"'."
+        Otherwise Call Error "Invalid option '"option"'."
       End
     End
     Else Do -- No "=" in option
@@ -186,7 +186,8 @@ Fenced:
    .Error~Say( Copies("-",80) )
    .Error~Say( "None of -exp, -s, -u, -xtr, --executor, --experimental, --unicode, --style" )
    .Error~Say( "or --tutor can be specified for files with an extension of" FileSpec("E",file)"." )
-   .Error~Say( "Please use --attributes or specific attributes in your fenced code blocks instead." )
+   .Error~Say( "Please use the --default option, or specific attributes in your" )
+   .Error~Say( "fenced code blocks instead." )
    .Error~Say( "See https://rexx.epbcn.com/rexx-parser/doc/highlighter/fencedcode/ for details" )
     Exit 1
   End
@@ -264,6 +265,7 @@ and we highlight it directly.
 Options:
   -a,  --ansi               Select ANSI mode
        --css                Include links to css files (HTML only)
+       --default=attributes Select default attributes for code blocks
        --doccomments=detailed|block Select highlighting level for doc-comments
   -xtr,--executor           Enable support for Executor
   -e, -exp, --experimental  Enable Experimental features

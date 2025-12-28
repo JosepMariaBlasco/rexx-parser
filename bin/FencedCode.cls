@@ -28,6 +28,7 @@
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
 /* 20251222    0.4a Add support for ```executor                               */
+/* 20251228    0.4a Add support for default options                           */
 /*                                                                            */
 /******************************************************************************/
 
@@ -209,12 +210,12 @@
     End
 
     -- Parse code block parameters
-    If defaultOptions.["ATTRIBUTES"] \== "" Then Do
+    If defaultOptions.default \== "" Then Do
       Parse Var attributes prefix"{"rest
       If rest == "" Then
-        attributes ||= " {"defaultOptions.["ATTRIBUTES"]"}"
+        attributes ||= " {"defaultOptions.default"}"
       Else
-        attributes = prefix"{"defaultOptions.["ATTRIBUTES"] rest
+        attributes = prefix"{"defaultOptions.default rest
     End
     options. = ParseOptions( filename, attributes, defaultStyle )
     If executor Then Options.["EXECUTOR"] = 1

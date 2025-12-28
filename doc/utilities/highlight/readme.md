@@ -56,8 +56,9 @@ is a Rexx file, it is highlighted accordingly.
 do not make sense when highlighting files
 containing fenced code blocks, like
 Markdown or HTML files. In these cases,
-you should use [the desired attributes](../../highlighter/fencedcode/)
-in each of the ```` ```rexx ```` or ```` ```executor ```` fences.
+you should use either [the `--default` option]{#default}
+or [the desired attributes](../../highlighter/fencedcode/)
+in every of the ```` ```rexx ```` or ```` ```executor ```` fences.
 
 #### -a, --ansi {#ansi}
 
@@ -85,6 +86,11 @@ Select the highlighting level for doc-comments. When "detailed" is specified
 statement, block tags or tag values, receive their own, separated
 styling; when "block" is specified, all the doc-comment as a whole
 gets a single style.
+
+#### --default=<em>attributes</em> {#default}
+
+Specifies the default attributes to be applied to all the highlighted
+code blocks.
 
 #### --executor {#executor}
 

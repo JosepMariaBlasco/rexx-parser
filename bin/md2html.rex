@@ -17,6 +17,7 @@
 /* 20251226         Unify searches for default.md2html & md2html.custom.rex   */
 /* 20251226         Implement --path option                                   */
 /* 20251227         Use .SysCArgs when available                              */
+/* 20251228         Implement --default attributes                            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -45,10 +46,11 @@
   If rc \== 0 Then
     Call Error myself "needs a working version of pandoc. Aborting..."
 
-  cssbase = ""
-  jsbase  = ""
-  itrace  = 0
-  path    = ""
+  attributes = ""
+  cssbase    = ""
+  jsbase     = ""
+  itrace     = 0
+  path       = ""
 
 ProcessOptions:
 
@@ -59,6 +61,12 @@ ProcessOptions:
     Select Case Lower(option)
       When "-h", "-?", "--help" Then Signal Help
       When "-it", "--itrace" Then itrace = 1
+      When "--default" Then Do
+        If args~size == 0 Then
+          Call Error "Missing attributes after '"option"' option."
+        attributes = args[1]
+        args~delete(1)
+      End
       When "-c", "--css" Then Do
         If args~size == 0 Then
           Call Error "Missing base directory after '"option"' option."
@@ -228,7 +236,7 @@ TemplateFound:
         Call Error "Directory creation failed. Aborting..."
     End
     Say Time("Long") "Processing" file"..."
-    Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, itrace
+    Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, itrace, attributes
     processed += 1
   End
 
@@ -254,7 +262,8 @@ Help:
 --------------------------------------------------------------------------------
 
 ::Routine ProcessFile
-  Use Strict Arg file, directory, sourceFn, template, cssbase, jsbase, itrace
+  Use Strict Arg file, directory, sourceFn, template, -
+    cssbase, jsbase, itrace, attributes
 
   filename = file~absolutePath
   name     = FileSpec("Name",filename)
@@ -325,7 +334,10 @@ Help:
 
   Signal On Syntax Name IndividualFileFailed
 
-  source = FencedCode( filename, source, defaultTheme )
+  defaultOptions. = ""
+  defaultOptions.default = attributes
+
+  source = FencedCode( filename, source, defaultTheme, defaultOptions. )
 
   Signal Off Syntax
   Signal AllWentWell
@@ -473,6 +485,7 @@ The destination directory defaults to the current directory.
 Options:
 
 -?                         Display this help
+--default attributes       Specify default attributes for code blocks
 -c cssbase, --css cssbase  Where to locate the CSS files
 -h, --help                 Display this help
 -it, --itrace              Print internal traceback on error
