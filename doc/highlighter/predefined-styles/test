@@ -5,7 +5,12 @@ Say "Barcelona"                         -- String quotes may have a different co
 
 /* After the Executor extension below, all strings will have a new method "Giraffe"     */
 
-Say "abc"~giraffe                       -- Prints "🦒"
+Say "abc"~giraffe(2)                    -- Prints "🦒"
+
+/* Executor a higher-level function definition                                         */
+compose = {  use arg f, g
+             return {expose f g; use arg x; return f~(g~(x))}
+          }
 
 ::Constant Ducks "🦆🦆🦆"G             -- A Graphemes TUTOR string
 
@@ -15,5 +20,7 @@ Say "abc"~giraffe                       -- Prints "🦒"
 --- @param optional Does nothing
 
 ::Method Giraffe                        -- Directive keywords can have their own highlighting
+  Expose something                      -- "something" is an exposed variable
   Use Arg optional
+  something = optional
   Return "🦒"

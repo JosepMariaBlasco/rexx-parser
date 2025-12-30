@@ -135,6 +135,8 @@
   If options.css, options.mode \== "HTML" Then
     Call Error "The --css option cannot be used in" options.mode "mode."
 
+  If args~items == 0 Then Signal Help
+
   If args~items > 1 Then Call Error "Invalid argument '"args[2]"'."
 
   file = args[1]
@@ -208,7 +210,6 @@ Natural:
   Call Error "Positive whole number expected after '"option"', found '"n"'."
 
 Syntax:
-Trace ?a
   co         = condition("O")
   additional = Condition("A")
   extra = additional~lastitem
