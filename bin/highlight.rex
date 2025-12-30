@@ -34,6 +34,7 @@
 /* 20251226         Don't allow -s or --style for .md, improve error msgs     */
 /* 20251227         Use .SysCArgs when available                              */
 /* 20251228         Add support for --default                                 */
+/* 20251230         Add support for --continue                                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -73,7 +74,6 @@
     args~delete(1)
 
     Select Case Lower(option)
-      When "--startfrom"       Then options.startFrom   = Natural(value)
       When "-s", "--style"     Then Do
         If args~size == 0 Then
           Call Error "Missing style after '"option"' option."
@@ -81,8 +81,6 @@
         args~delete(1)
         styleSpecified = 1
       End
-      When "-w", "--width"     Then options.width       = Natural(value)
-      When "--pad"             Then options.pad         = Natural(value)
       When "--default"         Then Do
         If args~size == 0 Then
           Call Error "Missing attributes after '"option"' option."
@@ -116,18 +114,26 @@
         patch = .StylePatch~of( value )
         args~delete(1)
       End
-      When "-it", "--itrace"     Then options.itrace      =  1
-      When "-h", "--html"        Then options.mode        =  HTML
-      When "-l", "--latex"       Then options.mode        =  LaTeX
-      When "-n", "--numberlines" Then options.numberlines = .True
-      When "-a", "--ansi"        Then options.mode        =  ANSI
-      When "-e", "-exp", "--experimental" Then options.experimental = 1
-      When "-xtr", "--executor"  Then options.executor    = 1
-      When "--css"               Then options.css         = 1
-      When "--tutor"             Then options.unicode     = 1
-      When "-u", "--unicode"     Then options.unicode     = 1
-      When "--noprolog"          Then options.prolog      = 0
-      When "--prolog"            Then options.prolog      = 1
+
+      When "--startfrom"         Then options.startFrom    = Natural(value)
+      When "-w", "--width"       Then options.width        = Natural(value)
+      When "--pad"               Then options.pad          = Natural(value)
+
+      When "-it", "--itrace"     Then options.itrace       =  1
+      When "-h", "--html"        Then options.mode         =  HTML
+      When "-l", "--latex"       Then options.mode         =  LaTeX
+      When "-n", "--numberlines" Then options.numberlines  = .True
+      When "-a", "--ansi"        Then options.mode         =  ANSI
+      When "-xtr", "--executor"  Then options.executor     = 1
+      When "--css"               Then options.css          = 1
+      When "--tutor"             Then options.unicode      = 1
+      When "-u", "--unicode"     Then options.unicode      = 1
+      When "--noprolog"          Then options.prolog       = 0
+      When "--prolog"            Then options.prolog       = 1
+      When "--continue"          Then options.continue     = 1
+      When "-e", "-exp", "--experimental" Then
+                                      options.experimental = 1
+
       Otherwise Call Error "Invalid option '"option"'."
     End
   End
@@ -199,7 +205,13 @@ Fenced:
    .Error~Say( "See https://rexx.epbcn.com/rexx-parser/doc/highlighter/fencedcode/ for details" )
     Exit 1
   End
-  Return FencedCode( file, source,,  options. )
+
+  Return FencedCode( file, source, , options. )
+
+After:
+  If args~size == 0 Then
+    Call Error "Missing value after '"option"' option."
+  Return args~delete(1)
 
 Natural:
   If args~size == 0 Then

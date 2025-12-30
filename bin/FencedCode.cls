@@ -28,7 +28,8 @@
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
 /* 20251222    0.4a Add support for ```executor                               */
-/* 20251228    0.4a Add support for default options                           */
+/* 20251228         Add support for default options                           */
+/* 20251230         Add support for --continue                                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -144,6 +145,7 @@
 ::Requires "Rexx.Parser.cls"
 ::Requires "Highlighter.cls"
 ::Requires "StylePatch.cls"
+::Requires "ANSI.ErrorText.cls"
 
 --------------------------------------------------------------------------------
 -- Main routine                                                               --
@@ -165,6 +167,9 @@
   OK.["executor "  ] = 1                -- "~~~executor <attributes>"
   OK.["executor{"  ] = 1                -- "~~~executor{<attributes>}"
   OK.["executor"tab] = 1                -- "~~~executor<tab><attributes>"
+
+  -- Continue when an error is found
+  continue = defaultOptions.continue
 
   accum     = 0                         -- Accumulates read lines
 
@@ -219,6 +224,7 @@
     End
     options. = ParseOptions( filename, attributes, defaultStyle )
     If executor Then Options.["EXECUTOR"] = 1
+    If continue Then Options.["CONTINUE"] = 1
 
     -- Look for the end marker
     start  = lineNo
@@ -378,6 +384,8 @@ BadOptions:
 ::Routine ProcessACodeBlock
   Use Strict Arg filename, source, start, end, accum, options.
 
+  If options.continue Then Signal On Syntax
+
   -- Process patch files, if any
   patches = .Nil
   If options.patch \== "" Then Do
@@ -412,3 +420,49 @@ BadOptions:
 MissingEndMarker:
   Raise Syntax 88.900 -
     Additional("Missing end marker '-->' for code block at line "start)
+
+Syntax:
+  -- This trap will only be activated if the --incremental option has
+  -- been specified. Our task here is complex, because we are most
+  -- probably in the middle of some HTML tags, which we don't control
+  -- and can't close.
+
+  res = .Array~new
+
+  res~append("<br><br>")
+  res~append("<hr>")
+  res~append("<b>Truncated contents, stopped here:</b>")
+  res~append("<hr>")
+
+  co         = condition("O")
+  additional = Condition("A")
+  extra = additional~lastitem
+  line  = extra~position
+  Parse Value co~code With major"."minor
+  res~append( "<b>"Right(line,6) "*-*" extra~sourceline"</b>" )
+  -- Try to reconstruct the line number if we have enough information
+  name = extra~name
+  majorMessagePrinted = 0
+  If Right(name,1) == "]" Then Do
+    Parse Var name name1" [lines "start"-"end"]"
+    If name == name1" [lines "start"-"end"]" Then Do
+      majorMessagePrinted = 1
+      res~ append( "<b>Error" major "in" name1", line" (start+line)": " ErrorText(major)"</b>" )
+    End
+  End
+  If \majorMessagePrinted Then
+    res~append( "<b>Error" major "in" extra~name", line" line": " ErrorText(major)"</b>" )
+  res~append( "<b>Error" co~code": " Ansi.ErrorText( co~code, additional )"</b>" )
+
+  If options.itrace == 1 Then Do
+    res~append( "" )
+    res~append( "<b>Trace follows:</b>" )
+    res~append( "<b>"Copies("-",80)"</b>" )
+
+    Loop line Over co~stackFrames~makeArray
+      res~append( "<b>"line"</b>" )
+    End
+  End
+
+  Return res
+

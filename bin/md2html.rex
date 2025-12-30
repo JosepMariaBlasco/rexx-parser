@@ -99,7 +99,7 @@ ProcessOptions:
         Call Error "'"source"' is not a directory."
       If args~items == 1 Then destination = Directory()
       Else Do
-        destination = args[1]
+        destination = args[2]
         If \SysFileExists(destination) Then
           Call Error "Destination directory '"destination"' does not exist."
         If \SysIsFileDirectory(destination) Then
