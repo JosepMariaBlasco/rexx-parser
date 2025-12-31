@@ -282,6 +282,7 @@ and we highlight it directly.
 
 Options:
   -a,  --ansi               Select ANSI mode
+       --continue           Continue when a fenced code block is in error
        --css                Include links to css files (HTML only)
        --default=attributes Select default attributes for code blocks
        --doccomments=detailed|block Select highlighting level for doc-comments

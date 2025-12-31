@@ -29,6 +29,7 @@ is a Rexx file, it is highlighted accordingly.
 ------------------------------------------------------- ------------------------------
 `-a`, `--ansi`                                          Select ANSI SGR terminal highlighting
 `--css`                                                 Include links to css files (HTML only)
+`--continue`                                            Continue when a fenced code block is in error (HTML only)
 `--doccomments detailed|block`&nbsp;&nbsp;              Select highlighting level for doc-comments
 `-xtr`, `--executor`                                    Enable support for Executor
 `-e`, `-exp`, `--experimental`                          Enable Experimental features
@@ -65,9 +66,19 @@ in every of the ```` ```rexx ```` or ```` ```executor ```` fences.
 Selects [ANSI highlighting](../../highlighter/ansi/)
 using ANSI SGR (Select Graphic Rendition) codes.
 
+#### --continue {#continue}
+
+When processing fenced code blocks, the default behaviour of highlight.rex is
+to stop when an error is found or all the blocks have been processed,
+whichever occurs first. You can change this behaviour by specifying The
+`--continue` option; in that case, processing continue even in the
+presence of an error: blocks in error cannot be highlighted,
+but they will be substituted by a big warning box, with a red background,
+displaying the line in error.
+
 #### --css {#css}
 
-When generating HTML highlighting, the `css` option adds a skeleton
+When generating HTML highlighting, the `--css` option adds a skeleton
 HTML5 envelope to the generated code. This envelope includes, in its
 `head` tag, up to three links to the style file referenced in the `-s` or `--style`
 options: one to a possible version stored in the <https://rexx.epbcn.com/> site,

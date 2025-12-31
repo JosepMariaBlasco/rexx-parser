@@ -48,7 +48,6 @@
   -- ...and remember the fact
  .environment~Parser.Constants.Loaded = 1
 
-
 /******************************************************************************/
 /* CategoryName(Arg(1)) returns the readable name of category "Arg(1)"        */
 /******************************************************************************/

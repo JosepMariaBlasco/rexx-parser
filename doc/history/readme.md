@@ -36,6 +36,7 @@ Version history
   <li> New `--default` option for `highlight.rex` and `md2html.rex` (20251228).
   <li> **Breaking change**: Options which have values in `highligh.rex`
        now use `-option value` instead of `-option=value` (20251228).
+  <li> Add `--continue` option to `highlight.rex` (20251231).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

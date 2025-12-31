@@ -186,7 +186,9 @@ Exit
   -- We process Rexx fenced code blocks first                                 --
   ------------------------------------------------------------------------------
 
-  source = FencedCode( file, source, style )
+  defaultOptions.         = 0
+  defaultOptions.continue = 1
+  source = FencedCode( file, source, style, defaultOptions. )
 
   ------------------------------------------------------------------------------
   -- We now call pandoc. It will transform markdown into html by default      --

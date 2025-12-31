@@ -429,17 +429,15 @@ Syntax:
 
   res = .Array~new
 
-  res~append("<br><br>")
-  res~append("<hr>")
-  res~append("<b>Truncated contents, stopped here:</b>")
-  res~append("<hr>")
+  res~append("<pre style='font-weight: bold; background-color: red; color: #fff;'>")
+  res~append("Code could not be displayed because of the following error:")
 
   co         = condition("O")
   additional = Condition("A")
   extra = additional~lastitem
   line  = extra~position
   Parse Value co~code With major"."minor
-  res~append( "<b>"Right(line,6) "*-*" extra~sourceline"</b>" )
+  res~append( Right(line,6) "*-*" extra~sourceline )
   -- Try to reconstruct the line number if we have enough information
   name = extra~name
   majorMessagePrinted = 0
@@ -447,22 +445,25 @@ Syntax:
     Parse Var name name1" [lines "start"-"end"]"
     If name == name1" [lines "start"-"end"]" Then Do
       majorMessagePrinted = 1
-      res~ append( "<b>Error" major "in" name1", line" (start+line)": " ErrorText(major)"</b>" )
+      res~ append( "Error" major "in" name1", line" (start+line)": " ErrorText(major) )
     End
   End
   If \majorMessagePrinted Then
-    res~append( "<b>Error" major "in" extra~name", line" line": " ErrorText(major)"</b>" )
-  res~append( "<b>Error" co~code": " Ansi.ErrorText( co~code, additional )"</b>" )
+    res~append( "Error" major "in" extra~name", line" line": " ErrorText(major) )
+  res~append( "Error" co~code": " Ansi.ErrorText( co~code, additional ) )
 
   If options.itrace == 1 Then Do
     res~append( "" )
-    res~append( "<b>Trace follows:</b>" )
-    res~append( "<b>"Copies("-",80)"</b>" )
+    res~append( "Trace follows" )
+    res~append( Copies("-",80) )
 
     Loop line Over co~stackFrames~makeArray
-      res~append( "<b>"line"</b>" )
+      res~append( line )
     End
   End
+
+  res~append("</pre>")
+  res~append("")
 
   Return res
 
