@@ -51,6 +51,7 @@
   jsbase     = ""
   itrace     = 0
   path       = ""
+  continue   = 0
 
 ProcessOptions:
 
@@ -67,6 +68,7 @@ ProcessOptions:
         attributes = args[1]
         args~delete(1)
       End
+      When "--continue" Then continue = 1
       When "-c", "--css" Then Do
         If args~size == 0 Then
           Call Error "Missing base directory after '"option"' option."
@@ -236,7 +238,8 @@ TemplateFound:
         Call Error "Directory creation failed. Aborting..."
     End
     Say Time("Long") "Processing" file"..."
-    Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, itrace, attributes
+    Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, -
+      itrace, attributes, continue
     processed += 1
   End
 
@@ -263,7 +266,7 @@ Help:
 
 ::Routine ProcessFile
   Use Strict Arg file, directory, sourceFn, template, -
-    cssbase, jsbase, itrace, attributes
+    cssbase, jsbase, itrace, attributes, continue
 
   filename = file~absolutePath
   name     = FileSpec("Name",filename)
@@ -334,17 +337,20 @@ Help:
 
   Signal On Syntax Name IndividualFileFailed
 
-  defaultOptions. = ""
-  defaultOptions.default = attributes
+  defaultOptions. = 0
+  defaultOptions.default  = attributes
+  If continue Then defaultOptions.["CONTINUE"] = 1
 
   source = FencedCode( filename, source, defaultTheme, defaultOptions. )
 
   Signal Off Syntax
   Signal AllWentWell
+
 IndividualFileFailed:
   co         = condition("O")
   additional = Condition("A")
   extra = additional~lastitem
+  If \extra~hasMethod("position") Then Raise Propagate
   line  = extra~position
   Parse Value co~code With major"."minor
  .Error~Say( Right(line,6) "*-*" extra~sourceline                            )
