@@ -25,6 +25,7 @@ Options
 --------------------------------------------------------------------------------- ------------------------------
 `-?`                                                                              Display this help
 <code>-c <em>cssbase</em></code>, <code>--css <em>cssbase</em></code>&nbsp;&nbsp; Where to locate the CSS files
+`--continue`                                                                      Continue when a fenced code block is in error
 `--default` "attributes"                                                          Default attributes for all code blocks
 `-h`, `--help`                                                                    Display this help
 `-it`, `--itrace`                                                                 Print internal traceback on error

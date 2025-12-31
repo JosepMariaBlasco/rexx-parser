@@ -116,6 +116,7 @@ h4 {font-size:24px;}
 h5 {font-size:22px;}
 h6 {font-size:20px;}
 h1.part {font-size:45px;}
+
 pre {margin-top:20px;margin-bottom:20px;}
 pre.dark {background-color: #000;color: #aaa;}
 
@@ -123,4 +124,16 @@ blockquote {
   margin: 20px 0 20px;
   font-style: italic;
   font-size: 18px;
+}
+
+/* Ensure that long lines don't wrap */
+
+pre {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+pre code {
+  white-space: pre;
+  overflow-x: auto;
 }

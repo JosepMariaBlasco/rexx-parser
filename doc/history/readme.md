@@ -37,6 +37,7 @@ Version history
   <li> **Breaking change**: Options which have values in `highligh.rex`
        now use `-option value` instead of `-option=value` (20251228).
   <li> Add `--continue` option to `highlight.rex` and `md2html.rex` (20251231).
+  <li> Update `markdown.css` to display horizontal scroll bars when necessary (20251231).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

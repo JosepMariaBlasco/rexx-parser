@@ -492,6 +492,7 @@ Options:
 
 -?                         Display this help
 --default attributes       Specify default attributes for code blocks
+--continue                 Continue when a fenced code block is in error
 -c cssbase, --css cssbase  Where to locate the CSS files
 -h, --help                 Display this help
 -it, --itrace              Print internal traceback on error
