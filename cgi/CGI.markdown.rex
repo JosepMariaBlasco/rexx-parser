@@ -40,6 +40,7 @@
 /*                  to separate files.                                        */
 /* 20250524         Move generic CGI behaviour to Rexx.CGI.cls.               */
 /* 20250621    0.2c Add support for .rex and .cls files.                      */
+/* 20260101    0.4a Change [*STYLES*] -> %usedStyles%                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -158,14 +159,14 @@ Exit
   ------------------------------------------------------------------------------
 
   Select Case FileSpec("Name",file)
-    When "slides.md"  Then ownStyle = "slides"
-    When "article.md" Then ownStyle = "article"
-    Otherwise              ownStyle = ""
+    When "slides.md"  Then filenameSpecificStyle = "slides"
+    When "article.md" Then filenameSpecificStyle = "article"
+    Otherwise              filenameSpecificStyle = ""
   End
-  extraStyle = Stream(file".css","c","Q exists")
-  If extraStyle \== "" Then Do
-    p = LastPos(.File~separator,extraStyle)
-    extraStyle = SubStr(extraStyle,p+1)
+  printStyle = Stream(file".css","c","Q exists")
+  If printStyle \== "" Then Do
+    p = LastPos(.File~separator,printStyle)
+    printStyle = SubStr(printStyle,p+1)
   End
 
   ------------------------------------------------------------------------------
@@ -215,20 +216,20 @@ Exit
   template = .Resources~HTML
 
   Do line Over template
-    Select
-      When line = "%title%"         Then Say title
-      When line = "%header%"        Then Call OptionalCall PageHeader, title
-      When line = "%contents%"      Then Do line Over contents; Say line; End
-      When line = "%footer%"        Then Call OptionalCall PageFooter
-      When line = "%sidebar%"       Then Call OptionalCall Sidebar, uri
-      When line = "%contentheader%" Then Call OptionalCall ContentHeader, uri
-      When line = "%extrastyle%"    Then
-        If extraStyle \== "" Then
-          Say "    <link rel='stylesheet' media='print' href='"extraStyle"'>"
-      When line = "%ownstyle%"      Then
-        If ownStyle \== ""   Then
+    Select Case Strip(Lower(line))
+      When "%title%"         Then Say title
+      When "%contentheader%" Then Call OptionalCall ContentHeader, uri
+      When "%header%"        Then Call OptionalCall PageHeader, title
+      When "%contents%"      Then Do line Over contents; Say line; End
+      When "%footer%"        Then Call OptionalCall PageFooter
+      When "%sidebar%"       Then Call OptionalCall Sidebar, uri
+      When "%printstyle%"    Then
+        If printStyle \== "" Then
+          Say "    <link rel='stylesheet' media='print' href='"printStyle"'>"
+      When "%filenamespecificstyle%"    Then
+        If filenameSpecificStyle \== "" Then
           Say "    <link rel='stylesheet'" -
-              "href='/rexx-parser/css/print/"ownstyle".css'>"
+              "href='/rexx-parser/css/print/"filenameSpecificStyle".css'>"
       Otherwise Say line
     End
   End
@@ -246,12 +247,12 @@ Hack:
   -- We choose "</head>" because it has no attributes.
 
   subs = 0
-  Do i = 1 To lines Until out[i] = "</head>"
-    If out[i] == "[*STYLES*]" Then subs = i
+  Do i = 1 To lines Until Lower(out[i]) = "</head>"
+    If Lower(out[i]) = "%usedstyles%" Then subs = i
   End
 
   If i > items Then Raise Halt Array("No '</head>' line found.")
-  If subs == 0 Then Raise Halt Array("No '[*STYLES*]' line found.")
+  If subs == 0 Then Raise Halt Array("No '%usedStyles%' line found.")
 
   allowed = XRange(AlNum)".-_"
   styles = .Array~new
@@ -308,22 +309,20 @@ View:
   template = .Resources~DisplayRexx
 
   Do line Over template
-    Select
-      When line = "%title%"         Then Say  URI
-      When line = "%header%"        Then Call OptionalCall PageHeader, URI
-      When line = "%contents%"      Then Do line Over contents; Say line; End
-      When line = "%footer%"        Then Call OptionalCall PageFooter
-      When line = "%sidebar%"       Then Call OptionalCall Sidebar, uri
-      When line = "%contentheader%" Then Call OptionalCall ContentHeader, uri
-      When line = "%extrastyle%"    Then Nop
-      When line = "%ownstyle%"      Then Nop
+    Select Case Strip(Lower(line))
+      When "%title%"                 Then Say  URI
+      When "%header%"                Then Call OptionalCall PageHeader, URI
+      When "%contents%"              Then Do line Over contents; Say line; End
+      When "%footer%"                Then Call OptionalCall PageFooter
+      When "%sidebar%"               Then Call OptionalCall Sidebar, uri
+      When "%contentheader%"         Then Call OptionalCall ContentHeader, uri
+      When "%printstyle%"            Then Nop
+      When "%filenamespecificstyle%" Then Nop
       Otherwise Say line
     End
   End
 
   Signal Hack
-
-
 -- We are loading a local copy of Bootstrap 3, customized to eliminate
 -- print media styles, and then we add our own media styles css.
 
@@ -338,11 +337,11 @@ View:
       %title%
     </title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
-[*STYLES*]
+%usedStyles%
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
-    %extrastyle%
+    %printStyle%
     <!--[if lt IE 9]>
       <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
@@ -387,13 +386,13 @@ View:
       %title%
     </title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
-[*STYLES*]
+%usedStyles%
     <link rel='stylesheet' href='/rexx-parser/css/markdown.css'>
-    %ownstyle%
+    %filenameSpecificStyle%
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
-    %extrastyle%
+    %printStyle%
     <!--[if lt IE 9]>
       <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>

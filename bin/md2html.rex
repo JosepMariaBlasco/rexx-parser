@@ -18,6 +18,7 @@
 /* 20251226         Implement --path option                                   */
 /* 20251227         Use .SysCArgs when available                              */
 /* 20251228         Implement --default attributes                            */
+/* 20260101         Change [*STYLES*] -> %usedStyles%                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -323,10 +324,10 @@ Help:
   --   is not properly implemented in the major browsers).                    --
   ------------------------------------------------------------------------------
 
-  printstyle = Stream(filename".css","Command","Query Exists")
-  If printstyle \== "" Then Do
+  printStyle = Stream(filename".css","Command","Query Exists")
+  If printStyle \== "" Then Do
     p = LastPos(.File~separator,printstyle)
-    printstyle = SubStr(printstyle,p+1)
+    printStyle = SubStr(printStyle,p+1)
   End
 
   ------------------------------------------------------------------------------
@@ -401,22 +402,22 @@ AllWentWell: Nop
   ------------------------------------------------------------------------------
 
   Do line Over template
-    Select
-      When line = "%title%"         Then res~append( title )
-      When line = "%contents%"      Then
+    Select Case Strip(Lower(line))
+      When "%title%"         Then res~append( title )
+      When "%header%"        Then Call OptionalCall Header,  res, title
+      When "%contentheader%" Then Call OptionalCall ContentHeader, filename
+      When "%contents%"      Then
         Do line Over contents
           res~append( line )
         End
-      When line = "%header%"        Then Call OptionalCall Header,  res, title
-      When line = "%footer%"        Then Call OptionalCall Footer,  res
-      When line = "%sidebar%"       Then Call OptionalCall Sidebar, res
-      When line = "%contentheader%" Then Call OptionalCall ContentHeader, filename
-      When line = "%printstyle%"    Then
-        If printstyle \== "" Then
+      When "%footer%"        Then Call OptionalCall Footer,  res
+      When "%sidebar%"       Then Call OptionalCall Sidebar, res
+      When "%printstyle%"    Then
+        If printStyle \== "" Then
           res~append(                                                       -
-            "    <link rel='stylesheet' media='print' href='"printstyle"'>" -
+            "    <link rel='stylesheet' media='print' href='"printStyle"'>" -
           )
-      When line = "%filenameSpecificStyle%"      Then
+      When "%filenamespecificstyle%"      Then
         If filenameSpecificStyle \== ""   Then
           res~append(                                                       -
             "    <link rel='stylesheet' href='"cssbase"/"filenameSpecificStyle".css'>"   -
@@ -437,11 +438,11 @@ Hack:
 
   subs = 0
   Do i = 1 To lines Until res[i] = "</head>"
-    If res[i] == "[*STYLES*]" Then subs = i
+    If res[i] = "%usedStyles%" Then subs = i
   End
 
   If i > items Then Raise Halt Array("No '</head>' line found.")
-  If subs == 0 Then Raise Halt Array("No '[*STYLES*]' line found.")
+  If subs == 0 Then Raise Halt Array("No '%usedStyles%' line found.")
 
   allowed = XRange(AlNum)".-_"
   styles = .Array~new
