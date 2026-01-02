@@ -40,6 +40,7 @@ Version history
   <li> Update `markdown.css` to display horizontal scroll bars when necessary (20251231).
   <li> **Breaking change**: Change `[*STYLES*]` -> `%usedStyles%` when transforming
        Markdown to HTML (20260101).
+  <li> Allow `<div class="img-scroll">` in generated HTML (thanks, JLF!) (20260102).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

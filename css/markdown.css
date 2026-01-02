@@ -137,3 +137,43 @@ pre code {
   white-space: pre;
   overflow-x: auto;
 }
+
+/* Horizontal scrollbar for images -- Contribution by JLF (Thanks!) */
+
+/*
+Usage:
+<p class="img-scroll"><img src="image.png" width="1400"></p>
+
+The image will not shrink when the content column shrinks.
+The image occupies its own line (display:block, not inline-block).
+The horizontal scrollbar will appear as needed.
+
+If the image's intrinsic size is too wide then put a width in your <img>.
+For example,
+<img width="1400">
+(not width="1400px", it's an HTML attribute).
+This means "The intrinsic layout width of this image is exactly 1400 pixels",
+which is ideal for scrollable, fixed-size images.
+
+In this context, an HTML attribute is preferable to a CSS property like
+<img style="width: 1400px">
+because CSS widths are subject to flex shrinking, while HTML intrinsic sizes
+are not unless explicitly allowed.
+Don't use % widths, because % is relative to the container.
+*/
+
+.img-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 6px;  /* space for scrollbar */
+
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background-color: #f6f8fa;
+}
+
+.img-scroll img {
+  display: block;
+  max-width: none;
+  height: auto;
+}
