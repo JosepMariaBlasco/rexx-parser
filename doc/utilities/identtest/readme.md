@@ -21,14 +21,14 @@ Usage
 -----
 
 <pre>
-[rexx] identtest [OPTIONS]
+[rexx] identtest [OPTIONS] ["start"]
 </pre>
 
 Options
 -------
 
 ---------------------------------------- ----------------------------
-`--help`, `-h`, `-?`                     Display this help
+`--help`, `-?`                           Display this help
 `--executor`, `-xtr`                     Support Executor syntax
 `-it`, `--itrace`                        Print internal traceback on error
 `--testgroup`, `-tg`                     Analyze `.testgroup` files
@@ -37,6 +37,9 @@ Options
 `--norexx`, `--norex`, `-nr`&nbsp;&nbsp; Don't analyze `.rex` files
 `--nocls`, `-nc`                         Don't analyze `.cls` files
 ---------------------------------------- --------------------------------
+
+If you specify "start", the myname tests are started; otherwise, this
+help is displayed.
 
 Examples
 --------

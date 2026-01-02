@@ -29,6 +29,7 @@
 /* 20251221    0.4a Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
+/* 20260102         Standardize help options to -h and --help                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -71,13 +72,13 @@ ProcessOptions:
 
   If option[1] == "-" Then Do
     Select Case Lower(option)
+      When "-h", "--help"       Then Signal Help
       When "-u", "--tutor", -
         "--unicode"             Then unicode = 1
       When "-e", "-exp", "--exp", -
         "--experimental"        Then experimental = 1
       When "-xtr", "--executor" Then executor = 1
       When "-it", "--itrace"    Then itrace = 1
-      When "--help"             Then Signal Help
       When "--from"             Then opFrom = Integer()
       When "--to"               Then opTo   = Integer()
       Otherwise Call Error "Invalid option '"option"'."

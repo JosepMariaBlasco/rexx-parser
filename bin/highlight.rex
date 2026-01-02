@@ -35,6 +35,7 @@
 /* 20251227         Use .SysCArgs when available                              */
 /* 20251228         Add support for --default                                 */
 /* 20251230         Add support for --continue                                */
+/* 20260102         Standardize help options to -h and --help                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -74,6 +75,7 @@
     args~delete(1)
 
     Select Case Lower(option)
+      When "--help"            Then Signal Help
       When "-s", "--style"     Then Do
         If args~size == 0 Then
           Call Error "Missing style after '"option"' option."
@@ -141,6 +143,7 @@
   If options.css, options.mode \== "HTML" Then
     Call Error "The --css option cannot be used in" options.mode "mode."
 
+  -- This means that "highlight -h" will display help, which is good.
   If args~items == 0 Then Signal Help
 
   If args~items > 1 Then Call Error "Invalid argument '"args[2]"'."
@@ -275,6 +278,9 @@ Help:
 myname - Highlight a Rexx program, or a file containing Rexx programs
 
 Usage: myname [OPTIONS] FILE
+
+If the only option is -h or --help, or if no arguments are present,
+then display this help and exit.
 
 If FILE has a .md or .html extension, process all Rexx fenced code blocks
 in FILE and highlight them. Otherwise, we assume that this is a Rexx file,

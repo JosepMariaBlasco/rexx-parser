@@ -41,6 +41,9 @@ Version history
   <li> **Breaking change**: Change `[*STYLES*]` -> `%usedStyles%` when transforming
        Markdown to HTML (20260101).
   <li> Allow `<div class="img-scroll">` in generated HTML (thanks, JLF!) (20260102).
+  <li> **Breaking change**: Standardize on `-h` and `--html` to display help
+       for all utils (and no arguments too: now, to start `identtest`, you
+       should now use `identtest start`) -- following a suggestion from JLF (20260101).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

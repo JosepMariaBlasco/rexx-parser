@@ -19,6 +19,7 @@
 /* 20251227         Use .SysCArgs when available                              */
 /* 20251228         Implement --default attributes                            */
 /* 20260101         Change [*STYLES*] -> %usedStyles%                         */
+/* 20260102         Standardize help options to -h and --help                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -61,7 +62,7 @@ ProcessOptions:
     args~delete(1)
 
     Select Case Lower(option)
-      When "-h", "-?", "--help" Then Signal Help
+      When "-h", "--help" Then Signal Help
       When "-it", "--itrace" Then itrace = 1
       When "--default" Then Do
         If args~size == 0 Then
@@ -93,7 +94,7 @@ ProcessOptions:
   End
 
   Select Case args~items
-    When 0 Then Call Error "Source directory is missing."
+    When 0 Then Signal Help
     When 1,2 Then Do
       source = args[1]
       If \SysFileExists(source) Then
@@ -489,9 +490,11 @@ Usage: [rexx] myname OPTIONS source [destination]
 "source" and "destination" should be existing directories.
 The destination directory defaults to the current directory.
 
+If the only option is -h or --help, or if no arguments are present,
+then display this help and exit.
+
 Options:
 
--?                         Display this help
 --default attributes       Specify default attributes for code blocks
 --continue                 Continue when a fenced code block is in error
 -c cssbase, --css cssbase  Where to locate the CSS files

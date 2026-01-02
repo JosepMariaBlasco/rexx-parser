@@ -21,6 +21,7 @@
 /* 20251221    0.4a Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
+/* 20260102         Standardize help options to -h and --help                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -51,11 +52,10 @@ ProcessOptions:
 
   If option[1] == "-" Then Do
     Select Case lower(option)
-      When "-l"         Then list     = 1
-      When "-it"        Then itrace = 1
-      When "--itrace"   Then itrace = 1
-      When "-xtr"       Then executor = 1
-      When "--executor" Then executor = 1
+      When "-l"                 Then list     = 1
+      When "-h", "--help"       Then Signal Help
+      When "-it", "--itrace"    Then itrace = 1
+      When "-xtr", "--executor" Then executor = 1
       Otherwise Call Error "Invalid option '"option"'."
     End
     Call ProcessOptions
@@ -119,6 +119,12 @@ Help:
   Say .Resources[Help]~makeString        -
     ~caselessChangeStr("myName", myName) -
     ~caselessChangeStr("myHelp", myHelp)
+  Exit 1
+
+--------------------------------------------------------------------------------
+
+Error:
+ .Error~Say(Arg(1))
   Exit 1
 
 --------------------------------------------------------------------------------
@@ -192,6 +198,9 @@ Usage:
 
 Runs the Rexx Parser against FILE, compiles the Experimental features,
 and runs the resulting program.
+
+If the only option is -h or --help, or if no arguments are present,
+then display this help and exit.
 
 Options:
 

@@ -27,6 +27,7 @@
 /* 20251221    0.4a Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
+/* 20260102         Standardize help options to -h and --help                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -57,7 +58,7 @@ ProcessOptions:
 
   If option[1] == "-" Then Do
     Select Case Lower(option)
-      When "--help", "-?"               Then Signal Help
+      When "-h", "--help"               Then Signal Help
       When "--itrace", "-it"            Then itrace = 1
       When "--executor", "-xtr"         Then executor = 1
       When "-u", "--tutor", "--unicode" Then unicode = 1
@@ -196,7 +197,7 @@ myname -- Verify if the identity compiler returns a perfect copy of a program.
 
 Usage: myname [OPTION]... [FILE]
 
-If the only option is --help or -?, or if no arguments are present,
+If the only option is -h or --help, or if no arguments are present,
 then display this help and exit.
 
 Options:

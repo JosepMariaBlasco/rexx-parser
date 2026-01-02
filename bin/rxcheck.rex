@@ -28,6 +28,7 @@
 /* 20251129         -e option does not need quotes now                        */
 /* 20251226    0.4a Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
+/* 20260102         Standardize help options to -h and --help                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -62,7 +63,7 @@
     option = args[1]
     args~delete(1)
     Select Case Lower(option)
-      When "-?", "-help", "--help" Then Signal Help
+      When "-h", "--help" Then Signal Help
       When "-all" Then Do
         signal  = 0
         guard   = 0
@@ -194,8 +195,8 @@ without needing to execute the program. Checks are performed
 syntactically, and therefore they reach dead branches,
 uncalled procedures and routines, etc.
 
-Options:
-  -?, -help, -- help Display this help file.
+If the only option is -h or --help, or if no arguments are present,
+then display this help and exit.
 
 Toggles:
 

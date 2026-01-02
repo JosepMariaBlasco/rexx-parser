@@ -21,6 +21,7 @@
 /* 20251221         Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
+/* 20260102         Standardize help options to -h and --help                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -33,7 +34,7 @@
   -- files. The script will stop when all files have been processed, or when
   -- an error is encountered.
   --
-  -- Run "indentest -?" to show a list of the available options.
+  -- Run "indentest --help" to show a list of the available options.
   --
   -- See also the list of exceptions below
   --
@@ -58,20 +59,25 @@
   executor           = 0
   SysFileTreeOptions = "FSO"
 
+  If args~items == 0 Then Signal Help
+
 ProcessOptions:
   Loop While args~items > 0
 
     option = args[1]
     args~delete(1)
 
+    If Lower(option) == "start", args~items == 0 Then Leave
+
     Select Case Lower(option)
-      When "--help", "-h",         "-?" Then Signal Help
+      When "--help",               "-h" Then Signal Help
       When "--itrace",            "-it" Then itrace = 1
       When "--executor",         "-xtr" Then executor  = 1
       When "--noelements",        "-ne" Then elements  = 0
       When "--notree",            "-nt" Then tree      = 0
       Otherwise Call Error "Invalid option '"option"'."
     End
+
   End
 
   If Executor Then option = "-xtr"
@@ -192,16 +198,22 @@ Help:
 myname -- Run identity tests against a collection of files
 
 Usage:
-  [rexx] myname [OPTIONS...]
+  [rexx] myname [OPTIONS...] ["start"]
+
+If the only option is -h or --help, or if no arguments are present,
+then display this help and exit.
 
 Options:
-  -h, -?, --help         Display this help
+  -h,   --help           Display this help
   -xtr, --executor       Support Executor syntax
   -it, --itrace          Print internal traceback on error
   -nc, --nocls           Don't analyze .cls files
   -ne, --noelements      Don't run the elident test
   -nr, --norex, --norexx Don't analyze .rex files
   -nt, --notree          Don't run the trident test
+  
+If you specify "start", the myname tests are started; otherwise, this
+help is displayed.
 
 The 'myname' program is part of the Rexx Parser package,
 see https://rexx.epbcn.com/rexx-parser/. It is distributed under

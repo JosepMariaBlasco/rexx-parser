@@ -20,7 +20,7 @@ reach dead branches, uncalled procedures and routines, etc.
 \
 
 ----------------------------------- ----------------------
-`-?`, `-help`, `--help`&nbsp;&nbsp; Display this help file.
+`-h`, `--help`&nbsp;&nbsp;          Display this help file.
 &nbsp;
 Toggles:
 &nbsp;

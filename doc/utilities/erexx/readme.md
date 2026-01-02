@@ -17,6 +17,7 @@ into a standard ooRexx program and then runs this program.
 ## options
 
 ---------------------------------- ----------------------
+`-h`, `--help`                     Display help and exit
 `-l`                               Print the translated program and exit immediately
 `-it`, `--itrace`                  Print internal traceback on error
 `-xtr`, `--executor`&nbsp;&nbsp;   Enable Executor support

@@ -18,10 +18,10 @@ Options
 -------
 
 ---------------------------------------- ------------------------------
+`-h`, `--help`                           Display help and exit
 `-it`, `--itrace`                        Print internal traceback on error
 `-u`, `--tutor`, `--unicode`&nbsp;&nbsp; Enable TUTOR-flavored Unicode
 `-xtr`, `--executor`                     Enable Executor support
-`-?`, `--help`                           Display this information
 ---------------------------------------- ------------------------------
 
 Program source

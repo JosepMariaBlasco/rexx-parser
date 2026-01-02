@@ -54,7 +54,7 @@ ProcessOptions:
 
   If option[1] == "-" Then Do
     Select Case Lower(option)
-      When "--help", "-?"               Then Signal Help
+      When "-h", "--help"               Then Signal Help
       When "--executor", "-xtr"         Then executor = 1
       When "-it", "--itrace"            Then itrace = 1
       When "-u", "--tutor", "--unicode" Then unicode = 1
@@ -168,7 +168,7 @@ myname -- Checks that the Parser' stream of elements is identical to a FILE.
 
 Usage: myname [OPTION]... [FILE]
 
-If the only option is --help or -?, or if no arguments are present,
+If the only option is -h or --help, or if no arguments are present,
 then display this help and exit.
 
 Options:

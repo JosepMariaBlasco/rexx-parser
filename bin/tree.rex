@@ -18,9 +18,9 @@
 /* 20251215    0.4a First public release                                      */
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
+/* 20260102         Standardize help options to -h and --help                 */
 /*                                                                            */
 /******************************************************************************/
-
 
   -- Errors returned by the parser require special handling
   Signal On Syntax
@@ -56,7 +56,7 @@ ProcessOptions:
       When "-e", "-exp", "--exp", "--experimental" Then experimental = 1
       When "-it", "--itrace"    Then itrace = 1
       When "-xtr", "--executor" Then executor = 1
-      When "--help" Then Signal Help
+      When "-h", "--help"       Then Signal Help
       Otherwise Call Error "Invalid option '"option"'."
     End
     Signal ProcessOptions
@@ -232,13 +232,16 @@ Usage: myName [options] FILE
 
 Display the parse tree of FILE
 
+If the only option is -h or --help, or if no arguments are present,
+then display this help and exit.
+
 Options:
 -xtr,--executor     Enable support for Executor
 -e,  --experimental Enable Experimental features (also -exp)
      --help         Display this information
 -it, --itrace       Print internal traceback on error
      --tutor        Enable TUTOR-flavored Unicode
- -u, --unicode      Enable TUTOR-flavored Unicode
+-u,  --unicode      Enable TUTOR-flavored Unicode
 
 The 'myname' program is part of the Rexx Parser package,
 see https://rexx.epbcn.com/rexx-parser/. It is distributed under
