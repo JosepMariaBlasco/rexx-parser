@@ -92,6 +92,7 @@
 
 -- An approximate value. It is used to determine if an opening brace is
 -- (incorrectly) paired with a closing brace in another clause.
+
 ::Attribute clauseNumber
 
 --
