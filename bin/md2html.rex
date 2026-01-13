@@ -37,8 +37,8 @@
   If how == "COMMAND", .SysCArgs \== .Nil
     Then args = .SysCArgs
     Else args = ArgArray(Arg(1))
-  myself = FileSpec("Name"    ,name)
-  mydir  = FileSpec("Location",name)
+  myself = FileSpec("Name"    ,myName)
+  mydir  = FileSpec("Location",myName)
 
   ------------------------------------------------------------------------------
   -- Ensure that we have access to pandoc                                     --

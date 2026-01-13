@@ -225,7 +225,6 @@ Natural:
   Call Error "Positive whole number expected after '"option"', found '"n"'."
 
 Syntax:
-Trace ?a
   co         = condition("O")
   additional = Condition("A")
   extra = additional~lastitem
