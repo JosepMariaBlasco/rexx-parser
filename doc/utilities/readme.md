@@ -26,6 +26,9 @@ All the utilities are located in the `bin` subdirectory.
 - [**RxCheck**](rxcheck/) - A [utility program](rxcheck/)
   that runs the parser with a selectable number of
   early check options enabled.
+- [**RxComp**](rxcomp/) - A [utility program](rxcomp/)
+  that compares two Rexx files to see if they are equal,
+  regardless of casing, line numbers, continuations and comments.
 - [**Trident**](trident/) - [A small self-consistency tool](trident/) that checks
   that a program is identical its own parse tree.
 

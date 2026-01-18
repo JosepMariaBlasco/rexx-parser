@@ -44,6 +44,7 @@ Version history
   <li> **Breaking change**: Standardize on `-h` and `--html` to display help
        for all utils (and no arguments too: now, to start `identtest`, you
        should now use `identtest start`) -- following a suggestion from JLF (20260101).
+  <li> New `rxcomp` utility (20260118).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

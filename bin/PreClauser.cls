@@ -624,16 +624,9 @@ BalanceBrackets:
     element = TheElementAfter(closing)
     Return
   End
-  -- TODO: raise an error
-  level = 0
-  Loop Until level == 0
-    Select Case element~category
-      When .EL.LEFT_BRACKET  Then level += 1
-      When .EL.RIGHT_BRACKET Then level -= 1
-      Otherwise Nop
-    End
-    element = TheElementAfter( element )
-  End
-  Return
+  Parse Value element~from With line col
+-- Square bracket "[" in position &1 on line &2
+-- requires a corresponding right square bracket "]".
+36.902: Syntax( 36.902, element, col, line)
 
 ::Requires "Scanner.cls"

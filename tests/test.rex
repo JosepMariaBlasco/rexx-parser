@@ -1,3 +1,1 @@
-If 0 Then Say Length(a,b)
-
-Nop
+If a = b Then Say "Hello"

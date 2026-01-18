@@ -212,6 +212,7 @@ Crumb:
     When doc"/oorexx-bugs"         Then Return "Related ooRexx bugs"
     When doc"/utilities"           Then Return "Utilities"
     When doc"/utilities/rxcheck"   Then Return "RxCheck"
+    When doc"/utilities/rxcomp"    Then Return "RxComp"
     When doc"/utilities/erexx"     Then Return "ERexx"
     When doc"/utilities/highlight" Then Return "Highlight"
     When doc"/utilities/elements"  Then Return "Elements"
