@@ -161,8 +161,8 @@
   BIFARGS.ENDLOCAL     = ""                  -- Linux only
   BIFARGS.ERRORTEXT    = "r0_99"
   BIFARGS.FILESPEC     = "rDELNP rANY"
-  -- INSERT Bug: Arg(3) should be POS. See ooRexx bug n. 2012
   BIFARGS.GC           = "oF"
+  -- INSERT Bug: Arg(3) should be POS. See ooRexx bug n. 2012
   BIFARGS.INSERT       = "rANY rANY oLENGTH oLENGTH oPAD"
   BIFARGS.LASTPOS      = "rANY rANY oPOS oLENGTH"
   BIFARGS.LEFT         = "rANY rLENGTH oPAD"

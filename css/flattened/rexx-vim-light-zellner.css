@@ -1,0 +1,476 @@
+/******************************************************************************/
+/*                                                                            */
+/* rexx-dark.css - Sample CSS for Rexx highlighting, dark background          */
+/* =================================================================          */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20241206    0.1  First public release                                      */
+/* 20241209    0.1b New call system                                           */
+/* 20241222    0.1c Line number support                                       */
+/* 20250103    0.1e Add TUTOR-flavored Unicode classes                        */
+/* 20250116    0.1f Add support for sub-keywords                              */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250406         Rename fractional numbers to decimal                      */
+/* 20250530    0.2c Add support for detailed string highlighting              */
+/* 20250624    0.2d Complete refactor to use nesting and "&"                  */
+/* 20250630         Add support for doc-comment subelements                   */
+/* 20250722         Add styles for rx-dskw                                    */
+/* 20251109         use rexx-dark as template for vim colorschemes            */
+/*                                                                            */
+/******************************************************************************/
+
+/******************************************************************************/
+/******************************************************************************/
+/* BASE SELECTOR: highlight-rexx-vim-light-zellner */
+/******************************************************************************/
+/******************************************************************************/
+/*   Format: "highlight-rexx-vim-light-zellner                                           */
+/*   It will apply to the whole CSS file                                      */
+/******************************************************************************/
+
+.highlight-rexx-vim-light-zellner {
+
+/******************************************************************************/
+/* Default settings                                                           */
+/* ================                                                           */
+/*                                                                            */
+/*   The "rexx" class is used as a fallback when no suitable class is found   */
+/*                                                                            */
+
+/******************************************************************************/
+
+/******************************************************************************/
+/* Whitespace and continuations                                               */
+/* ============================                                               */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Standard (non-doc) comments                                                */
+/* ===========================                                                */
+
+/******************************************************************************/
+/* Doc-comments                                                               */
+/* ============                                                               */
+
+/******************************************************************************/
+/* Shebangs                                                                   */
+/* ========                                                                   */
+
+/******************************************************************************/
+/* Keywords and subkeywords, assignment sequences, and "::"                   */
+
+/******************************************************************************/
+/* Strings (including taken constants that are strings)                       */
+/* ====================================================                       */
+
+/******************************************************************************/
+/* Numbers                                                                    */
+/* =======                                                                    */
+/******************************************************************************/
+
+  /*--------------------------------------------------------------------------*/
+  /* Simple highlighting classes (not used by the highlighter)                */
+
+  /*--------------------------------------------------------------------------*/        /* The (optional) exponent sign       */
+
+/******************************************************************************/
+/* Variables and constant symbols                                             */
+/* ==============================                                             */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Special characters and operators                                           */
+/* ================================                                           */
+
+/******************************************************************************/
+/* Taken constants                                                            */
+/* ===============                                                            */
+/*                                                                            */
+/*   I.e., tokens that are "strings or symbols taken as a constant".          */
+/*   In the case of strings, quotes and suffixes are assignes styles under    */
+/*   "strings".                                                               */ /* <-- END OF .rx-const                                                   */
+
+/******************************************************************************/
+/* ::RESOURCE data and ignored stuff                                          */
+/******************************************************************************/
+
+/******************************************************************************/
+/******************************************************************************/
+/* END highlight-rexx-dark                                                    */
+/******************************************************************************/
+/******************************************************************************/
+
+}
+
+/******************************************************************************/
+
+.highlight-rexx-vim-light-zellner pre, .highlight-rexx-vim-light-zellner .rexx {
+    /* %NORMAL%     */ background-color: #ffffff ; color: #000000 ;            /* vim: background and foreground */
+  }
+
+/******************************************************************************/
+
+.highlight-rexx-vim-light-zellner .rx-lineno  {                         /* ANSI Driver only                   */
+    /* %LINENR%     */ color: #a52a2a ;
+  }
+
+/* ========================                                                   */
+
+.highlight-rexx-vim-light-zellner .rx-linebar {                         /* ANSI Driver only                   */
+    /* %LINENR%     */ color: #a52a2a ;
+  }
+
+/* Support for line numbers                                                   */
+
+.highlight-rexx-vim-light-zellner pre.number-lines {
+          padding-left: 50px;
+  }
+
+.highlight-rexx-vim-light-zellner pre.number-lines.w3 {padding-left: 58px; }
+
+.highlight-rexx-vim-light-zellner pre.number-lines.w3 code:before {width:58px;}
+
+.highlight-rexx-vim-light-zellner pre.number-lines.w4 {padding-left: 65px; }
+
+.highlight-rexx-vim-light-zellner pre.number-lines.w4 code:before {width:65px;}
+
+.highlight-rexx-vim-light-zellner pre.number-lines.w5 {padding-left: 72px; }
+
+.highlight-rexx-vim-light-zellner pre.number-lines.w5 code:before {width:72px;}
+
+.highlight-rexx-vim-light-zellner pre.number-lines code:before{
+      content: attr(lineno) " | ";
+      position:absolute;
+      left:10px;
+      width:50px;
+      text-align:right;
+      /* %LINENR%     */ color: #a52a2a ;
+    }
+
+/* .rx-ws, .rx-cont { color: #cc0; } */
+
+.highlight-rexx-vim-light-zellner .rx-cont { /* %WILDMENU%   */ background-color: #ffff00 ; color: #000000 ; }
+
+/******************************************************************************/
+
+.highlight-rexx-vim-light-zellner .rx-cm,                               
+  .highlight-rexx-vim-light-zellner .rx-lncm {                            /* Line comments                      */
+    /* %COMMENT%    */ color: #ff0000 ;
+  }
+
+/******************************************************************************/
+
+.highlight-rexx-vim-light-zellner .rx-doc-comment,                      
+  .highlight-rexx-vim-light-zellner .rx-doc-comment-markdown {            /* Markdown style doc-comments        */
+
+                                        /* Default values (for "block"..      */
+                                        /* ..highlighting.                    */
+    /* %COMMENT%    */ color: #ff0000 ;
+  }
+
+.highlight-rexx-vim-light-zellner .rx-doc-comment.rx-doc-comment-armature,          
+    .highlight-rexx-vim-light-zellner .rx-doc-comment.rx-doc-comment-whitespace,          
+    .highlight-rexx-vim-light-zellner .rx-doc-comment.rx-doc-comment-main-description,          
+    .highlight-rexx-vim-light-zellner .rx-doc-comment-markdown.rx-doc-comment-armature,          
+    .highlight-rexx-vim-light-zellner .rx-doc-comment-markdown.rx-doc-comment-whitespace,          
+    .highlight-rexx-vim-light-zellner .rx-doc-comment-markdown.rx-doc-comment-main-description {
+        /* %COMMENT%    */ color: #ff0000 ;
+    }
+
+.highlight-rexx-vim-light-zellner .rx-doc-comment.rx-doc-comment-summary, .highlight-rexx-vim-light-zellner .rx-doc-comment-markdown.rx-doc-comment-summary {          /* Initial summary statement.         */
+        /* %COMMENT%    */ color: #ff0000 ;
+    }
+
+.highlight-rexx-vim-light-zellner .rx-doc-comment.rx-doc-comment-tag, .highlight-rexx-vim-light-zellner .rx-doc-comment-markdown.rx-doc-comment-tag {              /* @block-tag                         */
+        /* %COMMENT%    */ color: #ff0000 ;
+    }
+
+.highlight-rexx-vim-light-zellner .rx-doc-comment.rx-doc-comment-tag-value, .highlight-rexx-vim-light-zellner .rx-doc-comment-markdown.rx-doc-comment-tag-value {        /* As the name in "@param name".      */
+        /* %COMMENT%    */ color: #ff0000 ;
+    }
+
+.highlight-rexx-vim-light-zellner .rx-doc-comment.rx-doc-comment-tag-description, .highlight-rexx-vim-light-zellner .rx-doc-comment-markdown.rx-doc-comment-tag-description {  /* Text after @deprecated.            */
+        /* %COMMENT%    */ color: #ff0000 ;
+    }
+
+/******************************************************************************/
+
+.highlight-rexx-vim-light-zellner .rx-shb { /* %SPECIAL%    */ color: #ff00ff ; }
+
+/******************************************************************************/
+
+.highlight-rexx-vim-light-zellner .rx-kw,                               
+  .highlight-rexx-vim-light-zellner .rx-skw,                               
+  .highlight-rexx-vim-light-zellner .rx-asg                               /* Assignment sequences (incl. "=")   */
+  {
+    /* %STATEMENT%  */ color: #a52a2a ; /* %_KEYWORD_% */
+  }
+
+/* ========================================================                   */
+
+.highlight-rexx-vim-light-zellner .rx-dkw,                              
+  .highlight-rexx-vim-light-zellner .rx-dskw,                              
+  .highlight-rexx-vim-light-zellner .rx-dir                               /* The directive start "::" sequence  */
+  {
+    /* %PREPROC%    */ color: #a020f0 ; /* %_TYPE_% */
+  }
+
+/* Additionally, directive keywords and subkeywords are underlined          */
+
+.highlight-rexx-vim-light-zellner .rx-dkw, .highlight-rexx-vim-light-zellner .rx-dskw { /* %NONE% */ }
+
+/******************************************************************************/
+
+.highlight-rexx-vim-light-zellner .rx-str, .highlight-rexx-vim-light-zellner .rx-bstr, .highlight-rexx-vim-light-zellner .rx-xstr, .highlight-rexx-vim-light-zellner .rx-ystr, .highlight-rexx-vim-light-zellner .rx-pstr, .highlight-rexx-vim-light-zellner .rx-gstr, .highlight-rexx-vim-light-zellner .rx-tstr, .highlight-rexx-vim-light-zellner .rx-ustr { /* TUTOR Unicode strings */
+    /* %STRING%     */ color: #ff00ff ;   /* Quotes                             */
+  }
+
+/* the inner part of the string       */
+
+.highlight-rexx-vim-light-zellner .rx-str.rx-ssuf,            .highlight-rexx-vim-light-zellner .rx-bstr.rx-ssuf,            .highlight-rexx-vim-light-zellner .rx-xstr.rx-ssuf,            .highlight-rexx-vim-light-zellner .rx-ystr.rx-ssuf,            .highlight-rexx-vim-light-zellner .rx-pstr.rx-ssuf,            .highlight-rexx-vim-light-zellner .rx-gstr.rx-ssuf,            .highlight-rexx-vim-light-zellner .rx-tstr.rx-ssuf,            .highlight-rexx-vim-light-zellner .rx-ustr.rx-ssuf            { /* %STRING%     */ color: #ff00ff ; }
+
+/* String suffix                      */
+
+.highlight-rexx-vim-light-zellner .rx-str.rx-oquo, .highlight-rexx-vim-light-zellner .rx-str.rx-cquo, .highlight-rexx-vim-light-zellner .rx-bstr.rx-oquo, .highlight-rexx-vim-light-zellner .rx-bstr.rx-cquo, .highlight-rexx-vim-light-zellner .rx-xstr.rx-oquo, .highlight-rexx-vim-light-zellner .rx-xstr.rx-cquo, .highlight-rexx-vim-light-zellner .rx-ystr.rx-oquo, .highlight-rexx-vim-light-zellner .rx-ystr.rx-cquo, .highlight-rexx-vim-light-zellner .rx-pstr.rx-oquo, .highlight-rexx-vim-light-zellner .rx-pstr.rx-cquo, .highlight-rexx-vim-light-zellner .rx-gstr.rx-oquo, .highlight-rexx-vim-light-zellner .rx-gstr.rx-cquo, .highlight-rexx-vim-light-zellner .rx-tstr.rx-oquo, .highlight-rexx-vim-light-zellner .rx-tstr.rx-cquo, .highlight-rexx-vim-light-zellner .rx-ustr.rx-oquo, .highlight-rexx-vim-light-zellner .rx-ustr.rx-cquo { /* %STRING%     */ color: #ff00ff ; }
+
+/* Taken constants that are strings                                         */
+
+.highlight-rexx-vim-light-zellner .rx-const {   /* Quotes                             */
+  }
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-ssuf            { /* %SPECIAL%    */ color: #ff00ff ; /* %_STRING_% */ }
+
+/* String suffix                      */
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-oquo, .highlight-rexx-vim-light-zellner .rx-const.rx-cquo { /* %SPECIAL%    */ color: #ff00ff ; /* %_STRING_% */ }
+
+/*--------------------------------------------------------------------------*/
+
+.highlight-rexx-vim-light-zellner .rx-int,                              
+  .highlight-rexx-vim-light-zellner .rx-deci,                              
+  .highlight-rexx-vim-light-zellner .rx-exp {                             /* Exponentials (w/ or w/o a dot)     */
+    /* %NUMBER%     */ color: #ff00ff ;
+  }
+
+/*--------------------------------------------------------------------------*/
+
+.highlight-rexx-vim-light-zellner .rx-nsign { /* %NUMBER%     */ color: #ff00ff ; }
+
+/* Number sign (for strings only)     */
+
+.highlight-rexx-vim-light-zellner .rx-ipart,                            
+  .highlight-rexx-vim-light-zellner .rx-fpart,                            
+  .highlight-rexx-vim-light-zellner .rx-expon                             /* The exponent itself                */
+  {
+    /* %NUMBER%     */ color: #ff00ff ;
+  }
+
+/* Detailed highlighting (includes non X and B strings that are numbers)    */
+
+.highlight-rexx-vim-light-zellner .rx-dpoint { /* %NUMBER%     */ color: #ff00ff ; }
+
+/* The decimal point                  */
+
+.highlight-rexx-vim-light-zellner .rx-emark  { /* %NUMBER%     */ color: #ff00ff ; }
+
+/* The exponent mark ("E" or "e")     */
+
+.highlight-rexx-vim-light-zellner .rx-esign  { /* %NUMBER%     */ color: #ff00ff ; }
+
+/* Set a common color for all variables                                     */
+
+.highlight-rexx-vim-light-zellner .rx-var, .highlight-rexx-vim-light-zellner .rx-xvar, .highlight-rexx-vim-light-zellner .rx-stem, .highlight-rexx-vim-light-zellner .rx-xstem, .highlight-rexx-vim-light-zellner .rx-cmp, .highlight-rexx-vim-light-zellner .rx-xcmp { /* %IDENTIFIER% */ color: #0000ff ; }
+
+/* Additionally, exposed variables will be italicized                       */
+
+.highlight-rexx-vim-light-zellner .rx-xvar, .highlight-rexx-vim-light-zellner .rx-xstem, .highlight-rexx-vim-light-zellner .rx-xcmp { /* %IDENTIFIER% */ color: #0000ff ; }
+
+/* Environment symbols                                                      */
+
+.highlight-rexx-vim-light-zellner .rx-env { /* %PREPROC%    */ color: #a020f0 ; /* %_NONTEXT_% */ }
+
+/* Const symbols that are not environment symbols                           */
+
+.highlight-rexx-vim-light-zellner .rx-lit { /* %SPECIAL%    */ color: #ff00ff ; /* %_NONTEXT_% */ }
+
+/******************************************************************************/
+
+.highlight-rexx-vim-light-zellner .rx-spe, .highlight-rexx-vim-light-zellner .rx-op { /* %OPERATOR%   */ color: #a52a2a ; }
+
+/******************************************************************************/
+
+.highlight-rexx-vim-light-zellner .rx-const {
+
+    /*------------------------------------------------------------------------*/
+    /* Default highlighting                                                   */
+    /*------------------------------------------------------------------------*/
+
+    /* %STATEMENT%  */ color: #a52a2a ;
+
+    /*------------------------------------------------------------------------*/
+    /* Built-in functions and procedures                                      */
+
+    /*------------------------------------------------------------------------*/
+    /* Internal functions and procedures, labels and block instruction names  */
+
+    /*------------------------------------------------------------------------*/
+    /* ::ROUTINE names, ::ROUTINE function and procedure calls,               */
+    /* and namespace-qualified ::ROUTINEs                                     */
+
+    /*------------------------------------------------------------------------*/
+    /* External calls                                                         */
+
+    /*------------------------------------------------------------------------*/
+    /* Method names                                                           */
+
+    /*------------------------------------------------------------------------*/
+    /* Namespace names                                                        */
+
+    /*------------------------------------------------------------------------*/
+    /* Resources                                                              */
+    /*------------------------------------------------------------------------*/
+
+  }
+
+/*------------------------------------------------------------------------*/
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-bif-func, .highlight-rexx-vim-light-zellner .rx-const.rx-bif-proc {
+      /* %FUNCTION%   */ background-color: #ffffff ; color: #000000 ;          /* Suffix (for strings)               */
+    }
+
+/* Color (symbols and strings)        */
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-bif-func.rx-ssuf, .highlight-rexx-vim-light-zellner .rx-const.rx-bif-proc.rx-ssuf { /* %STRING%     */ color: #ff00ff ;   }
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-bif-func.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-bif-func.rx-cquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-bif-proc.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-bif-proc.rx-cquo { /* %STRING%     */ color: #ff00ff ;   }
+
+/*------------------------------------------------------------------------*/
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-int-func, .highlight-rexx-vim-light-zellner .rx-const.rx-int-proc, .highlight-rexx-vim-light-zellner .rx-const.rx-block, .highlight-rexx-vim-light-zellner .rx-const.rx-label {
+      /* %FUNCTION%   */ background-color: #ffffff ; color: #000000 ;            /* Suffix (for strings)               */
+    }
+
+/* Color (symbols and strings)        */
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-int-func.rx-ssuf, .highlight-rexx-vim-light-zellner .rx-const.rx-int-proc.rx-ssuf, .highlight-rexx-vim-light-zellner .rx-const.rx-block.rx-ssuf, .highlight-rexx-vim-light-zellner .rx-const.rx-label.rx-ssuf { /* %STRING%     */ color: #ff00ff ; }
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-int-func.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-int-func.rx-cquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-int-proc.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-int-proc.rx-cquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-block.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-block.rx-cquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-label.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-label.rx-cquo { /* %STRING%     */ color: #ff00ff ; }
+
+/*------------------------------------------------------------------------*/
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-routine, .highlight-rexx-vim-light-zellner .rx-const.rx-pkg-func, .highlight-rexx-vim-light-zellner .rx-const.rx-pkg-proc, .highlight-rexx-vim-light-zellner .rx-const.rx-ext-pkg-func, .highlight-rexx-vim-light-zellner .rx-const.rx-ext-pkg-proc {
+      /* %FUNCTION%   */ background-color: #ffffff ; color: #000000 ;            /* Suffix (for strings)               */
+    }
+
+/* Color (symbols and strings)        */
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-routine.rx-ssuf, .highlight-rexx-vim-light-zellner .rx-const.rx-pkg-func.rx-ssuf, .highlight-rexx-vim-light-zellner .rx-const.rx-pkg-proc.rx-ssuf, .highlight-rexx-vim-light-zellner .rx-const.rx-ext-pkg-func.rx-ssuf, .highlight-rexx-vim-light-zellner .rx-const.rx-ext-pkg-proc.rx-ssuf { /* %STRING%     */ color: #ff00ff ; }
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-routine.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-routine.rx-cquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-pkg-func.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-pkg-func.rx-cquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-pkg-proc.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-pkg-proc.rx-cquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-ext-pkg-func.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-ext-pkg-func.rx-cquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-ext-pkg-proc.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-ext-pkg-proc.rx-cquo { /* %STRING%     */ color: #ff00ff ; }
+
+/*------------------------------------------------------------------------*/
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-ext-func, .highlight-rexx-vim-light-zellner .rx-const.rx-ext-proc {
+      /* %FUNCTION%   */ background-color: #ffffff ; color: #000000 ;                        /* Color (symbols and strings)        */            /* Suffix (for strings)               */
+    }
+
+/* Italic (symbols and strings)       */
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-ext-func.rx-ssuf, .highlight-rexx-vim-light-zellner .rx-const.rx-ext-proc.rx-ssuf { /* %STRING%     */ color: #ff00ff ; }
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-ext-func.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-ext-func.rx-cquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-ext-proc.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-ext-proc.rx-cquo { /* %STRING%     */ color: #ff00ff ; }
+
+/*------------------------------------------------------------------------*/
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-method {
+      /* %TAG%        */ color: #006400 ;                             /* Color (symbols and strings)        */            /* Suffix (for strings)               */
+    }
+
+/* Italic (symbols and strings)       */
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-method.rx-ssuf { /* %STRING%     */ color: #ff00ff ; }
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-method.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-method.rx-cquo { /* %STRING%     */ color: #ff00ff ; }
+
+/*------------------------------------------------------------------------*/
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-namespace {
+      /* %STATUSLINE% */ background-color: #a9a9a9 ; color: #ffff00 ;            /* Suffix (for strings)               */
+    }
+
+/* Color (symbols and strings)        */
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-namespace.rx-ssuf { /* %STRING%     */ color: #ff00ff ; }
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-namespace.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-namespace.rx-cquo { /* %STRING%     */ color: #ff00ff ; }
+
+/* Resource name                                                          */
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-resource {
+      /* %PREPROC%    */ color: #a020f0 ;            /* Suffix (for strings)               */
+    }
+
+/* Color (symbols and strings)        */
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-resource.rx-ssuf { /* %STRING%     */ color: #ff00ff ; }
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-resource.rx-oquo,                        
+      .highlight-rexx-vim-light-zellner .rx-const.rx-resource.rx-cquo { /* %STRING%     */ color: #ff00ff ; }
+
+/* Resource delimiter                                                     */
+
+.highlight-rexx-vim-light-zellner .rx-const.rx-res-delimiter {
+      /* %PREPROC%    */ color: #a020f0 ;
+    }
+
+/* Resource data                                                            */
+
+.highlight-rexx-vim-light-zellner .rx-res-data {
+   /* %STRING%     */ color: #ff00ff ;
+  }
+
+/* Resource ignored stuff                                                   */
+
+.highlight-rexx-vim-light-zellner .rx-res-ignore {
+   /* %COMMENT%    */ color: #ff0000 ;
+  } /* <--- END OF highlight-rexx-vim-light-zellner                                        */
+
+/******************************************************************************/
+/******************************************************************************/
+/* END OF BASE SELECTOR highlight-rexx-dark                                   */
+/******************************************************************************/
+/******************************************************************************/

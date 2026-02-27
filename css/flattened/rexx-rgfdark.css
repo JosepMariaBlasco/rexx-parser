@@ -1,0 +1,326 @@
+/******************************************************************************/
+/*                                                                            */
+/* rexx-rgfdark.css - RGF's CSS for Rexx highlighting, light background      */
+/* ===================================================================        */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/* Copyright (c) 2025 Rony G. Flatscher                                       */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20250527    0.1  Initial, based on "rexx-dark.css" and "rexx-rgflight.css" */
+/*                                                                            */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Line numbers                                                               */
+/******************************************************************************/
+
+.highlight-rexx-rgfdark pre.number-lines    { padding-left: 50px; }
+.highlight-rexx-rgfdark pre.number-lines.w3 { padding-left: 58px; }
+.highlight-rexx-rgfdark pre.number-lines.w4 { padding-left: 65px; }
+.highlight-rexx-rgfdark pre.number-lines.w5 { padding-left: 72px; }
+
+.highlight-rexx-rgfdark pre.number-lines code:before{
+  content: attr(lineno) " | ";
+  position:absolute;
+  left:10px;
+  width:50px;
+  text-align:right;
+  color: #8c8c8c; /* #444; */
+}
+
+.highlight-rexx-rgfdark pre.number-lines.w3 code:before { width:58px; }
+.highlight-rexx-rgfdark pre.number-lines.w4 code:before { width:65px; }
+.highlight-rexx-rgfdark pre.number-lines.w5 code:before { width:72px; }
+
+/******************************************************************************/
+/* END Line numbers                                                           */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Default                                                                    */
+/******************************************************************************/
+
+/* Default: light gray background, text at ~80% black                         */
+/* The "rexx" class is applied as a fallback when no suitable class is found  */
+.highlight-rexx-rgfdark pre,
+.highlight-rexx-rgfdark .rexx {
+  background-color: #000;
+  color: #ccc;
+}
+
+/******************************************************************************/
+/* END Default                                                                */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Comments                                                                   */
+/******************************************************************************/
+
+/* doc-comments                                                               */
+.highlight-rexx-rgfdark .rx-doc-comment,
+.highlight-rexx-rgfdark .rx-doc-comment-markdown
+{
+  color: #4d4dff;
+  font-style: italic;
+}
+
+/* normal (i.e., non-doc-) comments                                           */
+.highlight-rexx-rgfdark .rx-cm,
+.highlight-rexx-rgfdark .rx-lncm
+{
+  color: #a6a6a6;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* END Comments                                                               */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Keywords, assignment sequences, and "::"                                   */
+/******************************************************************************/
+
+/* instruction keywords, assignment sequences, and "::"                       */
+.highlight-rexx-rgfdark .rx-kw,
+.highlight-rexx-rgfdark .rx-skw,
+.highlight-rexx-rgfdark .rx-asg,
+.highlight-rexx-rgfdark .rx-dir {
+  color: #00ace6;
+  /* font-weight: bold; */
+}
+
+/* directive keywords                                                         */
+.highlight-rexx-rgfdark .rx-dkw {
+  color: #00ace6;
+  /* font-weight: bold; */
+  text-decoration:underline;
+}
+
+/******************************************************************************/
+/* END Keywords, assignment sequences, and "::"                               */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Strings                                                                    */
+/******************************************************************************/
+
+.highlight-rexx-rgfdark .rx-str,          /* Standard strings                   */
+.highlight-rexx-rgfdark .rx-bstr,         /* Binary strings                     */
+.highlight-rexx-rgfdark .rx-xstr,         /* heXadecimal strings                */
+.highlight-rexx-rgfdark .rx-ystr,         /* bYtes strings      (TUTOR only)    */
+.highlight-rexx-rgfdark .rx-pstr,         /* codePoints strings (TUTOR only)    */
+.highlight-rexx-rgfdark .rx-gstr,         /* Graphemes strings  (TUTOR only)    */
+.highlight-rexx-rgfdark .rx-tstr,         /* Text strings       (TUTOR only)    */
+.highlight-rexx-rgfdark .rx-ustr {        /* U(nicode) strings  (TUTOR only)    */
+  color: #093;
+}
+
+/******************************************************************************/
+/* END Strings                                                                */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Numbers                                                                    */
+/******************************************************************************/
+
+.highlight-rexx-rgfdark .rx-int,          /* Integers                           */
+.highlight-rexx-rgfdark .rx-deci,         /* Decimals (w/ a dot, no exponent)   */
+.highlight-rexx-rgfdark .rx-exp {         /* Exponentials (w/ or w/o a dot)     */
+  color: #ccc;
+}
+
+/******************************************************************************/
+/* END Numbers                                                                */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Variables                                                                  */
+/******************************************************************************/
+
+/* Local variables                                                            */
+.highlight-rexx-rgfdark .rx-var,          /* Simple variables                   */
+.highlight-rexx-rgfdark .rx-stem,         /* Stem variables                     */
+.highlight-rexx-rgfdark .rx-cmp {         /* Compound variables                 */
+  color: #ccc;
+}
+
+/* Exposed variables                                                          */
+.highlight-rexx-rgfdark .rx-xvar,         /* Simple variables                   */
+.highlight-rexx-rgfdark .rx-xstem,        /* Stem variables                     */
+.highlight-rexx-rgfdark .rx-xcmp {        /* Compound variables                 */
+  color: #ccc;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* END Variables                                                              */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Environment symbols                                                        */
+/******************************************************************************/
+
+.highlight-rexx-rgfdark .rx-env {
+  color: #00bfff; /* #87CEEB; */
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* END Environment symbols                                                    */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Constant symbols that are not environment symbols                          */
+/******************************************************************************/
+
+/* Const symbols that are not environment symbols                             */
+.highlight-rexx-rgfdark .rx-lit {
+  color: #ccc;
+  font-style: bold;
+}
+
+/******************************************************************************/
+/* END Constant symbols that are not environment symbols                      */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Functions and procedures                                                   */
+/******************************************************************************/
+
+.highlight-rexx-rgfdark .rx-bif-func,     /* BIFs                               */
+.highlight-rexx-rgfdark .rx-bif-proc {
+  color: #36c;
+}
+
+/* Internal functions and procedures, labels and block instruction names      */
+.highlight-rexx-rgfdark .rx-int-func,
+.highlight-rexx-rgfdark .rx-int-proc,
+.highlight-rexx-rgfdark .rx-block,
+.highlight-rexx-rgfdark .rx-label {
+  color: #ccc;
+  font-style: bold;
+}
+
+/* Internal ::Routines and namespace-qualified routines                       */
+.highlight-rexx-rgfdark .rx-routine {
+  color: #ccc;
+  font-style: bold;
+}
+
+/* External calls                                                             */
+.highlight-rexx-rgfdark .rx-ext-func,
+.highlight-rexx-rgfdark .rx-ext-proc {
+  color: #33c;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* END Functions and procedures                                               */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Message names                                                              */
+/******************************************************************************/
+
+.highlight-rexx-rgfdark .rx-method {
+  color: #ccc;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* END Message names                                                          */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Special characters and operators                                           */
+/******************************************************************************/
+
+.highlight-rexx-rgfdark .rx-spe,
+.highlight-rexx-rgfdark .rx-op {
+  color: #cc0000;
+}
+
+/******************************************************************************/
+/* END Special characters and operators                                       */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Resources                                                                  */
+/******************************************************************************/
+
+/* Resource keyword                                                           */
+.highlight-rexx-rgfdark .rx-resource {
+  color: #ccc;
+}
+
+/* Resource ignored stuff                                                     */
+.highlight-rexx-rgfdark .rx-res-ignore {
+  color: #ccc;
+}
+
+/* Resource data                                                              */
+.highlight-rexx-rgfdark .rx-res-data {
+  color: #093;
+}
+
+/* Resource delimiter                                                         */
+.highlight-rexx-rgfdark .rx-res-delimiter {
+  color: #00ace6;
+  background-color:  #808080;
+  text-decoration: underline;
+}
+
+/******************************************************************************/
+/* END Resources                                                              */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Other taken constants                                                      */
+/******************************************************************************/
+
+/* Taken constants that do not have a specific style                          */
+/* .highlight-rexx-dark .rx-const { */
+.highlight-rexx-rgfdark .rx-const {
+  color: #ccc;
+  font-style: bold;
+}
+
+/******************************************************************************/
+/* END Other taken constants                                                  */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Whitespace                                                                 */
+/******************************************************************************/
+
+/* Whitespace                                                                 */
+.highlight-rexx-rgfdark .rx-ws {
+  color: #800;
+}
+
+/******************************************************************************/
+/* END Whitespace                                                             */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Continuations                                                              */
+/******************************************************************************/
+
+/* Continuations.                                                             */
+.highlight-rexx-rgfdark .rx-cont {
+  color: #820;
+  background-color: #808080;
+}
+
+/******************************************************************************/
+/* END Continuations                                                          */
+/******************************************************************************/

@@ -61,7 +61,7 @@
           <a href="/"><img src="/imagenes/logo.png" class="img-responsive" alt="Rexx Repository -"></a>
         </div>
         <div class="col-lg-9 col-md-8 col-sm-7 col-xs-12">
-          <h1 class="websection">%title%</h1>
+          <h1 class="pagetitle">%title%</h1>
         </div>
       </div>
       <br>
@@ -111,6 +111,7 @@ Crumb:
   guide        = doc"/guide"
   ref          = doc"/ref"
   dochl        = doc"/highlighter"
+  docrexxpub   = doc"/rexxpub"
   dochlhtml    = dochl"/html"
   dochlfeat    = dochl"/features"
   docpub       = doc"/publications"
@@ -218,6 +219,7 @@ Crumb:
     When doc"/utilities/elements"  Then Return "Elements"
     When doc"/utilities/elident"   Then Return "Elident"
     When doc"/utilities/md2html"   Then Return "Md2html"
+    When doc"/utilities/md2pdf"    Then Return "Md2pdf"
     When doc"/utilities/trident"   Then Return "Trident"
     When doc"/utilities/identtest" Then Return "Identtest"
     When doc"/unicode"             Then Return "Unicode"
@@ -230,6 +232,11 @@ Crumb:
     -- "/rexx-parser/doc/executor"
 
     When exe                       Then Return "Executor"
+
+    -- "/rexx-parser/doc/rexxpub"
+
+    When docrexxpub                Then Return "RexxPub"
+    When docrexxpub"/article"      Then Return "Writing articles"
 
     -- "/rexx-parser/doc/highlighter"
 
@@ -268,6 +275,11 @@ Crumb:
 
     When docpub                    Then Return "Publications"
     When docpub"/36"               Then Return "36<sup>th</sup> Symposium"
+    When docpub"/37"               Then Return "37<sup>th</sup> Symposium"
+    When docpub"/37/2026-05-04-The-Rexx-Parser-Revisited"
+                                   Then Return "The Rexx Parser Revisited"
+    When docpub"/37/2026-05-05-RexxPub-A-Rexx-Publishing-Framework"
+                                   Then Return "RexxPub: A Rexx Publishing Framework"
     When docpub"/36/2025-05-05-The-Rexx-Parser"
                                    Then Return "The Rexx Parser"
     When docpub"/36/2025-05-06-The-Rexx-Highlighter"
@@ -304,6 +316,7 @@ Crumb:
               <br><a href="/rexx-parser/doc/">Documentation</a>
               <br><a href="/rexx-parser/doc/glossary/">Glossary</a>
               <br><a href="/rexx-parser/doc/highlighter/">Highlighter</a>
+              <br><a href="/rexx-parser/doc/rexxpub/">RexxPub</a>
               <br><a href="/rexx-parser/doc/history/">History</a>
               <br><a href="/rexx-parser/tests/">Tests</a>
               <br><a href="/rexx-parser/doc/todo/">To-do</a>

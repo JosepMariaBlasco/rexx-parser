@@ -41,6 +41,8 @@
 /* 20250524         Move generic CGI behaviour to Rexx.CGI.cls.               */
 /* 20250621    0.2c Add support for .rex and .cls files.                      */
 /* 20260101    0.4a Change [*STYLES*] -> %usedStyles%                         */
+/* 20260215    0.4a Add support for print=pdf                                 */
+/* 20260219    0.4a Add support for generalized style= parameters             */
 /*                                                                            */
 /******************************************************************************/
 
@@ -49,10 +51,11 @@
 --------------------------------------------------------------------------------
 -- ::REQUIRES does not work well with "../" paths                             --
 --------------------------------------------------------------------------------
-  package   = .context~package
-  local     =  package~local
-  mypath    =  FileSpec( "Location", package~name )
-  local ~ . = .File~new( mypath"../" )~absolutePath      -- Creates ".."
+  package      = .context~package
+  local        =  package~local
+  mypath       =  FileSpec( "Location", package~name )
+  local~mypath = mypath
+  local ~ .    = .File~new( mypath"../" )~absolutePath      -- Creates ".."
 
   Call Requires .."/bin/FencedCode.cls"
   Call Requires mypath"rexx.epbcn.com.optional.cls"
@@ -115,27 +118,43 @@ Exit
   URI  = self~URI
 
   ------------------------------------------------------------------------------
-  -- We only accept one optional query, of the form "style=(light|dark)"      --
-  -- or "view=highlight" (only for .rex and .cls files)                       --
+  -- Accepted parameters are "style=styleName, "print=pdf", and               --
+  -- "view=highlight" (only for .rex and .cls files)                          --
+  -- When style=styleName is specified, the program will search for a file    --
+  -- called rexx-<stylename>.css in the css subdirectory.                     --
+  -- For security reasons, only letters, numbers, periods, dashes and         --
+  -- underscores are accepted as styleNames.                                  --
   ------------------------------------------------------------------------------
 
   style = "dark"
   view  = "text"
+  print = 0
   If uri~contains("?")  Then Do
-    Parse Var uri uri"?"query
-    ok = 0
-    If query~startsWith("view="), -
-      (uri~endsWith(".cls") | uri~endsWith(".rex")) Then Do
-      Parse Var query "view="view
-      If view == "highlight" Then ok = 1
-    End
-    Else If query~startsWith("style=") Then Do
-      Parse Var query "style="style
-      If style == "dark" | style == "light" Then ok = 1
-    End
-    If \ok              Then Do
-     .Response~404
-     Return self~FAIL
+    Parse Var uri uri"?"parameters
+    Loop While parameters \== ""
+      Parse Var parameters param"&"parameters
+      ok = 1
+      Select
+        When param == "print=pdf" Then print = 1
+        When param~startsWith("view="), -
+          (uri~endsWith(".cls") | uri~endsWith(".rex")) Then Do
+          Parse Var param "view="view
+          If view \== "highlight" Then ok = 0
+        End
+        When param~startsWith("style=") Then Do
+          Parse Var param "style="style
+          If style~verify(XRange("ALNUM")"-_.") > 0 Then ok = 0
+          Else Do
+            cssName = .MyPath"../css/rexx-"style".css"
+            If \.File~new(cssName)~exists Then ok = 0
+          End
+        End
+        Otherwise ok = 0
+      End
+      If \ok              Then Do
+       .Response~404
+        Return self~FAIL
+      End
     End
   End
 
@@ -159,9 +178,9 @@ Exit
   ------------------------------------------------------------------------------
 
   Select Case FileSpec("Name",file)
-    When "slides.md"  Then filenameSpecificStyle = "slides"
-    When "article.md" Then filenameSpecificStyle = "article"
-    Otherwise              filenameSpecificStyle = ""
+    When "slides.md"  Then filenameSpecificStyle = "print/slides"
+    When "article.md" Then filenameSpecificStyle = "print/article"
+    Otherwise              filenameSpecificStyle = "markdown"
   End
   printStyle = Stream(file".css","c","Q exists")
   If printStyle \== "" Then Do
@@ -196,9 +215,13 @@ Exit
   ------------------------------------------------------------------------------
 
   contents = .Array~new
-  Address COMMAND 'pandoc --from markdown-smart+footnotes' -
-    '--reference-location=section' -
-    With Input Using (source) Output Using (contents)
+
+  If \print Then command = 'pandoc --from markdown-smart+footnotes' -
+    '--reference-location=section'
+  Else command = 'pandoc --lua-filter='.myPath || "inline-footnotes.lua"
+
+  Address COMMAND command -
+    With Input Using (source) Output Using (contents) Error Using (contents)
 
   ------------------------------------------------------------------------------
   -- As the document title, pick the contents of the first h1 header          --
@@ -206,8 +229,19 @@ Exit
 
   title = "Missing title"
   chunk = contents~makeString("L"," ")
-  If chunk~contains("<h1") Then
+  If chunk~contains("<h1") Then Do
     Parse Var chunk "<h1" ">"title"</h1>"
+    If title~caselessPos("<small") > 0 Then
+      Parse Caseless Var title title "<small"
+    htmlTitle = title
+    Do While title~caselessPos("<br>") > 0
+      title = title~caselessChangeStr("<br>","")
+    End
+    Do While title~caselessPos("<br") > 0
+      Parse Caseless Var title With before "<br" ">" after
+      title = before after
+    End
+  End
 
   ------------------------------------------------------------------------------
   -- Copy the HTML resource, with some substitutions                          --
@@ -219,17 +253,19 @@ Exit
     Select Case Strip(Lower(line))
       When "%title%"         Then Say title
       When "%contentheader%" Then Call OptionalCall ContentHeader, uri
-      When "%header%"        Then Call OptionalCall PageHeader, title
+      When "%header%"        Then Call OptionalCall PageHeader, HTMLTitle
       When "%contents%"      Then Do line Over contents; Say line; End
       When "%footer%"        Then Call OptionalCall PageFooter
       When "%sidebar%"       Then Call OptionalCall Sidebar, uri
+      When "%printjs%"       Then If print Then
+        Say "<script src='/js/paged.polyfill.js'></script>"
       When "%printstyle%"    Then
         If printStyle \== "" Then
           Say "    <link rel='stylesheet' media='print' href='"printStyle"'>"
       When "%filenamespecificstyle%"    Then
         If filenameSpecificStyle \== "" Then
           Say "    <link rel='stylesheet'" -
-              "href='/rexx-parser/css/print/"filenameSpecificStyle".css'>"
+              "href='/rexx-parser/css/"filenameSpecificStyle".css'>"
       Otherwise Say line
     End
   End
@@ -323,6 +359,7 @@ View:
   End
 
   Signal Hack
+
 -- We are loading a local copy of Bootstrap 3, customized to eliminate
 -- print media styles, and then we add our own media styles css.
 
@@ -338,9 +375,6 @@ View:
     </title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 %usedStyles%
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
     %printStyle%
     <!--[if lt IE 9]>
       <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
@@ -387,12 +421,9 @@ View:
     </title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 %usedStyles%
-    <link rel='stylesheet' href='/rexx-parser/css/markdown.css'>
     %filenameSpecificStyle%
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
     %printStyle%
+    %printJs%
     <!--[if lt IE 9]>
       <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>

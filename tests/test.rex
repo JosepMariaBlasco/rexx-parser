@@ -1,1 +1,1 @@
-If a = b Then Say "Hello"
+  Say "Hi"

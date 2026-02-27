@@ -23,6 +23,8 @@ All the utilities are located in the `bin` subdirectory.
   and to test against the ooRexx test tree.
 - [**md2html**](md2html/) - A batch [utility program](md2html/)
   to transform a set of Markdown files to HTML.
+- [**md2pdf**](md2pdf/) - A [utility program](md2pdf/)
+  that converts Markdown to print-quality PDF.
 - [**RxCheck**](rxcheck/) - A [utility program](rxcheck/)
   that runs the parser with a selectable number of
   early check options enabled.

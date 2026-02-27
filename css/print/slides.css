@@ -1,3 +1,215 @@
+/******************************************************************************/
+/*                                                                            */
+/* slides.css - Predefined CSS for slides.md files                            */
+/* ===============================================                            */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20250215    0.4a First documented version                                  */
+/*                                                                            */
+/******************************************************************************/
+
+body {background-color:#eee;}
+
+.bg-white {background-color:white;}
+.micrologo {
+   font-family:'Century Gothic','Helvetica Neue',Helvetica,Arial,sans-serif;
+   font-size:larger;
+}
+
+code {color:#222; background-color:#f0f0f0;}
+
+h1.pagetitle {color: #ad564a; font-weight:normal;}
+
+.navbar-default .navbar-nav>li>a.secundario, .navbar-default .secundario {color: #952424;}
+
+span.smallcaps {font-variant:small-caps;}
+
+div.content {
+  font-size:18px; /* font-family: 'Times New Roman', Times, serif;text-align:justify; */
+}
+
+a.uri {
+  font-family: monospace, monospace;
+}
+
+div.sidebar { font-size:larger; }
+
+h1.slide {
+  margin-top:20px;
+  color:blue;
+}
+
+h1.part {
+  margin-top:40px;
+  margin-bottom:40px;
+  color:black;
+  text-decoration:underline;
+  text-align:center;
+}
+
+  /* Title page */
+
+  h1.title {
+    text-align: center;
+    text-align-last: center;
+    font-size:36px;
+    margin-top:50px;
+    margin-bottom:0px;
+    color:blue;
+  }
+  h2.subtitle {
+    text-align: center;
+    text-align-last: center;
+    font-size:24px;
+    margin-top:0;
+    margin-bottom:0px;
+    color:blue;
+  }
+  h2.event {
+    text-align: center;
+    text-align-last: center;
+    font-size:22px;
+    margin-top:20;
+    margin-bottom:5px;
+    color:blue;
+  }
+  h3.venue {
+    text-align: center;
+    text-align-last: center;
+    font-size:14px;
+    margin-top:0;
+    color:blue;
+  }
+  h2.author {
+    text-align: center;
+    text-align-last: center;
+    font-size:26px;
+    margin-top:30px;
+    margin-bottom:5px;
+  }
+  h3.email {
+    text-align: center;
+    text-align-last: center;
+    font-size:16px;
+    margin-top:0;
+    font-family: monospace, monospace;
+  }
+  h2.institution {
+    text-align: center;
+    text-align-last: center;
+    font-size:20px;
+    margin-top:30px;
+    margin-bottom:5px;
+  }
+  h3.address {
+    text-align: center;
+    text-align-last: center;
+    font-size:14px;
+    margin-top:0;
+    margin-bottom:5px;
+  }
+  h3.phone {
+    text-align: center;
+    text-align-last: center;
+    font-size:16px;
+    margin-top:0;
+    font-style: italic;
+  }
+  h2.date {
+    text-align: center;
+    text-align-last: center;
+    font-size:25px;
+    margin-top:25px;
+    margin-bottom:50px;
+  }
+
+  h1.center{
+    text-align: center;
+    text-align-last: center;
+  }
+
+h1 {font-size:35px;}
+h2 {font-size:29px;}
+h3 {font-size:26px;}
+h4 {font-size:24px;}
+h5 {font-size:22px;}
+h6 {font-size:20px;}
+h1.part {font-size:45px;}
+
+pre {margin-top:20px;margin-bottom:20px;}
+pre.dark {background-color: #000;color: #aaa;}
+
+blockquote {
+  margin: 20px 0 20px;
+  font-style: italic;
+  font-size: 18px;
+}
+
+/* Ensure that long lines don't wrap */
+
+pre {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+pre code {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* Horizontal scrollbar for images -- Contribution by JLF (Thanks!) */
+
+/*
+Usage:
+<p class="img-scroll"><img src="image.png" width="1400"></p>
+
+The image will not shrink when the content column shrinks.
+The image occupies its own line (display:block, not inline-block).
+The horizontal scrollbar will appear as needed.
+
+If the image's intrinsic size is too wide then put a width in your <img>.
+For example,
+<img width="1400">
+(not width="1400px", it's an HTML attribute).
+This means "The intrinsic layout width of this image is exactly 1400 pixels",
+which is ideal for scrollable, fixed-size images.
+
+In this context, an HTML attribute is preferable to a CSS property like
+<img style="width: 1400px">
+because CSS widths are subject to flex shrinking, while HTML intrinsic sizes
+are not unless explicitly allowed.
+
+Don't use % widths, because % is relative to the container.
+*/
+
+.img-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 6px;  /* space for scrollbar */
+
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background-color: #f6f8fa;
+}
+
+.img-scroll img {
+  display: block;
+  max-width: none;
+  height: auto;
+}
+
+/* End of contribution by JLF */
+
 .footnotes ol {
   font-size:12px;
 }
@@ -47,7 +259,6 @@
   @top-center {
     content: "Running header - Override";
     font-size: 9pt;
-    font-family: "Questrial", serif;
     font-style: italic;
   }
 
@@ -55,14 +266,12 @@
     margin-left:17px;
     content: "Running footer - Override";
     font-size: 9pt;
-    font-family: "Questrial", serif;
     font-style: italic;
   }
 
   @bottom-center {
     content: "Running footer - Override";
     font-size: 9pt;
-    font-family: "Questrial", serif;
     font-style: italic;
   }
 

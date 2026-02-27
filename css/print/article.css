@@ -1,51 +1,77 @@
-h1.title {
-  text-align: center;
-  font-size:36px;
-  margin-top:50px;
-  margin-bottom:5px;
-}
+/******************************************************************************/
+/*                                                                            */
+/* article.css - Predefined CSS for article.md files                          */
+/* =================================================                          */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20250215    0.4a First documented version                                  */
+/*                                                                            */
+/******************************************************************************/
 
-h2.subtitle {
-  text-align: center;
-  font-size:24px;
-  margin-top:0;
-  margin-bottom:20px;
-}
+/*
+  Structure of an article page (at 1080p):
 
-h1.title, h2.subtitle, h2.event, h3.venue {
-  color:black;
-}
+             1    2    3    4    5    6    7    8    9   10   11   12
+          +----|----|----|----|----|----|----|----|----|----|----|----+
+          |                           MENU                            |
+          +-----------------------------------------------------------+
+          |  LOGO          PAGE TITLE                                 |
+          +--------------------------------------------+--------------+
+          | Breadcrumb                                 | Side bar     |
+  Margin  +--------------------------------------------+              | Margin
+          | Article contents                           |              |
+          |                                            |              |
+          | ...                                        |              |
+          +--------------------------------------------+--------------+
+          |                           FOOTER                          |
+          +-----------------------------------------------------------+
 
-div.content {
-  font-size: 12pt;
-  font-family: 'Times New Roman', Times, serif;text-align:justify;
-  hyphens: auto;
-}
+  body                               bg-white                             body
+*/
 
-.footnotes ol {
-  font-size: 9pt;
+/******************************************************************************/
+/******************************************************************************/
+/* EPBCN-specific styles                                                      */
+/******************************************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+/* Styling the HTML body                                                      */
+/******************************************************************************/
+
+body {
+ background-color:#eee;
 }
 
 @media print {
-
-  h1.title {
-    margin-top:150px;
-  }
-
   body {background-color:#fff;}
+}
 
-  .slide {
-    break-before: page;
-  }
+/* Body contents will be inside a div with classes 'container' and 'bg-white' */
 
-  h1.slide{
-    margin-top:10px;
-    font-size:30px;
-  }
+.bg-white {background-color:white;}
 
-  div.sidebar{display: none;}
+/******************************************************************************/
+/* We will print the article contents only                                    */
+/******************************************************************************/
 
-  div.logo-and-title, nav.x-breadcrumb, nav.x-header, div.footer, hr.before-footer {
+@media print {
+
+  div.logo-and-title,
+  nav.x-breadcrumb,
+  nav.x-header,
+  div.footer,
+  hr.before-footer {
     display: none;
   }
 
@@ -55,45 +81,425 @@ div.content {
 
 }
 
+/******************************************************************************/
+/* Styling the side bar                                                       */
+/******************************************************************************/
 
+div.sidebar { font-size:larger; }
+
+@media print {
+  div.sidebar{display: none;}
 }
+
+/******************************************************************************/
+/* At small resolutions, the logo collapses inside the menu bar               */
+/******************************************************************************/
+
+.micrologo {
+   font-family:'Century Gothic','Helvetica Neue',Helvetica,Arial,sans-serif;
+   font-size:larger;
+}
+
+/******************************************************************************/
+/* The page title, after the logo                                             */
+/******************************************************************************/
+
+h1.pagetitle {
+  color: #ad564a;
+  font-weight:normal;
+  font-size: 35px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+/******************************************************************************/
+/* Style the navbar                                                           */
+/******************************************************************************/
+
+.navbar-default .navbar-nav>li>a.secundario, .navbar-default .secundario {
+  color: #952424;
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/* Styling the article content                                                */
+/******************************************************************************/
+/******************************************************************************/
+
+div.content{
+ font-family: "Times New Roman", Times, serif;
+ font-size: 12pt;
+ line-height: 1.3;
+ text-align: justify;
+ text-align-last: auto !important;
+ hyphens: auto;
+}
+
+/******************************************************************************/
+/* Styling paragraphs                                                         */
+/******************************************************************************/
+
+p {
+  margin: 0;
+  text-indent: 1.5em;
+}
+
+.noindent p {
+  text-indent: 0;
+}
+
+/******************************************************************************/
+/* h1 -> \section                                                             */
+/******************************************************************************/
+
+h1 {
+  font-size: 1.4em;
+  font-weight: bold;
+  margin-top: 2.0em;
+  margin-bottom: 0.8em;
+}
+
+@media print {
+  h1.newpage {
+    margin-top: 0;
+  }
+}
+
+/******************************************************************************/
+/* h2 -> \subsection                                                          */
+/******************************************************************************/
+
+h2 {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+}
+
+@media print {
+  h2.newpage {
+    margin-top: 0;
+  }
+}
+
+h1 + h2 {
+  margin-top: 0;
+}
+
+/******************************************************************************/
+/* h3 -> \subsubsection                                                       */
+/******************************************************************************/
+
+h3 {
+  font-size: 1em;
+  font-weight: bold;
+  margin-top: 1.2em;
+  margin-bottom: 0.4em;
+}
+
+@media print {
+  h3.newpage {
+    margin-top: 0;
+  }
+}
+
+h2 + h3 {
+  margin-top: 0;
+}
+
+/******************************************************************************/
+/* h4 -> \subsubsubsection                                                    */
+/******************************************************************************/
+
+h4 {
+  font-size: 1em;
+  font-weight: bold;
+  font-style: italic;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+}
+
+@media print {
+  h4.newpage {
+    margin-top: 0;
+  }
+}
+
+h3 + h4 {
+  margin-top: 0;
+}
+
+/******************************************************************************/
+/* lists                                                                      */
+/* paged.js assigns the data-align-last-split-element attribute to lists      */
+/* that get split between pages.                                              */
+/******************************************************************************/
+
+ul[data-align-last-split-element='justify'] > li,
+ol[data-align-last-split-element='justify'] > li {
+  text-align-last: left;
+}
+
+/******************************************************************************/
+/* Style the maketitle section                                                */
+/******************************************************************************/
+
+.title {
+  margin-top:20px 0;
+  font-size: 1.7em;
+  text-align: center;
+  font-weight: normal;
+  text-align-last: center;
+}
+
+.title small { /* For subtitles */
+  display: block;
+  font-size: 0.75em;
+  margin-top: 0.2em;
+  color:black;
+  font-style: italic;
+}
+
+@media print {
+  .title {
+    margin-top:150px;
+  }
+}
+
+.author {
+  font-size: 1.2em;
+  font-weight: normal;
+  text-align: center;
+  text-align-last: center;
+  margin-top: 20px;
+}
+
+.affiliation, .address, .phone {
+  font-size: 0.95em;
+  font-weight: normal;
+  font-style: italic;
+  text-align: center;
+  text-align-last: center;
+  margin: 0.2em 0 0 0;
+}
+
+.email {
+  font-size: 0.95em;
+  text-align: center;
+  text-align-last: center;
+  font-size:13px;
+  margin-top:0;
+  margin-bottom: 0;
+  font-family: monospace, monospace;
+}
+
+.date {
+  font-size: 1em;
+  text-align: center;
+  text-align-last: center;
+  margin: 1.2em 0 2em 0;
+}
+
+/******************************************************************************/
+/* Pagination                                                                 */
+/******************************************************************************/
 
 @page {
 
-  margin: 10mm;
-  size: A4 portrait; /* DIN A4 */
+  margin: 3cm;
+  size: A4 portrait;
 
-  @top-center {
-    content: "Running header - Override";
-    font-size: 9pt;
-    font-family: "Questrial", serif;
-    font-style: italic;
-  }
-
-  @bottom-left {
-    margin-left:17px;
-    content: "Running footer - Override";
-    font-size: 9pt;
-    font-family: "Questrial", serif;
-    font-style: italic;
-  }
-
-  @bottom-right {
-    margin-right:17px;
+  @bottom-center {
+    font-family: 'Times New Roman', Times, serif;
     content: counter(page);
-    font-size: 9pt;
+    font-size: 14pt;
     font-style: italic;
+    text-align: center;
+    text-align-last: center;
+  }
+
+}
+
+@page :blank {
+  @bottom-center {
+    content: none;
   }
 }
 
-@page :first{
-  @top-center {
-    content: none;
-  }
-  @bottom-left {
-    content: none;
-  }
-  @bottom-right {
-    content: none;
+/******************************************************************************/
+/******************************************************************************/
+/* Style document sectioning                                                  */
+/******************************************************************************/
+/******************************************************************************/
+
+/******************************************************************************/
+/* Styling URIs                                                               */
+/******************************************************************************/
+
+a.uri {
+  font-family:
+    Consolas,
+    "Andale Mono WT",
+    "Andale Mono",
+    "Lucida Console",
+    "Lucida Sans Typewriter",
+    "DejaVu Sans Mono",
+    "Bitstream Vera Sans Mono",
+    "Liberation Mono",
+    "Nimbus Mono L",
+    Monaco,
+    "Courier New",
+    Courier,
+    monospace;
+  font-size: 0.9em;
+}
+
+/******************************************************************************/
+/* Styling code                                                               */
+/******************************************************************************/
+
+code {
+  color:#222;
+  background-color:#f0f0f0;
+}
+
+/******************************************************************************/
+/* Small capitals                                                             */
+/******************************************************************************/
+
+span.smallcaps {
+  font-variant:small-caps;
+}
+
+/******************************************************************************/
+/* Blockquotes                                                                */
+/******************************************************************************/
+
+blockquote {
+  margin: 20px 0 20px;
+  font-style: italic;
+  font-size: 18px;
+}
+
+/******************************************************************************/
+/* pre blocks                                                                 */
+/******************************************************************************/
+
+pre {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  font-size: 8.6pt;
+}
+
+pre.dark {
+  background-color: #000;
+  color: #aaa;
+}
+
+/* Ensure that long lines don't wrap */
+
+pre {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+pre code {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/******************************************************************************/
+/* Horizontal scrollbar for images -- Contribution by JLF (Thanks!)           */
+/******************************************************************************/
+/*
+Usage:
+<p class="img-scroll"><img src="image.png" width="1400"></p>
+
+The image will not shrink when the content column shrinks.
+The image occupies its own line (display:block, not inline-block).
+The horizontal scrollbar will appear as needed.
+
+If the image's intrinsic size is too wide then put a width in your <img>.
+For example,
+<img width="1400">
+(not width="1400px", it's an HTML attribute).
+This means "The intrinsic layout width of this image is exactly 1400 pixels",
+which is ideal for scrollable, fixed-size images.
+
+In this context, an HTML attribute is preferable to a CSS property like
+<img style="width: 1400px">
+because CSS widths are subject to flex shrinking, while HTML intrinsic sizes
+are not unless explicitly allowed.
+
+Don't use % widths, because % is relative to the container.
+*/
+
+.img-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 6px;  /* space for scrollbar */
+
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background-color: #f6f8fa;
+}
+
+.img-scroll img {
+  display: block;
+  max-width: none;
+  height: auto;
+}
+
+/******************************************************************************/
+/* Class to force a page break                                                */
+/******************************************************************************/
+
+.newpage {
+  break-before: page;
+  page-break-before: always;
+}
+
+/******************************************************************************/
+/* Support for footnotes at the end of the page -- works with a Lua filter    */
+/******************************************************************************/
+
+.footnotes ol {
+  font-size: 9pt;
+  ::marker {
+    font-size: 7pt;
+    vertical-align: super;
   }
 }
+
+.footnotes p {
+  text-indent: 0;
+}
+
+
+.footnote {
+  float: footnote;
+  margin-left: 10pt;
+  margin-right: 10pt;
+  font-size: 0.9em;
+  line-height: 1.4;
+  font-size: 10pt;
+  font-family: 'Times New Roman', Times, serif;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+}
+
+::footnote-call {
+  font-size: 60%;
+  vertical-align: super;
+  line-height: 0;
+}
+
+@page {
+  @footnote {
+    border-top: 0.5pt solid black;
+    margin-top: 10pt;
+    padding-top: 8pt;
+  }
+}
+

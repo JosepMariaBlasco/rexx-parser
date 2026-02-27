@@ -45,6 +45,11 @@ Version history
        for all utils (and no arguments too: now, to start `identtest`, you
        should now use `identtest start`) -- following a suggestion from JLF (20260101).
   <li> New `rxcomp` utility (20260118).
+  <li> Add support for `paged.js` and `print=pdf` (20260215).
+  <li> Add support for `style=styleName` in URLs (20260219).
+  <li> New `md2pdf` utility (20260224).
+  <li> Create flattened versions of CSS because `pagedjs-cli` bundles an
+       old version of Chromium that doesn't understand nesting (20260226).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

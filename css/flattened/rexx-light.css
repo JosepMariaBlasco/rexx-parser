@@ -1,0 +1,442 @@
+/******************************************************************************/
+/*                                                                            */
+/* rexx-light.css - Sample CSS for Rexx highlighting, light background        */
+/* ===================================================================        */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20241208    0.1  First public release                                      */
+/* 20241222    0.1c Line number support                                       */
+/* 20250103    0.1e Add TUTOR-flavored Unicode classes                        */
+/* 20250116    0.1f Add support for sub-keywords                              */
+/* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20250406         Rename fractional numbers to decimal                      */
+/* 20250530    0.2c Add support for detailed string highlighting              */
+/* 20250629    0.2d Complete refactor to use nesting and "&"                  */
+/* 20250706         Add support for doc-comment subelements                   */
+/* 20250722         Add styles for rx-dskw                                    */
+/* 20251111    0.2e Support customizable line numbers in ANSI                 */
+/*                                                                            */
+/******************************************************************************/
+
+/******************************************************************************/
+/******************************************************************************/
+/* BASE SELECTOR: highlight-rexx-light                                        */
+/******************************************************************************/
+/******************************************************************************/
+/*   Format: "highlight-rexx-<stylename>                                      */
+/*   It will apply to the whole CSS file                                      */
+/******************************************************************************/
+
+.highlight-rexx-light {
+
+/******************************************************************************/
+/* Default settings                                                           */
+/* ================                                                           */
+/*                                                                            */
+/*   Black background, text at ~80%                                           */
+/*   The "rexx" class is used as a fallback when no suitable class is found   */
+/*                                                                            */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Default                                                                    */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Support for line numbers                                                   */
+/* ========================                                                   */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Whitespace and continuations                                               */
+/* ============================                                               */
+/******************************************************************************/
+
+
+/******************************************************************************/
+/* Standard (non-doc) comments                                                */
+/* ===========================                                                */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Doc-comments                                                               */
+/* ============                                                               */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Shebangs                                                                   */
+/* ========                                                                   */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Keywords and subkeywords, assignment sequences, and "::"                   */
+/* ========================================================                   */
+/******************************************************************************/
+
+  /* Additionally, directive keywords and subkeywords are underlined          */
+
+/******************************************************************************/
+/* Strings (including taken constants that are strings)                       */
+/* ====================================================                       */
+/******************************************************************************/
+
+  /* Taken constants that are strings                                         */
+
+/******************************************************************************/
+/* Numbers                                                                    */
+/* =======                                                                    */
+/******************************************************************************/
+
+  /*--------------------------------------------------------------------------*/
+  /* Simple highlighting classes (not used by the highlighter)                */
+  /*--------------------------------------------------------------------------*/
+
+  /*--------------------------------------------------------------------------*/
+  /* Detailed highlighting (includes non X and B strings that are numbers)    */
+  /*--------------------------------------------------------------------------*/            /* Number sign (for strings only)     */        /* The decimal point                  */        /* The exponent mark ("E" or "e")     */        /* The (optional) exponent sign       */
+
+/******************************************************************************/
+/* Variables and constant symbols                                             */
+/* ==============================                                             */
+/******************************************************************************/
+
+  /* Set a common color for all variables                                     */
+
+  /* Additionally, exposed variables will be italicized                       */
+
+  /* Environment symbols                                                      */
+
+  /* Const symbols that are not environment symbols                           */
+
+/******************************************************************************/
+/* Special characters and operators                                           */
+/* ================================                                           */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Taken constants                                                            */
+/* ===============                                                            */
+/*                                                                            */
+/*   I.e., tokens that are "strings or symbols taken as a constant".          */
+/*   In the case of strings, quotes and suffixes are assignes styles under    */
+/*   "strings".                                                               */
+/******************************************************************************/ /* <-- END OF .rx-const                                                   */
+
+/******************************************************************************/
+/* ::RESOURCE data and ignored stuff                                          */
+/******************************************************************************/
+
+  /* Resource data                                                            */
+
+  /* Resource ignored stuff                                                   */
+
+/******************************************************************************/
+/******************************************************************************/
+/* END highlight-rexx-light                                                    */
+/******************************************************************************/
+/******************************************************************************/
+
+}
+
+.highlight-rexx-light pre, .highlight-rexx-light .rexx {
+    background-color: #eee;
+    color: #333;
+  }
+
+.highlight-rexx-light .rx-lineno  {                         /* ANSI Driver only                   */
+    color: #ff0;
+    font-style: italic;
+  }
+
+.highlight-rexx-light .rx-linebar {                         /* ANSI Driver only                   */
+    color: #ff0;
+  }
+
+.highlight-rexx-light pre.number-lines {
+          padding-left: 50px;
+  }
+
+.highlight-rexx-light pre.number-lines.w3 {padding-left: 58px; }
+
+.highlight-rexx-light pre.number-lines.w3 code:before {width:58px;}
+
+.highlight-rexx-light pre.number-lines.w4 {padding-left: 65px; }
+
+.highlight-rexx-light pre.number-lines.w4 code:before {width:65px;}
+
+.highlight-rexx-light pre.number-lines.w5 {padding-left: 72px; }
+
+.highlight-rexx-light pre.number-lines.w5 code:before {width:72px;}
+
+.highlight-rexx-light pre.number-lines code:before{
+      content: attr(lineno) " | ";
+      position:absolute;
+      left:10px;
+      width:50px;
+      text-align:right;
+      color: #444;
+    }
+
+.highlight-rexx-light .rx-ws, .highlight-rexx-light .rx-cont { color: #cc0; }
+
+.highlight-rexx-light .rx-cm,                               
+  .highlight-rexx-light .rx-lncm {                            /* Line comments                      */
+    color: #080;
+    font-style: italic;
+  }
+
+.highlight-rexx-light .rx-doc-comment,                      
+  .highlight-rexx-light .rx-doc-comment-markdown {            /* Markdown style doc-comments        */
+
+    color: #93a1ed;                     /* Default values (for "block"..      */
+    font-style: italic;                 /* ..highlighting).                   */
+  }
+
+.highlight-rexx-light .rx-doc-comment.rx-doc-comment-armature,          
+    .highlight-rexx-light .rx-doc-comment.rx-doc-comment-whitespace,          
+    .highlight-rexx-light .rx-doc-comment.rx-doc-comment-main-description,          
+    .highlight-rexx-light .rx-doc-comment-markdown.rx-doc-comment-armature,          
+    .highlight-rexx-light .rx-doc-comment-markdown.rx-doc-comment-whitespace,          
+    .highlight-rexx-light .rx-doc-comment-markdown.rx-doc-comment-main-description {
+      color: #93a1ed;
+      font-style: italic;
+    }
+
+.highlight-rexx-light .rx-doc-comment.rx-doc-comment-summary, .highlight-rexx-light .rx-doc-comment-markdown.rx-doc-comment-summary {          /* Initial summary statement.         */
+      color: purple;
+      text-decoration:underline;
+      font-style: normal;
+    }
+
+.highlight-rexx-light .rx-doc-comment.rx-doc-comment-tag, .highlight-rexx-light .rx-doc-comment-markdown.rx-doc-comment-tag {              /* @block-tag                         */
+      color: chocolate;
+      font-style: normal;
+    }
+
+.highlight-rexx-light .rx-doc-comment.rx-doc-comment-tag-value, .highlight-rexx-light .rx-doc-comment-markdown.rx-doc-comment-tag-value {        /* As the name in "@param name".      */
+      color: #f6f;
+      font-style: normal;
+    }
+
+.highlight-rexx-light .rx-doc-comment.rx-doc-comment-tag-description, .highlight-rexx-light .rx-doc-comment-markdown.rx-doc-comment-tag-description {  /* Text after @deprecated.            */
+      color: teal;
+      font-style: italic;
+    }
+
+.highlight-rexx-light .rx-shb { color: #f55; font-style: italic; }
+
+.highlight-rexx-light .rx-kw,                               
+  .highlight-rexx-light .rx-skw,                               
+  .highlight-rexx-light .rx-dkw,                               
+  .highlight-rexx-light .rx-dskw,                               
+  .highlight-rexx-light .rx-asg,                               
+  .highlight-rexx-light .rx-dir                               /* The directive start "::" sequence  */
+  {
+    color: #333;
+    font-weight: bold;
+  }
+
+.highlight-rexx-light .rx-dkw, .highlight-rexx-light .rx-dskw { text-decoration:underline; }
+
+.highlight-rexx-light .rx-str, .highlight-rexx-light .rx-bstr, .highlight-rexx-light .rx-xstr, .highlight-rexx-light .rx-ystr, .highlight-rexx-light .rx-pstr, .highlight-rexx-light .rx-gstr, .highlight-rexx-light .rx-tstr, .highlight-rexx-light .rx-ustr { /* TUTOR Unicode strings */
+    color: #88f;                        /* the inner part of the string       */ /* String suffix                      */ /* Quotes                             */
+  }
+
+.highlight-rexx-light .rx-str.rx-ssuf,            .highlight-rexx-light .rx-bstr.rx-ssuf,            .highlight-rexx-light .rx-xstr.rx-ssuf,            .highlight-rexx-light .rx-ystr.rx-ssuf,            .highlight-rexx-light .rx-pstr.rx-ssuf,            .highlight-rexx-light .rx-gstr.rx-ssuf,            .highlight-rexx-light .rx-tstr.rx-ssuf,            .highlight-rexx-light .rx-ustr.rx-ssuf            {color: #0ff;}
+
+.highlight-rexx-light .rx-str.rx-oquo, .highlight-rexx-light .rx-str.rx-cquo, .highlight-rexx-light .rx-bstr.rx-oquo, .highlight-rexx-light .rx-bstr.rx-cquo, .highlight-rexx-light .rx-xstr.rx-oquo, .highlight-rexx-light .rx-xstr.rx-cquo, .highlight-rexx-light .rx-ystr.rx-oquo, .highlight-rexx-light .rx-ystr.rx-cquo, .highlight-rexx-light .rx-pstr.rx-oquo, .highlight-rexx-light .rx-pstr.rx-cquo, .highlight-rexx-light .rx-gstr.rx-oquo, .highlight-rexx-light .rx-gstr.rx-cquo, .highlight-rexx-light .rx-tstr.rx-oquo, .highlight-rexx-light .rx-tstr.rx-cquo, .highlight-rexx-light .rx-ustr.rx-oquo, .highlight-rexx-light .rx-ustr.rx-cquo {color: #ff0;}
+
+.highlight-rexx-light .rx-const { /* String suffix                      */ /* Quotes                             */
+  }
+
+.highlight-rexx-light .rx-const.rx-ssuf            {color: #0ff;}
+
+.highlight-rexx-light .rx-const.rx-oquo, .highlight-rexx-light .rx-const.rx-cquo {color: #fff;}
+
+.highlight-rexx-light .rx-int,                              
+  .highlight-rexx-light .rx-deci,                              
+  .highlight-rexx-light .rx-exp {                             /* Exponentials (w/ or w/o a dot)     */
+    color:#f0f;
+  }
+
+.highlight-rexx-light .rx-nsign { color: #3cc; }
+
+.highlight-rexx-light .rx-ipart,                            
+  .highlight-rexx-light .rx-fpart,                            
+  .highlight-rexx-light .rx-expon                             /* The exponent itself                */
+  {
+    color:#3cc;
+  }
+
+.highlight-rexx-light .rx-dpoint { color: #93a1ed; }
+
+.highlight-rexx-light .rx-emark  { color: #93a1ed; }
+
+.highlight-rexx-light .rx-esign  { color: #93a1ed; }
+
+.highlight-rexx-light .rx-var, .highlight-rexx-light .rx-xvar, .highlight-rexx-light .rx-stem, .highlight-rexx-light .rx-xstem, .highlight-rexx-light .rx-cmp, .highlight-rexx-light .rx-xcmp { color: #f60; }
+
+.highlight-rexx-light .rx-xvar, .highlight-rexx-light .rx-xstem, .highlight-rexx-light .rx-xcmp { font-style: italic; }
+
+.highlight-rexx-light .rx-env { color: #093; font-style: italic; }
+
+.highlight-rexx-light .rx-lit { color: #08f; }
+
+.highlight-rexx-light .rx-spe, .highlight-rexx-light .rx-op { color:#f39; }
+
+.highlight-rexx-light .rx-const {
+
+    /*------------------------------------------------------------------------*/
+    /* Default highlighting                                                   */
+    /*------------------------------------------------------------------------*/
+
+    color: #48c;
+
+    /*------------------------------------------------------------------------*/
+    /* Built-in functions and procedures                                      */
+    /*------------------------------------------------------------------------*/
+
+    /*------------------------------------------------------------------------*/
+    /* Internal functions and procedures, labels and block instruction names  */
+    /*------------------------------------------------------------------------*/
+
+    /*------------------------------------------------------------------------*/
+    /* ::ROUTINE names, ::ROUTINE function and procedure calls,               */
+    /* and namespace-qualified ::ROUTINEs                                     */
+    /*------------------------------------------------------------------------*/
+
+    /*------------------------------------------------------------------------*/
+    /* External calls                                                         */
+    /*------------------------------------------------------------------------*/
+
+    /*------------------------------------------------------------------------*/
+    /* Method names                                                           */
+    /*------------------------------------------------------------------------*/
+
+    /*------------------------------------------------------------------------*/
+    /* Namespace names                                                        */
+    /*------------------------------------------------------------------------*/
+
+    /*------------------------------------------------------------------------*/
+    /* Resources                                                              */
+    /*------------------------------------------------------------------------*/
+
+    /* Resource name                                                          */
+
+    /* Resource delimiter                                                     */
+
+  }
+
+.highlight-rexx-light .rx-const.rx-bif-func, .highlight-rexx-light .rx-const.rx-bif-proc {
+      color:#36c;                       /* Color (symbols and strings)        */          /* Suffix (for strings)               */
+    }
+
+.highlight-rexx-light .rx-const.rx-bif-func.rx-ssuf, .highlight-rexx-light .rx-const.rx-bif-proc.rx-ssuf {color: #0ff;}
+
+.highlight-rexx-light .rx-const.rx-bif-func.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-bif-func.rx-cquo,                        
+      .highlight-rexx-light .rx-const.rx-bif-proc.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-bif-proc.rx-cquo {color: #ff0;}
+
+.highlight-rexx-light .rx-const.rx-int-func, .highlight-rexx-light .rx-const.rx-int-proc, .highlight-rexx-light .rx-const.rx-block, .highlight-rexx-light .rx-const.rx-label {
+      color:#f30;                       /* Color (symbols and strings)        */          /* Suffix (for strings)               */
+    }
+
+.highlight-rexx-light .rx-const.rx-int-func.rx-ssuf, .highlight-rexx-light .rx-const.rx-int-proc.rx-ssuf, .highlight-rexx-light .rx-const.rx-block.rx-ssuf, .highlight-rexx-light .rx-const.rx-label.rx-ssuf {color: #0ff;}
+
+.highlight-rexx-light .rx-const.rx-int-func.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-int-func.rx-cquo,                        
+      .highlight-rexx-light .rx-const.rx-int-proc.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-int-proc.rx-cquo,                        
+      .highlight-rexx-light .rx-const.rx-block.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-block.rx-cquo,                        
+      .highlight-rexx-light .rx-const.rx-label.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-label.rx-cquo {color: #ff0;}
+
+.highlight-rexx-light .rx-const.rx-routine, .highlight-rexx-light .rx-const.rx-pkg-func, .highlight-rexx-light .rx-const.rx-pkg-proc, .highlight-rexx-light .rx-const.rx-ext-pkg-func, .highlight-rexx-light .rx-const.rx-ext-pkg-proc {
+      color:#f0a;                       /* Color (symbols and strings)        */          /* Suffix (for strings)               */
+    }
+
+.highlight-rexx-light .rx-const.rx-routine.rx-ssuf, .highlight-rexx-light .rx-const.rx-pkg-func.rx-ssuf, .highlight-rexx-light .rx-const.rx-pkg-proc.rx-ssuf, .highlight-rexx-light .rx-const.rx-ext-pkg-func.rx-ssuf, .highlight-rexx-light .rx-const.rx-ext-pkg-proc.rx-ssuf {color: #0ff;}
+
+.highlight-rexx-light .rx-const.rx-routine.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-routine.rx-cquo,                        
+      .highlight-rexx-light .rx-const.rx-pkg-func.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-pkg-func.rx-cquo,                        
+      .highlight-rexx-light .rx-const.rx-pkg-proc.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-pkg-proc.rx-cquo,                        
+      .highlight-rexx-light .rx-const.rx-ext-pkg-func.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-ext-pkg-func.rx-cquo,                        
+      .highlight-rexx-light .rx-const.rx-ext-pkg-proc.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-ext-pkg-proc.rx-cquo {color: #ff0;}
+
+.highlight-rexx-light .rx-const.rx-ext-func, .highlight-rexx-light .rx-const.rx-ext-proc {
+      color:#a5f;                       /* Color (symbols and strings)        */
+      font-style: italic;               /* Italic (symbols and strings)       */          /* Suffix (for strings)               */
+    }
+
+.highlight-rexx-light .rx-const.rx-ext-func.rx-ssuf, .highlight-rexx-light .rx-const.rx-ext-proc.rx-ssuf {color: #0ff;}
+
+.highlight-rexx-light .rx-const.rx-ext-func.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-ext-func.rx-cquo,                        
+      .highlight-rexx-light .rx-const.rx-ext-proc.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-ext-proc.rx-cquo {color: #ff0;}
+
+.highlight-rexx-light .rx-const.rx-method {
+      color:#c09;                       /* Color (symbols and strings)        */
+      font-style: italic;               /* Italic (symbols and strings)       */          /* Suffix (for strings)               */
+    }
+
+.highlight-rexx-light .rx-const.rx-method.rx-ssuf {color: #0ff;}
+
+.highlight-rexx-light .rx-const.rx-method.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-method.rx-cquo {color: #ff0;}
+
+.highlight-rexx-light .rx-const.rx-namespace {
+      color: #cc0;                      /* Color (symbols and strings)        */          /* Suffix (for strings)               */
+    }
+
+.highlight-rexx-light .rx-const.rx-namespace.rx-ssuf {color: #0ff;}
+
+.highlight-rexx-light .rx-const.rx-namespace.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-namespace.rx-cquo {color: #ff0;}
+
+.highlight-rexx-light .rx-const.rx-resource {
+    color: #fc0;                        /* Color (symbols and strings)        */          /* Suffix (for strings)               */
+    }
+
+.highlight-rexx-light .rx-const.rx-resource.rx-ssuf {color: #0ff;}
+
+.highlight-rexx-light .rx-const.rx-resource.rx-oquo,                        
+      .highlight-rexx-light .rx-const.rx-resource.rx-cquo {color: #ff0;}
+
+.highlight-rexx-light .rx-const.rx-res-delimiter {
+      color: #fc0;
+      text-decoration:underline;
+    }
+
+.highlight-rexx-light.rx-res-data {
+    color: #fc0;
+    font-style: italic;
+  }
+
+.highlight-rexx-light.rx-res-ignore {
+    color: #ccc;
+    font-style: italic;
+  } /* <--- END OF highlight-rexx-light                                          */
+
+/******************************************************************************/
+/******************************************************************************/
+/* END OF BASE SELECTOR highlight-rexx-light                                   */
+/******************************************************************************/
+/******************************************************************************/
