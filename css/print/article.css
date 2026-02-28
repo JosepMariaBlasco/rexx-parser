@@ -241,10 +241,10 @@ ol[data-align-last-split-element='justify'] > li {
 }
 
 /******************************************************************************/
-/* Style the maketitle section                                                */
+/* Style the title-page ("maketitle") section                                 */
 /******************************************************************************/
 
-.title {
+.title-page h1 {
   margin-top:20px 0;
   font-size: 1.7em;
   text-align: center;
@@ -252,7 +252,7 @@ ol[data-align-last-split-element='justify'] > li {
   text-align-last: center;
 }
 
-.title small { /* For subtitles */
+.title-page h1 small { /* For subtitles */
   display: block;
   font-size: 0.75em;
   margin-top: 0.2em;
@@ -261,12 +261,12 @@ ol[data-align-last-split-element='justify'] > li {
 }
 
 @media print {
-  .title {
+  .title-page h1 {
     margin-top:150px;
   }
 }
 
-.author {
+.title-page .author {
   font-size: 1.2em;
   font-weight: normal;
   text-align: center;
@@ -274,7 +274,9 @@ ol[data-align-last-split-element='justify'] > li {
   margin-top: 20px;
 }
 
-.affiliation, .address, .phone {
+.title-page .affiliation,
+.title-page .address,
+.title-page .phone {
   font-size: 0.95em;
   font-weight: normal;
   font-style: italic;
@@ -283,7 +285,7 @@ ol[data-align-last-split-element='justify'] > li {
   margin: 0.2em 0 0 0;
 }
 
-.email {
+.title-page .email {
   font-size: 0.95em;
   text-align: center;
   text-align-last: center;
@@ -293,7 +295,7 @@ ol[data-align-last-split-element='justify'] > li {
   font-family: monospace, monospace;
 }
 
-.date {
+.title-page .date {
   font-size: 1em;
   text-align: center;
   text-align-last: center;

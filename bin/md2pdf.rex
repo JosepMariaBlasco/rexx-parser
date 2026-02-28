@@ -13,6 +13,8 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260219    0.4a First public release                                      */
+/* 20260228         Add --outline and --fix-outline                           */
+/* 20260228         Add support for codepages other than 65001 (thanks, JLF!) */
 /*                                                                            */
 /******************************************************************************/
 
@@ -20,6 +22,7 @@
 
   myName  =  package~name
   rootDir = .File~new(myName)~parentFile~parent
+Say rootdir
   rootDir =  ChangeStr("\",rootDir,"/")
   Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
   myHelp  = ChangeStr(                                         -
@@ -31,12 +34,28 @@
     Then args = .SysCArgs
     Else args = ArgArray(Arg(1))
 
+
+  check = "✔"
+  fail  = "❌"
+  -- Under windows, if we are not using the UTF8 codepage,
+  -- revert to plain ASCII.
+  If .RexxInfo~platform~startsWith("Windows") Then Do
+    Address COMMAND "CHCP" With Output Stem O.
+    Parse Var O.1 ":" codepage .
+    If codepage \== 65001 Then Do
+      check = "[Ok]"
+      fail  = "[Fail!]"
+    End
+  End
+
   defaultTheme   = "dark"
   docClass       = "article"
   quiet          = .False
   language       = "en"
   defaultOptions = ""
   csl            = "ieee"               -- Default Citation Style Language style
+  outline        = 3                    -- Outline H1, H2 and H3
+  fixOutline     = 0
 
 ProcessOptions:
 
@@ -45,9 +64,18 @@ ProcessOptions:
     args~delete(1)
 
     Select Case Lower(option)
+      When "--fix-outline"    Then fixOutline = 1
       When "-h",  "--help"    Then Signal Help
       When "-it", "--itrace"  Then itrace = 1
       When "--check-deps"     Then Call CheckDeps
+      When "--outline"        Then Do
+        If args~size == 0 Then
+          Call Error "Missing outline number after '"option"' option."
+        outline = args[1]
+        If \DataType(outline,"W") | outline < 0 | outline > 6 Then
+          Call Error "Outline should be a positive whole number smaller than 7, found '"outline"'."
+        args~delete(1)
+      End
       When "--default"        Then Do
         If args~size == 0 Then
           Call Error "Missing options after '"option"' option."
@@ -185,13 +213,13 @@ AllWentWell:
   Address COMMAND pandocCommand -
     With Input Using (source) Output Using (contents) Error Stem Error.
   If rc \== 0 Then Do
-   .Error~Say("❌ Pandoc failed with return code" rc":")
+   .Error~Say(fail "Pandoc failed with return code" rc":")
     Loop i = 1 To Error.0
      .Error~Say(Error.i)
     End
     Exit rc
   End
- .Error~say('✔')
+ .Error~say(check)
 
   contents = contents~makeString
   Parse Caseless Var contents With "<h1" ">"title"</"
@@ -207,11 +235,25 @@ AllWentWell:
   Call lineout htmlFilename, HTML
   Call lineout htmlFilename
 
+  outlineTags = "h1"
+  Do i = 2 To outline
+    outlineTags ||= ",h"i
+  End
+
  .Error~Say("Invoking pagedjs-cli (this may take some time)... ")
-  cmd = 'pagedjs-cli "'htmlFilename'" -o "'fileDir || sep || name'.pdf"'
+  outFile = '"'fileDir || sep || name'.pdf"'
+  cmd = 'pagedjs-cli "'htmlFilename'"'  -
+    '--outline-tags' outlineTags -
+    '-o' outFile
   Address COMMAND cmd
 
   Call SysFileDelete htmlFilename
+
+  If fixOutline Then Do
+   .Error~Say("Fixing PDF file so that the document outline opens automatically... ")
+    Address COMMAND "python" rootDir"/bin/fix_pdf_outline.py" outFile
+    If rc == 0 Then Say check "Document outline activated in" outFile
+  End
 
   Exit rc
 
@@ -226,8 +268,8 @@ CheckDeps: -- Check dependencies
  .Error~charOut("Checking that pandoc is installed...")
   Address COMMAND "pandoc -v" With Output Stem Discard. Error Stem Discard.
   If rc \== 0 Then
-    Call Error " ❌" myName "needs a working version of pandoc."
- .Error~say('✔')
+    Call Error " "fail myName "needs a working version of pandoc."
+ .Error~say(check)
 
   ------------------------------------------------------------------------------
   -- Ensure that node is installed                                            --
@@ -236,8 +278,8 @@ CheckDeps: -- Check dependencies
 .Error~charOut("Checking that Node.js is installed...")
   Address COMMAND "node -v" With Output Stem Discard. Error Stem Discard.
   If rc \== 0 Then
-    Call Error " ❌" myName "needs a working version of Node.js."
- .Error~say('✔')
+    Call Error " "fail myName "needs a working version of Node.js."
+ .Error~say(check)
 
   ------------------------------------------------------------------------------
   -- Ensure that npm is installed                                             --
@@ -246,8 +288,8 @@ CheckDeps: -- Check dependencies
  .Error~charOut("Checking that npm is installed...")
   Address COMMAND "npm -v" With Output Stem Discard. Error Stem Discard.
   If rc \== 0 Then
-    Call Error " ❌" myName "needs a working version of npm."
- .Error~say('✔')
+    Call Error " "fail myName "needs a working version of npm."
+ .Error~say(check)
 
   ------------------------------------------------------------------------------
   -- Ensure that we have pagedjs-cli is installed                             --
@@ -257,8 +299,8 @@ CheckDeps: -- Check dependencies
   Address COMMAND "pagedjs-cli --help" -
     With Output Stem Discard. Error Stem Discard.
   If rc \== 0 Then
-    Call Error " ❌" myName "needs a working version of pagedjs-cli."
- .Error~say('✔')
+    Call Error " "fail myName "needs a working version of pagedjs-cli."
+ .Error~say(check)
 
 Return
 
@@ -290,6 +332,9 @@ Options:
 -h, --help            Display this help
 -it, --itrace         Print internal traceback on error
 -l, --language CODE   Set document language (e.g. en, es, fr)
+--outline n           Generate outline with H1,...,Hn (default: 3)
+--fix-outline         Fix PDF so that the outline shows automatically
+                      (requires python and pikepdf)
 --style NAME          Set the default visual theme for Rexx code blocks
 
 The 'myname' program is part of the Rexx Parser package,

@@ -27,9 +27,12 @@ Options
 `--csl` NAME                              Sets the Citation Style Language style
 `--docclass` CLASS                        Controls the overall layout and CSS
 `--default` "options"                     Default options for all code blocks
+`--fix-outline`                           Fix PDF so that the outline shows automatically
+                                          (requires python and pikepdf)
 `-h`, `--help`                            Display this help
 `-it`, `--itrace`                         Print internal traceback on error
 `-l`, `--language` CODE&nbsp;&nbsp;&nbsp; Set document language (e.g. en, es, fr)
+`--outline n`                             Generate outline with H1,...,Hn (default: 3, max 6)
 `--style` NAME                            Sets the default theme for Rexx code blocks
 ----------------------------------------- ------------------------------
 
