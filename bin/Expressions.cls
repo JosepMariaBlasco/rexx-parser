@@ -1315,7 +1315,7 @@ Return
     stemClass, line, col, col+offset, sourceLine -
   )
 
-  parts = Array(stem) -- Parts of the tail
+  parts = .Array~of(stem) -- Parts of the tail
 
   col += offset
   Do While tail~contains(".")

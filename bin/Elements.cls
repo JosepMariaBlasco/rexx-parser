@@ -338,6 +338,7 @@
   self~init:super
   Use Strict Arg self~category, line, start, end, sourceLine
   self~traceOnly = 0
+  self~parts = .Array~new
 ::Method source
   Expose sourceLine start end
   Return sourceLine[ start, end-start ]
