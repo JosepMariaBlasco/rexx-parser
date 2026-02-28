@@ -18,6 +18,7 @@
 /* 20241229    0.1e Make non-essential parts of the page non-printable.       */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250621    0.2c Partial support for .rex and .cls files                   */
+/* 20260228    0.4a Add style chooser support                                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -92,6 +93,30 @@
 
   Say pad'  </ol>'
   Say pad'</nav>'
+
+  myDir = FileSpec("Location",.context~package~name)
+  Call SysFileTree myDir"../css/*.css",F.,"FO"
+
+  array = .Array~new
+  Do i = 1 To F.0
+    name = FileSpec("Name", F.i)
+    Parse Var name "rexx-"name".css"
+    If name == "" | name == "dark" | name == "test1" Then Iterate
+    array~append('<option value="'name'">'name'</option>')
+  End
+
+  Say pad'<form class="form-inline screenonly">'
+  Say pad'  <div class="form-group">'
+  Say pad'    <label for="style-chooser" style="margin-right: 10px;">'
+  Say pad'      <span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Style'
+  Say pad'    </label>'
+  Say pad'    <select class="form-control" id="style-chooser" style="width: auto; display: inline-block;">'
+  Say pad'      <option value="dark">Default (dark)</option>'
+  Say array
+  Say pad'    </select>'
+  Say pad'  </div>'
+  Say pad'</form>'
+
 
   Exit
 
