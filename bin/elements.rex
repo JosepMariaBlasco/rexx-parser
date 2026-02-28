@@ -30,6 +30,7 @@
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
 /* 20260102         Standardize help options to -h and --help                 */
+/* 20260228         Add --[no-]show-spaces options (suggestion by RGF)        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -57,12 +58,13 @@
 -- Main program                                                               --
 --------------------------------------------------------------------------------
 
-  unicode      = 0
-  experimental = 0
-  executor     = 0
-  opFrom       = 1
-  itrace       = 0
-  opTo         = "*"
+  unicode        = 0
+  experimental   = 0
+  executor       = 0
+  opFrom         = 1
+  itrace         = 0
+  opTo           = "*"
+  showSpaces = 1
 
 ProcessOptions:
   If args~items == 0 Then Signal Help
@@ -72,15 +74,17 @@ ProcessOptions:
 
   If option[1] == "-" Then Do
     Select Case Lower(option)
-      When "-h", "--help"       Then Signal Help
+      When "-h", "--help"        Then Signal Help
       When "-u", "--tutor", -
-        "--unicode"             Then unicode = 1
+        "--unicode"              Then unicode = 1
       When "-e", "-exp", "--exp", -
-        "--experimental"        Then experimental = 1
-      When "-xtr", "--executor" Then executor = 1
-      When "-it", "--itrace"    Then itrace = 1
-      When "--from"             Then opFrom = Integer()
-      When "--to"               Then opTo   = Integer()
+        "--experimental"         Then experimental = 1
+      When "-xtr", "--executor"  Then executor = 1
+      When "-it", "--itrace"     Then itrace = 1
+      When "--from"              Then opFrom = Integer()
+      When "--to"                Then opTo   = Integer()
+      When "--show-spaces"       Then showSpaces = 1
+      When "--no-show-spaces"    Then showSpaces = 0
       Otherwise Call Error "Invalid option '"option"'."
     End
     Signal ProcessOptions
@@ -181,7 +185,11 @@ Print:
   Call Chunk (element~isInserted)~?(" >","  ")
   Call Chunk (element~ignorable)~?("X"," ")
   Call Chunk (element~isAssigned)~?("A"," ")
-  If class \== .EL.RESOURCE_DATA Then value = element~value
+  If class \== .EL.RESOURCE_DATA Then Do
+    value = element~value
+    If showSpaces Then
+      value = ChangeStr(" ",value,"␣")
+  End
   Else value = "[... resource data ...]"
   Call Chunk " '"value"'"
   If class == .EL.TAKEN_CONSTANT Then Do
@@ -277,7 +285,9 @@ Options:
 -it, --itrace       Print internal traceback on error
      --to   [LINE]  Stop showing elements after line LINE
      --tutor        Enable TUTOR-flavored Unicode
- -u, --unicode      Enable TUTOR-flavored Unicode
+-u,  --unicode      Enable TUTOR-flavored Unicode
+--show-spaces       Display spaces as "␣" (requires UTF8)
+--no-show-spaces    Display spaces as spaces
 
 The 'myname' program is part of the Rexx Parser package,
 see https://rexx.epbcn.com/rexx-parser/. It is distributed under

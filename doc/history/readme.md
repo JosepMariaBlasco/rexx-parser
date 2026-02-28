@@ -51,6 +51,8 @@ Version history
   <li> Create flattened versions of CSS because `pagedjs-cli` bundles an
        old version of Chromium that doesn't understand nesting (20260226).
   <li> Add support for `--outline` and `--fix-outline` in `md2pdf` (20260226).
+  <li> Add `--show-spaces` and `--no-show-spaces` to `elements` (inspired
+       by a conversation with Rony) (20260228).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting
