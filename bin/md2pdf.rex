@@ -22,7 +22,6 @@
 
   myName  =  package~name
   rootDir = .File~new(myName)~parentFile~parent
-Say rootdir
   rootDir =  ChangeStr("\",rootDir,"/")
   Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
   myHelp  = ChangeStr(                                         -

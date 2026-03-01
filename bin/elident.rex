@@ -24,6 +24,7 @@
 /* 20251221    0.4a Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
+/* 20260301         Use compound variable parts                               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -98,6 +99,8 @@ ProcessOptions:
       Else If category == .EL.DOC_COMMENT          Then Call StandardComment
       Else If category == .EL.DOC_COMMENT_MARKDOWN Then Call StandardComment
       Else If category == .EL.RESOURCE_DATA        Then Call ResourceData
+      Else If category == .EL.EXPOSED_COMPOUND_VARIABLE | -
+              category == .EL.COMPOUND_VARIABLE    Then Call CompoundVariable
       Else    currentLine ||= element~source
     End
     element = element~next
@@ -110,6 +113,12 @@ Help:
     ~caselessChangeStr("myName", myName) -
     ~caselessChangeStr("myHelp", myHelp)
   Exit 1
+
+CompoundVariable:
+  Do part Over element~parts
+    currentLine ||= part~source
+  End
+  Return
 
 StandardComment:
   lastLine = element~to~word(1)

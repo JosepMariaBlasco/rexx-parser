@@ -54,6 +54,7 @@ Version history
   <li> Add `--show-spaces` and `--no-show-spaces` to `elements` (inspired
        by a conversation with Rony) (20260228).
   <li> Add a dropdown to choose the default page style (20260228).
+  <li> Upgrade `elident` to recognize compound variable parts (20260301).
 <tr><td>20251111<td>0.3a<td>
 <ul>
   <li> Add a series of CSS files inspired by the highlighting

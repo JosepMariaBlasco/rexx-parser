@@ -1277,7 +1277,7 @@ Return
   Use Strict Arg package, variable, inExpose
 
   thisBody      = package~currentBodies~top
-  -- TODO Calculated constants don't have a body
+  -- TODO: Calculated constants don't have a body
   If thisbody == .Nil Then Do
     exposed     = .Nil
     useLocal    = .Nil

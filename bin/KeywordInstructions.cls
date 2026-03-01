@@ -1247,7 +1247,7 @@ Expression:
 
   PARSE = elements[1]
 
-  keyword      = TheElementAfter( PARSE )
+  keyword      =  TheElementAfter( PARSE )
   options.     = .False
 
   ignoreBlanks = .True
@@ -1283,6 +1283,11 @@ Var:
   If c >>= "0", c <<= "9" Then Signal 31.002
   options.variant = "VAR"
   options.["VARNAME"] = name
+  name~setAssigned
+
+  -- Ensure that compound variable parts are collected if necessary
+  options.["VARIABLE"] = Symbol.Term( package, name )
+
   element = TheElementAfter( name, ignoreBlanks )
   Signal Templates
 
@@ -1349,10 +1354,11 @@ Templates:
 ::Attribute Caseless   Get
 ::Attribute Variant    Get
 ::Attribute VarName    Get
+::Attribute Variable    Get
 ::Attribute Expression Get
 ::Attribute Templates Get
 ::Method init
-  Expose Upper Lower Caseless Variant VarName Expression Templates
+  Expose Upper Lower Caseless Variant VarName Variable Expression Templates
 
   Use Strict Arg package, begin, end, options., Templates
 
@@ -1362,6 +1368,7 @@ Templates:
   Lower      =  0
   Caseless   =  0
   VarName    = .Nil
+  Variable   = .Nil
   Expression = .Nil
 
   If options.~hasIndex("UPPER")    Then Upper    = 1
@@ -1369,6 +1376,7 @@ Templates:
   If options.~hasIndex("CASELESS") Then Caseless = 1
   Variant = options.["VARIANT"]
   If Variant == "VAR"   Then VarName    = options.["VARNAME"]
+  If options.~hasIndex("VARIABLE") Then Variable = options.["VARIABLE"]
   If Variant == "VALUE" Then Expression = options.["EXPRESSION"]
 
 /******************************************************************************/
