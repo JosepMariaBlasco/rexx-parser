@@ -178,9 +178,7 @@ and continues to contribute CSS styles, testing, and expert
 feedback.  Jean Louis Faucher, the creator of Executor, inspired the
 development of the md2html utility, which was originally built to
 serve his documentation needs, and contributed the horizontal
-scrollbar mechanism for wide images.  René Jansen, president of
-RexxLA, provides the institutional framework through which the Rexx
-community gathers and collaborates.
+scrollbar mechanism for wide images.
 
 This book itself was written in collaboration with Claude
 (Anthropic), through a process of detailed technical discussion
