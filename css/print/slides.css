@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*                                                                            */
 /* slides.css - Predefined CSS for slides.md files                            */
-/* ===============================================                            */
+/* ================================================                           */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -14,152 +14,360 @@
 /*                                                                            */
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
-/* 20250215    0.4a First documented version                                  */
+/* 20260303    0.5  First version                                             */
 /*                                                                            */
 /******************************************************************************/
 
-body {background-color:#eee;}
+/*
+  Conference slide deck for paged.js
 
-.bg-white {background-color:white;}
-.micrologo {
-   font-family:'Century Gothic','Helvetica Neue',Helvetica,Arial,sans-serif;
-   font-size:larger;
+  Page size: 254mm x 142.875mm (exact 16:9, FHD-compatible)
+  Body font: 20pt sans-serif for projection readability
+  No parametric sizing — one size fits all for slides
+
+  Markdown structure:
+
+    ::::: title-page        Title slide (same convention as article/letter)
+    h1 {.newpage}           Content slide — h1 is the slide title
+    h1 {.part .newpage}     Section divider — centred, large
+    ::::: closing-page      Optional closing slide (thank you, Q&A, etc.)
+
+  The title-page div uses the same nested divs as article:
+    ::: author, ::: affiliation, ::: address, ::: email, ::: date, etc.
+  This means the same Markdown title page works in both article and slides.
+*/
+
+/******************************************************************************/
+/******************************************************************************/
+/* EPBCN-specific styles                                                      */
+/******************************************************************************/
+/******************************************************************************/
+
+body {
+  background-color: #eee;
 }
 
-code {color:#222; background-color:#f0f0f0;}
+@media print {
+  body { background-color: #fff; }
+}
 
-h1.pagetitle {color: #ad564a; font-weight:normal;}
+.bg-white { background-color: white; }
 
-.navbar-default .navbar-nav>li>a.secundario, .navbar-default .secundario {color: #952424;}
+@media print {
 
-span.smallcaps {font-variant:small-caps;}
+  div.logo-and-title,
+  nav.x-breadcrumb,
+  nav.x-header,
+  div.footer,
+  hr.before-footer {
+    display: none;
+  }
+
+  .screenonly {
+    display: none;
+  }
+
+}
+
+div.sidebar { font-size: larger; }
+
+@media print {
+  div.sidebar { display: none; }
+}
+
+.micrologo {
+  font-family: 'Century Gothic','Helvetica Neue',Helvetica,Arial,sans-serif;
+  font-size: larger;
+}
+
+h1.pagetitle {
+  color: #ad564a;
+  font-weight: normal;
+  font-size: 35px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.navbar-default .navbar-nav>li>a.secundario,
+.navbar-default .secundario {
+  color: #952424;
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/* Styling the slide content                                                  */
+/******************************************************************************/
+/******************************************************************************/
 
 div.content {
-  font-size:18px; /* font-family: 'Times New Roman', Times, serif;text-align:justify; */
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 20pt;
+  line-height: 1.4;
+  text-align: left;
+  text-align-last: left;
+  hyphens: manual;                      /* No auto-hyphenation in slides      */
 }
 
-a.uri {
-  font-family: monospace, monospace;
+/******************************************************************************/
+/* Slide title (h1)                                                           */
+/* Each h1 with {.newpage} starts a new slide.                                */
+/******************************************************************************/
+
+h1 {
+  font-size: 1.6em;
+  font-weight: bold;
+  color: #00529B;
+  margin-top: 0;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.2em;
+  border-bottom: 2pt solid #00529B;
 }
 
-div.sidebar { font-size:larger; }
-
-h1.slide {
-  margin-top:20px;
-  color:blue;
-}
+/******************************************************************************/
+/* Section divider slides                                                     */
+/* Use {.part .newpage} on an h1 for a full-page centred section title.       */
+/******************************************************************************/
 
 h1.part {
-  margin-top:40px;
-  margin-bottom:40px;
-  color:black;
-  text-decoration:underline;
-  text-align:center;
+  font-size: 2em;
+  text-align: center;
+  text-align-last: center;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-top: 1.5em;                    /* Push down towards vertical centre  */
+  color: #00529B;
 }
 
-  /* Title page */
+/******************************************************************************/
+/* h2, h3 — sub-headings within a slide                                       */
+/******************************************************************************/
 
-  h1.title {
-    text-align: center;
-    text-align-last: center;
-    font-size:36px;
-    margin-top:50px;
-    margin-bottom:0px;
-    color:blue;
-  }
-  h2.subtitle {
-    text-align: center;
-    text-align-last: center;
-    font-size:24px;
-    margin-top:0;
-    margin-bottom:0px;
-    color:blue;
-  }
-  h2.event {
-    text-align: center;
-    text-align-last: center;
-    font-size:22px;
-    margin-top:20;
-    margin-bottom:5px;
-    color:blue;
-  }
-  h3.venue {
-    text-align: center;
-    text-align-last: center;
-    font-size:14px;
-    margin-top:0;
-    color:blue;
-  }
-  h2.author {
-    text-align: center;
-    text-align-last: center;
-    font-size:26px;
-    margin-top:30px;
-    margin-bottom:5px;
-  }
-  h3.email {
-    text-align: center;
-    text-align-last: center;
-    font-size:16px;
-    margin-top:0;
-    font-family: monospace, monospace;
-  }
-  h2.institution {
-    text-align: center;
-    text-align-last: center;
-    font-size:20px;
-    margin-top:30px;
-    margin-bottom:5px;
-  }
-  h3.address {
-    text-align: center;
-    text-align-last: center;
-    font-size:14px;
-    margin-top:0;
-    margin-bottom:5px;
-  }
-  h3.phone {
-    text-align: center;
-    text-align-last: center;
-    font-size:16px;
-    margin-top:0;
-    font-style: italic;
-  }
-  h2.date {
-    text-align: center;
-    text-align-last: center;
-    font-size:25px;
-    margin-top:25px;
-    margin-bottom:50px;
-  }
+h2 {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #333;
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
+}
 
-  h1.center{
-    text-align: center;
-    text-align-last: center;
-  }
+h3 {
+  font-size: 1em;
+  font-weight: bold;
+  color: #555;
+  margin-top: 0.6em;
+  margin-bottom: 0.2em;
+}
 
-h1 {font-size:35px;}
-h2 {font-size:29px;}
-h3 {font-size:26px;}
-h4 {font-size:24px;}
-h5 {font-size:22px;}
-h6 {font-size:20px;}
-h1.part {font-size:45px;}
+div.content h1, div.content h2,
+div.content h3, div.content h4 {
+  font-family: inherit;
+  line-height: 1.2;
+  break-after: avoid;
+  page-break-after: avoid;
+}
 
-pre {margin-top:20px;margin-bottom:20px;}
-pre.dark {background-color: #000;color: #aaa;}
+/******************************************************************************/
+/* Paragraphs — block style, no indent                                        */
+/******************************************************************************/
 
-blockquote {
-  margin: 20px 0 20px;
+div.content p {
+  margin: 0;
+  margin-bottom: 0.6em;
+  text-indent: 0;
+}
+
+/******************************************************************************/
+/* Lists — the bread and butter of conference slides                          */
+/* More generous spacing than article for projection readability.             */
+/******************************************************************************/
+
+div.content ul,
+div.content ol {
+  margin-top: 0.3em;
+  margin-bottom: 0.5em;
+  padding-left: 1.5em;                  /* Tighter than article — space is    */
+                                        /* precious on slides                 */
+}
+
+div.content li {
+  margin-bottom: 0.4em;                 /* More generous than article         */
+}
+
+div.content li:last-child {
+  margin-bottom: 0;
+}
+
+div.content ul ul,
+div.content ol ol,
+div.content ul ol,
+div.content ol ul {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  padding-left: 1.3em;
+}
+
+ul[data-align-last-split-element='justify'] > li,
+ol[data-align-last-split-element='justify'] > li {
+  text-align-last: left;
+}
+
+/******************************************************************************/
+/* Title slide                                                                */
+/* Same ::::: title-page structure as article, but styled for projection.     */
+/******************************************************************************/
+
+.title-page {
+  text-align: center;
+  text-align-last: center;
+}
+
+.title-page h1 {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #00529B;
+  margin-top: 1em;
+  margin-bottom: 0.3em;
+  border-bottom: none;
+  padding-bottom: 0;
+  text-align: center;
+  text-align-last: center;
+}
+
+.title-page h1 small {
+  display: block;
+  font-size: 0.6em;
+  margin-top: 0.3em;
+  color: #555;
   font-style: italic;
-  font-size: 18px;
+  font-weight: normal;
 }
 
-/* Ensure that long lines don't wrap */
+.title-page .author {
+  font-size: 1.1em;
+  font-weight: normal;
+  margin-top: 1em;
+}
 
-pre {
+.title-page .author a {
+  color: #00529B;
+  text-decoration: none;
+}
+
+.title-page .affiliation {
+  font-size: 0.85em;
+  font-style: italic;
+  color: #555;
+  margin-top: 0.2em;
+}
+
+.title-page .address {
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 0.1em;
+}
+
+.title-page .email {
+  font-size: 0.8em;
+  font-family: Consolas, 'Courier New', monospace;
+  margin-top: 0.3em;
+}
+
+.title-page .phone {
+  font-size: 0.8em;
+  font-style: italic;
+  color: #666;
+  margin-top: 0.1em;
+}
+
+.title-page .date {
+  font-size: 0.9em;
+  margin-top: 1em;
+  color: #333;
+}
+
+/* Event and venue — useful for conference title slides                       */
+
+.title-page .event {
+  font-size: 0.9em;
+  color: #00529B;
+  margin-top: 1.2em;
+}
+
+.title-page .venue {
+  font-size: 0.75em;
+  color: #666;
+  margin-top: 0.1em;
+}
+
+/******************************************************************************/
+/* Closing slide (thank you, Q&A, contact info)                               */
+/******************************************************************************/
+
+div.content div.closing-page {
+  text-align: center;
+  text-align-last: center;
+}
+
+div.content div.closing-page h1 {
+  font-size: 2em;
+  border-bottom: none;
+  margin-top: 1em;
+  color: #00529B;
+  text-align: center;
+  text-align-last: center;
+}
+
+div.content div.closing-page p {
+  text-align: center;
+  text-align-last: center;
+}
+
+/******************************************************************************/
+/* Inline code                                                                */
+/******************************************************************************/
+
+div.content code {
+  color: #222;
+  background-color: #f0f0f0;
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+div.content pre code {
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/******************************************************************************/
+/* Pre blocks                                                                 */
+/******************************************************************************/
+
+div.content pre {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  font-size: 14pt;
   white-space: pre;
   overflow-x: auto;
+  word-break: normal;
+  word-wrap: normal;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+div.content > pre {
+  background-color: #f5f5f5;
+  border: none;
+  border-radius: 4px;                   /* Slightly rounded for slides        */
+  padding: 0.5em 0.8em;
+}
+
+pre.dark {
+  background-color: #000;
+  color: #aaa;
 }
 
 pre code {
@@ -167,36 +375,82 @@ pre code {
   overflow-x: auto;
 }
 
-/* Horizontal scrollbar for images -- Contribution by JLF (Thanks!) */
+/******************************************************************************/
+/* Links                                                                      */
+/******************************************************************************/
 
-/*
-Usage:
-<p class="img-scroll"><img src="image.png" width="1400"></p>
+div.content a {
+  color: #00529B;
+  text-decoration: none;
+}
 
-The image will not shrink when the content column shrinks.
-The image occupies its own line (display:block, not inline-block).
-The horizontal scrollbar will appear as needed.
+/******************************************************************************/
+/* URIs                                                                       */
+/******************************************************************************/
 
-If the image's intrinsic size is too wide then put a width in your <img>.
-For example,
-<img width="1400">
-(not width="1400px", it's an HTML attribute).
-This means "The intrinsic layout width of this image is exactly 1400 pixels",
-which is ideal for scrollable, fixed-size images.
+a.uri {
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.85em;
+}
 
-In this context, an HTML attribute is preferable to a CSS property like
-<img style="width: 1400px">
-because CSS widths are subject to flex shrinking, while HTML intrinsic sizes
-are not unless explicitly allowed.
+/******************************************************************************/
+/* Small capitals                                                             */
+/******************************************************************************/
 
-Don't use % widths, because % is relative to the container.
-*/
+span.smallcaps {
+  font-variant: small-caps;
+}
+
+/******************************************************************************/
+/* Blockquotes                                                                */
+/******************************************************************************/
+
+div.content blockquote {
+  margin: 0.5em 1.5em;
+  padding: 0;
+  padding-left: 0.8em;
+  border-left: 3pt solid #00529B;       /* Keep a left bar for slides —       */
+                                        /* useful visual anchor on projection */
+  font-style: italic;
+  font-size: inherit;
+  color: #444;
+}
+
+/******************************************************************************/
+/* Tables                                                                     */
+/******************************************************************************/
+
+div.content table {
+  width: auto;
+  margin: 0.5em auto;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+div.content table th,
+div.content table td {
+  padding: 0.25em 0.6em;
+  text-align: left;
+  vertical-align: top;
+}
+
+div.content table thead {
+  border-top: 1.5pt solid #00529B;
+  border-bottom: 0.75pt solid #00529B;
+}
+
+div.content table tbody {
+  border-bottom: 1.5pt solid #00529B;
+}
+
+/******************************************************************************/
+/* Horizontal scrollbar for images — Contribution by JLF                      */
+/******************************************************************************/
 
 .img-scroll {
   overflow-x: auto;
   max-width: 100%;
-  padding-bottom: 6px;  /* space for scrollbar */
-
+  padding-bottom: 6px;
   border: 1px solid #d0d7de;
   border-radius: 6px;
   background-color: #f6f8fa;
@@ -208,89 +462,100 @@ Don't use % widths, because % is relative to the container.
   height: auto;
 }
 
-/* End of contribution by JLF */
+/******************************************************************************/
+/* Page break                                                                 */
+/******************************************************************************/
 
-.footnotes ol {
-  font-size:12px;
+.newpage {
+  break-before: page;
+  page-break-before: always;
 }
-
-.footnotes ol li p {
-  margin-bottom: 0;
-}
-
 
 @media print {
-
-  body {background-color:#fff;}
-
-  .slide, .part {
-    break-before: page;
+  h1.newpage {
+    margin-top: 0;
   }
-
-  h1.slide{
-    margin-top:10px;
-    font-size:30px;
-  }
-
-  h1.part{
-    margin-top:200px;
-    font-size:40px;
-    color:blue;
-  }
-
-  div.sidebar{display: none;}
-
-  div.logo-and-title, nav.x-breadcrumb, nav.x-header, div.footer, hr.before-footer {
-    display: none;
-  }
-
-  .screenonly {
-    display: none;
-  }
-
 }
 
+/******************************************************************************/
+/* Pagination                                                                 */
+/* FHD-compatible 16:9 slide: 254mm x 142.875mm                               */
+/******************************************************************************/
 
 @page {
 
-  margin: 10mm;
-  size: 263.11mm 148mm; /* Height of a landscape DIN A5, 16x9 */
-
-  @top-center {
-    content: "Running header - Override";
-    font-size: 9pt;
-    font-style: italic;
-  }
-
-  @bottom-left {
-    margin-left:17px;
-    content: "Running footer - Override";
-    font-size: 9pt;
-    font-style: italic;
-  }
-
-  @bottom-center {
-    content: "Running footer - Override";
-    font-size: 9pt;
-    font-style: italic;
-  }
+  margin: 1.5cm 1.8cm;                  /* Compact margins for slides         */
+  size: 254mm 142.875mm;                /* Exact 16:9, FHD-compatible         */
 
   @bottom-right {
-    margin-right:17px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     content: counter(page);
-    font-size: 9pt;
-    font-style: italic;
+    font-size: 10pt;
+    color: #999;
+  }
+
+}
+
+/* No slide number on the title slide                                         */
+
+@page:first {
+  @bottom-right {
+    content: none;
   }
 }
 
-@page :first{
-  @top-center {
-    content: none;
-  }
-  @bottom-left {
-    content: none;
-  }
+@page :blank {
   @bottom-right {
     content: none;
+  }
+}
+
+/******************************************************************************/
+/* Footnotes                                                                  */
+/******************************************************************************/
+
+.footnotes ol {
+  font-size: 12pt;
+  ::marker {
+    font-size: 9pt;
+    vertical-align: super;
+  }
+}
+
+.footnotes p {
+  text-indent: 0;
+}
+
+.footnote {
+  float: footnote;
+  margin-left: 10pt;
+  margin-right: 10pt;
+  font-size: 12pt;
+  line-height: 1.3;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  text-align: left;
+  text-align-last: left;
+  hyphens: manual;
+}
+
+.footnote code {
+  color: #222;
+  background-color: #f0f0f0;
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+
+::footnote-call {
+  font-size: 60%;
+  vertical-align: super;
+  line-height: 0;
+}
+
+@page {
+  @footnote {
+    border-top: 0.5pt solid #ccc;
+    margin-top: 8pt;
+    padding-top: 6pt;
   }
 }

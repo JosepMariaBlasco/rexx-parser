@@ -7,6 +7,9 @@ Provided document classes
 -------------------------
 
 + [Article](article/).
++ [Book](book/).
++ [Letter](letter/).
++ [Slides](slides/).
 
 Dependencies
 ------------

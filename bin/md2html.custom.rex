@@ -14,7 +14,8 @@
 /*                                                                            */
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
-/* 20241223    0.4a First version, based cgi/on rexx.epbcn.com.optional.cls   */
+/* 20251223    0.4a First version, based cgi/on rexx.epbcn.com.optional.cls   */
+/* 20260304    0.5  Add support for letter and book                           */
 /*                                                                            */
 /******************************************************************************/
 
@@ -34,6 +35,8 @@
   pkgLocal~FilenameSpecificStyle = .Stem~new
  .FilenameSpecificStyle[] = ""          -- .Nil means no change
  .FilenameSpecificStyle["article.md"] = "article"
+ .FilenameSpecificStyle["book.md"]    = "book"
+ .FilenameSpecificStyle["letter.md"]  = "letter"
  .FilenameSpecificStyle["slides.md" ] = "slides"
 
   -- Output files will have this extension. See md2html.Extension

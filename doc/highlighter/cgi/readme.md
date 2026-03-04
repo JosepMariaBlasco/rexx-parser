@@ -211,7 +211,7 @@ We will need:
    e. Locate a line that reads `DirectoryIndex index.html`. Change that line so that it reads
 
       ```
-      DirectoryIndex readme.md slides.md article.md index.html
+      DirectoryIndex readme.md article.md book.md letter.md slides.md index.html
       ```
 
       <em>
@@ -236,7 +236,7 @@ CSS Paged Media
 The [workflow defined above](#workflow) can be extended with a further last step:
 by using [the W3C CSS Paged Media Level 3 specification](https://www.w3.org/TR/css-page-3/),
 we can prepare special Markdown pages such that, when displayed on the browser
-and then printed, we obtain, automatically, a set of slides (or an article).
+and then printed, we obtain, automatically, a set of slides (or an article, book, etc.).
 The procedure and the rules to follow are
 [explained in detail in a separate page](../paged-media/).
 

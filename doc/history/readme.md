@@ -8,6 +8,12 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20260303<td>0.5<td>
+<ul>
+  <li> Jump release level to mark start of RexxPub.
+  <li> (md2pdf) Add support for `--size` and slides and letter document classes.
+  <li> (CGI) Add support for the letter document class.
+  <li> (CGI) Add support for style chooser, size chooser and print button.
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

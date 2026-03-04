@@ -19,6 +19,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250621    0.2c Partial support for .rex and .cls files                   */
 /* 20260228    0.4a Add style chooser support                                 */
+/* 20260303    0.5  Add optional size chooser support and print button        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -69,12 +70,12 @@
 ::END
 
 --------------------------------------------------------------------------------
--- Content header -- Displays a breadcrumb                                    --
+-- Content header -- Displays a breadcrumb and, optionally, some choosers     --
 --------------------------------------------------------------------------------
 
 ::Routine MarkDown.ContentHeader Public
 
-  Parse Arg before"/"after
+  Parse Arg before"/"after, file
 
   pad = "          "
 
@@ -105,6 +106,8 @@
     array~append('<option value="'name'">'name'</option>')
   End
 
+  name = FileSpec("Name",file)
+
   Say pad'<form class="form-inline screenonly">'
   Say pad'  <div class="form-group">'
   Say pad'    <label for="style-chooser" style="margin-right: 10px;">'
@@ -115,7 +118,27 @@
   Say array
   Say pad'    </select>'
   Say pad'  </div>'
+If Words(name) == 1, WordPos(name, "article.md book.md letter.md slides.md") > 0 Then Do
+If name \== "slides.md" Then Do
+  Say pad'  <div class="form-group" style="margin-left: 20px;">'
+  Say pad'    <label for="size-chooser" style="margin-right: 10px;">'
+  Say pad'      <span class="glyphicon glyphicon-text-size" aria-hidden="true"></span> Size'
+  Say pad'    </label>'
+  Say pad'    <select class="form-control" id="size-chooser" style="width: auto; display: inline-block;">'
+  Say pad'      <option value="10">10pt</option>'
+  Say pad'      <option value="12" selected>12pt (default)</option>'
+  Say pad'      <option value="14">14pt</option>'
+  Say pad'    </select>'
+  Say pad'  </div>'
+End
+  Say pad'  <div class="form-group" style="margin-left: 20px;">'
+  Say pad'    <button type="button" class="btn btn-default" id="print-button">'
+  Say pad'      <span class="glyphicon glyphicon-print" aria-hidden="true"></span> Print'
+  Say pad'    </button>'
+  Say pad'  </div>'
+End
   Say pad'</form>'
+
 
 
   Exit
@@ -261,7 +284,10 @@ Crumb:
     -- "/rexx-parser/doc/rexxpub"
 
     When docrexxpub                Then Return "RexxPub"
-    When docrexxpub"/article"      Then Return "Writing articles"
+    When docrexxpub"/article"      Then Return "The article Document Class"
+    When docrexxpub"/letter"       Then Return "Letter to the Rexx Community"
+    When docrexxpub"/slides"       Then Return "The slides Document Class"
+    When docrexxpub"/book"         Then Return "The book Document Class"
 
     -- "/rexx-parser/doc/highlighter"
 

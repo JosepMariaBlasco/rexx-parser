@@ -18,7 +18,7 @@ The Rexx Parser is hosted on:
 
 The documentation copy at <https://rexx.epbcn.com/rexx-parser/> uses
 the Rexx Highlighter to display Rexx programs, and therefore has better
-highlihting. On the other hand, the copy at
+highlighting. On the other hand, the copy at
 <https://github.com/JosepMariaBlasco/rexx-parser/>
 has version control, bug reporting, and all the features offered by GitHub.
 
@@ -72,8 +72,8 @@ in the corresponding copyright notices.
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.4a, refresh 20260301.
-You can download it <a href="Rexx-Parser-0.4a-20260301.zip">here</a>.
+The current release is beta 0.5, refresh 20260303.
+You can download it <a href="Rexx-Parser-0.5-20260303.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).

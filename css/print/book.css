@@ -1,0 +1,747 @@
+/******************************************************************************/
+/*                                                                            */
+/* book.css - Predefined CSS for book.md files                                */
+/* ============================================                               */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260304    0.5  First version                                             */
+/*                                                                            */
+/******************************************************************************/
+
+/*
+  LaTeX book class — CSS implementation for paged.js
+
+  This is the most complete document class in RexxPub, designed for
+  long-form documents with chapters, parts, running headers, facing
+  pages, and a table of contents.
+
+  Markdown structure:
+
+    ::::: title-page          Title page (same convention as article)
+    ::: {#toc}                Table of Contents placeholder (filled by
+    :::                       createToc.js at render time)
+    h1 {.part}                Part divider (optional, centred, recto)
+    h1 {.chapter}             Chapter (always starts on recto)
+    h2, h3, h4                Section, subsection, subsubsection
+
+  Page layout:
+    - DIN A4 portrait, facing pages (asymmetric margins)
+    - Inner margin wider for binding (3.5cm inner, 2.5cm outer)
+    - Running headers: book title on verso (left), chapter on recto (right)
+    - Page numbers: outer bottom corner
+    - Chapters always start on recto (right-hand page)
+    - Part dividers: full page, centred, no headers/numbers
+
+  CSS custom properties (--doc-*):
+    Same naming convention as article/letter, overridable with
+    book-10pt.css or book-14pt.css.
+
+  Requires: createToc.js (paged.js hook for TOC generation)
+*/
+
+/******************************************************************************/
+/* CSS Custom Properties                                                      */
+/******************************************************************************/
+
+:root {
+  --doc-font-size:        12pt;
+  --doc-line-height:      1.25;
+  --doc-footnote-size:    10pt;
+  --doc-fn-marker-size:   7pt;
+  --doc-pre-size:         8.6pt;
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/* EPBCN-specific styles                                                      */
+/******************************************************************************/
+/******************************************************************************/
+
+body {
+  background-color: #eee;
+}
+
+@media print {
+  body { background-color: #fff; }
+}
+
+.bg-white { background-color: white; }
+
+@media print {
+
+  div.logo-and-title,
+  nav.x-breadcrumb,
+  nav.x-header,
+  div.footer,
+  hr.before-footer {
+    display: none;
+  }
+
+  .screenonly {
+    display: none;
+  }
+
+}
+
+div.sidebar { font-size: larger; }
+
+@media print {
+  div.sidebar { display: none; }
+}
+
+.micrologo {
+  font-family: 'Century Gothic','Helvetica Neue',Helvetica,Arial,sans-serif;
+  font-size: larger;
+}
+
+h1.pagetitle {
+  color: #ad564a;
+  font-weight: normal;
+  font-size: 35px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.navbar-default .navbar-nav>li>a.secundario,
+.navbar-default .secundario {
+  color: #952424;
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/* Book content                                                               */
+/******************************************************************************/
+/******************************************************************************/
+
+div.content {
+  font-family: "Times New Roman", Times, serif;
+  font-size: var(--doc-font-size);
+  line-height: var(--doc-line-height);
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+  widows: 2;
+  orphans: 2;
+}
+
+/******************************************************************************/
+/* Running headers — captured via string-set, displayed in @page margins      */
+/* The book title is captured from the title-page h1.                         */
+/* The chapter title is captured from each h1.chapter.                        */
+/******************************************************************************/
+
+.title-page .book-title {
+  string-set: bookTitle content(text);
+}
+
+h1.chapter {
+  string-set: chapterTitle content(text);
+}
+
+/******************************************************************************/
+/* Paragraphs — LaTeX convention: first-line indent, no vertical space        */
+/******************************************************************************/
+
+div.content p {
+  margin: 0;
+  text-indent: 1.5em;
+}
+
+div.content h1 + p, div.content h2 + p,
+div.content h3 + p, div.content h4 + p {
+  text-indent: 0;
+}
+
+div.content header + p { text-indent: 0; }
+
+div.content blockquote + p { text-indent: 0; }
+
+div.content pre + p { text-indent: 0; }
+
+div.content [class*="highlight-rexx-"] + p {
+  text-indent: 0;
+}
+
+div.content table + p { text-indent: 0; }
+div.content figure + p { text-indent: 0; }
+
+div.content .noindent p { text-indent: 0; }
+
+div.content li p { text-indent: 0; }
+div.content dd p { text-indent: 0; }
+
+/******************************************************************************/
+/* Title page                                                                 */
+/* Same ::::: title-page structure as article.                                */
+/******************************************************************************/
+
+.title-page {
+  text-align: center;
+  text-align-last: center;
+}
+
+.title-page h1 {
+  font-size: 2em;
+  font-weight: normal;
+  margin-top: 3em;
+  margin-bottom: 0.3em;
+  break-after: auto;
+}
+
+.title-page h1 small {
+  display: block;
+  font-size: 0.5em;
+  margin-top: 0.5em;
+  color: #555;
+  font-style: italic;
+}
+
+.title-page .author       { font-size: 1.2em; margin-top: 2em; }
+.title-page .author a     { color: inherit; text-decoration: none; }
+.title-page .affiliation  { font-size: 1em;  font-style: italic; margin-top: 0.3em; }
+.title-page .address      { font-size: 0.9em; margin-top: 0.2em; }
+.title-page .email        { font-size: 0.9em; font-family: monospace; margin-top: 0.3em; }
+.title-page .phone        { font-size: 0.9em; font-style: italic; margin-top: 0.1em; }
+.title-page .date         { font-size: 1em;  margin-top: 2em; }
+
+.title-page p { text-indent: 0; text-align: center; text-align-last: center; }
+
+/******************************************************************************/
+/* Table of contents                                                          */
+/* The #toc div is populated by createToc.js before paged.js renders.         */
+/******************************************************************************/
+
+#toc {
+  page: toc-page;
+}
+
+#toc .toc-nav {
+  font-family: "Times New Roman", Times, serif;
+  font-size: var(--doc-font-size);
+  line-height: 1.8;
+}
+
+.toc-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.toc-entry a {
+  color: inherit;
+  text-decoration: none;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Dot leaders between title and page number                                  */
+.toc-entry a::after {
+  content: target-counter(attr(href url), page);
+  float: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.toc-entry.toc-level-1 {
+  font-weight: bold;
+  margin-top: 0.4em;
+}
+
+.toc-entry.toc-level-2 {
+  padding-left: 1.5em;
+  font-weight: normal;
+}
+
+.toc-entry.toc-level-3 {
+  padding-left: 3em;
+  font-weight: normal;
+  font-size: 0.95em;
+}
+
+/******************************************************************************/
+/* Part divider                                                               */
+/* Full page, centred, large title, no running headers.                       */
+/******************************************************************************/
+
+h1.part {
+  page: part-page;
+  text-align: center;
+  text-align-last: center;
+  font-size: 2.2em;
+  font-weight: bold;
+  margin-top: 5em;
+  break-before: recto;
+  page-break-before: recto;
+}
+
+/******************************************************************************/
+/* Chapter heading                                                            */
+/* Always starts on recto (right-hand page).  Prominent styling.              */
+/******************************************************************************/
+
+h1.chapter {
+  break-before: recto;
+  page-break-before: recto;
+  font-size: 1.8em;
+  font-weight: bold;
+  margin-top: 3em;
+  margin-bottom: 1em;
+  padding-bottom: 0.3em;
+  border-bottom: 1pt solid #333;
+  string-set: chapterTitle content(text);
+}
+
+/* First paragraph after chapter heading: no indent                           */
+h1.chapter + p { text-indent: 0; }
+
+/******************************************************************************/
+/* h1 (generic, without .chapter or .part) — same as article h1              */
+/******************************************************************************/
+
+div.content h1 {
+  font-size: 1.4em;
+  font-weight: bold;
+  line-height: 1.2;
+  margin-top: 1.5em;
+  margin-bottom: 0.6em;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+/******************************************************************************/
+/* h2 — section                                                               */
+/******************************************************************************/
+
+h2 {
+  font-size: 1.2em;
+  font-weight: bold;
+  line-height: 1.2;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+h1 + h2 { margin-top: 0; }
+
+/******************************************************************************/
+/* h3 — subsection                                                            */
+/******************************************************************************/
+
+h3 {
+  font-size: 1em;
+  font-weight: bold;
+  line-height: 1.2;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+h2 + h3 { margin-top: 0; }
+
+/******************************************************************************/
+/* h4 — paragraph                                                             */
+/******************************************************************************/
+
+h4 {
+  font-size: 1em;
+  font-weight: bold;
+  font-style: italic;
+  line-height: 1.2;
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+h3 + h4 { margin-top: 0; }
+
+div.content h1, div.content h2,
+div.content h3, div.content h4 {
+  font-family: inherit;
+}
+
+/******************************************************************************/
+/* Lists                                                                      */
+/******************************************************************************/
+
+div.content ul,
+div.content ol {
+  margin-top: 0.4em;
+  margin-bottom: 0.4em;
+  padding-left: 2.5em;
+}
+
+div.content ul ul,
+div.content ol ol,
+div.content ul ol,
+div.content ol ul {
+  padding-left: 2.2em;
+}
+
+div.content li {
+  margin-bottom: 0.2em;
+}
+
+div.content li:last-child {
+  margin-bottom: 0;
+}
+
+ul[data-align-last-split-element='justify'] > li,
+ol[data-align-last-split-element='justify'] > li {
+  text-align-last: left;
+}
+
+/******************************************************************************/
+/* Inline code                                                                */
+/******************************************************************************/
+
+div.content code {
+  color: #222;
+  background-color: #f0f0f0;
+  padding: 0.1em 0.2em;
+  border-radius: 2px;
+  font-size: 0.9em;
+}
+
+div.content pre code {
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+/******************************************************************************/
+/* Links                                                                      */
+/******************************************************************************/
+
+div.content a {
+  color: #00529B;
+  text-decoration: none;
+}
+
+/******************************************************************************/
+/* URIs                                                                       */
+/******************************************************************************/
+
+a.uri {
+  font-family:
+    Consolas,
+    "Andale Mono WT",
+    "Andale Mono",
+    "Lucida Console",
+    "Lucida Sans Typewriter",
+    "DejaVu Sans Mono",
+    "Bitstream Vera Sans Mono",
+    "Liberation Mono",
+    "Nimbus Mono L",
+    Monaco,
+    "Courier New",
+    Courier,
+    monospace;
+  font-size: 0.9em;
+}
+
+/******************************************************************************/
+/* Small capitals                                                             */
+/******************************************************************************/
+
+span.smallcaps {
+  font-variant: small-caps;
+}
+
+/******************************************************************************/
+/* Blockquotes                                                                */
+/******************************************************************************/
+
+div.content blockquote {
+  margin: 0.8em 1.5em;
+  padding: 0;
+  font-style: normal;
+  font-size: inherit;
+  border-left: none;
+}
+
+/******************************************************************************/
+/* Pre blocks                                                                 */
+/******************************************************************************/
+
+div.content pre {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  font-size: var(--doc-pre-size);
+  white-space: pre;
+  overflow-x: auto;
+  word-break: normal;
+  word-wrap: normal;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+div.content > pre {
+  background-color: #f8f8f8;
+  border: none;
+  border-radius: 0;
+  border-left: 2pt solid #ccc;
+  padding: 0.5em 1em;
+}
+
+pre.dark {
+  background-color: #000;
+  color: #aaa;
+}
+
+pre code {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/******************************************************************************/
+/* Tables                                                                     */
+/******************************************************************************/
+
+div.content table {
+  width: auto;
+  margin: 1em auto;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+div.content table th,
+div.content table td {
+  padding: 0.2em 0.5em;
+  text-align: left;
+  vertical-align: top;
+}
+
+div.content table thead {
+  border-top: 1.5pt solid black;
+  border-bottom: 0.75pt solid black;
+}
+
+div.content table tbody {
+  border-bottom: 1.5pt solid black;
+}
+
+/******************************************************************************/
+/* Horizontal scrollbar for images — Contribution by JLF                      */
+/******************************************************************************/
+
+.img-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 6px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background-color: #f6f8fa;
+}
+
+.img-scroll img {
+  display: block;
+  max-width: none;
+  height: auto;
+}
+
+/******************************************************************************/
+/* Page break                                                                 */
+/******************************************************************************/
+
+.newpage {
+  break-before: page;
+  page-break-before: always;
+}
+
+@media print {
+  h1.newpage, h1.chapter, h1.part {
+    margin-top: 3em;
+  }
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/* Pagination — Facing pages                                                  */
+/******************************************************************************/
+/******************************************************************************/
+
+/* Default page: A4 portrait, asymmetric margins for binding                  */
+
+@page {
+  size: A4 portrait;
+  margin-top: 2.5cm;
+  margin-bottom: 2.5cm;
+  margin-inside: 3.5cm;                /* Binding edge — wider                */
+  margin-outside: 2.5cm;               /* Outer edge — narrower              */
+
+  @bottom-center {
+    content: none;
+  }
+}
+
+/* Recto (right / odd) pages: page number bottom-right,                       */
+/*                             chapter title top-right                         */
+
+@page :right {
+
+  @top-right {
+    font-family: 'Times New Roman', Times, serif;
+    content: string(chapterTitle, first-except);
+    font-size: 9pt;
+    font-style: italic;
+    color: #555;
+  }
+
+  @top-left {
+    content: none;
+  }
+
+  @bottom-right {
+    font-family: 'Times New Roman', Times, serif;
+    content: counter(page);
+    font-size: 12pt;
+  }
+
+  @bottom-left {
+    content: none;
+  }
+
+}
+
+/* Verso (left / even) pages: page number bottom-left,                        */
+/*                              book title top-left                            */
+
+@page :left {
+
+  @top-left {
+    font-family: 'Times New Roman', Times, serif;
+    content: string(bookTitle);
+    font-size: 9pt;
+    font-style: italic;
+    color: #555;
+  }
+
+  @top-right {
+    content: none;
+  }
+
+  @bottom-left {
+    font-family: 'Times New Roman', Times, serif;
+    content: counter(page);
+    font-size: 12pt;
+  }
+
+  @bottom-right {
+    content: none;
+  }
+
+}
+
+/* Title page: no headers, no page number                                     */
+
+@page title-page {
+  @top-left    { content: none; }
+  @top-right   { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right{ content: none; }
+}
+
+/* TOC pages: no running chapter header (book title only on verso)            */
+
+@page toc-page {
+  @top-right { content: none; }
+}
+
+@page toc-page :left {
+  @top-left {
+    content: string(bookTitle);
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 9pt;
+    font-style: italic;
+    color: #555;
+  }
+}
+
+/* Part divider: no headers, no page number, centred                          */
+
+@page part-page {
+  @top-left    { content: none; }
+  @top-right   { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right{ content: none; }
+}
+
+/* First page of each chapter: no running header (chapter title is visible)   */
+
+@page:first {
+  @top-left    { content: none; }
+  @top-right   { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right{ content: none; }
+}
+
+@page :blank {
+  @top-left    { content: none; }
+  @top-right   { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right{ content: none; }
+}
+
+/******************************************************************************/
+/* Footnotes                                                                  */
+/******************************************************************************/
+
+.footnotes ol {
+  font-size: var(--doc-footnote-size);
+  ::marker {
+    font-size: var(--doc-fn-marker-size);
+    vertical-align: super;
+  }
+}
+
+.footnotes p {
+  text-indent: 0;
+}
+
+.footnote {
+  float: footnote;
+  margin-left: 10pt;
+  margin-right: 10pt;
+  font-size: var(--doc-footnote-size);
+  line-height: 1.4;
+  font-family: 'Times New Roman', Times, serif;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+}
+
+.footnote code {
+  color: #222;
+  background-color: #f0f0f0;
+  padding: 0.1em 0.2em;
+  border-radius: 2px;
+  font-size: 0.9em;
+}
+
+::footnote-call {
+  font-size: 60%;
+  vertical-align: super;
+  line-height: 0;
+}
+
+@page {
+  @footnote {
+    border-top: 0.5pt solid black;
+    margin-top: 10pt;
+    padding-top: 8pt;
+  }
+}

@@ -15,6 +15,7 @@
 /* 20260219    0.4a First public release                                      */
 /* 20260228         Add --outline and --fix-outline                           */
 /* 20260228         Add support for codepages other than 65001 (thanks, JLF!) */
+/* 20250303    0.5  Add support for size and for letter and slides docclasses */
 /*                                                                            */
 /******************************************************************************/
 
@@ -33,7 +34,6 @@
     Then args = .SysCArgs
     Else args = ArgArray(Arg(1))
 
-
   check = "✔"
   fail  = "❌"
   -- Under windows, if we are not using the UTF8 codepage,
@@ -48,13 +48,14 @@
   End
 
   defaultTheme   = "dark"
-  docClass       = "article"
+  docClass       = ""
   quiet          = .False
   language       = "en"
   defaultOptions = ""
   csl            = "ieee"               -- Default Citation Style Language style
   outline        = 3                    -- Outline H1, H2 and H3
   fixOutline     = 0
+  size           = 12
 
 ProcessOptions:
 
@@ -67,6 +68,14 @@ ProcessOptions:
       When "-h",  "--help"    Then Signal Help
       When "-it", "--itrace"  Then itrace = 1
       When "--check-deps"     Then Call CheckDeps
+      When "--size"           Then Do
+        If args~size == 0 Then
+          Call Error "Missing size after '"option"' option."
+        size = args[1]
+        If Words(size) > 1 | WordPos(size,"10 12 14") == 0 Then
+          Call Error "Size has to be one of 10, 12 or 14, found'"size"'."
+        args~delete(1)
+      End
       When "--outline"        Then Do
         If args~size == 0 Then
           Call Error "Missing outline number after '"option"' option."
@@ -111,18 +120,6 @@ ProcessOptions:
     End
   End
 
-  cssFile = rootDir"/css/flattened/rexx-"defaultTheme".css"
-  If \.File~new(cssFile)~exists Then
-     Call Error "Style '"defaultTheme"' not found."
-  If  .File~new(cssFile)~isDirectory Then
-     Call Error "File '"cssFile"' is a directory."
-
-  docClassFile = rootDir"/css/print/"docClass".css"
-  If \.File~new(docClassFile)~exists Then
-     Call Error "Document class '"docClass"' not found."
-  If  .File~new(docClassFile)~isDirectory Then
-     Call Error "File '"docClassFile"' is a directory."
-
   Select Case args~items
     When 0 Then Signal Help
     When 1 Then Do
@@ -135,6 +132,29 @@ ProcessOptions:
         Call Error "'"file"' is a directory."
     End
     Otherwise Call Error "Unexpected argument '"args[2]"'."
+  End
+
+  fileName = FileSpec("Name", file)
+  If fileName~endsWith(".md") Then
+    fileName = Left(fileName,Length(fileName)-3)
+  If docClass == "" Then docClass = fileName
+
+  cssFile = rootDir"/css/flattened/rexx-"defaultTheme".css"
+  If \.File~new(cssFile)~exists Then
+     Call Error "Style '"defaultTheme"' not found."
+  If  .File~new(cssFile)~isDirectory Then
+     Call Error "File '"cssFile"' is a directory."
+
+  docClassFile = rootDir"/css/print/"docClass".css"
+  If \.File~new(docClassFile)~exists Then
+     Call Error "Document class '"docClass"' not found."
+  If  .File~new(docClassFile)~isDirectory Then
+     Call Error "File '"docClassFile"' is a directory."
+
+  Select Case size
+    When 10 Then sizeFile = rootDir"/css/print/"docClass"-10pt.css"
+    When 12 Then sizeFile = ""
+    When 14 Then sizeFile = rootDir"/css/print/"docClass"-14pt.css"
   End
 
   source       =  CharIn(file,1,Chars(file))~makeArray
@@ -155,6 +175,8 @@ ProcessOptions:
   CSS          =  CharIn(bootstrap,    1,Chars(bootstrap)    )
   CSS        ||=  CharIn(cssFile,      1,Chars(cssFile)      )
   CSS        ||=  CharIn(docClassFile, 1,Chars(docClassFile) )
+  If sizeFile \== "" Then
+    CSS      ||=  CharIn(sizeFile,     1,Chars(sizeFile)     )
 
   HTML         = .Resources~HTML~makeString
   HTML         =  HTML~caselessChangeStr("%CSS%",CSS)
@@ -204,9 +226,9 @@ AllWentWell:
 
   contents = .Array~new
   pandocCommand = 'pandoc' -
-   '--citeproc' -
-   '--csl="'rootDir'/csl/'csl'.csl"' -
-   '--lua-filter="'rootDir'/cgi/inline-footnotes.lua"'
+    '--citeproc' -
+    '-M link-citations=true' -
+    '--lua-filter="'rootDir'/cgi/inline-footnotes.lua"'
   -- Say pandocCommand /* For debug */
  .Error~CharOut("Invoking Pandoc... ")
   Address COMMAND pandocCommand -
@@ -221,13 +243,50 @@ AllWentWell:
  .Error~say(check)
 
   contents = contents~makeString
-  Parse Caseless Var contents With "<h1" ">"title"</"
-  If title = "" Then title = "*** Missing title ***"
-  Parse Caseless Var title title "<small>"
-  HTML = HTML                                 -
-    ~caselessChangeStr("%language%",language) -
-    ~caselessChangeStr("%content%",contents)  -
-    ~caselessChangeStr("%title%",  title   )
+
+  If contents~~pos('div id="toc"') > 0 Then Do
+    createToc =  rootDir"/js/createToc.js"
+    chunk     =  CharIn(createToc, 1, Chars(createToc) )
+    TOCHandler = "<script>"chunk"</script>"
+  End
+  Else TOCHandler = ""
+
+  Select Case fileName
+    When "article", "slides", "book" Then Do
+      Parse Caseless Var contents With "<h1" ">"title"</"
+      If title = "" Then title = "*** Missing title ***"
+      Parse Caseless Var title title "<small>"
+      Do While title~caselessPos("<br>") > 0
+        title = title~caselessChangeStr("<br>","")
+      End
+      Do While title~caselessPos("<br") > 0
+        Parse Caseless Var title With before "<br" ">" after
+        title = before after
+      End
+      Do While Pos("<",title) > 0
+        Parse Var title before "<" ">" after
+        title = before after
+      End
+    End
+    When "letter" Then Do
+      Parse Caseless Var contents With '<div class="recipient">' '<p>'title'</p>'
+      If title \== "" Then title = "Letter to" title
+      Else Do
+        Parse Caseless Var contents With '<div class="opening">' '<p>'title'</p>'
+        If title \== "" Then Do
+          title = "Letter -" title
+          If title~endsWith(",") Then title = Left(title, Length(title)-1)
+        End
+        Else title = "Letter"
+      End
+    End
+    Otherwise title = fileName
+  End
+  HTML = HTML                                       -
+    ~caselessChangeStr("%Language%",   language   ) -
+    ~caselessChangeStr("%Content%",    contents   ) -
+    ~caselessChangeStr("%Title%",      title      ) -
+    ~caselessChangeStr("%TOCHandler%", TOCHandler )
 
   Call SysFileDelete htmlFilename
 
@@ -326,11 +385,12 @@ Options:
 
 --check-deps          Checks that all the dependencies are installed
 --csl NAME            Sets the Citation Style Language style
---defaultoptions OPTS Set default options for Rexx code blocks
+--default OPTIONS     Set default options for Rexx code blocks
 --docclass CLASS      Control overall layout and CSS class
 -h, --help            Display this help
 -it, --itrace         Print internal traceback on error
 -l, --language CODE   Set document language (e.g. en, es, fr)
+--size SIZE           Set the size in pt (10, 12 or 14)
 --outline n           Generate outline with H1,...,Hn (default: 3)
 --fix-outline         Fix PDF so that the outline shows automatically
                       (requires python and pikepdf)
@@ -371,6 +431,7 @@ See myhelp for details.
          </div>
       </div>
     </div>
+    %TOCHandler%
   </body>
 </html>
 ::END

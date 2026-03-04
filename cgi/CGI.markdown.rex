@@ -43,6 +43,7 @@
 /* 20260101    0.4a Change [*STYLES*] -> %usedStyles%                         */
 /* 20260215    0.4a Add support for print=pdf                                 */
 /* 20260219    0.4a Add support for generalized style= parameters             */
+/* 20260303    0.5  Add support for letter docclass                           */
 /*                                                                            */
 /******************************************************************************/
 
@@ -149,6 +150,10 @@ Exit
             If \.File~new(cssName)~exists Then ok = 0
           End
         End
+        When param~startsWith("size=") Then Do
+          Parse Var param "size="size
+          If WordPos(size,"10 12 14") == 0 Then ok = 0
+        End
         Otherwise ok = 0
       End
       If \ok              Then Do
@@ -159,14 +164,19 @@ Exit
   End
 
   ------------------------------------------------------------------------------
-  -- We are using "readme.md", "slides.md" and "article.md" as index pages,   --
-  -- using the Apache DirectoryIndex directive.                               --
+  -- We are using "readme.md", "article.md", "book.md", "letter.md" and       --
+  -- "slides.md" as index pages, using the Apache DirectoryIndex directive.   --
   ------------------------------------------------------------------------------
 
   -- In case we need to form canonical URLs
   If      URI~endsWith(  "readme.md" ) Then URI = Left(URI, Length(URI) -  9)
+  Else If URI~endsWith(    "book.md" ) Then URI = Left(URI, Length(URI) -  7)
   Else If URI~endsWith(  "slides.md" ) Then URI = Left(URI, Length(URI) -  9)
+  Else If URI~endsWith(  "letter.md" ) Then URI = Left(URI, Length(URI) -  9)
   Else If URI~endsWith( "article.md" ) Then URI = Left(URI, Length(URI) - 10)
+
+  fileLocation = FileSpec("Location",file)
+  fileName     = FileSpec("Name",    file)
 
   ------------------------------------------------------------------------------
   -- See if an accompanying extra style .css file exists                      --
@@ -178,8 +188,10 @@ Exit
   ------------------------------------------------------------------------------
 
   Select Case FileSpec("Name",file)
+    When "book.md"    Then filenameSpecificStyle = "print/book"
     When "slides.md"  Then filenameSpecificStyle = "print/slides"
     When "article.md" Then filenameSpecificStyle = "print/article"
+    When "letter.md"  Then filenameSpecificStyle = "print/letter"
     Otherwise              filenameSpecificStyle = "markdown"
   End
   printStyle = Stream(file".css","c","Q exists")
@@ -216,9 +228,17 @@ Exit
 
   contents = .Array~new
 
-  If \print Then command = 'pandoc --from markdown-smart+footnotes' -
+  -- Needed so that Pandoc finds the files mentioned in the YAML section
+  Call Directory fileLocation
+
+  If \print Then command = 'pandoc --citeproc -M link-citations=true' -
+    '--from markdown-smart+footnotes' -
     '--reference-location=section'
-  Else command = 'pandoc --lua-filter='.myPath || "inline-footnotes.lua"
+  Else Do
+    command = 'pandoc --citeproc'-
+    '-M link-citations=true' -
+    '--lua-filter='.myPath || "inline-footnotes.lua"
+  End
 
   Address COMMAND command -
     With Input Using (source) Output Using (contents) Error Using (contents)
@@ -229,17 +249,40 @@ Exit
 
   title = "Missing title"
   chunk = contents~makeString("L"," ")
-  If chunk~contains("<h1") Then Do
-    Parse Var chunk "<h1" ">"title"</h1>"
-    If title~caselessPos("<small") > 0 Then
-      Parse Caseless Var title title "<small"
-    htmlTitle = title
-    Do While title~caselessPos("<br>") > 0
-      title = title~caselessChangeStr("<br>","")
+
+
+  Select Case fileName
+    When "letter.md" Then Do
+      Parse Caseless Var chunk With '<div class="recipient">' '<p>'title'</p>'
+      If title \== "" Then title = "Letter to" title
+      Else Do
+        Parse Caseless Var chunk With '<div class="opening">' '<p>'title'</p>'
+        If title \== "" Then Do
+          title = "Letter -" title
+          If title~endsWith(",") Then title = Left(title, Length(title)-1)
+        End
+        Else title = "Letter"
+      End
+      htmlTitle = title
     End
-    Do While title~caselessPos("<br") > 0
-      Parse Caseless Var title With before "<br" ">" after
-      title = before after
+    Otherwise Do
+      If chunk~contains("<h1") Then Do
+        Parse Var chunk "<h1" ">"title"</h1>"
+        If title~caselessPos("<small") > 0 Then
+          Parse Caseless Var title title "<small"
+        htmlTitle = title
+        Do While title~caselessPos("<br>") > 0
+          title = title~caselessChangeStr("<br>","")
+        End
+        Do While title~caselessPos("<br") > 0
+          Parse Caseless Var title With before "<br" ">" after
+          title = before after
+        End
+        Do While Pos("<",title) > 0
+          Parse Var title before "<" ">" after
+          title = before after
+        End
+      End
     End
   End
 
@@ -252,13 +295,15 @@ Exit
   Do line Over template
     Select Case Strip(Lower(line))
       When "%title%"         Then Say title
-      When "%contentheader%" Then Call OptionalCall ContentHeader, uri
+      When "%contentheader%" Then Call OptionalCall ContentHeader, uri, file
       When "%header%"        Then Call OptionalCall PageHeader, HTMLTitle
       When "%contents%"      Then Do line Over contents; Say line; End
       When "%footer%"        Then Call OptionalCall PageFooter
       When "%sidebar%"       Then Call OptionalCall Sidebar, uri
-      When "%printjs%"       Then If print Then
+      When "%printjs%"       Then If print Then Do
         Say "<script src='/js/paged.polyfill.js'></script>"
+        Say "<script src='/rexx-parser/js/createToc.js'></script>"
+      End
       When "%printstyle%"    Then
         If printStyle \== "" Then
           Say "    <link rel='stylesheet' media='print' href='"printStyle"'>"
@@ -266,6 +311,11 @@ Exit
         If filenameSpecificStyle \== "" Then
           Say "    <link rel='stylesheet'" -
               "href='/rexx-parser/css/"filenameSpecificStyle".css'>"
+      When "%sizespecificstyle%"        Then
+        If size == 12 Then Nop
+        Else
+          Say "    <link rel='stylesheet'" -
+              "href='/rexx-parser/css/"filenameSpecificStyle"-"size"pt.css'>"
       Otherwise Say line
     End
   End
@@ -313,7 +363,7 @@ Hack:
 OptionalCall: Procedure
   Signal On Syntax Name OptionalRoutineMissing
   routineName = Markdown"."Arg(1)
-  Call (routineName) Arg(2)
+  Call (routineName) Arg(2), Arg(3)
   Return
 OptionalRoutineMissing:
   code = Condition("O")~code
@@ -422,6 +472,7 @@ View:
     <link rel="stylesheet" href="/css/bootstrap.min.css">
 %usedStyles%
     %filenameSpecificStyle%
+    %sizeSpecificStyle%
     %printStyle%
     %printJs%
     <!--[if lt IE 9]>
@@ -447,7 +498,7 @@ View:
     </div>
     <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
     <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/stylechooser.js"></script>
+    <script src="/js/chooser.js"></script>
   </body>
 </html>
 ::END

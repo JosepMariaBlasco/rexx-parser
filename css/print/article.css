@@ -15,6 +15,9 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20250215    0.4a First documented version                                  */
+/* 20260303    0.5  LaTeX article fidelity improvements                       */
+/*                  Parametrized with CSS custom properties for               */
+/*                  multi-size support (10pt, 12pt, 14pt)                     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -38,6 +41,46 @@
 
   body                               bg-white                             body
 */
+
+/******************************************************************************/
+/* CSS Custom Properties for article sizing                                   */
+/*                                                                            */
+/* These variables control all size-dependent aspects of the article layout.  */
+/* The default values correspond to 12pt (LaTeX article default).             */
+/*                                                                            */
+/* To use a different size, load one of the size-specific stylesheets         */
+/* AFTER this file:                                                           */
+/*   - article-10pt.css  (redefines :root variables + @page overrides)        */
+/*   - article-14pt.css  (redefines :root variables + @page overrides)        */
+/* If no size stylesheet is loaded, 12pt is used.                             */
+/*                                                                            */
+/* The values are derived from the LaTeX article class at each point size,    */
+/* with minor adjustments for Times New Roman (which has a larger x-height    */
+/* than Computer Modern, requiring slightly more generous line-height).       */
+/*                                                                            */
+/* Reference table:                                                           */
+/*                                                                            */
+/*   Property              10pt       12pt       14pt       LaTeX source      */
+/*   -------------------   --------   --------   --------   ----------------  */
+/*   --doc-font-size       10pt       12pt       14pt       \normalsize       */
+/*   --doc-line-height     1.20       1.25       1.29       \baselineskip     */
+/*   --doc-footnote-size   8pt        10pt       12pt       \footnotesize     */
+/*   --doc-fn-marker-size  6pt        7pt        8pt        ~\scriptsize      */
+/*   --doc-pre-size        7.2pt      8.6pt      10pt       ~0.72 * base      */
+/*                                                                            */
+/* The @page rules (margin, page number size) cannot reliably use var()       */
+/* in all paged.js versions, so they are set to 12pt defaults here and        */
+/* overridden in the size-specific stylesheets.                               */
+/*                                                                            */
+/******************************************************************************/
+
+:root {
+  --doc-font-size:        12pt;
+  --doc-line-height:      1.25;
+  --doc-footnote-size:    10pt;
+  --doc-fn-marker-size:   7pt;
+  --doc-pre-size:         8.6pt;
+}
 
 /******************************************************************************/
 /******************************************************************************/
@@ -128,11 +171,25 @@ h1.pagetitle {
 
 div.content{
  font-family: "Times New Roman", Times, serif;
- font-size: 12pt;
- line-height: 1.3;
+ font-size: var(--doc-font-size);
+ line-height: var(--doc-line-height);
  text-align: justify;
  text-align-last: auto !important;
  hyphens: auto;
+ widows: 2;
+ orphans: 2;
+}
+
+/******************************************************************************/
+/* Override Bootstrap heading defaults inside article content                 */
+/******************************************************************************/
+
+div.content h1, div.content h2,
+div.content h3, div.content h4 {
+  font-family: inherit;
+  line-height: 1.2;
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
 /******************************************************************************/
@@ -145,6 +202,14 @@ p {
 }
 
 .noindent p {
+  text-indent: 0;
+}
+
+li > p {
+  text-indent: 0;
+}
+
+h1 + p, h2 + p, h3 + p, h4 + p {
   text-indent: 0;
 }
 
@@ -208,7 +273,7 @@ h2 + h3 {
 }
 
 /******************************************************************************/
-/* h4 -> \subsubsubsection                                                    */
+/* h4 -> \paragraph                                                           */
 /******************************************************************************/
 
 h4 {
@@ -230,10 +295,32 @@ h3 + h4 {
 }
 
 /******************************************************************************/
-/* lists                                                                      */
-/* paged.js assigns the data-align-last-split-element attribute to lists      */
-/* that get split between pages.                                              */
+/* Lists                                                                      */
 /******************************************************************************/
+
+div.content ul,
+div.content ol {
+  margin-top: 0.4em;
+  margin-bottom: 0.4em;
+  padding-left: 2.5em;
+}
+
+div.content li {
+  margin-bottom: 0.2em;
+}
+
+div.content li:last-child {
+  margin-bottom: 0;
+}
+
+div.content ul ul,
+div.content ol ol,
+div.content ul ol,
+div.content ol ul {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  padding-left: 2.2em;
+}
 
 ul[data-align-last-split-element='justify'] > li,
 ol[data-align-last-split-element='justify'] > li {
@@ -245,14 +332,14 @@ ol[data-align-last-split-element='justify'] > li {
 /******************************************************************************/
 
 .title-page h1 {
-  margin-top:20px 0;
+  margin: 20px 0;
   font-size: 1.7em;
   text-align: center;
   font-weight: normal;
   text-align-last: center;
 }
 
-.title-page h1 small { /* For subtitles */
+.title-page h1 small {
   display: block;
   font-size: 0.75em;
   margin-top: 0.2em;
@@ -282,14 +369,13 @@ ol[data-align-last-split-element='justify'] > li {
   font-style: italic;
   text-align: center;
   text-align-last: center;
-  margin: 0.2em 0 0 0;
+  margin: 0;
 }
 
 .title-page .email {
-  font-size: 0.95em;
+  font-size: 13px;
   text-align: center;
   text-align-last: center;
-  font-size:13px;
   margin-top:0;
   margin-bottom: 0;
   font-family: monospace, monospace;
@@ -304,6 +390,12 @@ ol[data-align-last-split-element='justify'] > li {
 
 /******************************************************************************/
 /* Pagination                                                                 */
+/*                                                                            */
+/* NOTE: var() may not work inside @page rules in all paged.js versions.      */
+/* The values here are the 12pt defaults.  The size-specific stylesheets      */
+/* (article-10pt.css, article-14pt.css) override these @page rules with       */
+/* literal values appropriate to each size.                                   */
+/*                                                                            */
 /******************************************************************************/
 
 @page {
@@ -314,12 +406,18 @@ ol[data-align-last-split-element='justify'] > li {
   @bottom-center {
     font-family: 'Times New Roman', Times, serif;
     content: counter(page);
-    font-size: 14pt;
-    font-style: italic;
+    font-size: 12pt;
+    font-style: normal;
     text-align: center;
     text-align-last: center;
   }
 
+}
+
+@page:first {
+  @bottom-center {
+    content: none;
+  }
 }
 
 @page :blank {
@@ -329,10 +427,13 @@ ol[data-align-last-split-element='justify'] > li {
 }
 
 /******************************************************************************/
+/* Styling links                                                              */
 /******************************************************************************/
-/* Style document sectioning                                                  */
-/******************************************************************************/
-/******************************************************************************/
+
+div.content a {
+  color: #00529B;
+  text-decoration: none;
+}
 
 /******************************************************************************/
 /* Styling URIs                                                               */
@@ -357,12 +458,31 @@ a.uri {
 }
 
 /******************************************************************************/
-/* Styling code                                                               */
+/* Styling inline code                                                        */
 /******************************************************************************/
 
-code {
-  color:#222;
-  background-color:#f0f0f0;
+div.content code {
+  color: #222;
+  background-color: #f0f0f0;
+  padding: 0.1em 0.2em;
+  border-radius: 2px;
+  font-size: 0.9em;
+}
+
+div.content pre code {
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+.footnote code {
+  color: #222;
+  background-color: #f0f0f0;
+  padding: 0.1em 0.2em;
+  border-radius: 2px;
+  font-size: 0.9em;
 }
 
 /******************************************************************************/
@@ -377,32 +497,41 @@ span.smallcaps {
 /* Blockquotes                                                                */
 /******************************************************************************/
 
-blockquote {
-  margin: 20px 0 20px;
-  font-style: italic;
-  font-size: 18px;
+div.content blockquote {
+  margin: 0.8em 1.5em;
+  padding: 0;
+  font-style: normal;
+  font-size: inherit;
+  border-left: none;
 }
 
 /******************************************************************************/
 /* pre blocks                                                                 */
 /******************************************************************************/
 
-pre {
-  margin-top: 20px;
-  margin-bottom: 20px;
-  font-size: 8.6pt;
+div.content pre {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  font-size: var(--doc-pre-size);
+  white-space: pre;
+  overflow-x: auto;
+  word-break: normal;
+  word-wrap: normal;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+div.content > pre {
+  background-color: #f8f8f8;
+  border: none;
+  border-radius: 0;
+  border-left: 2pt solid #ccc;
+  padding: 0.5em 1em;
 }
 
 pre.dark {
   background-color: #000;
   color: #aaa;
-}
-
-/* Ensure that long lines don't wrap */
-
-pre {
-  white-space: pre;
-  overflow-x: auto;
 }
 
 pre code {
@@ -462,13 +591,40 @@ Don't use % widths, because % is relative to the container.
 }
 
 /******************************************************************************/
-/* Support for footnotes at the end of the page -- works with a Lua filter    */
+/* Tables (booktabs style)                                                    */
+/******************************************************************************/
+
+div.content table {
+  width: auto;
+  margin: 1em auto;
+  border-collapse: collapse;
+  font-size: inherit;
+}
+
+div.content table th,
+div.content table td {
+  padding: 0.3em 0.8em;
+  text-align: left;
+  vertical-align: top;
+}
+
+div.content table thead {
+  border-top: 1.5pt solid black;
+  border-bottom: 0.75pt solid black;
+}
+
+div.content table tbody {
+  border-bottom: 1.5pt solid black;
+}
+
+/******************************************************************************/
+/* Support for footnotes at the end of the page                               */
 /******************************************************************************/
 
 .footnotes ol {
-  font-size: 9pt;
+  font-size: var(--doc-footnote-size);
   ::marker {
-    font-size: 7pt;
+    font-size: var(--doc-fn-marker-size);
     vertical-align: super;
   }
 }
@@ -477,14 +633,12 @@ Don't use % widths, because % is relative to the container.
   text-indent: 0;
 }
 
-
 .footnote {
   float: footnote;
   margin-left: 10pt;
   margin-right: 10pt;
-  font-size: 0.9em;
+  font-size: var(--doc-footnote-size);
   line-height: 1.4;
-  font-size: 10pt;
   font-family: 'Times New Roman', Times, serif;
   text-align: justify;
   text-align-last: left;
@@ -505,3 +659,31 @@ Don't use % widths, because % is relative to the container.
   }
 }
 
+/******************************************************************************/
+/* Bibliographies                                                             */
+/******************************************************************************/
+
+div.csl-bib-body {
+  margin-top: 1em;
+  line-height: 1.4;
+}
+
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0.6em;
+}
+
+div.csl-left-margin {
+  float: left;
+  width: 2.5em;
+  text-align: right;
+  padding-right: 0.5em;
+}
+
+div.csl-right-inline {
+  margin-left: 3em;
+}
+
+div.csl-indent {
+  margin-left: 2em;
+}

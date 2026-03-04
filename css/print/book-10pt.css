@@ -1,0 +1,42 @@
+/******************************************************************************/
+/*                                                                            */
+/* book-10pt.css - Size variant (10pt) for the book document class            */
+/* ================================================================           */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260304    0.5  First version                                             */
+/*                                                                            */
+/******************************************************************************/
+
+/*
+  10pt variant for the book document class.
+
+  Smaller text means more content per page, so margins are widened
+  to keep the line length comfortable (roughly 65-75 characters).
+  Inner margin stays proportionally wider for binding.
+*/
+
+:root {
+  --doc-font-size:        10pt;
+  --doc-line-height:      1.25;
+  --doc-footnote-size:    8pt;
+  --doc-fn-marker-size:   6pt;
+  --doc-pre-size:         7.5pt;
+}
+
+@page {
+  margin-top: 3cm;
+  margin-bottom: 3cm;
+  margin-inside: 4cm;
+  margin-outside: 3cm;
+}

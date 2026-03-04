@@ -1,0 +1,42 @@
+/******************************************************************************/
+/*                                                                            */
+/* book-14pt.css - Size variant (14pt) for the book document class            */
+/* ================================================================           */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260304    0.5  First version                                             */
+/*                                                                            */
+/******************************************************************************/
+
+/*
+  14pt variant for the book document class.
+
+  Larger text means less content per page, so margins are narrowed
+  to keep the line length reasonable.  Inner margin stays wider
+  than outer for binding.
+*/
+
+:root {
+  --doc-font-size:        14pt;
+  --doc-line-height:      1.3;
+  --doc-footnote-size:    11pt;
+  --doc-fn-marker-size:   8pt;
+  --doc-pre-size:         9.5pt;
+}
+
+@page {
+  margin-top: 2cm;
+  margin-bottom: 2cm;
+  margin-inside: 3cm;
+  margin-outside: 2cm;
+}
