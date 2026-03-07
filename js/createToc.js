@@ -70,7 +70,7 @@
     tocContainer.appendChild(nav);
 
     /* Select headings to include — h1 through h3 by default               */
-    var headings = content.querySelectorAll("h1, h2, h3");
+    var headings = content.querySelectorAll("div.content h1, div.content h2, div.content h3");
 
     for (var i = 0; i < headings.length; i++) {
       var heading = headings[i];
@@ -99,6 +99,10 @@
       /* Build the TOC entry                                               */
       var entry = document.createElement("div");
       entry.className = "toc-entry " + level;
+
+      /* Propagate heading classes (part, chapter) for styling             */
+      if (heading.classList.contains("part"))    entry.classList.add("toc-part");
+      if (heading.classList.contains("chapter")) entry.classList.add("toc-chapter");
 
       var link = document.createElement("a");
       link.href = "#" + heading.id;

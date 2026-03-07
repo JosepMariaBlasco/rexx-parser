@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*                                                                            */
-/* letter.css - Predefined CSS for letter.md files                            */
-/* ================================================                           */
+/* letter.css - LaTeX letter class for paged.js                               */
+/* =============================================                              */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -10,112 +10,49 @@
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
+/* Load AFTER rexxpub-base.css.  Optional size variants:                      */
+/*   letter-10pt.css, letter-14pt.css (load AFTER this file).                 */
+/*                                                                            */
+/* Markdown structure using Pandoc fenced divs:                               */
+/*                                                                            */
+/*   ::::: sender              Sender address block                           */
+/*   ::::: date                Date line                                      */
+/*   ::::: recipient           Recipient address block                        */
+/*   ::::: opening             Salutation ("Dear...")                         */
+/*   (body paragraphs)         Normal Markdown paragraphs                     */
+/*   ::::: closing             Valediction ("Sincerely,")                     */
+/*   ::::: signature           Sender name (space above for handwriting)      */
+/*   ::::: enclosure           Optional enclosure notice                      */
+/*   ::::: cc                  Optional carbon copy list                      */
+/*                                                                            */
+/* Key differences from article.css:                                          */
+/*   - Block letter style: no text-indent, paragraph separation via margin    */
+/*   - Structured address blocks instead of title page                        */
+/*   - No section headings (body is continuous prose)                         */
+/*   - No page number on first page; numbers from page 2                      */
+/*   - Slightly narrower margins (2.5cm vs 3cm)                               */
+/*                                                                            */
 /* Version history:                                                           */
 /*                                                                            */
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260303    0.5  First version                                             */
+/* 20260306         Refactored: common styles moved to rexxpub-base.css       */
 /*                                                                            */
 /******************************************************************************/
 
-/*
-  LaTeX letter class — CSS implementation for paged.js
-
-  Markdown structure using Pandoc fenced divs:
-
-    ::::: sender              Sender address block
-    ::::: date                Date line
-    ::::: recipient           Recipient address block
-    ::::: opening             Salutation ("Dear...")
-    (body paragraphs)         Normal Markdown paragraphs
-    ::::: closing             Valediction ("Sincerely,")
-    ::::: signature           Sender name (space above for handwriting)
-    ::::: enclosure           Optional enclosure notice
-    ::::: cc                  Optional carbon copy list
-
-  Key differences from article.css:
-    - Block letter style: no text-indent, paragraph separation via margin
-    - Structured address blocks instead of title page
-    - No section headings (body is continuous prose)
-    - No page number on first page; numbers from page 2
-    - Slightly narrower margins (2.5cm vs 3cm)
-*/
-
 /******************************************************************************/
-/* CSS Custom Properties                                                      */
-/* Same variable names as article.css for consistency.                        */
-/* The size-specific stylesheets (letter-10pt.css, letter-14pt.css)           */
-/* override these.                                                            */
+/* CSS Custom Properties — override base for letter readability               */
 /******************************************************************************/
 
 :root {
-  --doc-font-size:        12pt;
   --doc-line-height:      1.30;         /* Slightly more generous than        */
                                         /* article for letter readability     */
-  --doc-footnote-size:    10pt;
-  --doc-fn-marker-size:   7pt;
-  --doc-pre-size:         8.6pt;
 }
 
 /******************************************************************************/
 /******************************************************************************/
-/* EPBCN-specific styles                                                      */
-/******************************************************************************/
-/******************************************************************************/
-
-body {
-  background-color: #eee;
-}
-
-@media print {
-  body { background-color: #fff; }
-}
-
-.bg-white { background-color: white; }
-
-@media print {
-
-  div.logo-and-title,
-  nav.x-breadcrumb,
-  nav.x-header,
-  div.footer,
-  hr.before-footer {
-    display: none;
-  }
-
-  .screenonly {
-    display: none;
-  }
-
-}
-
-div.sidebar { font-size: larger; }
-
-@media print {
-  div.sidebar { display: none; }
-}
-
-.micrologo {
-  font-family: 'Century Gothic','Helvetica Neue',Helvetica,Arial,sans-serif;
-  font-size: larger;
-}
-
-h1.pagetitle {
-  color: #ad564a;
-  font-weight: normal;
-  font-size: 35px;
-  margin-top: 20px;
-  margin-bottom: 10px;
-}
-
-.navbar-default .navbar-nav>li>a.secundario,
-.navbar-default .secundario {
-  color: #952424;
-}
-
-/******************************************************************************/
-/******************************************************************************/
-/* Styling the letter content                                                 */
+/* Letter content                                                             */
 /******************************************************************************/
 /******************************************************************************/
 
@@ -261,14 +198,6 @@ div.content div.cc p {
 /* Headings — rarely used in letters, but available                           */
 /******************************************************************************/
 
-div.content h1, div.content h2,
-div.content h3, div.content h4 {
-  font-family: inherit;
-  line-height: 1.2;
-  break-after: avoid;
-  page-break-after: avoid;
-}
-
 h1 {
   font-size: 1.4em; font-weight: bold; margin-top: 1.5em; margin-bottom: 0.6em;
 }
@@ -280,90 +209,16 @@ h3 {
 }
 
 /******************************************************************************/
-/* Lists                                                                      */
+/* Lists — override base: more bottom margin for block letter style           */
 /******************************************************************************/
 
 div.content ul,
 div.content ol {
-  margin-top: 0.4em;
   margin-bottom: 0.8em;
-  padding-left: 2.5em;
-}
-
-div.content li {
-  margin-bottom: 0.2em;
-}
-
-div.content li:last-child {
-  margin-bottom: 0;
-}
-
-ul[data-align-last-split-element='justify'] > li,
-ol[data-align-last-split-element='justify'] > li {
-  text-align-last: left;
 }
 
 /******************************************************************************/
-/* Inline code                                                                */
-/******************************************************************************/
-
-div.content code {
-  color: #222;
-  background-color: #f0f0f0;
-  padding: 0.1em 0.2em;
-  border-radius: 2px;
-  font-size: 0.9em;
-}
-
-div.content pre code {
-  padding: 0;
-  background-color: transparent;
-  border-radius: 0;
-  font-size: inherit;
-  color: inherit;
-}
-
-/******************************************************************************/
-/* Links                                                                      */
-/******************************************************************************/
-
-div.content a {
-  color: #00529B;
-  text-decoration: none;
-}
-
-/******************************************************************************/
-/* URIs                                                                       */
-/******************************************************************************/
-
-a.uri {
-  font-family:
-    Consolas,
-    "Andale Mono WT",
-    "Andale Mono",
-    "Lucida Console",
-    "Lucida Sans Typewriter",
-    "DejaVu Sans Mono",
-    "Bitstream Vera Sans Mono",
-    "Liberation Mono",
-    "Nimbus Mono L",
-    Monaco,
-    "Courier New",
-    Courier,
-    monospace;
-  font-size: 0.9em;
-}
-
-/******************************************************************************/
-/* Small capitals                                                             */
-/******************************************************************************/
-
-span.smallcaps {
-  font-variant: small-caps;
-}
-
-/******************************************************************************/
-/* Blockquotes                                                                */
+/* Blockquotes — italic in letters (differs from article/book)                */
 /******************************************************************************/
 
 div.content blockquote {
@@ -375,65 +230,13 @@ div.content blockquote {
 }
 
 /******************************************************************************/
-/* pre blocks                                                                 */
+/* Footnotes — override base: left-aligned, no hyphenation                    */
 /******************************************************************************/
 
-div.content pre {
-  margin-top: 1em;
-  margin-bottom: 1em;
-  font-size: var(--doc-pre-size);
-  white-space: pre;
-  overflow-x: auto;
-  word-break: normal;
-  word-wrap: normal;
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-
-div.content > pre {
-  background-color: #f8f8f8;
-  border: none;
-  border-radius: 0;
-  border-left: 2pt solid #ccc;
-  padding: 0.5em 1em;
-}
-
-pre.dark {
-  background-color: #000;
-  color: #aaa;
-}
-
-pre code {
-  white-space: pre;
-  overflow-x: auto;
-}
-
-/******************************************************************************/
-/* Horizontal scrollbar for images -- Contribution by JLF                     */
-/******************************************************************************/
-
-.img-scroll {
-  overflow-x: auto;
-  max-width: 100%;
-  padding-bottom: 6px;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  background-color: #f6f8fa;
-}
-
-.img-scroll img {
-  display: block;
-  max-width: none;
-  height: auto;
-}
-
-/******************************************************************************/
-/* Page break                                                                 */
-/******************************************************************************/
-
-.newpage {
-  break-before: page;
-  page-break-before: always;
+.footnote {
+  text-align: left;
+  text-align-last: left;
+  hyphens: manual;
 }
 
 /******************************************************************************/
@@ -459,8 +262,6 @@ pre code {
 
 }
 
-/* No page number on first page                                               */
-
 @page:first {
   @bottom-center {
     content: none;
@@ -470,55 +271,5 @@ pre code {
 @page :blank {
   @bottom-center {
     content: none;
-  }
-}
-
-/******************************************************************************/
-/* Footnotes                                                                  */
-/******************************************************************************/
-
-.footnotes ol {
-  font-size: var(--doc-footnote-size);
-  ::marker {
-    font-size: var(--doc-fn-marker-size);
-    vertical-align: super;
-  }
-}
-
-.footnotes p {
-  text-indent: 0;
-}
-
-.footnote {
-  float: footnote;
-  margin-left: 10pt;
-  margin-right: 10pt;
-  font-size: var(--doc-footnote-size);
-  line-height: 1.4;
-  font-family: 'Times New Roman', Times, serif;
-  text-align: left;
-  text-align-last: left;
-  hyphens: manual;
-}
-
-.footnote code {
-  color: #222;
-  background-color: #f0f0f0;
-  padding: 0.1em 0.2em;
-  border-radius: 2px;
-  font-size: 0.9em;
-}
-
-::footnote-call {
-  font-size: 60%;
-  vertical-align: super;
-  line-height: 0;
-}
-
-@page {
-  @footnote {
-    border-top: 0.5pt solid black;
-    margin-top: 10pt;
-    padding-top: 8pt;
   }
 }

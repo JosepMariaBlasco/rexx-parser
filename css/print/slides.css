@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*                                                                            */
-/* slides.css - Predefined CSS for slides.md files                            */
+/* slides.css - Conference slide deck for paged.js                            */
 /* ================================================                           */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
@@ -10,92 +10,30 @@
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
+/* Load AFTER rexxpub-base.css.  No size variants — one size fits all.        */
+/*                                                                            */
+/* Page size: 254mm x 142.875mm (exact 16:9, FHD-compatible)                  */
+/* Body font: 20pt sans-serif for projection readability                      */
+/*                                                                            */
+/* Markdown structure:                                                        */
+/*                                                                            */
+/*   ::::: title-page        Title slide                                      */
+/*   h1 {.newpage}           Content slide — h1 is the slide title            */
+/*   h1 {.part .newpage}     Section divider — centred, large                 */
+/*   ::::: closing-page      Optional closing slide                           */
+/*                                                                            */
 /* Version history:                                                           */
 /*                                                                            */
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260303    0.5  First version                                             */
+/* 20260306         Refactored: common styles moved to rexxpub-base.css       */
 /*                                                                            */
 /******************************************************************************/
 
-/*
-  Conference slide deck for paged.js
-
-  Page size: 254mm x 142.875mm (exact 16:9, FHD-compatible)
-  Body font: 20pt sans-serif for projection readability
-  No parametric sizing — one size fits all for slides
-
-  Markdown structure:
-
-    ::::: title-page        Title slide (same convention as article/letter)
-    h1 {.newpage}           Content slide — h1 is the slide title
-    h1 {.part .newpage}     Section divider — centred, large
-    ::::: closing-page      Optional closing slide (thank you, Q&A, etc.)
-
-  The title-page div uses the same nested divs as article:
-    ::: author, ::: affiliation, ::: address, ::: email, ::: date, etc.
-  This means the same Markdown title page works in both article and slides.
-*/
-
 /******************************************************************************/
 /******************************************************************************/
-/* EPBCN-specific styles                                                      */
-/******************************************************************************/
-/******************************************************************************/
-
-body {
-  background-color: #eee;
-}
-
-@media print {
-  body { background-color: #fff; }
-}
-
-.bg-white { background-color: white; }
-
-@media print {
-
-  div.logo-and-title,
-  nav.x-breadcrumb,
-  nav.x-header,
-  div.footer,
-  hr.before-footer {
-    display: none;
-  }
-
-  .screenonly {
-    display: none;
-  }
-
-}
-
-div.sidebar { font-size: larger; }
-
-@media print {
-  div.sidebar { display: none; }
-}
-
-.micrologo {
-  font-family: 'Century Gothic','Helvetica Neue',Helvetica,Arial,sans-serif;
-  font-size: larger;
-}
-
-h1.pagetitle {
-  color: #ad564a;
-  font-weight: normal;
-  font-size: 35px;
-  margin-top: 20px;
-  margin-bottom: 10px;
-}
-
-.navbar-default .navbar-nav>li>a.secundario,
-.navbar-default .secundario {
-  color: #952424;
-}
-
-/******************************************************************************/
-/******************************************************************************/
-/* Styling the slide content                                                  */
+/* Slide content                                                              */
 /******************************************************************************/
 /******************************************************************************/
 
@@ -158,14 +96,6 @@ h3 {
   margin-bottom: 0.2em;
 }
 
-div.content h1, div.content h2,
-div.content h3, div.content h4 {
-  font-family: inherit;
-  line-height: 1.2;
-  break-after: avoid;
-  page-break-after: avoid;
-}
-
 /******************************************************************************/
 /* Paragraphs — block style, no indent                                        */
 /******************************************************************************/
@@ -177,20 +107,19 @@ div.content p {
 }
 
 /******************************************************************************/
-/* Lists — the bread and butter of conference slides                          */
-/* More generous spacing than article for projection readability.             */
+/* Lists — override base for projection readability                           */
 /******************************************************************************/
 
 div.content ul,
 div.content ol {
   margin-top: 0.3em;
   margin-bottom: 0.5em;
-  padding-left: 1.5em;                  /* Tighter than article — space is    */
+  padding-left: 1.5em;                  /* Tighter than base — space is       */
                                         /* precious on slides                 */
 }
 
 div.content li {
-  margin-bottom: 0.4em;                 /* More generous than article         */
+  margin-bottom: 0.4em;                 /* More generous than base            */
 }
 
 div.content li:last-child {
@@ -204,11 +133,6 @@ div.content ol ul {
   margin-top: 0.2em;
   margin-bottom: 0.2em;
   padding-left: 1.3em;
-}
-
-ul[data-align-last-split-element='justify'] > li,
-ol[data-align-last-split-element='justify'] > li {
-  text-align-last: left;
 }
 
 /******************************************************************************/
@@ -323,82 +247,39 @@ div.content div.closing-page p {
 }
 
 /******************************************************************************/
-/* Inline code                                                                */
+/* Inline code — override base: slightly more padding for projection          */
 /******************************************************************************/
 
 div.content code {
-  color: #222;
-  background-color: #f0f0f0;
   padding: 0.1em 0.3em;
   border-radius: 3px;
-  font-size: 0.85em;
-}
-
-div.content pre code {
-  padding: 0;
-  background-color: transparent;
-  border-radius: 0;
-  font-size: inherit;
-  color: inherit;
 }
 
 /******************************************************************************/
-/* Pre blocks                                                                 */
+/* Pre blocks — override base for projection                                  */
 /******************************************************************************/
 
 div.content pre {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
   font-size: 14pt;
-  white-space: pre;
-  overflow-x: auto;
-  word-break: normal;
-  word-wrap: normal;
-  break-inside: avoid;
-  page-break-inside: avoid;
 }
 
 div.content > pre {
   background-color: #f5f5f5;
   border: none;
+  border-left: none;
   border-radius: 4px;                   /* Slightly rounded for slides        */
   padding: 0.5em 0.8em;
 }
 
-pre.dark {
-  background-color: #000;
-  color: #aaa;
-}
-
-pre code {
-  white-space: pre;
-  overflow-x: auto;
-}
-
 /******************************************************************************/
-/* Links                                                                      */
-/******************************************************************************/
-
-div.content a {
-  color: #00529B;
-  text-decoration: none;
-}
-
-/******************************************************************************/
-/* URIs                                                                       */
+/* URIs — override base: shorter font stack for slides                        */
 /******************************************************************************/
 
 a.uri {
   font-family: Consolas, 'Courier New', monospace;
   font-size: 0.85em;
-}
-
-/******************************************************************************/
-/* Small capitals                                                             */
-/******************************************************************************/
-
-span.smallcaps {
-  font-variant: small-caps;
 }
 
 /******************************************************************************/
@@ -417,21 +298,17 @@ div.content blockquote {
 }
 
 /******************************************************************************/
-/* Tables                                                                     */
+/* Tables — override base: slide colours                                      */
 /******************************************************************************/
 
 div.content table {
-  width: auto;
   margin: 0.5em auto;
-  border-collapse: collapse;
   font-size: 0.9em;
 }
 
 div.content table th,
 div.content table td {
   padding: 0.25em 0.6em;
-  text-align: left;
-  vertical-align: top;
 }
 
 div.content table thead {
@@ -444,32 +321,8 @@ div.content table tbody {
 }
 
 /******************************************************************************/
-/* Horizontal scrollbar for images — Contribution by JLF                      */
-/******************************************************************************/
-
-.img-scroll {
-  overflow-x: auto;
-  max-width: 100%;
-  padding-bottom: 6px;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  background-color: #f6f8fa;
-}
-
-.img-scroll img {
-  display: block;
-  max-width: none;
-  height: auto;
-}
-
-/******************************************************************************/
 /* Page break                                                                 */
 /******************************************************************************/
-
-.newpage {
-  break-before: page;
-  page-break-before: always;
-}
 
 @media print {
   h1.newpage {
@@ -511,7 +364,7 @@ div.content table tbody {
 }
 
 /******************************************************************************/
-/* Footnotes                                                                  */
+/* Footnotes — override base: sans-serif, smaller, left-aligned               */
 /******************************************************************************/
 
 .footnotes ol {
@@ -522,14 +375,7 @@ div.content table tbody {
   }
 }
 
-.footnotes p {
-  text-indent: 0;
-}
-
 .footnote {
-  float: footnote;
-  margin-left: 10pt;
-  margin-right: 10pt;
   font-size: 12pt;
   line-height: 1.3;
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -539,22 +385,13 @@ div.content table tbody {
 }
 
 .footnote code {
-  color: #222;
-  background-color: #f0f0f0;
   padding: 0.1em 0.3em;
   border-radius: 3px;
-  font-size: 0.85em;
-}
-
-::footnote-call {
-  font-size: 60%;
-  vertical-align: super;
-  line-height: 0;
 }
 
 @page {
   @footnote {
-    border-top: 0.5pt solid #ccc;
+    border-top: 0.5pt solid #ccc;       /* Lighter line for slides            */
     margin-top: 8pt;
     padding-top: 6pt;
   }

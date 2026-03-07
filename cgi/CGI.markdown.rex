@@ -129,6 +129,7 @@ Exit
 
   style = "dark"
   view  = "text"
+  size  = 12
   print = 0
   If uri~contains("?")  Then Do
     Parse Var uri uri"?"parameters
@@ -300,17 +301,23 @@ Exit
       When "%contents%"      Then Do line Over contents; Say line; End
       When "%footer%"        Then Call OptionalCall PageFooter
       When "%sidebar%"       Then Call OptionalCall Sidebar, uri
-      When "%printjs%"       Then If print Then Do
+      When "%printjs%"       Then If print Then
         Say "<script src='/js/paged.polyfill.js'></script>"
+      When "%printtoc%"      Then
         Say "<script src='/rexx-parser/js/createToc.js'></script>"
-      End
       When "%printstyle%"    Then
         If printStyle \== "" Then
           Say "    <link rel='stylesheet' media='print' href='"printStyle"'>"
-      When "%filenamespecificstyle%"    Then
-        If filenameSpecificStyle \== "" Then
+      When "%filenamespecificstyle%"    Then Do
+        If filenameSpecificStyle == "markdown" Then
+          Say "    <link rel='stylesheet' href='/rexx-parser/css/markdown.css'>"
+        Else Do
+          Say "    <link rel='stylesheet'" -
+              "href='/rexx-parser/css/print/rexxpub-base.css'>"
           Say "    <link rel='stylesheet'" -
               "href='/rexx-parser/css/"filenameSpecificStyle".css'>"
+        End
+      End
       When "%sizespecificstyle%"        Then
         If size == 12 Then Nop
         Else
@@ -498,6 +505,7 @@ View:
     </div>
     <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
     <script src="/js/bootstrap.min.js"></script>
+    %printTOC%
     <script src="/js/chooser.js"></script>
   </body>
 </html>

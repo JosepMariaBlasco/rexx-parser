@@ -128,8 +128,8 @@
       When "-a", "--ansi"        Then options.mode         =  ANSI
       When "-xtr", "--executor"  Then options.executor     = 1
       When "--css"               Then options.css          = 1
-      When "--tutor"             Then options.unicode      = 1
-      When "-u", "--unicode"     Then options.unicode      = 1
+      When "-u", "--tutor", -
+           "--unicode"           Then options.unicode = 1
       When "--noprolog"          Then options.prolog       = 0
       When "--prolog"            Then options.prolog       = 1
       When "--continue"          Then options.continue     = 1

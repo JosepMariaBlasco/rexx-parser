@@ -19,12 +19,13 @@
 /* 20241208    0.1a c/CLASSIC_COMMENT/STANDARD_COMMENT/                       */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20251110    0.3a Change the name to elident.rex                            */
-/* 20252111         Add Executor support, move to /bin                        */
-/* 20252118         Add TUTOR support                                         */
+/* 20251211         Add Executor support, move to /bin                        */
+/* 20251218         Add TUTOR support                                         */
 /* 20251221    0.4a Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
-/* 20260301         Use compound variable parts                               */
+/* 20260103         Use compound variable parts                               */
+/* 20260307    0.5  Implement experimental option                             */
 /*                                                                            */
 /******************************************************************************/
 
@@ -43,9 +44,10 @@
     Then args = .SysCArgs
     Else args = ArgArray(Arg(1))
 
-  executor = 0
-  unicode  = 0
-  itrace   = 0
+  executor     = 0
+  experimental = 0
+  unicode      = 0
+  itrace       = 0
 
 ProcessOptions:
   If args~items == 0 Then Signal Help
@@ -55,10 +57,11 @@ ProcessOptions:
 
   If option[1] == "-" Then Do
     Select Case Lower(option)
-      When "-h", "--help"               Then Signal Help
-      When "--executor", "-xtr"         Then executor = 1
-      When "-it", "--itrace"            Then itrace = 1
-      When "-u", "--tutor", "--unicode" Then unicode = 1
+      When "-h", "--help"                 Then Signal Help
+      When "--executor", "-xtr"           Then executor     = 1
+      When "-e", "-exp", "--experimental" Then experimental = 1
+      When "-it", "--itrace"              Then itrace       = 1
+      When "-u", "--tutor", "--unicode"   Then unicode      = 1
       Otherwise Call Error "Invalid option '"option"'."
     End
     Call ProcessOptions
@@ -81,8 +84,9 @@ ProcessOptions:
   If Right(chunk,1) = "0a"X Then source~append("")
 
   options = .Array~new
-  If executor Then options~append(("EXECUTOR", 1))
-  If unicode  Then options~append(("UNICODE", 1))
+  If executor     Then options~append(("EXECUTOR",     1))
+  If unicode      Then options~append(("UNICODE",      1))
+  If experimental Then options~append(("EXPERIMENTAL", 1))
 
   parser = .Rexx.Parser~new( file, source, options )
 
@@ -182,9 +186,10 @@ then display this help and exit.
 
 Options:
 
--it, --itrace           Print internal trace on error
--u, --tutor, --unicode  Enable TUTOR-flavored Unicode
--xtr, --executor        Activate support for Executor language extensions
+-it, --itrace             Print internal trace on error
+-u, --tutor, --unicode    Enable TUTOR-flavored Unicode
+-e, -exp, --experimental  Enable Experimental features
+-xtr, --executor          Activate support for Executor language extensions
 
 The 'myname' program is part of the Rexx Parser package,
 see https://rexx.epbcn.com/rexx-parser/. It is distributed under

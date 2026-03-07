@@ -35,16 +35,17 @@ Usage
 [rexx] rxcomp [<em>options</em>] <em>file1</em> <em>file2</em>
 </pre>
 
+When called without arguments, display help information and exit.
+
 Options
 -------
 
 ---------------------------------- ------------------------------
-`-it`, `--itrace`                  Print internal traceback on error
+`-h`, `--help`                     Display help and exit
 `-e`, `--experimental`             Enable Experimental features (also `-exp`)
+`-it`, `--itrace`                  Print internal traceback on error
+`-u`, `--unicode`, `--tutor`       Enable TUTOR-flavored Unicode
 `-xtr`, `--executor`&nbsp;&nbsp;   Enable Executor support
-`-h`, `--help`                     Display this information
-`-u`, `--unicode`                  Enable TUTOR support
-`--tutor`                          Enable TUTOR support
 ---------------------------------- ------------------------------
 
 Program source

@@ -51,7 +51,7 @@ ProcessOptions:
       When "-h", "--help"       Then Signal Help
       When "-u", "--tutor", -
         "--unicode"             Then unicode = 1
-      When "-e", "-exp", "--exp", -
+      When "-e", "-exp",  -
         "--experimental"        Then experimental = 1
       When "-xtr", "--executor" Then executor = 1
       When "-it", "--itrace"    Then itrace = 1

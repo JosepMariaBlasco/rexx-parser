@@ -1,7 +1,10 @@
 /******************************************************************************/
 /*                                                                            */
-/* article.css - Predefined CSS for article.md files                          */
-/* =================================================                          */
+/* article.css - LaTeX article class for paged.js                             */
+/* ===============================================                            */
+/*                                                                            */
+/* Load AFTER rexxpub-base.css.  Optional size variants:                      */
+/*   article-10pt.css, article-14pt.css (load AFTER this file).               */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -18,182 +21,29 @@
 /* 20260303    0.5  LaTeX article fidelity improvements                       */
 /*                  Parametrized with CSS custom properties for               */
 /*                  multi-size support (10pt, 12pt, 14pt)                     */
+/* 20260306         Refactored: common styles moved to rexxpub-base.css       */
 /*                                                                            */
 /******************************************************************************/
 
-/*
-  Structure of an article page (at 1080p):
-
-             1    2    3    4    5    6    7    8    9   10   11   12
-          +----|----|----|----|----|----|----|----|----|----|----|----+
-          |                           MENU                            |
-          +-----------------------------------------------------------+
-          |  LOGO          PAGE TITLE                                 |
-          +--------------------------------------------+--------------+
-          | Breadcrumb                                 | Side bar     |
-  Margin  +--------------------------------------------+              | Margin
-          | Article contents                           |              |
-          |                                            |              |
-          | ...                                        |              |
-          +--------------------------------------------+--------------+
-          |                           FOOTER                          |
-          +-----------------------------------------------------------+
-
-  body                               bg-white                             body
-*/
-
 /******************************************************************************/
-/* CSS Custom Properties for article sizing                                   */
-/*                                                                            */
-/* These variables control all size-dependent aspects of the article layout.  */
-/* The default values correspond to 12pt (LaTeX article default).             */
-/*                                                                            */
-/* To use a different size, load one of the size-specific stylesheets         */
-/* AFTER this file:                                                           */
-/*   - article-10pt.css  (redefines :root variables + @page overrides)        */
-/*   - article-14pt.css  (redefines :root variables + @page overrides)        */
-/* If no size stylesheet is loaded, 12pt is used.                             */
-/*                                                                            */
-/* The values are derived from the LaTeX article class at each point size,    */
-/* with minor adjustments for Times New Roman (which has a larger x-height    */
-/* than Computer Modern, requiring slightly more generous line-height).       */
-/*                                                                            */
-/* Reference table:                                                           */
-/*                                                                            */
-/*   Property              10pt       12pt       14pt       LaTeX source      */
-/*   -------------------   --------   --------   --------   ----------------  */
-/*   --doc-font-size       10pt       12pt       14pt       \normalsize       */
-/*   --doc-line-height     1.20       1.25       1.29       \baselineskip     */
-/*   --doc-footnote-size   8pt        10pt       12pt       \footnotesize     */
-/*   --doc-fn-marker-size  6pt        7pt        8pt        ~\scriptsize      */
-/*   --doc-pre-size        7.2pt      8.6pt      10pt       ~0.72 * base      */
-/*                                                                            */
-/* The @page rules (margin, page number size) cannot reliably use var()       */
-/* in all paged.js versions, so they are set to 12pt defaults here and        */
-/* overridden in the size-specific stylesheets.                               */
-/*                                                                            */
+/******************************************************************************/
+/* Article content                                                            */
+/******************************************************************************/
 /******************************************************************************/
 
-:root {
-  --doc-font-size:        12pt;
-  --doc-line-height:      1.25;
-  --doc-footnote-size:    10pt;
-  --doc-fn-marker-size:   7pt;
-  --doc-pre-size:         8.6pt;
+div.content {
+  font-family: "Times New Roman", Times, serif;
+  font-size: var(--doc-font-size);
+  line-height: var(--doc-line-height);
+  text-align: justify;
+  text-align-last: auto !important;
+  hyphens: auto;
+  widows: 2;
+  orphans: 2;
 }
 
 /******************************************************************************/
-/******************************************************************************/
-/* EPBCN-specific styles                                                      */
-/******************************************************************************/
-/******************************************************************************/
-
-/******************************************************************************/
-/* Styling the HTML body                                                      */
-/******************************************************************************/
-
-body {
- background-color:#eee;
-}
-
-@media print {
-  body {background-color:#fff;}
-}
-
-/* Body contents will be inside a div with classes 'container' and 'bg-white' */
-
-.bg-white {background-color:white;}
-
-/******************************************************************************/
-/* We will print the article contents only                                    */
-/******************************************************************************/
-
-@media print {
-
-  div.logo-and-title,
-  nav.x-breadcrumb,
-  nav.x-header,
-  div.footer,
-  hr.before-footer {
-    display: none;
-  }
-
-  .screenonly {
-    display: none;
-  }
-
-}
-
-/******************************************************************************/
-/* Styling the side bar                                                       */
-/******************************************************************************/
-
-div.sidebar { font-size:larger; }
-
-@media print {
-  div.sidebar{display: none;}
-}
-
-/******************************************************************************/
-/* At small resolutions, the logo collapses inside the menu bar               */
-/******************************************************************************/
-
-.micrologo {
-   font-family:'Century Gothic','Helvetica Neue',Helvetica,Arial,sans-serif;
-   font-size:larger;
-}
-
-/******************************************************************************/
-/* The page title, after the logo                                             */
-/******************************************************************************/
-
-h1.pagetitle {
-  color: #ad564a;
-  font-weight:normal;
-  font-size: 35px;
-  margin-top: 20px;
-  margin-bottom: 10px;
-}
-
-/******************************************************************************/
-/* Style the navbar                                                           */
-/******************************************************************************/
-
-.navbar-default .navbar-nav>li>a.secundario, .navbar-default .secundario {
-  color: #952424;
-}
-
-/******************************************************************************/
-/******************************************************************************/
-/* Styling the article content                                                */
-/******************************************************************************/
-/******************************************************************************/
-
-div.content{
- font-family: "Times New Roman", Times, serif;
- font-size: var(--doc-font-size);
- line-height: var(--doc-line-height);
- text-align: justify;
- text-align-last: auto !important;
- hyphens: auto;
- widows: 2;
- orphans: 2;
-}
-
-/******************************************************************************/
-/* Override Bootstrap heading defaults inside article content                 */
-/******************************************************************************/
-
-div.content h1, div.content h2,
-div.content h3, div.content h4 {
-  font-family: inherit;
-  line-height: 1.2;
-  break-after: avoid;
-  page-break-after: avoid;
-}
-
-/******************************************************************************/
-/* Styling paragraphs                                                         */
+/* Paragraphs — LaTeX convention: first-line indent, no vertical space        */
 /******************************************************************************/
 
 p {
@@ -295,40 +145,7 @@ h3 + h4 {
 }
 
 /******************************************************************************/
-/* Lists                                                                      */
-/******************************************************************************/
-
-div.content ul,
-div.content ol {
-  margin-top: 0.4em;
-  margin-bottom: 0.4em;
-  padding-left: 2.5em;
-}
-
-div.content li {
-  margin-bottom: 0.2em;
-}
-
-div.content li:last-child {
-  margin-bottom: 0;
-}
-
-div.content ul ul,
-div.content ol ol,
-div.content ul ol,
-div.content ol ul {
-  margin-top: 0.2em;
-  margin-bottom: 0.2em;
-  padding-left: 2.2em;
-}
-
-ul[data-align-last-split-element='justify'] > li,
-ol[data-align-last-split-element='justify'] > li {
-  text-align-last: left;
-}
-
-/******************************************************************************/
-/* Style the title-page ("maketitle") section                                 */
+/* Title page ("maketitle")                                                   */
 /******************************************************************************/
 
 .title-page h1 {
@@ -343,13 +160,13 @@ ol[data-align-last-split-element='justify'] > li {
   display: block;
   font-size: 0.75em;
   margin-top: 0.2em;
-  color:black;
+  color: black;
   font-style: italic;
 }
 
 @media print {
   .title-page h1 {
-    margin-top:150px;
+    margin-top: 150px;
   }
 }
 
@@ -376,7 +193,7 @@ ol[data-align-last-split-element='justify'] > li {
   font-size: 13px;
   text-align: center;
   text-align-last: center;
-  margin-top:0;
+  margin-top: 0;
   margin-bottom: 0;
   font-family: monospace, monospace;
 }
@@ -389,13 +206,24 @@ ol[data-align-last-split-element='justify'] > li {
 }
 
 /******************************************************************************/
+/* Blockquotes                                                                */
+/******************************************************************************/
+
+div.content blockquote {
+  margin: 0.8em 1.5em;
+  padding: 0;
+  font-style: normal;
+  font-size: inherit;
+  border-left: none;
+}
+
+/******************************************************************************/
 /* Pagination                                                                 */
 /*                                                                            */
 /* NOTE: var() may not work inside @page rules in all paged.js versions.      */
 /* The values here are the 12pt defaults.  The size-specific stylesheets      */
 /* (article-10pt.css, article-14pt.css) override these @page rules with       */
 /* literal values appropriate to each size.                                   */
-/*                                                                            */
 /******************************************************************************/
 
 @page {
@@ -424,266 +252,4 @@ ol[data-align-last-split-element='justify'] > li {
   @bottom-center {
     content: none;
   }
-}
-
-/******************************************************************************/
-/* Styling links                                                              */
-/******************************************************************************/
-
-div.content a {
-  color: #00529B;
-  text-decoration: none;
-}
-
-/******************************************************************************/
-/* Styling URIs                                                               */
-/******************************************************************************/
-
-a.uri {
-  font-family:
-    Consolas,
-    "Andale Mono WT",
-    "Andale Mono",
-    "Lucida Console",
-    "Lucida Sans Typewriter",
-    "DejaVu Sans Mono",
-    "Bitstream Vera Sans Mono",
-    "Liberation Mono",
-    "Nimbus Mono L",
-    Monaco,
-    "Courier New",
-    Courier,
-    monospace;
-  font-size: 0.9em;
-}
-
-/******************************************************************************/
-/* Styling inline code                                                        */
-/******************************************************************************/
-
-div.content code {
-  color: #222;
-  background-color: #f0f0f0;
-  padding: 0.1em 0.2em;
-  border-radius: 2px;
-  font-size: 0.9em;
-}
-
-div.content pre code {
-  padding: 0;
-  background-color: transparent;
-  border-radius: 0;
-  font-size: inherit;
-  color: inherit;
-}
-
-.footnote code {
-  color: #222;
-  background-color: #f0f0f0;
-  padding: 0.1em 0.2em;
-  border-radius: 2px;
-  font-size: 0.9em;
-}
-
-/******************************************************************************/
-/* Small capitals                                                             */
-/******************************************************************************/
-
-span.smallcaps {
-  font-variant:small-caps;
-}
-
-/******************************************************************************/
-/* Blockquotes                                                                */
-/******************************************************************************/
-
-div.content blockquote {
-  margin: 0.8em 1.5em;
-  padding: 0;
-  font-style: normal;
-  font-size: inherit;
-  border-left: none;
-}
-
-/******************************************************************************/
-/* pre blocks                                                                 */
-/******************************************************************************/
-
-div.content pre {
-  margin-top: 1em;
-  margin-bottom: 1em;
-  font-size: var(--doc-pre-size);
-  white-space: pre;
-  overflow-x: auto;
-  word-break: normal;
-  word-wrap: normal;
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-
-div.content > pre {
-  background-color: #f8f8f8;
-  border: none;
-  border-radius: 0;
-  border-left: 2pt solid #ccc;
-  padding: 0.5em 1em;
-}
-
-pre.dark {
-  background-color: #000;
-  color: #aaa;
-}
-
-pre code {
-  white-space: pre;
-  overflow-x: auto;
-}
-
-/******************************************************************************/
-/* Horizontal scrollbar for images -- Contribution by JLF (Thanks!)           */
-/******************************************************************************/
-/*
-Usage:
-<p class="img-scroll"><img src="image.png" width="1400"></p>
-
-The image will not shrink when the content column shrinks.
-The image occupies its own line (display:block, not inline-block).
-The horizontal scrollbar will appear as needed.
-
-If the image's intrinsic size is too wide then put a width in your <img>.
-For example,
-<img width="1400">
-(not width="1400px", it's an HTML attribute).
-This means "The intrinsic layout width of this image is exactly 1400 pixels",
-which is ideal for scrollable, fixed-size images.
-
-In this context, an HTML attribute is preferable to a CSS property like
-<img style="width: 1400px">
-because CSS widths are subject to flex shrinking, while HTML intrinsic sizes
-are not unless explicitly allowed.
-
-Don't use % widths, because % is relative to the container.
-*/
-
-.img-scroll {
-  overflow-x: auto;
-  max-width: 100%;
-  padding-bottom: 6px;  /* space for scrollbar */
-
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  background-color: #f6f8fa;
-}
-
-.img-scroll img {
-  display: block;
-  max-width: none;
-  height: auto;
-}
-
-/******************************************************************************/
-/* Class to force a page break                                                */
-/******************************************************************************/
-
-.newpage {
-  break-before: page;
-  page-break-before: always;
-}
-
-/******************************************************************************/
-/* Tables (booktabs style)                                                    */
-/******************************************************************************/
-
-div.content table {
-  width: auto;
-  margin: 1em auto;
-  border-collapse: collapse;
-  font-size: inherit;
-}
-
-div.content table th,
-div.content table td {
-  padding: 0.3em 0.8em;
-  text-align: left;
-  vertical-align: top;
-}
-
-div.content table thead {
-  border-top: 1.5pt solid black;
-  border-bottom: 0.75pt solid black;
-}
-
-div.content table tbody {
-  border-bottom: 1.5pt solid black;
-}
-
-/******************************************************************************/
-/* Support for footnotes at the end of the page                               */
-/******************************************************************************/
-
-.footnotes ol {
-  font-size: var(--doc-footnote-size);
-  ::marker {
-    font-size: var(--doc-fn-marker-size);
-    vertical-align: super;
-  }
-}
-
-.footnotes p {
-  text-indent: 0;
-}
-
-.footnote {
-  float: footnote;
-  margin-left: 10pt;
-  margin-right: 10pt;
-  font-size: var(--doc-footnote-size);
-  line-height: 1.4;
-  font-family: 'Times New Roman', Times, serif;
-  text-align: justify;
-  text-align-last: left;
-  hyphens: auto;
-}
-
-::footnote-call {
-  font-size: 60%;
-  vertical-align: super;
-  line-height: 0;
-}
-
-@page {
-  @footnote {
-    border-top: 0.5pt solid black;
-    margin-top: 10pt;
-    padding-top: 8pt;
-  }
-}
-
-/******************************************************************************/
-/* Bibliographies                                                             */
-/******************************************************************************/
-
-div.csl-bib-body {
-  margin-top: 1em;
-  line-height: 1.4;
-}
-
-div.csl-entry {
-  clear: both;
-  margin-bottom: 0.6em;
-}
-
-div.csl-left-margin {
-  float: left;
-  width: 2.5em;
-  text-align: right;
-  padding-right: 0.5em;
-}
-
-div.csl-right-inline {
-  margin-left: 3em;
-}
-
-div.csl-indent {
-  margin-left: 2em;
 }

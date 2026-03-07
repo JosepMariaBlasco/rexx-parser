@@ -13,20 +13,23 @@ Usage
 Transform *file* into a list of elements, according to
 *options*, and print the list.
 
+If *file* does not include an extension, `.rex` is automatically appended.
+
+When called without arguments, display help information and exit.
+
 Options
 -------
 
 ---------------------------------- ------------------------------
 `-h`, `--help`                     Display help and exit
-`-e`, `--experimental`&nbsp;&nbsp; Enable Experimental features (also `-exp`)
+`-e`, `--experimental`&nbsp;&nbsp; Enable Experimental features (also `-exp`, `--exp`)
 `-xtr`, `--executor`               Enable Executor support
 `--from [LINE]`                    Show elements starting at line LINE
 `-it`, `--itrace`                  Print internal traceback on error
 `--no-show-spaces`                 Leave spaces untouched
-`--show-spaces`                    Show spaces as the "␣" character
+`--show-spaces`                    Show spaces as the "␣" character (default)
 `--to   [LINE]`                    Stop showing elements after line LINE
-`--tutor`                          Enable TUTOR-flavored Unicode
-`-u`, `--unicode`                  Enable TUTOR-flavored Unicode
+`-u`, `--unicode`, `--tutor`       Enable TUTOR-flavored Unicode
 ---------------------------------- ------------------------------
 
 Program source

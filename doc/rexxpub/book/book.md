@@ -1,7 +1,7 @@
 ::::: title-page
 
-[The RexxPub Book]{.book-title} <small>A Comprehensive Guide</small>
-=====================================================================
+# The RexxPub Book {.book-title .toc-exclude}
+## A Comprehensive Guide {.book-subtitle}
 
 ::: author
 [Josep Maria Blasco](https://www.epbcn.com/equipo/josep-maria-blasco/)

@@ -169,11 +169,13 @@ ProcessOptions:
   fileDir      =  fileObj~parent
   tmpDir       = .File~temporaryPath~absolutePath
   htmlFilename =  SysTempFileName(tmpDir"/"name"?????.html")
+  baseFile     =  rootDir"/css/print/rexxpub-base.css"
 
   bootstrap    =  rootDir"/css/bootstrap.css"
 
   CSS          =  CharIn(bootstrap,    1,Chars(bootstrap)    )
   CSS        ||=  CharIn(cssFile,      1,Chars(cssFile)      )
+  CSS        ||=  CharIn(baseFile,     1,Chars(baseFile)     )
   CSS        ||=  CharIn(docClassFile, 1,Chars(docClassFile) )
   If sizeFile \== "" Then
     CSS      ||=  CharIn(sizeFile,     1,Chars(sizeFile)     )

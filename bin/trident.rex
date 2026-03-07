@@ -23,11 +23,12 @@
 /* 20250707    0.2d First version                                             */
 /* 20251110    0.2e Rename to "trident.rex" (was "clonetree")                 */
 /* 20251211    0.3a Implement Executor support                                */
-/* 20252118         Add TUTOR support                                         */
+/* 20251218         Add TUTOR support                                         */
 /* 20251221    0.4a Add --itrace option, improve error messages               */
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
 /* 20260102         Standardize help options to -h and --help                 */
+/* 20260307    0.5  Add experimental support                                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -46,9 +47,10 @@
     Then args = .SysCArgs
     Else args = ArgArray(Arg(1))
 
-  executor = 0
-  unicode  = 0
-  itrace   = 0
+  executor     = 0
+  experimental = 0
+  unicode      = 0
+  itrace       = 0
 
 ProcessOptions:
   If args~items == 0 Then Signal Help
@@ -58,10 +60,11 @@ ProcessOptions:
 
   If option[1] == "-" Then Do
     Select Case Lower(option)
-      When "-h", "--help"               Then Signal Help
-      When "--itrace", "-it"            Then itrace = 1
-      When "--executor", "-xtr"         Then executor = 1
-      When "-u", "--tutor", "--unicode" Then unicode = 1
+      When "-h", "--help"                 Then Signal Help
+      When "--itrace", "-it"              Then itrace = 1
+      When "--executor", "-xtr"           Then executor = 1
+      When "-e", "-exp", "--experimental" Then experimental = 1
+      When "-u", "--tutor", "--unicode"   Then unicode = 1
       Otherwise Call Error "Invalid option '"option"'."
     End
     Signal ProcessOptions
@@ -85,8 +88,9 @@ ProcessOptions:
   Call Stream fullPath, "C", "Close"
 
   options = .Array~new
-  If executor Then options~append(("EXECUTOR", 1))
-  If unicode  Then options~append(("UNICODE",  1))
+  If executor     Then options~append(("EXECUTOR",     1))
+  If unicode      Then options~append(("UNICODE",      1))
+  If experimental Then options~append(("EXPERIMENTAL", 1))
 
   -- Parse our program
   parser = .Rexx.Parser~new(fullPath, source, options)
@@ -202,8 +206,10 @@ then display this help and exit.
 
 Options:
 
---executor, -xtr  Activate support for Executor language extensions
---itrace, -it     Print internal trace on error
+--executor, -xtr          Activate support for Executor language extensions
+-e, -exp, --experimental  Enable Experimental features
+-u, --tutor, --unicode    Enable TUTOR-flavored Unicode
+--itrace, -it             Print internal trace on error
 
 The 'myname' program is part of the Rexx Parser package,
 see https://rexx.epbcn.com/rexx-parser/. It is distributed under

@@ -287,7 +287,7 @@ Crumb:
     When docrexxpub"/article"      Then Return "The article Document Class"
     When docrexxpub"/letter"       Then Return "Letter to the Rexx Community"
     When docrexxpub"/slides"       Then Return "The slides Document Class"
-    When docrexxpub"/book"         Then Return "The book Document Class"
+    When docrexxpub"/book"         Then Return "The RexxPub book"
 
     -- "/rexx-parser/doc/highlighter"
 

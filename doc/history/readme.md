@@ -14,6 +14,12 @@ Version history
   <li> (md2pdf) Add support for `--size` and slides and letter document classes.
   <li> (CGI) Add support for the letter document class.
   <li> (CGI) Add support for style chooser, size chooser and print button.
+  <li> Add javascript to generate TOC (20260304).
+  <li> Add size-specific CSS to book (20260304).
+  <li> Add support for letter and book to md2html (20260304).
+  <li> Refactor print CSS files (20260306).
+  <li> Add support for experimental rexx to elident and trident (20260307).
+  <li> Improve docs for utilities (20260307).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

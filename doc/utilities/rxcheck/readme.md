@@ -3,7 +3,8 @@ RxCheck
 
 ----------------------------
 
-## Usage
+Usage
+-----
 
 <pre>
 [rexx] rxcheck [<em>options</em>] <em>file</em>
@@ -11,38 +12,39 @@ RxCheck
 </pre>
 
 Perform a series of early checks on a Rexx program or
-of a short code fragment, without needing to
+on a short code fragment, without needing to
 run it first. Checks are performed syntactically, and therefore they
 reach dead branches, uncalled procedures and routines, etc.
 
-## Options
+When called without arguments, display help information and exit.
+
+Options
+-------
 
 \
 
 ----------------------------------- ----------------------
-`-h`, `--help`&nbsp;&nbsp;          Display this help file.
+`-h`, `--help`&nbsp;&nbsp;          Display help and exit
 &nbsp;
 Toggles:
 &nbsp;
 `+all`                              Activate all toggles. This is the default.
 `-all`                              Deactivate all toggles.
-`[+|-]iterate`                      Toggle detecting incorrect ITERATEs, or ITERATEs
-                                    to inexistent targets
-`[+|-]leave`                        Toggle detecting incorrect LEAVEs, or LEAVEs
-                                    to inexistent targets
-`[+|-]signal`                       Toggle detecting SIGNALs to inexistent labels.
-`[+|-]guard`                        Toggle checking that GUARD is in a method body.
 `[+|-]bifs`                         Check BIF arguments.
+`[+|-]guard`                        Toggle checking that GUARD is in a method body.
+`[+|-]iterate`                      Toggle detecting incorrect ITERATEs, or ITERATEs
+                                    to inexistent targets.
+`[+|-]leave`                        Toggle detecting incorrect LEAVEs, or LEAVEs
+                                    to inexistent targets.
+`[+|-]signal`                       Toggle detecting SIGNALs to inexistent labels.
 &nbsp;
 `[+|-]debug`                        (De)activate debug mode (not affected by "all").
-`[+|-]itrace`                       Toggle printing internal traceback on error
+`[+|-]itrace`                       Toggle printing internal traceback on error.
 &nbsp;
 Other options (all can be prefixed with "+" or "-"):
 &nbsp;
-`-executor`                         Enable support for Executor
-`-xtr`                              Enable support for Executor
-`-experimental`                     Enable experimental features
-`-exp`                              Enable experimental features
+`-experimental`                     Enable Experimental features (also `-exp`)
+`-executor`                         Enable support for Executor (also `-xtr`)
 `-emptyassignments`                 Allow assignments like "var =".
 `-extraletters "extra"`             Allow all the characters in "extra" to function as letters.
 &nbsp;
@@ -55,3 +57,9 @@ Executing short code fragments:
 \
 
 All toggles except "debug" are active by default.
+
+Program source
+--------------
+
+~~~rexx {source=../../../bin/rxcheck.rex}
+~~~

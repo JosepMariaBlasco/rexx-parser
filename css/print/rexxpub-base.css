@@ -1,0 +1,465 @@
+/******************************************************************************/
+/*                                                                            */
+/* rexxpub-base.css - Shared base styles for all RexxPub document classes     */
+/* ======================================================================     */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* This stylesheet contains styles common to all four document classes        */
+/* (article, book, letter, slides).  It is loaded AFTER Bootstrap and         */
+/* BEFORE the class-specific stylesheet:                                      */
+/*                                                                            */
+/*   bootstrap.css -> rexxpub-base.css -> {class}.css -> {size}.css           */
+/*                                                                            */
+/* It replaces the former markdown.css.                                       */
+/*                                                                            */
+/* Contents:                                                                  */
+/*   1. CSS custom properties (12pt defaults)                                 */
+/*   2. EPBCN site chrome (body, navbar, sidebar, print hide)                 */
+/*   3. Heading defaults (font-family, break-after)                           */
+/*   4. Inline code                                                           */
+/*   5. Links and URIs                                                        */
+/*   6. Small capitals                                                        */
+/*   7. Pre blocks (base)                                                     */
+/*   8. Horizontal image scrollbar (JLF contribution)                         */
+/*   9. Page break (.newpage)                                                 */
+/*  10. Tables (booktabs style, defaults)                                     */
+/*  11. Lists (base)                                                          */
+/*  12. paged.js split-element fixes                                          */
+/*  13. Footnotes (base)                                                      */
+/*  14. Bibliographies (Pandoc CSL)                                           */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260306    0.5  First version — extracted from article/book/letter/slides */
+/*                                                                            */
+/******************************************************************************/
+
+/******************************************************************************/
+/* 1. CSS Custom Properties                                                   */
+/*                                                                            */
+/* Default values for 12pt.  Class-specific stylesheets may override these,   */
+/* and size variants (e.g. article-10pt.css) override them again.             */
+/*                                                                            */
+/* Reference table (article class, LaTeX source):                             */
+/*                                                                            */
+/*   Property              10pt       12pt       14pt       LaTeX source      */
+/*   -------------------   --------   --------   --------   ----------------  */
+/*   --doc-font-size       10pt       12pt       14pt       \normalsize       */
+/*   --doc-line-height     1.20       1.25       1.29       \baselineskip     */
+/*   --doc-footnote-size   8pt        10pt       12pt       \footnotesize     */
+/*   --doc-fn-marker-size  6pt        7pt        8pt        ~\scriptsize      */
+/*   --doc-pre-size        7.2pt      8.6pt      10pt       ~0.72 * base      */
+/*                                                                            */
+/******************************************************************************/
+
+:root {
+  --doc-font-size:        12pt;
+  --doc-line-height:      1.25;
+  --doc-footnote-size:    10pt;
+  --doc-fn-marker-size:   7pt;
+  --doc-pre-size:         8.6pt;
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/* 2. EPBCN site chrome                                                       */
+/*                                                                            */
+/* These styles control the appearance of the EPBCN website shell:            */
+/* background, logo, navbar, sidebar, and print visibility.                   */
+/* They are identical across all four document classes.                        */
+/******************************************************************************/
+/******************************************************************************/
+
+body {
+  background-color: #eee;
+}
+
+@media print {
+  body { background-color: #fff; }
+}
+
+.bg-white { background-color: white; }
+
+@media print {
+
+  div.logo-and-title,
+  nav.x-breadcrumb,
+  nav.x-header,
+  div.footer,
+  hr.before-footer {
+    display: none;
+  }
+
+  .screenonly {
+    display: none;
+  }
+
+}
+
+div.sidebar { font-size: larger; }
+
+@media print {
+  div.sidebar { display: none; }
+}
+
+.micrologo {
+  font-family: 'Century Gothic','Helvetica Neue',Helvetica,Arial,sans-serif;
+  font-size: larger;
+}
+
+h1.pagetitle {
+  color: #ad564a;
+  font-weight: normal;
+  font-size: 35px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.navbar-default .navbar-nav>li>a.secundario,
+.navbar-default .secundario {
+  color: #952424;
+}
+
+/******************************************************************************/
+/* 3. Heading defaults                                                        */
+/*                                                                            */
+/* Override Bootstrap heading styles inside div.content.                       */
+/* Class-specific stylesheets define the actual heading sizes and margins.     */
+/******************************************************************************/
+
+div.content h1, div.content h2,
+div.content h3, div.content h4 {
+  font-family: inherit;
+  line-height: 1.2;
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+/******************************************************************************/
+/* 4. Inline code                                                             */
+/*                                                                            */
+/* Default styling shared by article, book, and letter.                       */
+/* slides.css overrides padding and border-radius for projection.             */
+/******************************************************************************/
+
+div.content code {
+  color: #222;
+  background-color: #f0f0f0;
+  padding: 0.1em 0.2em;
+  border-radius: 2px;
+  font-size: 0.9em;
+}
+
+div.content pre code {
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  font-size: inherit;
+  color: inherit;
+}
+
+.footnote code {
+  color: #222;
+  background-color: #f0f0f0;
+  padding: 0.1em 0.2em;
+  border-radius: 2px;
+  font-size: 0.9em;
+}
+
+/******************************************************************************/
+/* 5. Links and URIs                                                          */
+/*                                                                            */
+/* Link colour shared by all four classes.                                    */
+/* URI font stack shared by article, book, and letter.                        */
+/* slides.css overrides the font stack with a shorter sans-serif one.         */
+/******************************************************************************/
+
+div.content a {
+  color: #00529B;
+  text-decoration: none;
+}
+
+a.uri {
+  font-family:
+    Consolas,
+    "Andale Mono WT",
+    "Andale Mono",
+    "Lucida Console",
+    "Lucida Sans Typewriter",
+    "DejaVu Sans Mono",
+    "Bitstream Vera Sans Mono",
+    "Liberation Mono",
+    "Nimbus Mono L",
+    Monaco,
+    "Courier New",
+    Courier,
+    monospace;
+  font-size: 0.9em;
+  overflow-wrap: break-word;
+}
+
+/******************************************************************************/
+/* 6. Small capitals                                                          */
+/******************************************************************************/
+
+span.smallcaps {
+  font-variant: small-caps;
+}
+
+/******************************************************************************/
+/* 7. Pre blocks (base)                                                       */
+/*                                                                            */
+/* Base pre styling shared by article, book, and letter.                      */
+/* slides.css overrides font-size, background, and border for projection.     */
+/******************************************************************************/
+
+div.content pre {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  font-size: var(--doc-pre-size);
+  white-space: pre;
+  overflow-x: auto;
+  word-break: normal;
+  word-wrap: normal;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+div.content > pre {
+  background-color: #f8f8f8;
+  border: none;
+  border-radius: 0;
+  border-left: 2pt solid #ccc;
+  padding: 0.5em 1em;
+}
+
+pre.dark {
+  background-color: #000;
+  color: #aaa;
+}
+
+pre code {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/******************************************************************************/
+/* 8. Horizontal scrollbar for images — Contribution by JLF                   */
+/******************************************************************************/
+/*
+Usage:
+<p class="img-scroll"><img src="image.png" width="1400"></p>
+
+The image will not shrink when the content column shrinks.
+The image occupies its own line (display:block, not inline-block).
+The horizontal scrollbar will appear as needed.
+
+If the image's intrinsic size is too wide then put a width in your <img>.
+For example,
+<img width="1400">
+(not width="1400px", it's an HTML attribute).
+This means "The intrinsic layout width of this image is exactly 1400 pixels",
+which is ideal for scrollable, fixed-size images.
+
+In this context, an HTML attribute is preferable to a CSS property like
+<img style="width: 1400px">
+because CSS widths are subject to flex shrinking, while HTML intrinsic sizes
+are not unless explicitly allowed.
+
+Don't use % widths, because % is relative to the container.
+*/
+
+.img-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 6px;                  /* Space for scrollbar                */
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background-color: #f6f8fa;
+}
+
+.img-scroll img {
+  display: block;
+  max-width: none;
+  height: auto;
+}
+
+/******************************************************************************/
+/* 9. Page break                                                              */
+/******************************************************************************/
+
+.newpage {
+  break-before: page;
+  page-break-before: always;
+}
+
+/******************************************************************************/
+/* 10. Tables (booktabs style)                                                */
+/*                                                                            */
+/* Default values shared by article and letter.                               */
+/* book.css overrides font-size and padding; slides.css overrides colours.    */
+/******************************************************************************/
+
+div.content table {
+  width: auto;
+  margin: 1em auto;
+  border-collapse: collapse;
+  font-size: inherit;
+}
+
+div.content table th,
+div.content table td {
+  padding: 0.3em 0.8em;
+  text-align: left;
+  vertical-align: top;
+}
+
+div.content table thead {
+  border-top: 1.5pt solid black;
+  border-bottom: 0.75pt solid black;
+}
+
+div.content table tbody {
+  border-bottom: 1.5pt solid black;
+}
+
+/******************************************************************************/
+/* 11. Lists (base)                                                           */
+/*                                                                            */
+/* Base list styling shared by all four classes.  Margin and padding           */
+/* values may be overridden by individual class stylesheets.                  */
+/******************************************************************************/
+
+div.content ul,
+div.content ol {
+  margin-top: 0.4em;
+  margin-bottom: 0.4em;
+  padding-left: 2.5em;
+}
+
+div.content li {
+  margin-bottom: 0.2em;
+}
+
+div.content li:last-child {
+  margin-bottom: 0;
+}
+
+div.content ul ul,
+div.content ol ol,
+div.content ul ol,
+div.content ol ul {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  padding-left: 2.2em;
+}
+
+/******************************************************************************/
+/* 12. paged.js split-element fixes                                           */
+/*                                                                            */
+/* When paged.js splits a justified list item or paragraph across pages,      */
+/* the last visible line of the upper fragment can be badly stretched.         */
+/* These rules correct the alignment.                                         */
+/******************************************************************************/
+
+ul[data-align-last-split-element='justify'] > li,
+ol[data-align-last-split-element='justify'] > li {
+  text-align-last: left;
+}
+
+p:has(> [data-align-last-split-element='justify']) {
+  text-align-last: justify;
+}
+
+/******************************************************************************/
+/* 13. Footnotes (base)                                                       */
+/*                                                                            */
+/* Shared structure.  The .footnote rule sets the default for article/book    */
+/* (justified, serif, auto-hyphenation).  letter.css and slides.css           */
+/* override text-align, font-family, and hyphens as needed.                   */
+/******************************************************************************/
+
+.footnotes ol {
+  font-size: var(--doc-footnote-size);
+  ::marker {
+    font-size: var(--doc-fn-marker-size);
+    vertical-align: super;
+  }
+}
+
+.footnotes p {
+  text-indent: 0;
+}
+
+.footnote {
+  float: footnote;
+  margin-left: 10pt;
+  margin-right: 10pt;
+  font-size: var(--doc-footnote-size);
+  line-height: 1.4;
+  font-family: 'Times New Roman', Times, serif;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+}
+
+::footnote-call {
+  font-size: 60%;
+  vertical-align: super;
+  line-height: 0;
+}
+
+@page {
+  @footnote {
+    border-top: 0.5pt solid black;
+    margin-top: 10pt;
+    padding-top: 8pt;
+  }
+}
+
+/******************************************************************************/
+/* 14. Bibliographies (Pandoc CSL)                                            */
+/******************************************************************************/
+
+div.csl-bib-body {
+  margin-top: 1em;
+  line-height: 1.4;
+}
+
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0.6em;
+}
+
+div.csl-left-margin {
+  float: left;
+  width: 2.5em;
+  text-align: right;
+  padding-right: 0.5em;
+}
+
+div.csl-right-inline {
+  margin-left: 3em;
+}
+
+div.csl-indent {
+  margin-left: 2em;
+}
+
+/*
+ * When Pandoc renders a bibliography using the IEEE CSL style, @misc entries
+ * (which are used for URLs) end up with the URL immediately after the closing
+ * period of the note field, with no intervening space.  The fix injects a
+ * non-breaking space before every <a> inside a .csl-right-inline div.
+ */
+
+.csl-right-inline a::before {
+    content: "\00A0";
+}

@@ -3,7 +3,7 @@ Highlight
 
 ----------------------------
 
-### Usage:
+### Usage
 
 <pre>
 [rexx] highlight [<em>options</em>] <em>file</em>
@@ -24,22 +24,25 @@ or `.html`, the utility processes all Rexx fenced code blocks in
 <em>file</em> and highlights them. Otherwise, the utility assumes that <em>file</em>
 is a Rexx file, it is highlighted accordingly.
 
-### Options:
+When called without arguments, display help information and exit.
+
+### Options
 
 ------------------------------------------------------- ------------------------------
 `-a`, `--ansi`                                          Select ANSI SGR terminal highlighting
-`--css`                                                 Include links to css files (HTML only)
 `--continue`                                            Continue when a fenced code block is in error (HTML only)
+`--css`                                                 Include links to css files (HTML only)
+`--default` <code><em>attributes</em></code>            Select default attributes for code blocks
 `--doccomments detailed|block`&nbsp;&nbsp;              Select highlighting level for doc-comments
-`-xtr`, `--executor`                                    Enable support for Executor
 `-e`, `-exp`, `--experimental`                          Enable Experimental features
-`-h`                                                    Display help (when used alone) o select HTML highlighting
-`--html`                                                Select HTML highlighting
-`--help`                                                Display this help
+`-xtr`, `--executor`                                    Enable support for Executor
+`-h`, `--html`                                          Select HTML highlighting (see note below)
+`--help`                                                Display help and exit
 `-it`, `--itrace`                                       Print internal traceback on error
 `-l`, `--latex`                                         Select LaTeX highlighting
 `--noprolog`                                            Don't print a prolog
 `-n`, `--numberlines`&nbsp;&nbsp;                       Print line numbers
+`--pad=`<code><em>n</em></code>                         Pad doc-comments and ::resources to *n* characters
 `--patch=`<code><em>patches</em></code>                 Apply the semicolon-separated list of *patches*.
 `--patchfile` <code><em>file</em></code>                Apply the patches contained in *file*.
 `--prolog`                                              Print a prolog (LaTeX driver only)
@@ -52,8 +55,11 @@ is a Rexx file, it is highlighted accordingly.
 
 \
 
+**Note on `-h`**: The `-h` option selects HTML mode. When it is the only option
+and no *file* is specified, help is displayed instead (since processing options
+without a file to process always displays help).
 
-**Note**: Several of the options below
+**Note**: Several of the options
 (`-exp`, `-s`, `-u`, `-xtr`, `--executor`, `--experimental`,
 `--unicode`, `--style` or `--tutor`)
 do not make sense when highlighting files
@@ -92,6 +98,11 @@ in the current directory.
 development in RAD scenarios, not a way to generate distribution-ready
 or production files.
 
+#### --default <em>attributes</em> {#default}
+
+Specifies the default attributes to be applied to all the highlighted
+code blocks.
+
 #### --doccomments [detailed|block]
 
 Select the highlighting level for doc-comments. When "detailed" is specified
@@ -99,11 +110,6 @@ Select the highlighting level for doc-comments. When "detailed" is specified
 statement, block tags or tag values, receive their own, separated
 styling; when "block" is specified, all the doc-comment as a whole
 gets a single style.
-
-#### --default <em>attributes</em> {#default}
-
-Specifies the default attributes to be applied to all the highlighted
-code blocks.
 
 #### --executor {#executor}
 
@@ -136,15 +142,19 @@ Print line numbers.
 
 See also [--startFrom](#startFrom).
 
-#### --patch "_patches_"
+#### --pad=*n* {#pad}
+
+Pad doc-comments and `::resource` blocks to *n* characters.
+
+#### --patch "*patches*"
 
 Apply the semicolon-separated list of patches.
 
 See also [--patchFile](#patchFile).
 
-#### --patchFile _file_
+#### --patchFile *file*
 
-Apply the patches contained in _file_.
+Apply the patches contained in *file*.
 
 See also [--patch](#patch).
 
@@ -154,13 +164,13 @@ Print a prolog (LaTeX driver only).
 
 See also [--latex](#latex) and [--noprolog](#noprolog).
 
-#### --startFrom _n_
+#### --startFrom *n*
 
-Start numbering lines at line _n_.
+Start numbering lines at line *n*.
 
 See also [--numberlines](#numberlines)
 
-#### -s, --style _style_
+#### -s, --style *style*
 
 Use the <code>rexx-<em>style</em>.css</code> style sheet.
 The default is `rexx-dark.css`.
@@ -171,20 +181,20 @@ Enable TUTOR-flavored Unicode.
 
 See also [--unicode](#unicode).
 
-#### --u, --unicode {#unicode}
+#### -u, --unicode {#unicode}
 
 Enable TUTOR-flavored Unicode.
 
 See also [--tutor](#tutor).
 
-#### -w, --width _n_
+#### -w, --width *n*
 
-Ensure that lines have a minimum width of _n_ characters
+Ensure that lines have a minimum width of *n* characters
 (ANSI highlighting only).
 
 See also [--ansi](#ansi).
 
-#### -xtr {#xtr}
+#### -xtr, --executor {#xtr}
 
 Enables support for JLF's Executor extensions.
 
@@ -209,10 +219,10 @@ could generate the following `head` section:
 </pre>
 
 where `path` is the path where the `rexx-parser` resides, and the third link would
-only be generated if the `rexx-mystyle.css` file was places in the directory
+only be generated if the `rexx-mystyle.css` file was placed in the directory
 where the highlight utility was run.
 
-### Program source:
+### Program source
 
 ~~~rexx {source=../../../bin/highlight.rex}
 ~~~

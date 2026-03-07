@@ -85,15 +85,16 @@
       When "-iterate"      Then iterate  = 0
       When "+iterate"      Then iterate  = 1
       When "-guard"        Then guard    = 0
-      When "+guard"        Then guard    = 0
+      When "+guard"        Then guard    = 1
       When "-bifs"         Then bifs     = 0
       When "+bifs"         Then bifs     = 1
       When "-debug"        Then debug    = 0
       When "+debug"        Then debug    = 1
       When "-itrace"       Then itrace   = 0
       When "+itrace"       Then itrace   = 1
-      When "-xtr",-
-           "-executor"     Then executor = 1
+      When "-xtr", "+xtr",-
+           "-executor",  -
+           "+executor"     Then executor = 1
       When "-experimental", -
            "+experimental", -
            "-exp", "+exp"  Then experimental = 1

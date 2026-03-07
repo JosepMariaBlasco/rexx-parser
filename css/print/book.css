@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*                                                                            */
-/* book.css - Predefined CSS for book.md files                                */
-/* ============================================                               */
+/* book.css - LaTeX book class for paged.js                                   */
+/* =========================================                                  */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -10,112 +10,40 @@
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
+/* Load AFTER rexxpub-base.css.  Optional size variants:                      */
+/*   book-10pt.css, book-14pt.css (load AFTER this file).                     */
+/*                                                                            */
+/* This is the most complete document class in RexxPub, designed for          */
+/* long-form documents with chapters, parts, running headers, facing          */
+/* pages, and a table of contents.                                            */
+/*                                                                            */
+/* Markdown structure:                                                        */
+/*                                                                            */
+/*   ::::: title-page          Title page (same convention as article)        */
+/*   ::: {#toc}                Table of Contents placeholder (filled by       */
+/*   :::                       createToc.js at render time)                   */
+/*   h1 {.part}                Part divider (optional, centred, recto)        */
+/*   h1 {.chapter}             Chapter (always starts on recto)               */
+/*   h2, h3, h4                Section, subsection, subsubsection             */
+/*                                                                            */
+/* Page layout:                                                               */
+/*   - DIN A4 portrait, facing pages (asymmetric margins)                     */
+/*   - Inner margin wider for binding (3.5cm inner, 2.5cm outer)              */
+/*   - Running headers: book title on verso, chapter on recto                 */
+/*   - Page numbers: outer bottom corner                                      */
+/*   - Chapters always start on recto (right-hand page)                       */
+/*   - Part dividers: full page, centred, no headers/numbers                  */
+/*                                                                            */
+/* Requires: createToc.js (paged.js hook for TOC generation)                  */
+/*                                                                            */
 /* Version history:                                                           */
 /*                                                                            */
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260304    0.5  First version                                             */
+/* 20260306         Refactored: common styles moved to rexxpub-base.css       */
 /*                                                                            */
 /******************************************************************************/
-
-/*
-  LaTeX book class — CSS implementation for paged.js
-
-  This is the most complete document class in RexxPub, designed for
-  long-form documents with chapters, parts, running headers, facing
-  pages, and a table of contents.
-
-  Markdown structure:
-
-    ::::: title-page          Title page (same convention as article)
-    ::: {#toc}                Table of Contents placeholder (filled by
-    :::                       createToc.js at render time)
-    h1 {.part}                Part divider (optional, centred, recto)
-    h1 {.chapter}             Chapter (always starts on recto)
-    h2, h3, h4                Section, subsection, subsubsection
-
-  Page layout:
-    - DIN A4 portrait, facing pages (asymmetric margins)
-    - Inner margin wider for binding (3.5cm inner, 2.5cm outer)
-    - Running headers: book title on verso (left), chapter on recto (right)
-    - Page numbers: outer bottom corner
-    - Chapters always start on recto (right-hand page)
-    - Part dividers: full page, centred, no headers/numbers
-
-  CSS custom properties (--doc-*):
-    Same naming convention as article/letter, overridable with
-    book-10pt.css or book-14pt.css.
-
-  Requires: createToc.js (paged.js hook for TOC generation)
-*/
-
-/******************************************************************************/
-/* CSS Custom Properties                                                      */
-/******************************************************************************/
-
-:root {
-  --doc-font-size:        12pt;
-  --doc-line-height:      1.25;
-  --doc-footnote-size:    10pt;
-  --doc-fn-marker-size:   7pt;
-  --doc-pre-size:         8.6pt;
-}
-
-/******************************************************************************/
-/******************************************************************************/
-/* EPBCN-specific styles                                                      */
-/******************************************************************************/
-/******************************************************************************/
-
-body {
-  background-color: #eee;
-}
-
-@media print {
-  body { background-color: #fff; }
-}
-
-.bg-white { background-color: white; }
-
-@media print {
-
-  div.logo-and-title,
-  nav.x-breadcrumb,
-  nav.x-header,
-  div.footer,
-  hr.before-footer {
-    display: none;
-  }
-
-  .screenonly {
-    display: none;
-  }
-
-}
-
-div.sidebar { font-size: larger; }
-
-@media print {
-  div.sidebar { display: none; }
-}
-
-.micrologo {
-  font-family: 'Century Gothic','Helvetica Neue',Helvetica,Arial,sans-serif;
-  font-size: larger;
-}
-
-h1.pagetitle {
-  color: #ad564a;
-  font-weight: normal;
-  font-size: 35px;
-  margin-top: 20px;
-  margin-bottom: 10px;
-}
-
-.navbar-default .navbar-nav>li>a.secundario,
-.navbar-default .secundario {
-  color: #952424;
-}
 
 /******************************************************************************/
 /******************************************************************************/
@@ -144,6 +72,18 @@ div.content {
   string-set: bookTitle content(text);
 }
 
+.title-page .book-subtitle {
+  font-size: 1em;
+  font-weight: normal;
+  font-style: italic;
+  color: #555;
+  margin-top: 0;
+}
+
+.title-page h1.book-title {
+  margin-bottom: 0 !important;
+}
+
 h1.chapter {
   string-set: chapterTitle content(text);
 }
@@ -159,7 +99,7 @@ div.content p {
 
 div.content h1 + p, div.content h2 + p,
 div.content h3 + p, div.content h4 + p {
-  text-indent: 0;
+  text-indent: 0 !important;
 }
 
 div.content header + p { text-indent: 0; }
@@ -223,6 +163,7 @@ div.content dd p { text-indent: 0; }
 
 #toc {
   page: toc-page;
+  break-before: recto;
 }
 
 #toc .toc-nav {
@@ -257,14 +198,34 @@ div.content dd p { text-indent: 0; }
 }
 
 .toc-entry.toc-level-2 {
-  padding-left: 1.5em;
   font-weight: normal;
+  padding-left: 1.5em;
 }
 
 .toc-entry.toc-level-3 {
   padding-left: 3em;
   font-weight: normal;
   font-size: 0.95em;
+}
+
+#toc h2 {
+  font-size: 1.8em;
+  font-weight: bold;
+  margin-top: 3em;
+  margin-bottom: 1em;
+  text-align: left;
+}
+
+.toc-entry.toc-part {
+  font-size: 1.15em;
+  font-weight: bold;
+  margin-top: 0.8em;
+  text-transform: uppercase;
+}
+
+.toc-entry.toc-chapter {
+  font-weight: bold;
+  margin-top: 0.6em;
 }
 
 /******************************************************************************/
@@ -300,7 +261,6 @@ h1.chapter {
   string-set: chapterTitle content(text);
 }
 
-/* First paragraph after chapter heading: no indent                           */
 h1.chapter + p { text-indent: 0; }
 
 /******************************************************************************/
@@ -366,99 +326,17 @@ h4 {
 
 h3 + h4 { margin-top: 0; }
 
-div.content h1, div.content h2,
-div.content h3, div.content h4 {
-  font-family: inherit;
-}
-
 /******************************************************************************/
-/* Lists                                                                      */
+/* Tables — override base: smaller font, tighter padding                      */
 /******************************************************************************/
 
-div.content ul,
-div.content ol {
-  margin-top: 0.4em;
-  margin-bottom: 0.4em;
-  padding-left: 2.5em;
+div.content table {
+  font-size: 0.95em;
 }
 
-div.content ul ul,
-div.content ol ol,
-div.content ul ol,
-div.content ol ul {
-  padding-left: 2.2em;
-}
-
-div.content li {
-  margin-bottom: 0.2em;
-}
-
-div.content li:last-child {
-  margin-bottom: 0;
-}
-
-ul[data-align-last-split-element='justify'] > li,
-ol[data-align-last-split-element='justify'] > li {
-  text-align-last: left;
-}
-
-/******************************************************************************/
-/* Inline code                                                                */
-/******************************************************************************/
-
-div.content code {
-  color: #222;
-  background-color: #f0f0f0;
-  padding: 0.1em 0.2em;
-  border-radius: 2px;
-  font-size: 0.9em;
-}
-
-div.content pre code {
-  padding: 0;
-  background-color: transparent;
-  border-radius: 0;
-  font-size: inherit;
-  color: inherit;
-}
-
-/******************************************************************************/
-/* Links                                                                      */
-/******************************************************************************/
-
-div.content a {
-  color: #00529B;
-  text-decoration: none;
-}
-
-/******************************************************************************/
-/* URIs                                                                       */
-/******************************************************************************/
-
-a.uri {
-  font-family:
-    Consolas,
-    "Andale Mono WT",
-    "Andale Mono",
-    "Lucida Console",
-    "Lucida Sans Typewriter",
-    "DejaVu Sans Mono",
-    "Bitstream Vera Sans Mono",
-    "Liberation Mono",
-    "Nimbus Mono L",
-    Monaco,
-    "Courier New",
-    Courier,
-    monospace;
-  font-size: 0.9em;
-}
-
-/******************************************************************************/
-/* Small capitals                                                             */
-/******************************************************************************/
-
-span.smallcaps {
-  font-variant: small-caps;
+div.content table th,
+div.content table td {
+  padding: 0.2em 0.5em;
 }
 
 /******************************************************************************/
@@ -474,93 +352,8 @@ div.content blockquote {
 }
 
 /******************************************************************************/
-/* Pre blocks                                                                 */
+/* Page break overrides                                                       */
 /******************************************************************************/
-
-div.content pre {
-  margin-top: 1em;
-  margin-bottom: 1em;
-  font-size: var(--doc-pre-size);
-  white-space: pre;
-  overflow-x: auto;
-  word-break: normal;
-  word-wrap: normal;
-  break-inside: avoid;
-  page-break-inside: avoid;
-}
-
-div.content > pre {
-  background-color: #f8f8f8;
-  border: none;
-  border-radius: 0;
-  border-left: 2pt solid #ccc;
-  padding: 0.5em 1em;
-}
-
-pre.dark {
-  background-color: #000;
-  color: #aaa;
-}
-
-pre code {
-  white-space: pre;
-  overflow-x: auto;
-}
-
-/******************************************************************************/
-/* Tables                                                                     */
-/******************************************************************************/
-
-div.content table {
-  width: auto;
-  margin: 1em auto;
-  border-collapse: collapse;
-  font-size: 0.95em;
-}
-
-div.content table th,
-div.content table td {
-  padding: 0.2em 0.5em;
-  text-align: left;
-  vertical-align: top;
-}
-
-div.content table thead {
-  border-top: 1.5pt solid black;
-  border-bottom: 0.75pt solid black;
-}
-
-div.content table tbody {
-  border-bottom: 1.5pt solid black;
-}
-
-/******************************************************************************/
-/* Horizontal scrollbar for images — Contribution by JLF                      */
-/******************************************************************************/
-
-.img-scroll {
-  overflow-x: auto;
-  max-width: 100%;
-  padding-bottom: 6px;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  background-color: #f6f8fa;
-}
-
-.img-scroll img {
-  display: block;
-  max-width: none;
-  height: auto;
-}
-
-/******************************************************************************/
-/* Page break                                                                 */
-/******************************************************************************/
-
-.newpage {
-  break-before: page;
-  page-break-before: always;
-}
 
 @media print {
   h1.newpage, h1.chapter, h1.part {
@@ -655,20 +448,11 @@ div.content table tbody {
   @bottom-right{ content: none; }
 }
 
-/* TOC pages: no running chapter header (book title only on verso)            */
+/* TOC pages: no running chapter header                                       */
 
 @page toc-page {
+  @top-left  { content: none; }
   @top-right { content: none; }
-}
-
-@page toc-page :left {
-  @top-left {
-    content: string(bookTitle);
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 9pt;
-    font-style: italic;
-    color: #555;
-  }
 }
 
 /* Part divider: no headers, no page number, centred                          */
@@ -694,54 +478,4 @@ div.content table tbody {
   @top-right   { content: none; }
   @bottom-left { content: none; }
   @bottom-right{ content: none; }
-}
-
-/******************************************************************************/
-/* Footnotes                                                                  */
-/******************************************************************************/
-
-.footnotes ol {
-  font-size: var(--doc-footnote-size);
-  ::marker {
-    font-size: var(--doc-fn-marker-size);
-    vertical-align: super;
-  }
-}
-
-.footnotes p {
-  text-indent: 0;
-}
-
-.footnote {
-  float: footnote;
-  margin-left: 10pt;
-  margin-right: 10pt;
-  font-size: var(--doc-footnote-size);
-  line-height: 1.4;
-  font-family: 'Times New Roman', Times, serif;
-  text-align: justify;
-  text-align-last: left;
-  hyphens: auto;
-}
-
-.footnote code {
-  color: #222;
-  background-color: #f0f0f0;
-  padding: 0.1em 0.2em;
-  border-radius: 2px;
-  font-size: 0.9em;
-}
-
-::footnote-call {
-  font-size: 60%;
-  vertical-align: super;
-  line-height: 0;
-}
-
-@page {
-  @footnote {
-    border-top: 0.5pt solid black;
-    margin-top: 10pt;
-    padding-top: 8pt;
-  }
 }
