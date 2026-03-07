@@ -3,18 +3,30 @@ md2html
 
 ----------------
 
-MD2Html ("MarkDown to HTML") is a batch utility
-that transforms a set of Markdown files to HTML, after expanding
+MD2Html ("MarkDown to HTML") is a utility
+that transforms Markdown files to HTML, after expanding
 all Rexx fenced code blocks.
+
+Md2html operates in two modes: when the argument is a file,
+it converts that single file to HTML; when the argument is a directory,
+it converts all `.md` files in it (and its subdirectories) to HTML.
 
 Usage
 -----
 
 <pre>
+[rexx] md2html [<em>options</em>] <em>filename</em> [<em>destination</em>]
 [rexx] md2html [<em>options</em>] <em>source</em> [<em>destination</em>]
 </pre>
 
-<em>Source</em> and <em>destination</em> should be existing directories.
+In single-file mode, <em>filename</em> is a file containing Markdown.
+If the file is not found and does not already have an extension,
+`.md` is appended automatically.
+The output HTML file is placed in the <em>destination</em> directory,
+which defaults to the current directory.
+
+In batch mode, <em>source</em> and <em>destination</em> should be
+existing directories.
 <em>Destination</em> defaults to the current directory.
 
 When called without arguments, display help information and exit.
@@ -49,15 +61,22 @@ A working installation of <a href="https://pandoc.org/">Pandoc</a> is required.
 Program operation
 -----------------
 
-The `md2html.rex` uses SysFileTree to recursively list all the Markdown
-(`.md`) files found in the source directory and processes them in turn.
-For each file, the utility first expands all the Rexx fenced code blocks,
+In both modes, the processing of each Markdown file follows the
+same pipeline.  The utility first expands all the Rexx fenced code blocks,
 using [the Rexx Highlighter](../../highlighter),
-then runs <a href="https://pandoc.org/">Pandoc</a> against result to convert
+then runs <a href="https://pandoc.org/">Pandoc</a> against the result to convert
 it to HTML, and finally calls a set of routines
 found in `md2html.custom.rex`, which provide the constant or
 almost constant parts of an HTML page, like headers, footers,
 menus or sidebars.
+
+In single-file mode, md2html changes to the directory containing
+the file before processing, so that Pandoc can resolve relative
+paths for resources such as bibliographies.
+
+In batch mode, md2html uses `SysFileTree` to recursively list all the
+Markdown (`.md`) files found in the source directory and processes
+them in turn.
 
 ```
                                md2html workflow
@@ -101,9 +120,9 @@ menus or sidebars.
 
 A sample `md2html.custom.rex` is distributed with the Rexx Parser.
 To allow for maximum customization, the md2html utility looks for
-`md2html.custom.rex` first in path specified by the `-p` or `--path` options,
+`md2html.custom.rex` first in the path specified by the `-p` or `--path` options,
 if present, then in the current directory,
-then in the destination directory, then in the
+then in the destination directory, then (in batch mode) in the
 source directory, and finally using the standard Rexx search order
 for external files.
 

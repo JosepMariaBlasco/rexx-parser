@@ -1,0 +1,44 @@
+/******************************************************************************/
+/*                                                                            */
+/* default-10pt.css - Size overrides for 10pt default layout                  */
+/* =========================================================                  */
+/*                                                                            */
+/* Load this stylesheet AFTER default.css to produce a 10pt document.         */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260307    0.5  First version.                                            */
+/*                                                                            */
+/******************************************************************************/
+
+:root {
+  --doc-font-size:        10pt;
+  --doc-line-height:      1.20;
+  --doc-footnote-size:    8pt;
+  --doc-fn-marker-size:   6pt;
+  --doc-pre-size:         7.2pt;
+}
+
+/******************************************************************************/
+/* @page overrides                                                            */
+/* var() may not work inside @page rules, so we use literal values.           */
+/******************************************************************************/
+
+@page {
+
+  margin: 3.5cm;
+
+  @bottom-center {
+    font-size: 10pt;
+  }
+
+}

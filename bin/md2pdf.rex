@@ -16,8 +16,11 @@
 /* 20260228         Add --outline and --fix-outline                           */
 /* 20260228         Add support for codepages other than 65001 (thanks, JLF!) */
 /* 20250303    0.5  Add support for size and for letter and slides docclasses */
+/* 20260307         Add batch directory mode                                  */
 /*                                                                            */
 /******************************************************************************/
+
+  Call Time "R"
 
   package =  .context~package
 
@@ -52,10 +55,12 @@
   quiet          = .False
   language       = "en"
   defaultOptions = ""
-  csl            = "ieee"               -- Default Citation Style Language style
+  csl            = "rexxpub"            -- Default Citation Style Language style
   outline        = 3                    -- Outline H1, H2 and H3
   fixOutline     = 0
   size           = 12
+  continue       = 0
+  itrace         = 0
 
 ProcessOptions:
 
@@ -68,6 +73,7 @@ ProcessOptions:
       When "-h",  "--help"    Then Signal Help
       When "-it", "--itrace"  Then itrace = 1
       When "--check-deps"     Then Call CheckDeps
+      When "--continue"       Then continue = 1
       When "--size"           Then Do
         If args~size == 0 Then
           Call Error "Missing size after '"option"' option."
@@ -81,7 +87,7 @@ ProcessOptions:
           Call Error "Missing outline number after '"option"' option."
         outline = args[1]
         If \DataType(outline,"W") | outline < 0 | outline > 6 Then
-          Call Error "Outline should be a positive whole number smaller than 7, found '"outline"'."
+          Call Error "Outline should be a non-negative whole number smaller than 7, found '"outline"'."
         args~delete(1)
       End
       When "--default"        Then Do
@@ -94,7 +100,7 @@ ProcessOptions:
         If args~size == 0 Then
           Call Error "Missing CSL style name after '"option"' option."
         csl = Lower(args[1])
-        If \.File~new(rootDir"/"csl".csl")~exists Then
+        If \.File~new(rootDir"/csl/"csl".csl")~exists Then
           Call Error 'CSL style "'csl'.csl" not found in the "'rootDir'/csl" directory.'
         args~delete(1)
       End
@@ -120,41 +126,182 @@ ProcessOptions:
     End
   End
 
-  Select Case args~items
-    When 0 Then Signal Help
-    When 1 Then Do
-      file = args[1]
-      If \SysFileExists(file) Then Do
-        If SysFileExists(file".md") Then file ||= ".md"
-        Else Call Error "File '"file"' not found."
-      End
-      If SysIsFileDirectory(file) Then
-        Call Error "'"file"' is a directory."
-    End
-    Otherwise Call Error "Unexpected argument '"args[2]"'."
-  End
-
-  fileName = FileSpec("Name", file)
-  If fileName~endsWith(".md") Then
-    fileName = Left(fileName,Length(fileName)-3)
-  If docClass == "" Then docClass = fileName
-
+  -- Validate the highlighting style (common to both modes)
   cssFile = rootDir"/css/flattened/rexx-"defaultTheme".css"
   If \.File~new(cssFile)~exists Then
      Call Error "Style '"defaultTheme"' not found."
   If  .File~new(cssFile)~isDirectory Then
      Call Error "File '"cssFile"' is a directory."
 
-  docClassFile = rootDir"/css/print/"docClass".css"
-  If \.File~new(docClassFile)~exists Then
-     Call Error "Document class '"docClass"' not found."
-  If  .File~new(docClassFile)~isDirectory Then
-     Call Error "File '"docClassFile"' is a directory."
+  -- Precompute the CSS that is common to all files:
+  -- Bootstrap + highlighting style + rexxpub base
+  baseFile     =  rootDir"/css/print/rexxpub-base.css"
+  bootstrap    =  rootDir"/css/bootstrap.css"
+  commonCSS    =  CharIn(bootstrap, 1, Chars(bootstrap) )
+  commonCSS  ||=  CharIn(cssFile,   1, Chars(cssFile)   )
+  commonCSS  ||=  CharIn(baseFile,  1, Chars(baseFile)  )
+
+  -- The HTML template is the same for all files
+  HTMLtemplate = .Resources~HTML~makeString
+
+  ------------------------------------------------------------------------------
+  -- Determine mode: single file or batch directory                           --
+  ------------------------------------------------------------------------------
+
+  Select Case args~items
+    When 0 Then Signal Help
+    When 1 Then Do
+      arg1 = args[1]
+      If SysIsFileDirectory(arg1) Then
+        Signal BatchMode
+      -- Single file mode
+      file = arg1
+      If \SysFileExists(file) Then Do
+        If SysFileExists(file".md") Then file ||= ".md"
+        Else Call Error "File '"file"' not found."
+      End
+      Call Directory .File~new(file)~parentFile~absolutePath
+      Call ProcessFile file, docClass
+      Exit
+    End
+    When 2 Then Do
+      arg1 = args[1]
+      If \SysFileExists(arg1) Then Do
+        If SysFileExists(arg1".md") Then
+          -- Single file with .md appended; second argument is unexpected
+          Call Error "Unexpected argument '"args[2]"'."
+        Call Error "'"arg1"' not found."
+      End
+      If SysIsFileDirectory(arg1) Then
+        Signal BatchMode
+      -- arg1 is a file; second argument is unexpected
+      Call Error "Unexpected argument '"args[2]"'."
+    End
+    Otherwise Call Error "Unexpected argument '"args[3]"'."
+  End
+
+  -- This is never reached
+  Exit
+
+  ------------------------------------------------------------------------------
+  -- Batch directory mode                                                     --
+  ------------------------------------------------------------------------------
+
+BatchMode:
+
+  source = .File~new(arg1)~absolutePath
+
+  If args~items == 2 Then Do
+    destination = args[2]
+    If \SysFileExists(destination) Then
+      Call Error "Destination directory '"destination"' does not exist."
+    If \SysIsFileDirectory(destination) Then
+      Call Error "'"destination"' is not a directory."
+    destination = .File~new(destination)~absolutePath
+  End
+  Else destination = ""                   -- PDFs go alongside their .md files
+
+  Call SysFileTree source || .File~separator || "*.md", "md.", "FOS"
+
+  If md.0 == 0 Then Do
+    Say "No .md files found in '"arg1"'. Nothing to do."
+    Exit 0
+  End
+
+  prefixLength = Length(source) + 2
+  processed    = 0
+  failed       = 0
+  sep          = .File~separator
+
+  Loop i = 1 To md.0
+    file = .File~new(md.i)
+
+    If destination \== "" Then Do
+      -- Replicate directory structure in destination
+      dir    = SubStr(file~parent, prefixLength)
+      new    = destination"/"dir
+      newDir = .File~new(new)
+      new    = newDir~absolutePath
+      If newDir~exists Then Do
+        If \newDir~isDirectory Then
+          Call Error "'"new"' already exists, but it is not a directory. Aborting."
+      End
+      Else Do
+        Say Time("Long") "Creating directory '"new"'..."
+        If \newDir~makeDirs Then
+          Call Error "Directory creation failed. Aborting..."
+      End
+    End
+
+    Say Time("Long") "Processing" file"..."
+    savedDir = Directory()
+    Call Directory file~parent
+    If destination \== ""
+      Then processRC = ProcessFile(file~absolutePath, docClass, newDir~absolutePath)
+      Else processRC = ProcessFile(file~absolutePath, docClass)
+    Call Directory savedDir
+    If processRC \== 0 Then Do
+      failed += 1
+      If \continue Then Do
+        Say Copies("-",80)
+        Say Time("Long") "Aborted after" processed "files (" failed "failed),"  -
+          "took" Time("E") "seconds."
+        Exit 1
+      End
+    End
+    Else processed += 1
+  End
+
+  Say Copies("-",80)
+  If failed == 0
+    Then Say Time("Long") "Processed" processed "files, took" Time("E") "seconds."
+    Else Say Time("Long") "Processed" processed "files (" failed "failed),"  -
+      "took" Time("E") "seconds."
+
+  If failed > 0 Then Exit 1
+  Exit 0
+
+--------------------------------------------------------------------------------
+
+ProcessFile: Procedure Expose rootDir commonCSS HTMLtemplate check fail -
+  defaultTheme defaultOptions language outline fixOutline size continue -
+  itrace csl
+
+  Use Strict Arg file, requestedDocClass, outputDir = ""
+
+  fileName = FileSpec("Name", file)
+  If fileName~endsWith(".md") Then
+    fileName = Left(fileName,Length(fileName)-3)
+
+  -- Determine the document class for this file
+  If requestedDocClass \== ""
+    Then thisDocClass = requestedDocClass
+    Else thisDocClass = fileName
+
+  docClassFile = rootDir"/css/print/"thisDocClass".css"
+  If \.File~new(docClassFile)~exists Then Do
+    -- If the inferred class doesn't exist, fall back to default
+    If requestedDocClass \== "" Then Do
+      -- Explicit --docclass: no fallback, report error
+     .Error~Say( "Document class '"thisDocClass"' not found." )
+      Return 1
+    End
+    thisDocClass = "default"
+    docClassFile = rootDir"/css/print/"thisDocClass".css"
+    If \.File~new(docClassFile)~exists Then Do
+     .Error~Say( "Document class 'default' not found." )
+      Return 1
+    End
+  End
+  If  .File~new(docClassFile)~isDirectory Then Do
+   .Error~Say( "File '"docClassFile"' is a directory." )
+    Return 1
+  End
 
   Select Case size
-    When 10 Then sizeFile = rootDir"/css/print/"docClass"-10pt.css"
+    When 10 Then sizeFile = rootDir"/css/print/"thisDocClass"-10pt.css"
     When 12 Then sizeFile = ""
-    When 14 Then sizeFile = rootDir"/css/print/"docClass"-14pt.css"
+    When 14 Then sizeFile = rootDir"/css/print/"thisDocClass"-14pt.css"
   End
 
   source       =  CharIn(file,1,Chars(file))~makeArray
@@ -169,24 +316,21 @@ ProcessOptions:
   fileDir      =  fileObj~parent
   tmpDir       = .File~temporaryPath~absolutePath
   htmlFilename =  SysTempFileName(tmpDir"/"name"?????.html")
-  baseFile     =  rootDir"/css/print/rexxpub-base.css"
 
-  bootstrap    =  rootDir"/css/bootstrap.css"
-
-  CSS          =  CharIn(bootstrap,    1,Chars(bootstrap)    )
-  CSS        ||=  CharIn(cssFile,      1,Chars(cssFile)      )
-  CSS        ||=  CharIn(baseFile,     1,Chars(baseFile)     )
-  CSS        ||=  CharIn(docClassFile, 1,Chars(docClassFile) )
+  -- Build the full CSS: common + docclass + size
+  CSS          =  commonCSS
+  CSS        ||=  CharIn(docClassFile, 1, Chars(docClassFile) )
   If sizeFile \== "" Then
-    CSS      ||=  CharIn(sizeFile,     1,Chars(sizeFile)     )
+    CSS      ||=  CharIn(sizeFile,     1, Chars(sizeFile)     )
 
-  HTML         = .Resources~HTML~makeString
+  HTML         =  HTMLtemplate
   HTML         =  HTML~caselessChangeStr("%CSS%",CSS)
 
   Signal On Syntax Name IndividualFileFailed
 
   defaultOptions. = 0
   defaultOptions.default  = defaultOptions
+  If continue Then defaultOptions.["CONTINUE"] = 1
 
   source = FencedCode( file, source, defaultTheme, defaultOptions. )
 
@@ -222,13 +366,14 @@ IndividualFileFailed:
    .Error~Say( co~stackFrames~makeArray )
   End
 
-  Exit
+  Return 1
 
 AllWentWell:
 
   contents = .Array~new
   pandocCommand = 'pandoc' -
     '--citeproc' -
+    '--csl="'rootDir'/csl/'csl'.csl"' -
     '-M link-citations=true' -
     '--lua-filter="'rootDir'/cgi/inline-footnotes.lua"'
   -- Say pandocCommand /* For debug */
@@ -240,7 +385,7 @@ AllWentWell:
     Loop i = 1 To Error.0
      .Error~Say(Error.i)
     End
-    Exit rc
+    Return rc
   End
  .Error~say(check)
 
@@ -300,14 +445,25 @@ AllWentWell:
     outlineTags ||= ",h"i
   End
 
+  -- Determine the output directory for the PDF
+  If outputDir \== ""
+    Then outDir = outputDir
+    Else outDir = fileDir
+
  .Error~Say("Invoking pagedjs-cli (this may take some time)... ")
-  outFile = '"'fileDir || sep || name'.pdf"'
+  outFile = '"'outDir || sep || name'.pdf"'
   cmd = 'pagedjs-cli "'htmlFilename'"'  -
     '--outline-tags' outlineTags -
     '-o' outFile
   Address COMMAND cmd
+  cmdRC = rc
 
   Call SysFileDelete htmlFilename
+
+  If cmdRC \== 0 Then Do
+   .Error~Say(fail "pagedjs-cli failed with return code" cmdRC".")
+    Return cmdRC
+  End
 
   If fixOutline Then Do
    .Error~Say("Fixing PDF file so that the document outline opens automatically... ")
@@ -315,7 +471,7 @@ AllWentWell:
     If rc == 0 Then Say check "Document outline activated in" outFile
   End
 
-  Exit rc
+  Return 0
 
 --------------------------------------------------------------------------------
 
@@ -382,10 +538,20 @@ Help:
 myname -- Convert Markdown documents to styled PDF using Pandoc and paged.js
 
 Usage: [rexx] myname OPTIONS filename
+       [rexx] myname OPTIONS source-directory [destination-directory]
+
+When the argument is a file, convert that single file to PDF.
+When the argument is a directory, convert all .md files in it
+(and its subdirectories) to PDF.
+
+If a destination directory is given, the output PDF files are
+placed there, replicating the source directory structure.
+Otherwise, each PDF is placed alongside its source .md file.
 
 Options:
 
 --check-deps          Checks that all the dependencies are installed
+--continue            Continue when a file fails (batch mode)
 --csl NAME            Sets the Citation Style Language style
 --default OPTIONS     Set default options for Rexx code blocks
 --docclass CLASS      Control overall layout and CSS class

@@ -20,6 +20,7 @@
 /* 20251228         Implement --default attributes                            */
 /* 20260101         Change [*STYLES*] -> %usedStyles%                         */
 /* 20260102         Standardize help options to -h and --help                 */
+/* 20260307    0.5  Add single-file mode                                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -93,26 +94,91 @@ ProcessOptions:
     End
   End
 
+  ------------------------------------------------------------------------------
+  -- Determine mode: single file or batch directory                           --
+  ------------------------------------------------------------------------------
+
   Select Case args~items
     When 0 Then Signal Help
-    When 1,2 Then Do
-      source = args[1]
-      If \SysFileExists(source) Then
-        Call Error "Source directory '"source"' does not exist."
-      If \SysIsFileDirectory(source) Then
-        Call Error "'"source"' is not a directory."
-      If args~items == 1 Then destination = Directory()
-      Else Do
-        destination = args[2]
-        If \SysFileExists(destination) Then
-          Call Error "Destination directory '"destination"' does not exist."
-        If \SysIsFileDirectory(destination) Then
-          Call Error "'"destination"' is not a directory."
-        destination = .File~new(destination)~absolutePath
+    When 1 Then Do
+      arg1 = args[1]
+      If SysIsFileDirectory(arg1) Then Do
+        -- Batch mode: source directory, destination = current directory
+        source      = arg1
+        destination = Directory()
+        Signal BatchMode
       End
+      -- Single file mode: output goes to the current directory
+      file = arg1
+      If \SysFileExists(file) Then Do
+        If SysFileExists(file".md") Then file ||= ".md"
+        Else Call Error "File '"file"' not found."
+      End
+      destination = Directory()
+      Signal SingleFile
+    End
+    When 2 Then Do
+      arg1 = args[1]
+      arg2 = args[2]
+      If \SysFileExists(arg1) Then Do
+        If SysFileExists(arg1".md") Then Do
+          -- Single file with .md appended; check if second arg is a directory
+          arg1  = arg1".md"
+          file  = arg1
+          If \SysFileExists(arg2) Then
+            Call Error "Destination directory '"arg2"' does not exist."
+          If \SysIsFileDirectory(arg2) Then
+            Call Error "'"arg2"' is not a directory."
+          destination = .File~new(arg2)~absolutePath
+          Signal SingleFile
+        End
+        Call Error "'"arg1"' not found."
+      End
+      If SysIsFileDirectory(arg1) Then Do
+        -- Batch mode: source + destination directories
+        source = arg1
+        If \SysFileExists(arg2) Then
+          Call Error "Destination directory '"arg2"' does not exist."
+        If \SysIsFileDirectory(arg2) Then
+          Call Error "'"arg2"' is not a directory."
+        destination = .File~new(arg2)~absolutePath
+        Signal BatchMode
+      End
+      -- arg1 is a file; arg2 should be a destination directory
+      file = arg1
+      If \SysFileExists(arg2) Then
+        Call Error "Destination directory '"arg2"' does not exist."
+      If \SysIsFileDirectory(arg2) Then
+        Call Error "'"arg2"' is not a directory."
+      destination = .File~new(arg2)~absolutePath
+      Signal SingleFile
     End
     Otherwise Call Error "Unexpected argument '"args[3]"'."
   End
+
+  -- This is never reached
+  Exit
+
+  ------------------------------------------------------------------------------
+  -- Common setup: cssbase, jsbase, template, custom                          --
+  ------------------------------------------------------------------------------
+
+SingleFile:
+  singleFileMode = 1
+  Signal CommonSetup
+
+BatchMode:
+  singleFileMode = 0
+  fullSource = .File~new(source)~absolutePath
+
+  Call SysFileTree fullSource || .File~separator || "*.md", "md.", "FOS"
+
+  If md.0 == 0 Then Do
+    Say "No .md files found in '"source"'. Nothing to do."
+    Exit 0
+  End
+
+CommonSetup:
 
   If cssbase = "" Then Do
     cssdir = .File~new(destination"/css")
@@ -122,15 +188,6 @@ ProcessOptions:
   If jsbase = "" Then Do
     jsdir = .File~new(destination"/js")
     If jsdir~exists, jsdir~isDirectory Then jsbase = "file:///"jsdir~absolutePath
-  End
-
-  fullSource = .File~new(source)~absolutePath
-
-  Call SysFileTree fullSource"/*.md", "md.", "FOS"
-
-  If md.0 == 0 Then Do
-    Say "No .md files found in '"source"'. Nothing to do."
-    Exit 0
   End
 
   --
@@ -155,10 +212,12 @@ ProcessOptions:
   try = destination"/"template
   If .File~new(try)~exists Then Signal TemplateFound
 
-  -- 3) Look in the source directory
+  -- 3) In batch mode, look in the source directory
 
-  try = fullsource"/"template
-  If .File~new(try)~exists Then Signal TemplateFound
+  If \singleFileMode Then Do
+    try = fullSource"/"template
+    If .File~new(try)~exists Then Signal TemplateFound
+  End
 
   -- 4) Use the normal Rexx external search order
 
@@ -208,10 +267,12 @@ TemplateFound:
   try = destination"/"custom
   If .File~new(try)~exists Then Signal CustomFound
 
-  -- 3) Look in the source directory
+  -- 3) In batch mode, look in the source directory
 
-  try = fullsource"/"custom
-  If .File~new(try)~exists Then Signal CustomFound
+  If \singleFileMode Then Do
+    try = fullSource"/"custom
+    If .File~new(try)~exists Then Signal CustomFound
+  End
 
   -- 4) Use the normal Rexx external search order
 
@@ -219,6 +280,16 @@ TemplateFound:
 
   CustomFound:
     Call (try)
+
+  ------------------------------------------------------------------------------
+  -- Branch to the appropriate mode                                           --
+  ------------------------------------------------------------------------------
+
+  If singleFileMode Then Signal DoSingleFile
+
+  ------------------------------------------------------------------------------
+  -- Batch directory mode                                                     --
+  ------------------------------------------------------------------------------
 
   prefixLength = Length(fullSource) + 2
 
@@ -247,6 +318,30 @@ TemplateFound:
 
   Say Copies("-",80)
   Say Time("Long") "Processed" processed "files, took" Time("E") "seconds."
+
+  Exit
+
+  ------------------------------------------------------------------------------
+  -- Single file mode                                                         --
+  ------------------------------------------------------------------------------
+
+DoSingleFile:
+
+  fileObj = .File~new(file)
+  If \fileObj~exists Then
+    Call Error "File '"file"' not found."
+
+  destDir = .File~new(destination)
+  If \destDir~exists Then
+    Call Error "Destination directory '"destination"' does not exist."
+
+  Say Time("Long") "Processing" file"..."
+  Call Directory fileObj~parentFile~absolutePath
+  Call ProcessFile fileObj, destDir, fileObj~absolutePath, template, -
+    cssbase, jsbase, itrace, attributes, continue
+
+  Say Copies("-",80)
+  Say Time("Long") "Processed 1 file, took" Time("E") "seconds."
 
   Exit
 
@@ -485,13 +580,14 @@ Raise Propagate
 ::Resource Help End "::End"
 myname -- Markdown to HTML conversion tool
 
-Usage: [rexx] myname OPTIONS source [destination]
+Usage: [rexx] myname OPTIONS filename [destination]
+       [rexx] myname OPTIONS source-directory [destination-directory]
 
-"source" and "destination" should be existing directories.
+When the argument is a file, convert that single file to HTML.
+When the argument is a directory, convert all .md files in it
+(and its subdirectories) to HTML.
+
 The destination directory defaults to the current directory.
-
-If the only option is -h or --help, or if no arguments are present,
-then display this help and exit.
 
 Options:
 
@@ -501,7 +597,7 @@ Options:
 -h, --help                 Display this help
 -it, --itrace              Print internal traceback on error
 -j jsbase, --js jsbase     Where to locate the JavaScript files
--p path, --path path e     Search path for default.md2html and md2html.custom.rex
+-p path, --path path       Search path for default.md2html and md2html.custom.rex
 
 cssbase and jsbase default to "css" and "js" subdirectories
 in the destination directory, when they exist.

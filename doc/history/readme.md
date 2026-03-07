@@ -20,6 +20,9 @@ Version history
   <li> Refactor print CSS files (20260306).
   <li> Add support for experimental rexx to elident and trident (20260307).
   <li> Improve docs for utilities (20260307).
+  <li> Enhance `md2pdf` to add a batch mode (20260307).
+  <li> Enhance `md2html` to add a single-file mode (20260307).
+  <li> Add a `default.css` for print, and its size variants (20260307).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).
