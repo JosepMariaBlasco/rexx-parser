@@ -32,12 +32,14 @@
 /*  12. paged.js split-element fixes                                          */
 /*  13. Footnotes (base)                                                      */
 /*  14. Bibliographies (Pandoc CSL)                                           */
+/*  15. Section numbering (opt-in via class on div.content)                   */
 /*                                                                            */
 /* Version history:                                                           */
 /*                                                                            */
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260306    0.5  First version — extracted from article/book/letter/slides */
+/* 20260308         Add support for optional numbered headers                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -462,4 +464,95 @@ div.csl-indent {
 
 .csl-right-inline a::before {
     content: "\00A0";
+}
+
+/******************************************************************************/
+/* 15. Section numbering (opt-in via class on div.content)                    */
+/*                                                                            */
+/* Add one of .section-numbers-1 through .section-numbers-4 to div.content    */
+/* to enable automatic section numbering up to that heading depth.            */
+/*                                                                            */
+/* Numbering applies only to headings that are direct children of             */
+/* div.content.  Headings inside wrapper divs (.title-page, .toc-exclude,     */
+/* etc.) are automatically excluded because they are not direct children.     */
+/*                                                                            */
+/* Headings with class .unnumbered (Pandoc's {-} or {.unnumbered} syntax),    */
+/* .part, or .chapter are explicitly excluded.                                */
+/*                                                                            */
+/* The em-space (\2003) separates the number from the heading text.           */
+/******************************************************************************/
+
+/* --- Counter reset -------------------------------------------------------- */
+
+div.content[class*="section-numbers-"] {
+  counter-reset: h1counter h2counter h3counter h4counter;
+}
+
+/* --- h1 ------------------------------------------------------------------- */
+
+div.content[class*="section-numbers-"] > h1 {
+  counter-increment: h1counter;
+  counter-reset: h2counter h3counter h4counter;
+}
+
+div.content[class*="section-numbers-"] > h1::before {
+  content: counter(h1counter) ".\2003";
+}
+
+/* --- h2 (active from level 2) -------------------------------------------- */
+
+div.content.section-numbers-2 > h2,
+div.content.section-numbers-3 > h2,
+div.content.section-numbers-4 > h2 {
+  counter-increment: h2counter;
+  counter-reset: h3counter h4counter;
+}
+
+div.content.section-numbers-2 > h2::before,
+div.content.section-numbers-3 > h2::before,
+div.content.section-numbers-4 > h2::before {
+  content: counter(h1counter) "." counter(h2counter) "\2003";
+}
+
+/* --- h3 (active from level 3) -------------------------------------------- */
+
+div.content.section-numbers-3 > h3,
+div.content.section-numbers-4 > h3 {
+  counter-increment: h3counter;
+  counter-reset: h4counter;
+}
+
+div.content.section-numbers-3 > h3::before,
+div.content.section-numbers-4 > h3::before {
+  content: counter(h1counter) "." counter(h2counter) "." counter(h3counter) "\2003";
+}
+
+/* --- h4 (active at level 4 only) ----------------------------------------- */
+
+div.content.section-numbers-4 > h4 {
+  counter-increment: h4counter;
+}
+
+div.content.section-numbers-4 > h4::before {
+  content: counter(h1counter) "." counter(h2counter) "." counter(h3counter) "." counter(h4counter) "\2003";
+}
+
+/* --- Exclusions: unnumbered, part, chapter -------------------------------- */
+
+div.content[class*="section-numbers-"] > h1.unnumbered,
+div.content[class*="section-numbers-"] > h2.unnumbered,
+div.content[class*="section-numbers-"] > h3.unnumbered,
+div.content[class*="section-numbers-"] > h4.unnumbered,
+div.content[class*="section-numbers-"] > h1.part,
+div.content[class*="section-numbers-"] > h1.chapter {
+  counter-increment: none;
+}
+
+div.content[class*="section-numbers-"] > h1.unnumbered::before,
+div.content[class*="section-numbers-"] > h2.unnumbered::before,
+div.content[class*="section-numbers-"] > h3.unnumbered::before,
+div.content[class*="section-numbers-"] > h4.unnumbered::before,
+div.content[class*="section-numbers-"] > h1.part::before,
+div.content[class*="section-numbers-"] > h1.chapter::before {
+  content: none;
 }

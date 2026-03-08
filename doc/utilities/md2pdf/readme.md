@@ -48,6 +48,7 @@ Options
 `-it`, `--itrace`                         Print internal traceback on error
 `-l`, `--language` CODE&nbsp;&nbsp;&nbsp; Set document language (e.g. en, es, fr)
 `--outline` N                             Generate outline with H1,...,HN (default: 3, range: 0-6)
+`--section-numbers` N                     Number sections down to depth N (0=off, max 4)
 `--size` SIZE                             Set the font size in pt (10, 12 or 14; default: 12)
 `--style` NAME                            Set the default visual theme for Rexx code blocks
 ----------------------------------------- ------------------------------
@@ -64,6 +65,15 @@ If the inferred document class does not correspond to an existing
 CSS file, the `default` class is used as a fallback.
 
 When `--outline` is set to 0, no outline is generated.
+
+When `--section-numbers` is used, headings are automatically
+numbered up to the specified depth: 1 for h1 only, 2 for h1
+and h2, and so on up to 4.  The numbering follows the LaTeX
+convention (e.g. 1., 1.1, 1.1.1).  Headings marked with
+Pandoc's `{.unnumbered}` or `{-}` attribute are excluded from
+numbering, as are headings with the `.part` or `.chapter`
+classes, and headings inside `.title-page` or `.toc-exclude`
+containers.  The default is 0 (no section numbering).
 
 The `--continue` option is useful in batch mode: when a file fails
 (due to a syntax error in a fenced code block, a missing document

@@ -112,11 +112,17 @@ a type of document:
   documents with chapters, parts, facing pages, running headers, a
   table of contents, and asymmetric margins for binding.
 
+- **default** is a general-purpose class for documents that do not
+  match any of the named classes above.  It uses serif typography
+  with block-style paragraphs (no first-line indent) and
+  left-aligned text --- a clean, readable layout suitable for
+  README files, tutorials, and technical documentation.
+
 All classes share a common core of typographic conventions: the
-LaTeX-style paragraph indentation, the `booktabs` table style, the
-academic link colour, the blockquote treatment, and the code block
-styling that protects the Rexx Highlighter output.  Each class
-provides three base font sizes --- 10pt, 12pt, and 14pt --- through
+`booktabs` table style, the academic link colour, the blockquote
+treatment, and the code block styling that protects the Rexx
+Highlighter output.  The paginated classes (all except `slides`)
+provide three base font sizes --- 10pt, 12pt, and 14pt --- through
 a parametric system of CSS custom properties.
 
 The document you are now reading is itself a `book.md` file, rendered
@@ -154,11 +160,12 @@ components:
   httpd, with a style chooser, a size chooser, and print-ready
   output.
 
-- **md2html** converts directory trees of Markdown files into static
-  HTML.
+- **md2html** converts Markdown files --- either a single file or an
+  entire directory tree --- into static HTML.
 
-- **md2pdf** produces PDF files from the command line, orchestrating
-  the entire pipeline from Markdown to PDF in a single invocation.
+- **md2pdf** produces PDF files from the command line, either from a
+  single file or from a directory tree, orchestrating the entire
+  pipeline from Markdown to PDF in a single invocation.
 
 These components are described in detail in Parts II and III of this
 book.
@@ -246,11 +253,11 @@ and the same paged.js engine.
 Build
 -----
 
-The Build pipeline converts directory trees of Markdown files into
-static HTML.  It is driven by the md2html utility, which walks a
-source directory, processes each Markdown file through FencedCode and
-Pandoc, and writes the resulting HTML to an output directory,
-preserving the directory structure.
+The Build pipeline converts Markdown files into static HTML.  It is
+driven by the md2html utility, which can process a single file or
+walk an entire source directory, processing each Markdown file
+through FencedCode and Pandoc, and writing the resulting HTML to an
+output directory, preserving the directory structure.
 
 The Build pipeline is useful for generating documentation sites that
 do not need a running web server.  The output is plain HTML that can
@@ -516,13 +523,10 @@ Document class detection
 md2pdf determines the document class from the source filename.  A
 file named `article.md` uses the `article` class; `slides.md` uses
 `slides`; `book.md` uses `book`; `letter.md` uses `letter`.  Any
-other filename defaults to using that filename (without extension) as
-the document class name, which requires a corresponding CSS file in
-the `css/print` directory.
+other filename is first tried as a document class name (which
+requires a corresponding CSS file in the `css/print` directory);
+if no such file exists, the `default` class is used as a fallback.
 
-This convention means that the filename is significant: renaming
-`article.md` to `my-paper.md` would change the document class to
-`my-paper`, which would fail unless a corresponding CSS file existed.
 For cases where the filename does not match the desired class, the
 `--docclass` option provides an explicit override:
 
@@ -532,6 +536,33 @@ For cases where the filename does not match the desired class, the
 
 The `.md` extension can be omitted from the command line --- md2pdf
 will append it automatically if the file is not found without it.
+
+Single-file and batch mode
+--------------------------
+
+md2pdf operates in two modes.  When the argument is a file, it
+converts that single file to PDF.  When the argument is a directory,
+it converts all `.md` files in it (and its subdirectories) to PDF:
+
+```
+[rexx] md2pdf doc/publications/37
+```
+
+::: noindent
+In batch mode, the document class is inferred independently for each
+file from its filename, so a directory tree containing `article.md`,
+`slides.md` and `readme.md` files will produce PDFs using the
+`article`, `slides` and `default` classes respectively.
+:::
+
+If a second directory argument is given, the output PDF files are
+placed there, replicating the source directory structure.  Otherwise,
+each PDF is placed alongside its source `.md` file.
+
+In both modes, md2pdf changes to the directory containing the source
+file before invoking Pandoc, so that relative paths in the Markdown
+front matter (for example, `bibliography: references.bib`) are
+resolved correctly.
 
 Command-line options
 --------------------
@@ -555,7 +586,7 @@ stylesheet.
 be inferred from the filename.
 
 `--csl NAME` sets the Citation Style Language style for bibliographic
-references.  The default is `ieee`.  The style name must correspond
+references.  The default is `rexxpub`.  The style name must correspond
 to a `.csl` file in the distribution's `csl` directory.  This option
 allows documents with Pandoc citations to use any of the thousands
 of available CSL styles.
@@ -583,6 +614,10 @@ own options.
 Node.js, npm, and pagedjs-cli --- are installed and reachable from
 the command line.  This is useful for troubleshooting a new
 installation.
+
+`--continue` tells md2pdf to continue processing when a file fails
+in batch mode, rather than aborting.  At the end, a summary reports
+the number of files processed and the number of failures.
 
 `-h` or `--help` displays the usage summary.
 
@@ -872,13 +907,14 @@ itself served by the CGI program it documents.
 md2html {.chapter}
 =======
 
-The md2html utility drives the Build pipeline.  Given a source
-directory containing Markdown files, it processes each one through
-FencedCode and Pandoc, wraps the result in an HTML template, and
-writes the output to a destination directory, preserving the
-directory structure.  The result is a set of static HTML files that
-can be published on any hosting service, copied to a USB drive, or
-opened directly in a browser --- no web server required.
+The md2html utility drives the Build pipeline.  It can process a
+single Markdown file or an entire source directory.  In either case,
+each file is processed through FencedCode and Pandoc, wrapped in an
+HTML template, and written to a destination directory.  In batch
+mode, the directory structure is preserved, producing a set of
+static HTML files that can be published on any hosting service,
+copied to a USB drive, or opened directly in a browser --- no web
+server required.
 
 The utility was originally developed for Jean Louis Faucher's
 Executor documentation, and its design reflects that origin: it is
@@ -890,10 +926,17 @@ template and customisation mechanisms.
 How it works
 ------------
 
-md2html takes one or two positional arguments: a source directory
-(required) and a destination directory (optional, defaulting to the
-current directory).  It scans the source directory for `.md` files
-using `SysFileTree`, then processes each one in sequence.
+md2html accepts either a single Markdown file or a pair of
+positional arguments: a source directory (required) and a
+destination directory (optional, defaulting to the current
+directory).  In single-file mode, the output HTML file is placed in
+the destination directory.  In batch mode, md2html scans the source
+directory for `.md` files using `SysFileTree`, then processes each
+one in sequence.
+
+In both modes, md2html changes to the directory containing the
+source file before invoking Pandoc, so that relative paths in the
+front matter are resolved correctly.
 
 For each file, the processing follows the same stages as the other
 pipelines.  First, the Markdown source is passed to FencedCode, which
@@ -1122,10 +1165,10 @@ The CGI program runs on every request, processes a single file, and
 produces output that is served immediately and never stored.  It
 links to external CSS files on the web server and includes Bootstrap
 navigation, interactive controls, and the paged.js print pipeline.
-md2html runs once as a batch process, writes its output to disk, and
-produces static files that need no server.  Its CSS references
-default to local `file:///` URLs, and it includes no interactive
-controls unless the customisation file adds them.
+md2html processes one file or an entire directory tree, writes its
+output to disk, and produces static files that need no server.  Its
+CSS references default to local `file:///` URLs, and it includes no
+interactive controls unless the customisation file adds them.
 
 The template and customisation mechanisms are intentionally parallel,
 so that the same design patterns learned from one utility apply to
@@ -1140,12 +1183,12 @@ The Document Classes {.part}
 The Common Core {.chapter}
 ===============
 
-The four document classes --- `article`, `letter`, `slides`, and
-`book` --- share a common set of typographic conventions and CSS
-techniques.  Understanding this shared core makes it much easier to
-understand the individual classes, because much of what they do is
-the same; the differences are largely in page geometry, text
-alignment, and structural elements.
+The five paginated document classes --- `article`, `default`,
+`letter`, `slides`, and `book` --- share a common set of typographic
+conventions and CSS techniques.  Understanding this shared core makes
+it much easier to understand the individual classes, because much of
+what they do is the same; the differences are largely in page
+geometry, text alignment, and structural elements.
 
 This chapter describes the conventions that all classes share.  The
 chapters that follow describe each class individually, focusing on
@@ -1154,7 +1197,7 @@ what makes it different.
 Coexistence with Bootstrap
 --------------------------
 
-All four classes are designed to coexist with Bootstrap 3, which
+All five classes are designed to coexist with Bootstrap 3, which
 provides the responsive layout for the web view: the navigation bar,
 the breadcrumb trail, the sidebar, and the grid system.  When
 paged.js activates for printing (in the Print or Render pipelines),
@@ -1197,8 +1240,9 @@ LaTeX `quote` environment.
 CSS custom properties
 ---------------------
 
-All paginated classes (article, letter, book) use a common set of CSS
-custom properties to control their size-dependent parameters:
+All paginated classes (article, letter, book, default) use a common
+set of CSS custom properties to control their size-dependent
+parameters:
 
 `--doc-font-size` sets the body text size.  `--doc-line-height` sets
 the line spacing ratio.  `--doc-footnote-size` and
@@ -1235,9 +1279,10 @@ element already signals a new context.  The `.noindent` Pandoc div
 class can suppress indentation explicitly, and paragraphs inside list
 items and definition lists never indent.
 
-The letter class uses block letter style: no indent at all, with
-paragraphs separated by vertical space (0.8em bottom margin).  This
-is the conventional style for business correspondence.
+The letter and default classes use block style: no indent at all,
+with paragraphs separated by vertical space.  This is the
+conventional style for business correspondence (letter) and for
+general-purpose documentation (default).
 
 The slides class also uses block style (no indent, vertical
 separation), which is natural for projection slides.
@@ -1286,8 +1331,9 @@ font stack at 0.9em.
 Footnotes
 ---------
 
-The article, letter, and book classes all support footnotes through
-paged.js's implementation of the CSS `float: footnote` mechanism.
+The article, letter, book, and default classes all support footnotes
+through paged.js's implementation of the CSS `float: footnote`
+mechanism.
 The footnote area is separated from the body text by a thin rule
 (0.5pt), and the footnote text uses a smaller font
 (`--doc-footnote-size`).  Footnote markers in the body text use a
@@ -1764,7 +1810,7 @@ documents and that the article class does not need.
 The `markdown` Class {.chapter}
 ====================
 
-The `markdown` class is different from the other four.  It is not a
+The `markdown` class is different from the other five.  It is not a
 paginated class and does not define `@page` rules, CSS custom
 properties, or any of the print-specific features.  It is a web-only
 stylesheet used by the CGI program for Markdown files that do not
@@ -1777,6 +1823,13 @@ document class stylesheets.  The result is a clean, readable web
 page with Bootstrap navigation, but without the typographic
 refinements or page geometry of the document classes.
 
+For paginated output of generic Markdown files, md2pdf uses the
+`default` document class instead.  The `default` class provides
+proper `@page` rules, parametric sizing, and the same typographic
+conventions as the other paginated classes, making it suitable for
+producing print-quality PDFs from files like `readme.md` that the
+CGI serves with the web-only `markdown.css`.
+
 The `markdown` class defines the EPBCN site-specific styles (the
 navbar micro-logo, the page title colour, the sidebar font size), a
 set of basic heading styles (with fixed pixel sizes rather than the
@@ -1788,12 +1841,6 @@ It also includes the horizontal scrollbar mechanism for wide images
 and basic `<pre>` block styling, but it does not scope its rules to
 `div.content` as carefully as the document classes do --- a
 simplification that is acceptable for its web-only role.
-
-For paginated output, `markdown.css` can be paired with the old
-`slides.css` (now superseded), which appended `@media print` rules
-and `@page` directives.  This combination was the original approach
-before the current document classes were developed, and it remains
-available for backward compatibility.
 Design Decisions {.part}
 ================
 
@@ -2066,7 +2113,8 @@ RexxPub uses the filename of the Markdown source to determine the
 document class.  A file named `article.md` is an article;
 `letter.md` is a letter; `slides.md` is a slide deck; `book.md` is a
 book.  Any other name (such as `readme.md` or `installation.md`)
-uses the default `markdown` class.
+uses the `default` class in md2pdf, and the web-only `markdown`
+stylesheet in the CGI program.
 
 This convention eliminates the need for metadata, configuration
 files, or command-line flags to specify the document class.  The
@@ -2122,25 +2170,32 @@ md2pdf
 ------
 
 Usage: `[rexx] md2pdf [options] source`
+       `[rexx] md2pdf [options] source-directory [destination-directory]`
 
 The `source` argument is a Markdown filename (with or without the
-`.md` extension).  The output is a PDF file with the same base name.
+`.md` extension) or a directory.  When a file is given, the output
+is a PDF file with the same base name.  When a directory is given,
+all `.md` files in it and its subdirectories are converted to PDF.
 
 `--check-deps` checks that all external dependencies (Pandoc,
 pagedjs-cli, Node.js, and optionally pikepdf) are installed and
 reports their versions.  The program exits after the check.
 
+`--continue` continues processing when a file fails in batch mode,
+rather than aborting.
+
 `--csl file` specifies a Citation Style Language file for
-bibliographic references.  Pandoc's `--citeproc` is always enabled;
-this option controls the citation format.
+bibliographic references (default: `rexxpub`).  Pandoc's `--citeproc`
+is always enabled; this option controls the citation format.
 
 `--default attributes` passes default attributes to FencedCode for
 Rexx fenced code blocks (for example, `--default number` to enable
 line numbering).
 
 `--docclass name` overrides the document class inferred from the
-filename.  The recognised classes are `article`, `book`, `letter`,
-and `slides`.
+filename.  The recognised classes are `article`, `book`, `default`,
+`letter`, and `slides`.  When no explicit class is given and the
+inferred class does not exist, `default` is used as a fallback.
 
 `--fix-outline` runs the `fix_pdf_outline.py` post-processing script
 to set the PDF's `PageMode` to `/UseOutlines`, so that the document
@@ -2166,12 +2221,13 @@ structure.
 md2html
 -------
 
-Usage: `[rexx] md2html [options] source [destination]`
+Usage: `[rexx] md2html [options] filename [destination]`
+       `[rexx] md2html [options] source-directory [destination-directory]`
 
-The `source` argument is the directory containing the Markdown files.
+The argument is either a single Markdown filename (with or without
+the `.md` extension) or a source directory containing Markdown files.
 The `destination` argument (optional, defaults to the current
 directory) is the directory where the HTML output will be written.
-Both must be existing directories.
 
 `-c url` or `--css url` sets the base URL for CSS files.  If not
 specified and a `css` subdirectory exists in the destination
@@ -2293,13 +2349,27 @@ Rexx Highlighter styles:
 `article.css`, `article-10pt.css`, and `article-14pt.css` are the
 article class stylesheet and its size variants.  `book.css`,
 `book-10pt.css`, and `book-14pt.css` are the book class.
+`default.css`, `default-10pt.css`, and `default-14pt.css` are the
+default class for generic Markdown files.
 `letter.css`, `letter-10pt.css`, and `letter-14pt.css` are the
 letter class.  `slides.css` is the slides class (no size variants).
-`markdown.css` is the web-only stylesheet for generic Markdown files.
+`markdown.css` is the web-only stylesheet used by the CGI program
+for generic Markdown files.
 
 The `rexx-*.css` files are the Rexx Highlighter predefined styles:
 `rexx-dark.css`, `rexx-light.css`, `rexx-rgfdark.css`,
 `rexx-rgflight.css`, and the Vim-derived colour schemes.
+
+The `csl` directory
+-------------------
+
+The `csl` directory contains Citation Style Language files for
+Pandoc's `--citeproc` option:
+
+`rexxpub.csl` is the default bibliography style, with full author
+names, family names in small caps, and entries sorted by author and
+title.
+`ieee.csl` is the standard IEEE Reference Guide style.
 
 The `js` directory
 ------------------

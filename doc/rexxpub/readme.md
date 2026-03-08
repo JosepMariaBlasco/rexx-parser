@@ -11,6 +11,26 @@ Provided document classes
 + [Letter](letter/).
 + [Slides](slides/).
 
+Bibliography styles
+-------------------
+
+RexxPub uses Pandoc's `--citeproc` for bibliography processing, which
+means it can use any of the thousands of
+[Citation Style Language (CSL)](https://citationstyles.org/) styles
+available from the
+[CSL style repository](https://github.com/citation-style-language/styles).
+CSL files should be placed in the `csl` subdirectory of the
+distribution.
+
+The distribution includes two styles:
+
++ `ieee.csl` --- The standard
+  [IEEE Reference Guide](http://www.zotero.org/styles/ieee) style.
++ `rexxpub.csl` --- [The RexxPub Bibliography Style](bibliography/),
+  derived from the IEEE style, with full author names (no initials),
+  family names in small caps, and entries sorted by author and title.
+  This is the default style used by `md2pdf`.
+
 Dependencies
 ------------
 

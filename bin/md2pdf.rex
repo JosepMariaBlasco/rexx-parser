@@ -17,6 +17,7 @@
 /* 20260228         Add support for codepages other than 65001 (thanks, JLF!) */
 /* 20250303    0.5  Add support for size and for letter and slides docclasses */
 /* 20260307         Add batch directory mode                                  */
+/* 20260308         Add support for optional --section-numbers                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -60,6 +61,7 @@
   fixOutline     = 0
   size           = 12
   continue       = 0
+  sectionNumbers = 0
   itrace         = 0
 
 ProcessOptions:
@@ -88,6 +90,14 @@ ProcessOptions:
         outline = args[1]
         If \DataType(outline,"W") | outline < 0 | outline > 6 Then
           Call Error "Outline should be a non-negative whole number smaller than 7, found '"outline"'."
+        args~delete(1)
+      End
+      When "--section-numbers" Then Do
+        If args~size == 0 Then
+          Call Error "Missing depth after '"option"' option."
+        sectionNumbers = args[1]
+        If \DataType(sectionNumbers,"W") | sectionNumbers < 0 | sectionNumbers > 4 Then
+          Call Error "Section number depth should be a whole number between 0 and 4, found '"sectionNumbers"'."
         args~delete(1)
       End
       When "--default"        Then Do
@@ -262,10 +272,9 @@ BatchMode:
   Exit 0
 
 --------------------------------------------------------------------------------
-
 ProcessFile: Procedure Expose rootDir commonCSS HTMLtemplate check fail -
   defaultTheme defaultOptions language outline fixOutline size continue -
-  itrace csl
+  itrace csl sectionNumbers
 
   Use Strict Arg file, requestedDocClass, outputDir = ""
 
@@ -398,6 +407,10 @@ AllWentWell:
   End
   Else TOCHandler = ""
 
+  If sectionNumbers > 0
+    Then sectionNumbersClass = "section-numbers-"sectionNumbers
+    Else sectionNumbersClass = ""
+
   Select Case fileName
     When "article", "slides", "book" Then Do
       Parse Caseless Var contents With "<h1" ">"title"</"
@@ -429,11 +442,13 @@ AllWentWell:
     End
     Otherwise title = fileName
   End
-  HTML = HTML                                       -
-    ~caselessChangeStr("%Language%",   language   ) -
-    ~caselessChangeStr("%Content%",    contents   ) -
-    ~caselessChangeStr("%Title%",      title      ) -
-    ~caselessChangeStr("%TOCHandler%", TOCHandler )
+
+  HTML = HTML                                                   -
+    ~caselessChangeStr("%Language%",       language           ) -
+    ~caselessChangeStr("%Content%",        contents           ) -
+    ~caselessChangeStr("%Title%",          title              ) -
+    ~caselessChangeStr("%TOCHandler%",     TOCHandler         ) -
+    ~caselessChangeStr("%SectionNumbers%", sectionNumbersClass)
 
   Call SysFileDelete htmlFilename
 
@@ -558,6 +573,7 @@ Options:
 -h, --help            Display this help
 -it, --itrace         Print internal traceback on error
 -l, --language CODE   Set document language (e.g. en, es, fr)
+--section-numbers n   Number sections down to depth n (0=off, max 4)
 --size SIZE           Set the size in pt (10, 12 or 14)
 --outline n           Generate outline with H1,...,Hn (default: 3)
 --fix-outline         Fix PDF so that the outline shows automatically
@@ -594,7 +610,7 @@ See myhelp for details.
   <body>
     <div class='container bg-white' lang='en'>
       <div class="row">
-         <div class="content">
+         <div class="content %SectionNumbers%">
             %Content%
          </div>
       </div>
