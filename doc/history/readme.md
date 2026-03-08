@@ -24,7 +24,8 @@ Version history
   <li> Enhance `md2html` to add a single-file mode (20260307).
   <li> Add a `default.css` for print, and its size variants (20260307).
   <li> Add a `rexxpub.csl` style to RexxPub and document it (20260307).
-  <li> Add `--section-numbers N`to md2pdf to produce optional numbered headers (20260307).
+  <li> Add `--section-numbers N`to md2pdf to produce optional numbered headers (20260308).
+  <li> Add direct support for Executor, Experimental Rexx and Tutor to `md2pdf` (20260308).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

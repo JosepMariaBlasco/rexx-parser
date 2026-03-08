@@ -42,6 +42,7 @@ Options
 `--csl` NAME                              Set the Citation Style Language style
 `--default` "options"                     Default options for all code blocks
 `--docclass` CLASS                        Control the overall layout and CSS
+`-exp`, `--experimental`                  Enable Experimental features for all code blocks
 `--fix-outline`                           Fix PDF so that the outline shows automatically
                                           (requires python and pikepdf)
 `-h`, `--help`                            Display help and exit
@@ -51,6 +52,8 @@ Options
 `--section-numbers` N                     Number sections down to depth N (0=off, max 4)
 `--size` SIZE                             Set the font size in pt (10, 12 or 14; default: 12)
 `--style` NAME                            Set the default visual theme for Rexx code blocks
+`-u`, `--tutor`, `--unicode`              Enable TUTOR-flavoured Unicode for all code blocks
+`-xtr`, `--executor`                      Enable Executor support for all code blocks
 ----------------------------------------- ------------------------------
 
 \
@@ -80,6 +83,13 @@ The `--continue` option is useful in batch mode: when a file fails
 class, or any other error), processing continues with the remaining
 files instead of aborting.  At the end, a summary reports the number
 of files processed and the number of failures.
+
+The `-xtr`/`--executor`, `-exp`/`--experimental`, and
+`-u`/`--tutor`/`--unicode` options enable the corresponding language
+extensions for all Rexx fenced code blocks in the document.  They
+are equivalent to specifying `executor`, `experimental`, or `tutor`
+in the `--default` string, or to adding those attributes to every
+individual fenced code block.
 
 Prerequisites
 -------------

@@ -18,6 +18,7 @@
 /* 20250303    0.5  Add support for size and for letter and slides docclasses */
 /* 20260307         Add batch directory mode                                  */
 /* 20260308         Add support for optional --section-numbers                */
+/* 20260308         Add -xtr, --executor, -exp, --experimental, -u, --unicode */
 /*                                                                            */
 /******************************************************************************/
 
@@ -62,6 +63,9 @@
   size           = 12
   continue       = 0
   sectionNumbers = 0
+  executor       = 0
+  experimental   = 0
+  unicode        = 0
   itrace         = 0
 
 ProcessOptions:
@@ -100,6 +104,9 @@ ProcessOptions:
           Call Error "Section number depth should be a whole number between 0 and 4, found '"sectionNumbers"'."
         args~delete(1)
       End
+      When "-xtr", "--executor"           Then executor     = 1
+      When "-exp", "--experimental"       Then experimental = 1
+      When "-u", "--tutor", "--unicode"   Then unicode      = 1
       When "--default"        Then Do
         If args~size == 0 Then
           Call Error "Missing options after '"option"' option."
@@ -272,9 +279,10 @@ BatchMode:
   Exit 0
 
 --------------------------------------------------------------------------------
+
 ProcessFile: Procedure Expose rootDir commonCSS HTMLtemplate check fail -
   defaultTheme defaultOptions language outline fixOutline size continue -
-  itrace csl sectionNumbers
+  itrace csl sectionNumbers executor experimental unicode
 
   Use Strict Arg file, requestedDocClass, outputDir = ""
 
@@ -337,8 +345,13 @@ ProcessFile: Procedure Expose rootDir commonCSS HTMLtemplate check fail -
 
   Signal On Syntax Name IndividualFileFailed
 
+  combinedDefaults = defaultOptions
+  If executor     Then combinedDefaults = Strip(combinedDefaults "executor")
+  If experimental Then combinedDefaults = Strip(combinedDefaults "experimental")
+  If unicode      Then combinedDefaults = Strip(combinedDefaults "unicode")
+
   defaultOptions. = 0
-  defaultOptions.default  = defaultOptions
+  defaultOptions.default  = combinedDefaults
   If continue Then defaultOptions.["CONTINUE"] = 1
 
   source = FencedCode( file, source, defaultTheme, defaultOptions. )
@@ -570,6 +583,7 @@ Options:
 --csl NAME            Sets the Citation Style Language style
 --default OPTIONS     Set default options for Rexx code blocks
 --docclass CLASS      Control overall layout and CSS class
+-exp, --experimental  Enable Experimental features for all code blocks
 -h, --help            Display this help
 -it, --itrace         Print internal traceback on error
 -l, --language CODE   Set document language (e.g. en, es, fr)
@@ -579,6 +593,9 @@ Options:
 --fix-outline         Fix PDF so that the outline shows automatically
                       (requires python and pikepdf)
 --style NAME          Set the default visual theme for Rexx code blocks
+-u, --tutor,
+    --unicode         Enable TUTOR-flavoured Unicode for all code blocks
+-xtr, --executor      Enable Executor support for all code blocks
 
 The 'myname' program is part of the Rexx Parser package,
 see https://rexx.epbcn.com/rexx-parser/. It is distributed under
