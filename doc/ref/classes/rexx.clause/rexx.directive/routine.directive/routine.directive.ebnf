@@ -1,0 +1,5 @@
+Routine.Directive.name     ::= "name"
+Routine.Directive.private  ::= "private"
+Routine.Directive.external ::= "external"
+Routine.Directive.body     ::= "body"
+Routine.Directive.routine  ::= "routine"

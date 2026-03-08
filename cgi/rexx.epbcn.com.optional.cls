@@ -242,8 +242,20 @@ Crumb:
     When ref"/classes/highlighter" Then Return "Highlighter"
     When ref"/classes/rexx.clause" Then Return "Rexx.Clause"
     When ref"/classes/rexx.clause/rexx.directive" Then Return "Rexx.Directive"
+    When ref"/classes/rexx.clause/rexx.directive/coactivity.directive" Then
+      Return "Coactivity.Directive"
+    When ref"/classes/rexx.clause/rexx.directive/constant.directive" Then
+      Return "Constant.Directive"
     When ref"/classes/rexx.clause/rexx.directive/method.directive" Then
       Return "Method.Directive"
+    When ref"/classes/rexx.clause/rexx.directive/r.directive" Then
+      Return "R.Directive"
+    When ref"/classes/rexx.clause/rexx.directive/routine.directive" Then
+      Return "Routine.Directive"
+    When ref"/classes/rexx.clause/rexx.directive/requires.directive" Then
+      Return "Requires.Directive"
+    When ref"/classes/rexx.clause/rexx.directive/resource.directive" Then
+      Return "Resource.Directive"
     When ref"/classes/rexx.parser" Then Return "Rexx.Parser"
     When ref"/classes/rexx.parser/early-check" Then Return "Early checks"
     When ref"/classes/stylepatch"  Then Return "StylePatch"

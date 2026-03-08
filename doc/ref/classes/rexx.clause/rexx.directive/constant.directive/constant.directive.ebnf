@@ -1,0 +1,3 @@
+Constant.Directive.name     ::= "name"
+Constant.Directive.value    ::= "value"
+Constant.Directive.constant ::= "constant"

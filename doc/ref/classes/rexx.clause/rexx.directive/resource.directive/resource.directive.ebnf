@@ -1,0 +1,4 @@
+Resource.Directive.name      ::= "name"
+Resource.Directive.delimiter ::= "delimiter"
+Resource.Directive.fromLine  ::= "fromLine"
+Resource.Directive.toLine    ::= "toLine"

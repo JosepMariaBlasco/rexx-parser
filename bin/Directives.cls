@@ -22,6 +22,7 @@
 /* 20251101         Enhance and complete API for Requires.Directive           */
 /* 20251128    0.3a (Executor) Implement ::EXTENSION directive                */
 /* 20251201         (Executor) Add support for source literals                */
+/* 20260308         Add GET to several attributes that are not settable       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -413,7 +414,7 @@ Return
 --------------------------------------------------------------------------------
 
 ::Class Coactivity.Directive Public SubClass Rexx.Directive
-::Attribute directive
+::Attribute directive Get
 ::Method init
   Expose         package  begin  end  directive
   Use Strict Arg package, begin, end, directive
@@ -1000,9 +1001,9 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Requires.Directive Public SubClass Rexx.Directive
-::Attribute programName
-::Attribute nameSpace
-::Attribute library
+::Attribute programName Get
+::Attribute nameSpace   Get
+::Attribute library     Get
 ::Method init
   Expose programName nameSpace library
   Use Strict Arg package, begin, end, programName, options.
@@ -1079,10 +1080,10 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Resource.Directive Public SubClass Rexx.Directive
-::Attribute name
-::Attribute delimiter
-::Attribute fromLine
-::Attribute toLine
+::Attribute name      Get
+::Attribute delimiter Get
+::Attribute fromLine  Get
+::Attribute toLine    Get
 ::Method init
   Expose name delimiter
   Use Strict Arg package, begin, end, name, delimiter
@@ -1105,7 +1106,7 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class R.Directive Public SubClass Rexx.Directive
-::Attribute directive
+::Attribute directive Get
 ::Method init
   Expose         package  begin  end  directive
   Use Strict Arg package, begin, end, directive

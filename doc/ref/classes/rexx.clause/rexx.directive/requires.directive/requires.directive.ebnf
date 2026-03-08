@@ -1,0 +1,3 @@
+Requires.Directive.programName ::= "programName"
+Requires.Directive.nameSpace   ::= "nameSpace"
+Requires.Directive.library     ::= "library"

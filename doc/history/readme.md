@@ -28,6 +28,8 @@ Version history
   <li> Add direct support for Executor, Experimental Rexx and Tutor to `md2pdf` (20260308).
   <li> Add support for `?sections=N` for CGI (20260308).
   <li> Add `--section-numbers N`to md2html (20260308).
+  <li> Tree API: Document Coactivity.Directive, Constant.Directive,
+       R.Directive, Requires.Directive, Resource.Directive, Routine.Directive (20260308).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).
