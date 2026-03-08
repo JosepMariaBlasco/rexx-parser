@@ -44,6 +44,7 @@
 /* 20260215    0.4a Add support for print=pdf                                 */
 /* 20260219    0.4a Add support for generalized style= parameters             */
 /* 20260303    0.5  Add support for letter docclass                           */
+/* 20260303         Add support for numbered section headers                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -119,18 +120,19 @@ Exit
   URI  = self~URI
 
   ------------------------------------------------------------------------------
-  -- Accepted parameters are "style=styleName, "print=pdf", and               --
-  -- "view=highlight" (only for .rex and .cls files)                          --
+  -- Accepted parameters are "style=styleName, "print=pdf", "size=n",         --
+  -- "sections=n", and "view=highlight" (only for .rex and .cls files)        --
   -- When style=styleName is specified, the program will search for a file    --
   -- called rexx-<stylename>.css in the css subdirectory.                     --
   -- For security reasons, only letters, numbers, periods, dashes and         --
   -- underscores are accepted as styleNames.                                  --
   ------------------------------------------------------------------------------
 
-  style = "dark"
-  view  = "text"
-  size  = 12
-  print = 0
+  style          = "dark"
+  view           = "text"
+  size           = 12
+  print          = 0
+  sectionNumbers = 0
   If uri~contains("?")  Then Do
     Parse Var uri uri"?"parameters
     Loop While parameters \== ""
@@ -154,6 +156,10 @@ Exit
         When param~startsWith("size=") Then Do
           Parse Var param "size="size
           If WordPos(size,"10 12 14") == 0 Then ok = 0
+        End
+        When param~startsWith("sections=") Then Do
+          Parse Var param "sections="sectionNumbers
+          If \DataType(sectionNumbers,"W") | sectionNumbers < 0 | sectionNumbers > 4 Then ok = 0
         End
         Otherwise ok = 0
       End
@@ -291,6 +297,10 @@ Exit
   -- Copy the HTML resource, with some substitutions                          --
   ------------------------------------------------------------------------------
 
+  If sectionNumbers > 0
+    Then sectionNumbersClass = "section-numbers-"sectionNumbers
+    Else sectionNumbersClass = ""
+
   template = .Resources~HTML
 
   Do line Over template
@@ -323,7 +333,7 @@ Exit
         Else
           Say "    <link rel='stylesheet'" -
               "href='/rexx-parser/css/"filenameSpecificStyle"-"size"pt.css'>"
-      Otherwise Say line
+      Otherwise Say line~changeStr("%SectionNumbers%", sectionNumbersClass)
     End
   End
 
@@ -493,7 +503,7 @@ View:
       <div class='row'>
         <div class='col-md-9'>
           %contentheader%
-          <div class='content'>
+          <div class='content %SectionNumbers%'>
             %contents%
           </div>
         </div>

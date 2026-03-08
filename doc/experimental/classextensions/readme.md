@@ -81,7 +81,7 @@ The task of our new `compile` method is to translate
 the new, experimental, Rexx features into standard ooRexx.
 We do that as follows:
 
-* When no `EXTENDS` or `OTHERWISE` phrase is present,
+* When no `EXTENDS` or `OVERRIDES` phrase is present,
   the directive is copied without modification to the
   translated program.
 

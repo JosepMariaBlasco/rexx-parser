@@ -21,6 +21,7 @@
 /* 20260101         Change [*STYLES*] -> %usedStyles%                         */
 /* 20260102         Standardize help options to -h and --help                 */
 /* 20260307    0.5  Add single-file mode                                      */
+/* 20260308         Add --section-numbers option                              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -49,12 +50,13 @@
   If rc \== 0 Then
     Call Error myself "needs a working version of pandoc. Aborting..."
 
-  attributes = ""
-  cssbase    = ""
-  jsbase     = ""
-  itrace     = 0
-  path       = ""
-  continue   = 0
+  attributes     = ""
+  cssbase        = ""
+  jsbase         = ""
+  itrace         = 0
+  sectionNumbers = 0
+  path           = ""
+  continue       = 0
 
 ProcessOptions:
 
@@ -72,6 +74,14 @@ ProcessOptions:
         args~delete(1)
       End
       When "--continue" Then continue = 1
+      When "--section-numbers" Then Do
+        If args~size == 0 Then
+          Call Error "Missing depth after '"option"' option."
+        sectionNumbers = args[1]
+        If \DataType(sectionNumbers,"W") | sectionNumbers < 0 | sectionNumbers > 4 Then
+          Call Error "Section number depth should be a whole number between 0 and 4, found '"sectionNumbers"'."
+        args~delete(1)
+      End
       When "-c", "--css" Then Do
         If args~size == 0 Then
           Call Error "Missing base directory after '"option"' option."
@@ -312,7 +322,7 @@ TemplateFound:
     End
     Say Time("Long") "Processing" file"..."
     Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, -
-      itrace, attributes, continue
+      itrace, attributes, continue, sectionNumbers
     processed += 1
   End
 
@@ -338,7 +348,7 @@ DoSingleFile:
   Say Time("Long") "Processing" file"..."
   Call Directory fileObj~parentFile~absolutePath
   Call ProcessFile fileObj, destDir, fileObj~absolutePath, template, -
-    cssbase, jsbase, itrace, attributes, continue
+    cssbase, jsbase, itrace, attributes, continue, sectionNumbers
 
   Say Copies("-",80)
   Say Time("Long") "Processed 1 file, took" Time("E") "seconds."
@@ -363,7 +373,7 @@ Help:
 
 ::Routine ProcessFile
   Use Strict Arg file, directory, sourceFn, template, -
-    cssbase, jsbase, itrace, attributes, continue
+    cssbase, jsbase, itrace, attributes, continue, sectionNumbers
 
   filename = file~absolutePath
   name     = FileSpec("Name",filename)
@@ -497,6 +507,10 @@ AllWentWell: Nop
   -- Copy the HTML resource, with some substitutions                          --
   ------------------------------------------------------------------------------
 
+  If sectionNumbers > 0
+    Then sectionNumbersClass = "section-numbers-"sectionNumbers
+    Else sectionNumbersClass = ""
+
   Do line Over template
     Select Case Strip(Lower(line))
       When "%title%"         Then res~append( title )
@@ -518,7 +532,7 @@ AllWentWell: Nop
           res~append(                                                       -
             "    <link rel='stylesheet' href='"cssbase"/"filenameSpecificStyle".css'>"   -
           )
-      Otherwise res~append( line )
+      Otherwise res~append( line~changeStr("%SectionNumbers%", sectionNumbersClass) )
     End
   End
 
@@ -598,6 +612,7 @@ Options:
 -it, --itrace              Print internal traceback on error
 -j jsbase, --js jsbase     Where to locate the JavaScript files
 -p path, --path path       Search path for default.md2html and md2html.custom.rex
+--section-numbers n        Number sections down to depth n (0=off, max 4)
 
 cssbase and jsbase default to "css" and "js" subdirectories
 in the destination directory, when they exist.

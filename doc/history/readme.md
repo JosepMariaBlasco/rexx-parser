@@ -26,6 +26,8 @@ Version history
   <li> Add a `rexxpub.csl` style to RexxPub and document it (20260307).
   <li> Add `--section-numbers N`to md2pdf to produce optional numbered headers (20260308).
   <li> Add direct support for Executor, Experimental Rexx and Tutor to `md2pdf` (20260308).
+  <li> Add support for `?sections=N` for CGI (20260308).
+  <li> Add `--section-numbers N`to md2html (20260308).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

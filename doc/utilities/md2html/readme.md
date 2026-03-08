@@ -44,6 +44,7 @@ Options
 `-it`, `--itrace`                                                                 Print internal traceback on error
 <code>-j <em>jsbase</em></code>, <code>--js  <em>jsbase</em></code>               Where to locate the JavaScript files
 <code>-p <em>path</em></code>, <code>--path  <em>path</em></code>                 First path to search for `default.md2html` and `md2html.custom.rex`
+`--section-numbers` N                                                             Number sections down to depth N (0=off, max 4)
 --------------------------------------------------------------------------------- ------------------------------
 
 \
@@ -174,6 +175,10 @@ appear alone on a line, in lowercase):
 
 `%cssbase%` and `%jsbase%`
 : Replaced early during template loading with the values of the corresponding options.
+
+`%SectionNumbers%`
+: Replaced by the CSS class for section numbering (e.g. `section-numbers-3`),
+  or by an empty string when `--section-numbers` is not specified or is 0.
 
 Structure of the `md2html.custom.rex` file
 ------------------------------------------

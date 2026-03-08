@@ -250,6 +250,19 @@ offline by md2pdf, uses the Render pipeline described below.  The
 visual result is identical because both pipelines use the same CSS
 and the same paged.js engine.
 
+### Note on Unicode text in browser-generated PDFs.
+
+When saving a
+document as PDF via the browser's print dialog, characters outside
+the Basic Multilingual Plane (such as emoji and Mathematical symbols)
+and certain complex scripts (such as Devanagari conjuncts) may appear
+correctly on screen but produce garbled text when copied from the
+resulting PDF.  This is a known limitation of the PDF generators
+built into current browsers (both Firefox and Chrome are affected),
+not a RexxPub issue.  The Render pipeline (md2pdf) does not suffer
+from this problem: its PDFs support correct Unicode copy-paste.  For
+final-quality PDFs, always use md2pdf.
+
 Build
 -----
 
