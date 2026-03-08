@@ -20,6 +20,7 @@
 /* 20250621    0.2c Partial support for .rex and .cls files                   */
 /* 20260228    0.4a Add style chooser support                                 */
 /* 20260303    0.5  Add optional size chooser support and print button        */
+/* 20260308         Added section numbering chooser                           */
 /*                                                                            */
 /******************************************************************************/
 
@@ -128,6 +129,20 @@ If name \== "slides.md" Then Do
   Say pad'      <option value="10">10pt</option>'
   Say pad'      <option value="12" selected>12pt (default)</option>'
   Say pad'      <option value="14">14pt</option>'
+  Say pad'    </select>'
+  Say pad'  </div>'
+End
+If WordPos(name, "article.md book.md") > 0 Then Do
+  Say pad'  <div class="form-group" style="margin-left: 20px;">'
+  Say pad'    <label for="sections-chooser" style="margin-right: 10px;">'
+  Say pad'      <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> Sections'
+  Say pad'    </label>'
+  Say pad'    <select class="form-control" id="sections-chooser" style="width: auto; display: inline-block;">'
+  Say pad'      <option value="0" selected>None (default)</option>'
+  Say pad'      <option value="1">1 level</option>'
+  Say pad'      <option value="2">2 levels</option>'
+  Say pad'      <option value="3">3 levels</option>'
+  Say pad'      <option value="4">4 levels</option>'
   Say pad'    </select>'
   Say pad'  </div>'
 End

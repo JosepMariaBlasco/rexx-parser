@@ -30,6 +30,7 @@ Version history
   <li> Add `--section-numbers N`to md2html (20260308).
   <li> Tree API: Document Coactivity.Directive, Constant.Directive,
        R.Directive, Requires.Directive, Resource.Directive, Routine.Directive (20260308).
+  <li> Add section numbering dropdown to article and book (20260308).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).
