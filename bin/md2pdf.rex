@@ -341,7 +341,6 @@ ProcessFile: Procedure Expose rootDir commonCSS HTMLtemplate check fail -
     CSS      ||=  CharIn(sizeFile,     1, Chars(sizeFile)     )
 
   HTML         =  HTMLtemplate
-  HTML         =  HTML~caselessChangeStr("%CSS%",CSS)
 
   Signal On Syntax Name IndividualFileFailed
 
@@ -413,6 +412,26 @@ AllWentWell:
 
   contents = contents~makeString
 
+  -- Scan for per-block highlighting styles (e.g. style=vim-dark-darkblue)
+  -- and load the corresponding CSS files, same as the CGI does.
+  allowed = XRange("ALNUM")".-_"
+  loaded  = .Set~new
+  rest = contents
+  Loop While rest~pos('class="highlight-rexx-') > 0
+    Parse Var rest 'class="highlight-rexx-'extraStyle'">'rest
+    If extraStyle == "" Then Iterate
+    If extraStyle~verify(allowed) > 0 Then Iterate
+    If extraStyle == defaultTheme Then Iterate
+    If loaded~hasIndex(extraStyle) Then Iterate
+    extraCSSFile = rootDir"/css/flattened/rexx-"extraStyle".css"
+    If .File~new(extraCSSFile)~exists, \.File~new(extraCSSFile)~isDirectory Then Do
+      CSS ||= CharIn(extraCSSFile, 1, Chars(extraCSSFile))
+      loaded~put(extraStyle)
+    End
+  End
+
+  HTML = HTML~caselessChangeStr("%CSS%", CSS)
+
   If contents~~pos('div id="toc"') > 0 Then Do
     createToc =  rootDir"/js/createToc.js"
     chunk     =  CharIn(createToc, 1, Chars(createToc) )
@@ -420,9 +439,16 @@ AllWentWell:
   End
   Else TOCHandler = ""
 
-  If sectionNumbers > 0
-    Then sectionNumbersClass = "section-numbers-"sectionNumbers
-    Else sectionNumbersClass = ""
+  If sectionNumbers > 0 Then Do
+    sectionNumbersClass = "section-numbers-"sectionNumbers
+    numberSections = rootDir"/js/numberSections.js"
+    chunk = CharIn(numberSections, 1, Chars(numberSections) )
+    sectionNumbersHandler = "<script>"chunk"</script>"
+  End
+  Else Do
+    sectionNumbersClass = ""
+    sectionNumbersHandler = ""
+  End
 
   Select Case fileName
     When "article", "slides", "book" Then Do
@@ -461,7 +487,8 @@ AllWentWell:
     ~caselessChangeStr("%Content%",        contents           ) -
     ~caselessChangeStr("%Title%",          title              ) -
     ~caselessChangeStr("%TOCHandler%",     TOCHandler         ) -
-    ~caselessChangeStr("%SectionNumbers%", sectionNumbersClass)
+    ~caselessChangeStr("%SectionNumbers%", sectionNumbersClass) -
+    ~caselessChangeStr("%SectionNumbersHandler%", sectionNumbersHandler)
 
   Call SysFileDelete htmlFilename
 
@@ -632,6 +659,7 @@ See myhelp for details.
          </div>
       </div>
     </div>
+    %SectionNumbersHandler%
     %TOCHandler%
   </body>
 </html>

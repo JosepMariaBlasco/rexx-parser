@@ -40,6 +40,9 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20260306    0.5  First version — extracted from article/book/letter/slides */
 /* 20260308         Add support for optional numbered headers                 */
+/* 20260309         Fix: use descendant selectors for section numbering so    */
+/*                  that paged.js fragment wrappers do not break counters;    */
+/*                  explicitly exclude .title-page, .toc-exclude, .abstract  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -472,9 +475,10 @@ div.csl-indent {
 /* Add one of .section-numbers-1 through .section-numbers-4 to div.content    */
 /* to enable automatic section numbering up to that heading depth.            */
 /*                                                                            */
-/* Numbering applies only to headings that are direct children of             */
-/* div.content.  Headings inside wrapper divs (.title-page, .toc-exclude,     */
-/* etc.) are automatically excluded because they are not direct children.     */
+/* Numbering applies to all headings that descend from div.content.           */
+/* Descendant selectors (not child selectors) are used so that paged.js       */
+/* fragment wrappers do not break counter propagation.  Headings inside       */
+/* .title-page, .toc-exclude, and .abstract are explicitly excluded.          */
 /*                                                                            */
 /* Headings with class .unnumbered (Pandoc's {-} or {.unnumbered} syntax),    */
 /* .part, or .chapter are explicitly excluded.                                */
@@ -490,69 +494,110 @@ div.content[class*="section-numbers-"] {
 
 /* --- h1 ------------------------------------------------------------------- */
 
-div.content[class*="section-numbers-"] > h1 {
+div.content[class*="section-numbers-"] h1 {
   counter-increment: h1counter;
   counter-reset: h2counter h3counter h4counter;
 }
 
-div.content[class*="section-numbers-"] > h1::before {
+div.content[class*="section-numbers-"] h1::before {
   content: counter(h1counter) ".\2003";
 }
 
 /* --- h2 (active from level 2) -------------------------------------------- */
 
-div.content.section-numbers-2 > h2,
-div.content.section-numbers-3 > h2,
-div.content.section-numbers-4 > h2 {
+div.content.section-numbers-2 h2,
+div.content.section-numbers-3 h2,
+div.content.section-numbers-4 h2 {
   counter-increment: h2counter;
   counter-reset: h3counter h4counter;
 }
 
-div.content.section-numbers-2 > h2::before,
-div.content.section-numbers-3 > h2::before,
-div.content.section-numbers-4 > h2::before {
+div.content.section-numbers-2 h2::before,
+div.content.section-numbers-3 h2::before,
+div.content.section-numbers-4 h2::before {
   content: counter(h1counter) "." counter(h2counter) "\2003";
 }
 
 /* --- h3 (active from level 3) -------------------------------------------- */
 
-div.content.section-numbers-3 > h3,
-div.content.section-numbers-4 > h3 {
+div.content.section-numbers-3 h3,
+div.content.section-numbers-4 h3 {
   counter-increment: h3counter;
   counter-reset: h4counter;
 }
 
-div.content.section-numbers-3 > h3::before,
-div.content.section-numbers-4 > h3::before {
+div.content.section-numbers-3 h3::before,
+div.content.section-numbers-4 h3::before {
   content: counter(h1counter) "." counter(h2counter) "." counter(h3counter) "\2003";
 }
 
 /* --- h4 (active at level 4 only) ----------------------------------------- */
 
-div.content.section-numbers-4 > h4 {
+div.content.section-numbers-4 h4 {
   counter-increment: h4counter;
 }
 
-div.content.section-numbers-4 > h4::before {
+div.content.section-numbers-4 h4::before {
   content: counter(h1counter) "." counter(h2counter) "." counter(h3counter) "." counter(h4counter) "\2003";
 }
 
-/* --- Exclusions: unnumbered, part, chapter -------------------------------- */
+/* --- Exclusions: unnumbered, part, chapter, wrapper divs ----------------- */
+/*                                                                            */
+/* The wrapper selectors must carry the same div.content[...] prefix as the   */
+/* increment rules above, so that they match or exceed their specificity.     */
 
-div.content[class*="section-numbers-"] > h1.unnumbered,
-div.content[class*="section-numbers-"] > h2.unnumbered,
-div.content[class*="section-numbers-"] > h3.unnumbered,
-div.content[class*="section-numbers-"] > h4.unnumbered,
-div.content[class*="section-numbers-"] > h1.part,
-div.content[class*="section-numbers-"] > h1.chapter {
+div.content[class*="section-numbers-"] h1.unnumbered,
+div.content[class*="section-numbers-"] h2.unnumbered,
+div.content[class*="section-numbers-"] h3.unnumbered,
+div.content[class*="section-numbers-"] h4.unnumbered,
+div.content[class*="section-numbers-"] h1.part,
+div.content[class*="section-numbers-"] h1.chapter,
+div.content[class*="section-numbers-"] .title-page h1,
+div.content[class*="section-numbers-"] .title-page h2,
+div.content[class*="section-numbers-"] .title-page h3,
+div.content[class*="section-numbers-"] .title-page h4,
+div.content[class*="section-numbers-"] .toc-exclude h1,
+div.content[class*="section-numbers-"] .toc-exclude h2,
+div.content[class*="section-numbers-"] .toc-exclude h3,
+div.content[class*="section-numbers-"] .toc-exclude h4,
+div.content[class*="section-numbers-"] .abstract h1,
+div.content[class*="section-numbers-"] .abstract h2,
+div.content[class*="section-numbers-"] .abstract h3,
+div.content[class*="section-numbers-"] .abstract h4 {
   counter-increment: none;
 }
 
-div.content[class*="section-numbers-"] > h1.unnumbered::before,
-div.content[class*="section-numbers-"] > h2.unnumbered::before,
-div.content[class*="section-numbers-"] > h3.unnumbered::before,
-div.content[class*="section-numbers-"] > h4.unnumbered::before,
-div.content[class*="section-numbers-"] > h1.part::before,
-div.content[class*="section-numbers-"] > h1.chapter::before {
+div.content[class*="section-numbers-"] h1.unnumbered::before,
+div.content[class*="section-numbers-"] h2.unnumbered::before,
+div.content[class*="section-numbers-"] h3.unnumbered::before,
+div.content[class*="section-numbers-"] h4.unnumbered::before,
+div.content[class*="section-numbers-"] h1.part::before,
+div.content[class*="section-numbers-"] h1.chapter::before,
+div.content[class*="section-numbers-"] .title-page h1::before,
+div.content[class*="section-numbers-"] .title-page h2::before,
+div.content[class*="section-numbers-"] .title-page h3::before,
+div.content[class*="section-numbers-"] .title-page h4::before,
+div.content[class*="section-numbers-"] .toc-exclude h1::before,
+div.content[class*="section-numbers-"] .toc-exclude h2::before,
+div.content[class*="section-numbers-"] .toc-exclude h3::before,
+div.content[class*="section-numbers-"] .toc-exclude h4::before,
+div.content[class*="section-numbers-"] .abstract h1::before,
+div.content[class*="section-numbers-"] .abstract h2::before,
+div.content[class*="section-numbers-"] .abstract h3::before,
+div.content[class*="section-numbers-"] .abstract h4::before {
+  content: none;
+}
+
+/* --- JS-based numbering override ----------------------------------------- */
+/*                                                                            */
+/* When numberSections.js is active (paged.js print pipeline), it adds the    */
+/* class "sections-numbered" to div.content and injects the numbers as        */
+/* <span class="section-number"> elements.  The ::before rules above must     */
+/* then be suppressed to avoid duplicate numbers.                             */
+
+div.content.sections-numbered[class*="section-numbers-"] h1::before,
+div.content.sections-numbered[class*="section-numbers-"] h2::before,
+div.content.sections-numbered[class*="section-numbers-"] h3::before,
+div.content.sections-numbered[class*="section-numbers-"] h4::before {
   content: none;
 }

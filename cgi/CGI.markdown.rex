@@ -315,6 +315,9 @@ Exit
         Say "<script src='/js/paged.polyfill.js'></script>"
       When "%printtoc%"      Then
         Say "<script src='/rexx-parser/js/createToc.js'></script>"
+      When "%printsections%"  Then
+        If print & sectionNumbers > 0 Then
+          Say "<script src='/rexx-parser/js/numberSections.js'></script>"
       When "%printstyle%"    Then
         If printStyle \== "" Then
           Say "    <link rel='stylesheet' media='print' href='"printStyle"'>"
@@ -515,6 +518,7 @@ View:
     </div>
     <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
     <script src="/js/bootstrap.min.js"></script>
+    %printSections%
     %printTOC%
     <script src="/js/chooser.js"></script>
   </body>

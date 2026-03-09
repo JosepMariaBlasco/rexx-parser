@@ -4,6 +4,8 @@ Utilities
 ----------------------------
 
 All the utilities are located in the `bin` subdirectory.
+All utilities display help information when called without arguments,
+and accept `-h` or `--help` to display the same help.
 
 - [**Elements**](elements/) - A sample utility program
   using the Element API of the Rexx Parser to analyze a program
