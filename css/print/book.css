@@ -244,6 +244,13 @@ h1.part {
   page-break-before: recto;
 }
 
+h1.part .section-number {
+  display: block;
+  font-size: 0.55em;
+  font-weight: normal;
+  margin-bottom: 0.5em;
+}
+
 /******************************************************************************/
 /* Chapter heading                                                            */
 /* Always starts on recto (right-hand page).  Prominent styling.              */

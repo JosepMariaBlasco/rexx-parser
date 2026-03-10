@@ -15,6 +15,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260309    0.5  First version.  Works around paged.js CSS counter issues. */
+/* 20260310         Number chapters (arabic) and parts (Roman), as in LaTeX.  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -41,6 +42,15 @@
   the ::before content when that class is present.  Alternatively,
   this script removes the ::before content rules directly.
 
+  Numbering follows the LaTeX book convention:
+
+  - Parts are numbered with uppercase Roman numerals ("Part I",
+    "Part II", etc.).  Parts do not affect the chapter counter.
+  - Chapters are numbered with Arabic numerals ("1.", "2.", etc.).
+    Sections within a chapter are numbered as "1.1.", "1.2.", etc.
+  - Headings with .unnumbered, or inside .title-page, .toc-exclude,
+    or .abstract containers, are skipped entirely.
+
   Dual-mode operation (same pattern as createToc.js):
 
   - If Paged is available (Print pipeline), the numbering is done
@@ -53,10 +63,50 @@
 (function() {
 
   /* -----------------------------------------------------------------------*/
+  /* toRoman — convert an integer to uppercase Roman numerals               */
+  /* -----------------------------------------------------------------------*/
+
+  function toRoman(n) {
+    var lookup = [
+      [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"],
+      [100, "C"],  [90, "XC"],  [50, "L"],  [40, "XL"],
+      [10, "X"],   [9, "IX"],   [5, "V"],   [4, "IV"],
+      [1, "I"]
+    ];
+    var result = "";
+    for (var i = 0; i < lookup.length; i++) {
+      while (n >= lookup[i][0]) {
+        result += lookup[i][1];
+        n -= lookup[i][0];
+      }
+    }
+    return result;
+  }
+
+  /* -----------------------------------------------------------------------*/
+  /* partLabel — "Part" in the document language                           */
+  /* -----------------------------------------------------------------------*/
+
+  function partLabel(content) {
+    var lang = (content.documentElement || content.ownerDocument.documentElement)
+               .getAttribute("lang") || "en";
+    lang = lang.toLowerCase().substring(0, 2);
+    var labels = {
+      "en": "Part",   "es": "Parte",  "fr": "Partie",
+      "de": "Teil",   "it": "Parte",  "pt": "Parte",
+      "nl": "Deel",   "ca": "Part",   "gl": "Parte"
+    };
+    return labels[lang] || "Part";
+  }
+
+  /* -----------------------------------------------------------------------*/
   /* numberSections — the core logic                                        */
   /* -----------------------------------------------------------------------*/
 
   function numberSections(content) {
+
+    /* Determine the localized label for parts                              */
+    var partWord = partLabel(content);
 
     /* Find div.content with a section-numbers-N class                      */
     var container = content.querySelector(
@@ -71,13 +121,12 @@
     if (maxDepth < 1 || maxDepth > 4) return;
 
     /* Counters                                                             */
+    var partCounter = 0;
     var counters = [0, 0, 0, 0];  /* h1, h2, h3, h4                        */
 
-    /* Selectors for headings to exclude                                    */
+    /* Headings to skip entirely (no counting, no numbering)                */
     function isExcluded(heading) {
       if (heading.classList.contains("unnumbered")) return true;
-      if (heading.classList.contains("part"))       return true;
-      if (heading.classList.contains("chapter"))    return true;
       if (heading.closest(".title-page"))           return true;
       if (heading.closest(".toc-exclude"))          return true;
       if (heading.closest(".abstract"))             return true;
@@ -97,6 +146,34 @@
 
       if (isExcluded(h)) continue;
 
+      /* Parts: separate counter, Roman numerals, no effect on chapters    */
+      if (h.classList.contains("part")) {
+        partCounter++;
+        var partStr = partWord + "\u00A0" + toRoman(partCounter) + ".\u2003";
+        var partSpan = document.createElement("span");
+        partSpan.className = "section-number";
+        partSpan.textContent = partStr;
+        h.insertBefore(partSpan, h.firstChild);
+        continue;
+      }
+
+      /* Chapters: increment h1 counter, reset deeper levels               */
+      if (h.classList.contains("chapter")) {
+        counters[0]++;
+        for (var r = 1; r < 4; r++) counters[r] = 0;
+        /* Number the chapter heading itself                               */
+        if (maxDepth >= 1) {
+          var chapStr = counters[0] + ".\u2003";
+          var chapSpan = document.createElement("span");
+          chapSpan.className = "section-number";
+          chapSpan.textContent = chapStr;
+          h.insertBefore(chapSpan, h.firstChild);
+        }
+        continue;
+      }
+
+      /* Regular headings                                                   */
+
       /* Increment the counter for this level, reset deeper levels          */
       counters[level - 1]++;
       for (var r = level; r < 4; r++) counters[r] = 0;
@@ -104,7 +181,7 @@
       /* Only number up to maxDepth                                         */
       if (level > maxDepth) continue;
 
-      /* Build the number string: "1.", "2.3", "2.3.1", "2.3.1.4"          */
+      /* Build the number string: "1.", "2.3.", "2.3.1.", "2.3.1.4."       */
       var parts = [];
       for (var p = 0; p < level; p++) parts.push(counters[p]);
       var numberStr = parts.join(".") + ".\u2003";
