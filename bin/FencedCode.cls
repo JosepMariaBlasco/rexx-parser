@@ -422,7 +422,7 @@ MissingEndMarker:
     Additional("Missing end marker '-->' for code block at line "start)
 
 Syntax:
-  -- This trap will only be activated if the --incremental option has
+  -- This trap will only be activated if the --continue option has
   -- been specified. Our task here is complex, because we are most
   -- probably in the middle of some HTML tags, which we don't control
   -- and can't close.

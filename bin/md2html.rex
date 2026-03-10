@@ -322,7 +322,7 @@ TemplateFound:
     End
     Say Time("Long") "Processing" file"..."
     Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, -
-      itrace, attributes, continue, sectionNumbers
+      itrace, attributes, continue, sectionNumbers, singleFileMode
     processed += 1
   End
 
@@ -348,7 +348,8 @@ DoSingleFile:
   Say Time("Long") "Processing" file"..."
   Call Directory fileObj~parentFile~absolutePath
   Call ProcessFile fileObj, destDir, fileObj~absolutePath, template, -
-    cssbase, jsbase, itrace, attributes, continue, sectionNumbers
+    cssbase, jsbase, itrace, attributes, continue, sectionNumbers, -
+    singleFileMode
 
   Say Copies("-",80)
   Say Time("Long") "Processed 1 file, took" Time("E") "seconds."
@@ -373,7 +374,8 @@ Help:
 
 ::Routine ProcessFile
   Use Strict Arg file, directory, sourceFn, template, -
-    cssbase, jsbase, itrace, attributes, continue, sectionNumbers
+    cssbase, jsbase, itrace, attributes, continue, sectionNumbers, -
+    singleFileMode
 
   filename = file~absolutePath
   name     = FileSpec("Name",filename)
@@ -446,7 +448,9 @@ Help:
 
   defaultOptions. = 0
   defaultOptions.default  = attributes
-  If continue Then defaultOptions.["CONTINUE"] = 1
+
+  If singleFileMode Then defaultOptions.["CONTINUE"] = 1
+  Else If continue Then defaultOptions.["CONTINUE"] = 1
 
   source = FencedCode( filename, source, defaultTheme, defaultOptions. )
 

@@ -164,9 +164,9 @@ ProcessOptions:
   -- Validate the highlighting style (common to both modes)
   cssFile = cssDir"/flattened/rexx-"defaultTheme".css"
   If \.File~new(cssFile)~exists Then
-     Call Error "Style '"defaultTheme"' not found."
+    Call Error "Style '"defaultTheme"' not found."
   If  .File~new(cssFile)~isDirectory Then
-     Call Error "File '"cssFile"' is a directory."
+    Call Error "File '"cssFile"' is a directory."
 
   -- Precompute the CSS that is common to all files:
   -- Bootstrap + highlighting style + rexxpub base
@@ -182,6 +182,8 @@ ProcessOptions:
   ------------------------------------------------------------------------------
   -- Determine mode: single file or batch directory                           --
   ------------------------------------------------------------------------------
+
+  mode = "single"
 
   Select Case args~items
     When 0 Then Do
@@ -226,6 +228,7 @@ ProcessOptions:
   ------------------------------------------------------------------------------
 
 BatchMode:
+  mode = "batch"
 
   source = .File~new(arg1)~absolutePath
 
@@ -280,7 +283,7 @@ BatchMode:
     Call Directory savedDir
     If processRC \== 0 Then Do
       failed += 1
-      If \continue Then Do
+      If mode == "batch", \continue Then Do
         Say Copies("-",80)
         Say Time("Long") "Aborted after" processed "files (" failed "failed),"  -
           "took" Time("E") "seconds."
@@ -303,7 +306,7 @@ BatchMode:
 
 ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   defaultTheme defaultOptions language outline fixOutline size continue -
-  itrace csl sectionNumbers executor experimental unicode
+  itrace csl sectionNumbers executor experimental unicode mode
 
   Use Strict Arg file, requestedDocClass, outputDir = ""
 
@@ -375,11 +378,13 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   If experimental Then combinedDefaults = Strip(combinedDefaults "experimental")
   If unicode      Then combinedDefaults = Strip(combinedDefaults "unicode")
 
-  defaultOptions. = 0
-  defaultOptions.default  = combinedDefaults
-  If continue Then defaultOptions.["CONTINUE"] = 1
+  options. = 0
+  options.default  = combinedDefaults
 
-  source = FencedCode( file, source, defaultTheme, defaultOptions. )
+  If mode == "single" Then options.["CONTINUE"] = 1
+  Else If continue Then options.["CONTINUE"] = 1
+
+  source = FencedCode( file, source, defaultTheme, options. )
 
   Signal Off Syntax
   Signal AllWentWell
