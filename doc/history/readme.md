@@ -31,6 +31,10 @@ Version history
   <li> Tree API: Document Coactivity.Directive, Constant.Directive,
        R.Directive, Requires.Directive, Resource.Directive, Routine.Directive (20260308).
   <li> Add section numbering dropdown to article and book (20260308).
+  <li> Add new "tokio" and "electric" CSS styles and a highlighter torture test (20260309).
+  <li> Add arbitrary size support to md2pdf and CGI (thanks, JLF!) (20260310).
+  <li> Add `--css` option to md2pdf (thanks, JLF!) (20260310).
+  <li> Improve size system to 10,11,12,13 and 14pt (20260310).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

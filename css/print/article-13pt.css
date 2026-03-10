@@ -1,0 +1,52 @@
+/******************************************************************************/
+/*                                                                            */
+/* article-13pt.css - Size overrides for 13pt article layout                  */
+/* =========================================================                  */
+/*                                                                            */
+/* Load this stylesheet AFTER article.css to produce a 13pt article.          */
+/*                                                                            */
+/* Values interpolated between the 12pt (standard) and 14pt layouts:          */
+/*                                                                            */
+/*   \normalsize    = 13pt                                                    */
+/*   \baselineskip  ~ 16.25pt  (ratio 1.27, interpolated)                    */
+/*   \footnotesize  = 11pt     (interpolated)                                 */
+/*   \scriptsize    = 7.5pt    (interpolated, used for footnote markers)      */
+/*   Page margins   ~ 2.75cm   (interpolated between 12pt and 14pt)          */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260310    0.5  First version.                                            */
+/*                                                                            */
+/******************************************************************************/
+
+:root {
+  --doc-font-size:        13pt;
+  --doc-line-height:      1.27;
+  --doc-footnote-size:    11pt;
+  --doc-fn-marker-size:   7.5pt;
+  --doc-pre-size:         9.3pt;
+}
+
+/******************************************************************************/
+/* @page overrides                                                            */
+/* var() may not work inside @page rules, so we use literal values.           */
+/******************************************************************************/
+
+@page {
+
+  margin: 2.75cm;
+
+  @bottom-center {
+    font-size: 13pt;
+  }
+
+}

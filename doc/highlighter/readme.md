@@ -108,12 +108,15 @@ These files have been kindly curated and adapted by Rony Flatscher (thanks!).
 You can take a look at the whole palette of predefined styles
 [here](predefined-styles) (as of 20251227).
 
-
 You can select a style by using the `style=` attribute on a
 [Rexx fenced code block](fencedcode/), or the
 `--style=` option of the [highlight](../utilities/highlight/) utility.
 The [Highlighter class](../ref/classes/highlighter/) class
 also allows to specify a style in the options argument.
+
+You can also take a look at our [Highlighter torture test](torture-test/)
+and use the style dropdown to see most of the capabilities of
+all styles in action.
 
 ------------
 

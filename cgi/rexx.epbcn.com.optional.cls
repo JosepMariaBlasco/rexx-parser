@@ -21,6 +21,7 @@
 /* 20260228    0.4a Add style chooser support                                 */
 /* 20260303    0.5  Add optional size chooser support and print button        */
 /* 20260308         Added section numbering chooser                           */
+/* 20260310         Generate size chooser dynamically (thanks, JLF!)          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -121,14 +122,29 @@
   Say pad'  </div>'
 If Words(name) == 1, WordPos(name, "article.md book.md letter.md slides.md") > 0 Then Do
 If name \== "slides.md" Then Do
+  Parse Var name docClass".md"
+  Call SysFileTree myDir"../css/print/"docClass"-*pt.css",S.,"FO"
+  sizes = .Array~new
+  Do i = 1 To S.0
+    sName = FileSpec("Name", S.i)
+    Parse Var sName (docClass)"-"sizeVal"pt.css"
+    If sizeVal \== "", DataType(sizeVal,"W") Then sizes~append(sizeVal)
+  End
+  sizes~stableSort
   Say pad'  <div class="form-group" style="margin-left: 20px;">'
   Say pad'    <label for="size-chooser" style="margin-right: 10px;">'
   Say pad'      <span class="glyphicon glyphicon-text-size" aria-hidden="true"></span> Size'
   Say pad'    </label>'
   Say pad'    <select class="form-control" id="size-chooser" style="width: auto; display: inline-block;">'
-  Say pad'      <option value="10">10pt</option>'
+  Do s Over sizes
+    If s < 12 Then
+      Say pad'      <option value="'s'">'s'pt</option>'
+  End
   Say pad'      <option value="12" selected>12pt (default)</option>'
-  Say pad'      <option value="14">14pt</option>'
+  Do s Over sizes
+    If s > 12 Then
+      Say pad'      <option value="'s'">'s'pt</option>'
+  End
   Say pad'    </select>'
   Say pad'  </div>'
 End

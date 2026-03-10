@@ -1,0 +1,37 @@
+/******************************************************************************/
+/*                                                                            */
+/* letter-11pt.css - Size overrides for 11pt letter layout                    */
+/* ======================================================                     */
+/*                                                                            */
+/* Load this stylesheet AFTER letter.css to produce an 11pt letter.           */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260310    0.5  First version                                             */
+/*                                                                            */
+/******************************************************************************/
+
+:root {
+  --doc-font-size:        11pt;
+  --doc-line-height:      1.25;
+  --doc-footnote-size:    9pt;
+  --doc-fn-marker-size:   6.5pt;
+  --doc-pre-size:         7.9pt;
+}
+
+@page {
+
+  margin: 2.75cm;
+
+  @bottom-center {
+    font-size: 11pt;
+  }
+
+}

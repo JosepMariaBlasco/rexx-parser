@@ -39,6 +39,7 @@ Options
 ----------------------------------------- ------------------------------
 `--check-deps`                            Check that all dependencies are installed
 `--continue`                              Continue when a file fails (batch mode)
+`-c`, `--css` DIR                         Set the CSS base directory
 `--csl` NAME                              Set the Citation Style Language style
 `--default` "options"                     Default options for all code blocks
 `--docclass` CLASS                        Control the overall layout and CSS
@@ -50,7 +51,7 @@ Options
 `-l`, `--language` CODE&nbsp;&nbsp;&nbsp; Set document language (e.g. en, es, fr)
 `--outline` N                             Generate outline with H1,...,HN (default: 3, range: 0-6)
 `--section-numbers` N                     Number sections down to depth N (0=off, max 4)
-`--size` SIZE                             Set the font size in pt (10, 12 or 14; default: 12)
+`--size` SIZE                             Set the font size in pt (default: 12)
 `--style` NAME                            Set the default visual theme for Rexx code blocks
 `-u`, `--tutor`, `--unicode`              Enable TUTOR-flavoured Unicode for all code blocks
 `-xtr`, `--executor`                      Enable Executor support for all code blocks
@@ -62,10 +63,29 @@ The default language is `en`, the default Citation Style Language
 style is `rexxpub`, and the default Rexx highlighting theme is `dark`.
 CSL files should be stored in the `csl` subdirectory.
 
+When `--css` is used, all CSS files are loaded from the specified
+directory instead of the default `css/` directory inside the Rexx
+Parser installation. The directory is expected to contain the same
+internal structure: `bootstrap.css` at the root, highlighting styles
+under `flattened/`, and document class styles under `print/`.
+This allows users to publish their own documents using custom
+styles and document classes independently of the Rexx Parser
+installation.
+
 When `--docclass` is not specified, the document class defaults to
 the base name of the input file (e.g. `article` for `article.md`).
 If the inferred document class does not correspond to an existing
 CSS file, the `default` class is used as a fallback.
+
+When `--size` is used, md2pdf looks for a CSS file named
+`<docclass>-<size>pt.css` in the `print/` subdirectory.
+For example, `--size 14` with the `article` document class
+will look for `article-14pt.css`.  If the file is not found
+and the requested size is 12, md2pdf assumes that 12pt is the
+default for the document class and proceeds without a size override.
+For any other size, an error is reported.  To add support for a
+new size, simply create the corresponding CSS file (e.g.
+`article-11pt.css`).
 
 When `--outline` is set to 0, no outline is generated.
 

@@ -1,0 +1,389 @@
+/******************************************************************************/
+/*                                                                            */
+/* Style Torture Test                                                         */
+/* ==================                                                         */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* A comprehensive test covering every highlighting category and subcategory  */
+/* supported by the Rexx Highlighter. Use with executor and unicode options.  */
+/*                                                                            */
+/* Usage:                                                                     */
+/*   ```rexx {executor unicode style=<stylename> source=torture-test}         */
+/*   ```                                                                      */
+/* or                                                                         */
+/*   ```rexx {executor unicode source=torture-test}                           */
+/*   ```                                                                      */
+/* and use the style drop-down.                                               */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260309    0.5  First version.                                            */
+/*                                                                            */
+/******************************************************************************/
+
+/******************************************************************************/
+/* 1. COMMENTS                                                                */
+/*    ========                                                                */
+/*    This is a standard (block/classic) comment.                             */
+/*    rx-cm                                                                   */
+/******************************************************************************/
+
+-- This is a line comment (rx-lncm)
+
+/******************************************************************************/
+/* 2. DOC-COMMENTS (classic style)                                            */
+/*    ============================                                            */
+/*    rx-doc-comment, with detailed subelements                               */
+/******************************************************************************/
+
+/** Summary statement for this class (doc-comment-summary).
+ *
+ * This is the main description (doc-comment-main-description).
+ * It continues on multiple lines with armature and whitespace.
+ *
+ * @param  name       The name to greet (tag, tag-value, tag-description).
+ * @param  options    Additional options.
+ * @return            A greeting string.
+ * @deprecated        Use NewGreeter instead.
+ */
+
+/******************************************************************************/
+/* 3. DOC-COMMENTS (markdown style)                                           */
+/*    =============================                                           */
+/*    rx-doc-comment-markdown, with detailed subelements                      */
+/******************************************************************************/
+
+--- Summary statement in markdown style (doc-comment-summary).
+---
+--- This is the main description (doc-comment-main-description).
+---
+--- @param  name       The name to greet (tag, tag-value, tag-description).
+--- @return            A greeting string.
+
+/******************************************************************************/
+/* 4. KEYWORDS AND SUBKEYWORDS                                                */
+/*    ========================                                                */
+/*    rx-kw, rx-skw                                                           */
+/******************************************************************************/
+
+Parse Arg filename options              /* Parse (kw), Arg (skw)              */
+Parse Upper Var filename stem ext       /* Upper (skw), Var (skw)             */
+
+If filename == "" Then Do               /* If, Then, Do (kw)                  */
+  Say "No file specified."              /* Say (kw)                           */
+  Exit 1                                /* Exit (kw)                          */
+End                                     /* End (kw)                           */
+Else Nop                                /* Else, Nop (kw)                     */
+
+Select                                  /* Select (kw)                        */
+  When options == "A" Then Nop          /* When (kw)                          */
+  Otherwise Nop                         /* Otherwise (kw)                     */
+End
+
+Do i = 1 To 10 By 2 For 3               /* To, By, For (skw)                  */
+  Leave                                 /* Leave (kw)                         */
+End
+
+Do While i > 0                          /* While (skw)                        */
+  Iterate                               /* Iterate (kw)                       */
+End
+
+Do Until i == 0                         /* Until (skw)                        */
+  Nop
+End
+
+Signal MyLabel                          /* Signal (kw)                        */
+
+Address System                          /* Address (kw)                       */
+Drop x y z                              /* Drop (kw)                          */
+Interpret "Say 1"                       /* Interpret (kw)                     */
+Guard On                                /* Guard (kw), On (skw)               */
+Numeric Digits 20                       /* Numeric (kw), Digits (skw)         */
+Numeric Form Scientific                 /* Form, Scientific (skw)             */
+Options ETMODE                          /* Options (kw)                       */
+Procedure Expose i                      /* Procedure (kw), Expose (skw)       */
+Raise Halt                              /* Raise (kw), Halt (skw)             */
+Return result                           /* Return (kw)                        */
+Trace All                               /* Trace (kw), All (skw)              */
+Use Strict Arg a, b                     /* Use, Strict, Arg (skw)             */
+
+::Method M1                             /* Needed for Use Local               */
+
+Use Local                               /* Local (skw)                        */
+
+/******************************************************************************/
+/* 5. DIRECTIVE KEYWORDS AND SUBKEYWORDS                                      */
+/*    ==================================                                      */
+/*    rx-dkw, rx-dskw, rx-dir (the "::" start)                                */
+/******************************************************************************/
+
+::Class Greeter Public SubClass Object  /* Class (dkw), Public, SubClass..    */
+                                        /* .. (dskw), :: (dir)                */
+::Method init                           /* Method (dkw)                       */
+::Method greet Abstract                 /* Abstract (dskw)                    */
+
+::Routine Main Public                   /* Routine (dkw)                      */
+
+::Requires "SomePackage.cls"            /* Requires (dkw)                     */
+
+::Constant Pi 3.14159                   /* Constant (dkw)                     */
+
+::Attribute name Get                    /* Attribute (dkw), Get (dskw)        */
+
+::Options Digits 40                     /* ::Options (dkw)                    */
+
+::Annotate Class Serializable           /* Annotate (dkw)                     */
+
+::Resource Greeting                     /* Resource (dkw)                     */
+Hello from the resource!
+::END                                   /* END resource delimiter             */
+
+::Extension String Inherit Comparable   /* Extension (dkw), Inherit (dskw)    */
+
+/******************************************************************************/
+/* 6. VARIABLES                                                               */
+/*    =========                                                               */
+/*    rx-var, rx-xvar, rx-stem, rx-xstem, rx-cmp, rx-xcmp                     */
+/******************************************************************************/
+
+::Method M2                             /* Localvar can't follow ::Extension  */
+
+localVar   = 1                          /* Simple variable (rx-var)           */
+data.      = 0                          /* Stem variable (rx-stem)            */
+data.name  = "Alice"                    /* Compound variable (rx-cmp+parts)   */
+data.i.j   = 42                         /* Compound: stem + two tails         */
+
+::Method M3                             /* Needed for Expose                  */
+
+Expose count items.                     /* Exposed: xvar, xstem               */
+
+::Method M4                             /* Needed for Expose                  */
+
+Expose record.key                       /* Exposed compound: xcmp             */
+
+/******************************************************************************/
+/* 7. ENVIRONMENT SYMBOLS AND LITERALS                                        */
+/*    ================================                                        */
+/*    rx-env, rx-lit                                                          */
+/******************************************************************************/
+
+obj = .Nil                              /* Environment symbol (rx-env)        */
+Say .true .false                        /* Symbol literals (rx-lit)           */
+buf = .MutableBuffer~new                /* Environment symbol                 */
+out = .Output                           /* Environment symbol                 */
+arr = .Array~of(1,2,3)                  /* Environment symbol                 */
+
+/******************************************************************************/
+/* 8. STRINGS                                                                 */
+/*    =======                                                                 */
+/*    rx-str, rx-oquo, rx-cquo, rx-ssuf                                       */
+/*    rx-bstr, rx-xstr, rx-ystr, rx-pstr, rx-gstr, rx-tstr, rx-ustr           */
+/******************************************************************************/
+
+s1 = "Hello World"                      /* Plain string (rx-str)              */
+s2 = 'Single-quoted'                    /* Plain string (rx-str)              */
+s3 = "48656C6C6F"x                      /* Hex string (rx-xstr + suffix)      */
+s4 = "01001000"b                        /* Binary string (rx-bstr + suffix)   */
+s5 = "café"y                            /* Bytes string (rx-ystr)             */
+s6 = "π≈3.14"p                          /* Codepoints string (rx-pstr)        */
+s7 = "👋🌍"g                            /* Graphemes string (rx-gstr)        */
+s8 = "Ünïcödé"t                         /* Text string (rx-tstr)              */
+s9 = "4565"u                            /* Unicode string (rx-ustr)           */
+
+/******************************************************************************/
+/* 9. NUMBERS (simple and detailed highlighting)                              */
+/*    ==========================================                              */
+/*    rx-int, rx-deci, rx-exp                                                 */
+/*    rx-ipart, rx-dpoint, rx-fpart, rx-emark, rx-esign, rx-expon, rx-nsign   */
+/******************************************************************************/
+
+n1 = 42                                 /* Integer (rx-int / rx-ipart)        */
+n2 = 3.14159                            /* Decimal (rx-deci / ipart.fpart)    */
+n3 = -2.5E+10                           /* Exponential (rx-exp / detailed)    */
+n4 = +0.001e-99                         /* Sign, decimal, exponent            */
+n5 = " +007.50e-3 "                     /* Number-as-string: all parts        */
+n6 = 1000000                            /* Pure integer                       */
+
+/******************************************************************************/
+/* 10. OPERATORS                                                              */
+/*     =========                                                              */
+/*     rx-op (group mode)                                                     */
+/******************************************************************************/
+
+/* Arithmetic operators                                                       */
+result = a + b - c * d / e // f % g ** h
+
+/* Comparison operators                                                       */
+If a == b Then Nop                      /* Strict equal                       */
+If a \== b Then Nop                     /* Strict not equal                   */
+If a >= b Then Nop                      /* Greater or equal                   */
+If a << b Then Nop                      /* Strict lower than                  */
+If a >>= b Then Nop                     /* Strict greater or equal            */
+If a <> b Then Nop                      /* Greater or lower than              */
+If a >< b Then Nop                      /* Lower or greater than              */
+
+/* Logical operators                                                          */
+If a & b | c && d Then Nop              /* And, Or, Xor                       */
+If \a Then Nop                          /* Negation                           */
+
+/* Concatenation operators                                                    */
+s = a || b                              /* Concatenation                      */
+s = a b                                 /* Blank concatenation                */
+
+/* Message operator                                                           */
+obj~method                              /* Message send                       */
+obj~~chain                              /* Cascading message                  */
+
+/******************************************************************************/
+/* 11. ASSIGNMENT SEQUENCES                                                   */
+/*     ====================                                                   */
+/*     rx-asg (group mode)                                                    */
+/******************************************************************************/
+
+x  = 1                                  /* Simple assignment                  */
+x += 1                                  /* Add-assign                         */
+x -= 1                                  /* Subtract-assign                    */
+x *= 2                                  /* Multiply-assign                    */
+x /= 2                                  /* Divide-assign                      */
+x %= 3                                  /* Integer-divide-assign              */
+x //= 4                                 /* Remainder-assign                   */
+x ||= "a"                               /* Concatenation-assign               */
+x &= .true                              /* And-assign                         */
+x |= .false                             /* Or-assign                          */
+x &&= .true                             /* Xor-assign                         */
+x **= 2                                 /* Power-assign                       */
+
+/******************************************************************************/
+/* 12. SPECIAL CHARACTERS                                                     */
+/*     ==================                                                     */
+/*     rx-spe (group mode)                                                    */
+/******************************************************************************/
+
+Call MyFunc(a, b)                       /* Parens, comma (rx-spe)             */
+arr[i]                                  /* Brackets (rx-spe)                  */
+data.i.j                                /* Tail separator period (rx-spe)     */
+
+/******************************************************************************/
+/* 13. TAKEN CONSTANTS                                                        */
+/*     ===============                                                        */
+/*     rx-const and its subcategories                                         */
+/******************************************************************************/
+
+/* Built-in functions (rx-const rx-bif-func)                                  */
+len = Length(str)
+pos = Pos("x", str)
+w   = Word(sentence, 3)
+n   = Copies("ab", 5)
+
+/* Built-in subroutine (rx-const rx-bif-proc)                                 */
+Call CharOut , "Hello"
+
+/* Internal function and subroutine (rx-const rx-int-func, rx-int-proc)       */
+Call ProcessItem item
+val = ProcessItem(item)
+
+/* Routines and package calls (rx-const rx-routine, rx-pkg-func, rx-pkg-proc) */
+Call MyRoutine arg1
+Call SomePackage:Helper arg1
+
+/* External calls (rx-const rx-ext-func, rx-ext-proc)                         */
+/* (These depend on parser resolution; shown for completeness)                */
+
+/* Labels (rx-const rx-label)                                                 */
+MyLabel:
+  Nop
+
+/* Block instruction names (rx-const rx-block)                                */
+Loop:
+  Do i = 1 To 3; Nop; End
+
+/* Method names (rx-const rx-method)                                          */
+result = obj~doSomething
+txt    = obj~toString
+
+/* Class names (rx-const rx-class)                                            */
+::Class MyClass
+
+/* Namespace names (rx-const rx-namespace)                                    */
+/* (Used in qualified routine references)                                     */
+
+/* Annotation name and value (rx-const rx-annotation, rx-annotation-value)    */
+::Annotate Class Serializable Power "true"
+
+/* Constant value (rx-const rx-constant-value)                                */
+::Constant MaxRetries 5
+
+/* Resource and resource delimiter                                            */
+::Resource Banner                       /* rx-const rx-resource               */
+===========================
+   Welcome to the system!
+===========================
+::END                                   /* rx-const rx-res-delimiter          */
+
+/******************************************************************************/
+/* 14. TAKEN CONSTANTS AS STRINGS (quotes and suffix highlighting)            */
+/*     ==========================================================             */
+/*     rx-const.rx-oquo, rx-const.rx-cquo, rx-const.rx-ssuf                   */
+/******************************************************************************/
+
+::Method M5                             /* Needed for label                   */
+
+/* Built-in function called via string (quotes get const-bif style)           */
+"Length": Say "Length"(2)
+
+/* Internal call via string                                                   */
+"MyLabel": Say "MyLabel"(2)
+
+/* Unicode string as function call                                            */
+"LENGTH"G(2)
+
+/******************************************************************************/
+/* 15. WHITESPACE AND CONTINUATIONS                                           */
+/*     ============================                                           */
+/*     rx-ws, rx-cont                                                         */
+/******************************************************************************/
+
+longResult = firstPart +  ,
+             secondPart + ,             /* Continuation character             */
+             thirdPart
+
+/******************************************************************************/
+/* 16. SHEBANG                                                                */
+/*     =======                                                                */
+/*     rx-shb                                                                 */
+/*     (Only valid on line 1, shown here for documentation)                   */
+/*     #!/usr/bin/env rexx                                                    */
+/******************************************************************************/
+
+/******************************************************************************/
+/* 17. EXECUTOR EXTENSIONS                                                    */
+/*     ===================                                                    */
+/*     Curly brackets (rx-spe rx-curly), named arguments (rx-argument-name),  */
+/*     and final "=" / "==" (rx-spe rx-xtr-final-equal, etc.)                 */
+/******************************************************************************/
+
+/* Executor closures / higher-order functions                                 */
+double = { use arg n; return n * 2 }    /* Curly brackets (rx-spe)            */
+compose = {  use arg f, g
+             return {expose f g; use arg x; return f~(g~(x))}
+          }
+
+/* Named arguments                                                            */
+obj~method(name: "Alice", age: 30)      /* rx-argument-name                   */
+
+/******************************************************************************/
+/* 18. RESOURCE DATA AND IGNORED STUFF                                        */
+/*     ===============================                                        */
+/*     rx-res-data, rx-res-ignore                                             */
+/******************************************************************************/
+
+/* (Resource data appears between ::RESOURCE and ::END above)                 */
+/* (Ignored stuff appears after the final ::END)                              */

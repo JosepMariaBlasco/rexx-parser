@@ -19,6 +19,8 @@
 /* 20260307         Add batch directory mode                                  */
 /* 20260308         Add support for optional --section-numbers                */
 /* 20260308         Add -xtr, --executor, -exp, --experimental, -u, --unicode */
+/* 20260310         Allow arbitrary sizes (thanks, JLF!)                      */
+/* 20260310         Add -c, --css option (thanks, JLF!)                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -67,6 +69,7 @@
   experimental   = 0
   unicode        = 0
   itrace         = 0
+  cssDir         = ""
 
 ProcessOptions:
 
@@ -84,8 +87,8 @@ ProcessOptions:
         If args~size == 0 Then
           Call Error "Missing size after '"option"' option."
         size = args[1]
-        If Words(size) > 1 | WordPos(size,"10 12 14") == 0 Then
-          Call Error "Size has to be one of 10, 12 or 14, found'"size"'."
+        If Words(size) > 1 | \DataType(size,"W") | size < 1 Then
+          Call Error "Size has to be a positive whole number, found '"size"'."
         args~delete(1)
       End
       When "--outline"        Then Do
@@ -121,6 +124,17 @@ ProcessOptions:
           Call Error 'CSL style "'csl'.csl" not found in the "'rootDir'/csl" directory.'
         args~delete(1)
       End
+      When "-c", "--css"      Then Do
+        If args~size == 0 Then
+          Call Error "Missing CSS directory after '"option"' option."
+        cssDir = args[1]
+        If \SysFileExists(cssDir) Then
+          Call Error "CSS directory '"cssDir"' not found."
+        If \SysIsFileDirectory(cssDir) Then
+          Call Error "'"cssDir"' is not a directory."
+        cssDir = .File~new(cssDir)~absolutePath
+        args~delete(1)
+      End
       When "-l", "--language" Then Do
         If args~size == 0 Then
           Call Error "Missing language code after '"option"' option."
@@ -143,8 +157,11 @@ ProcessOptions:
     End
   End
 
+  -- Determine the CSS base directory
+  If cssDir == "" Then cssDir = rootDir"/css"
+
   -- Validate the highlighting style (common to both modes)
-  cssFile = rootDir"/css/flattened/rexx-"defaultTheme".css"
+  cssFile = cssDir"/flattened/rexx-"defaultTheme".css"
   If \.File~new(cssFile)~exists Then
      Call Error "Style '"defaultTheme"' not found."
   If  .File~new(cssFile)~isDirectory Then
@@ -152,8 +169,8 @@ ProcessOptions:
 
   -- Precompute the CSS that is common to all files:
   -- Bootstrap + highlighting style + rexxpub base
-  baseFile     =  rootDir"/css/print/rexxpub-base.css"
-  bootstrap    =  rootDir"/css/bootstrap.css"
+  baseFile     =  cssDir"/print/rexxpub-base.css"
+  bootstrap    =  cssDir"/bootstrap.css"
   commonCSS    =  CharIn(bootstrap, 1, Chars(bootstrap) )
   commonCSS  ||=  CharIn(cssFile,   1, Chars(cssFile)   )
   commonCSS  ||=  CharIn(baseFile,  1, Chars(baseFile)  )
@@ -280,7 +297,7 @@ BatchMode:
 
 --------------------------------------------------------------------------------
 
-ProcessFile: Procedure Expose rootDir commonCSS HTMLtemplate check fail -
+ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   defaultTheme defaultOptions language outline fixOutline size continue -
   itrace csl sectionNumbers executor experimental unicode
 
@@ -295,7 +312,7 @@ ProcessFile: Procedure Expose rootDir commonCSS HTMLtemplate check fail -
     Then thisDocClass = requestedDocClass
     Else thisDocClass = fileName
 
-  docClassFile = rootDir"/css/print/"thisDocClass".css"
+  docClassFile = cssDir"/print/"thisDocClass".css"
   If \.File~new(docClassFile)~exists Then Do
     -- If the inferred class doesn't exist, fall back to default
     If requestedDocClass \== "" Then Do
@@ -304,7 +321,7 @@ ProcessFile: Procedure Expose rootDir commonCSS HTMLtemplate check fail -
       Return 1
     End
     thisDocClass = "default"
-    docClassFile = rootDir"/css/print/"thisDocClass".css"
+    docClassFile = cssDir"/print/"thisDocClass".css"
     If \.File~new(docClassFile)~exists Then Do
      .Error~Say( "Document class 'default' not found." )
       Return 1
@@ -315,10 +332,15 @@ ProcessFile: Procedure Expose rootDir commonCSS HTMLtemplate check fail -
     Return 1
   End
 
-  Select Case size
-    When 10 Then sizeFile = rootDir"/css/print/"thisDocClass"-10pt.css"
-    When 12 Then sizeFile = ""
-    When 14 Then sizeFile = rootDir"/css/print/"thisDocClass"-14pt.css"
+  sizeFile = cssDir"/print/"thisDocClass"-"size"pt.css"
+  If \.File~new(sizeFile)~exists Then Do
+    If size == 12 Then
+      sizeFile = ""
+    Else Do
+     .Error~Say( "Size" size"pt not available for document class '"thisDocClass"'" -
+        "(file '"thisDocClass"-"size"pt.css' not found)." )
+      Return 1
+    End
   End
 
   source       =  CharIn(file,1,Chars(file))~makeArray
@@ -423,7 +445,7 @@ AllWentWell:
     If extraStyle~verify(allowed) > 0 Then Iterate
     If extraStyle == defaultTheme Then Iterate
     If loaded~hasIndex(extraStyle) Then Iterate
-    extraCSSFile = rootDir"/css/flattened/rexx-"extraStyle".css"
+    extraCSSFile = cssDir"/flattened/rexx-"extraStyle".css"
     If .File~new(extraCSSFile)~exists, \.File~new(extraCSSFile)~isDirectory Then Do
       CSS ||= CharIn(extraCSSFile, 1, Chars(extraCSSFile))
       loaded~put(extraStyle)
@@ -607,6 +629,7 @@ Options:
 
 --check-deps          Checks that all the dependencies are installed
 --continue            Continue when a file fails (batch mode)
+-c, --css DIR         Set the CSS base directory
 --csl NAME            Sets the Citation Style Language style
 --default OPTIONS     Set default options for Rexx code blocks
 --docclass CLASS      Control overall layout and CSS class
@@ -615,7 +638,7 @@ Options:
 -it, --itrace         Print internal traceback on error
 -l, --language CODE   Set document language (e.g. en, es, fr)
 --section-numbers n   Number sections down to depth n (0=off, max 4)
---size SIZE           Set the size in pt (10, 12 or 14)
+--size SIZE           Set the size in pt (default: 12)
 --outline n           Generate outline with H1,...,Hn (default: 3)
 --fix-outline         Fix PDF so that the outline shows automatically
                       (requires python and pikepdf)

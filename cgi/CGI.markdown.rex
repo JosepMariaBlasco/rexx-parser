@@ -45,6 +45,7 @@
 /* 20260219    0.4a Add support for generalized style= parameters             */
 /* 20260303    0.5  Add support for letter docclass                           */
 /* 20260303         Add support for numbered section headers                  */
+/* 20260310         Allow arbitrary sizes (thanks, JLF!)                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -120,7 +121,7 @@ Exit
   URI  = self~URI
 
   ------------------------------------------------------------------------------
-  -- Accepted parameters are "style=styleName, "print=pdf", "size=n",         --
+  -- Accepted parameters are "style=styleName", "print=pdf", "size=n",        --
   -- "sections=n", and "view=highlight" (only for .rex and .cls files)        --
   -- When style=styleName is specified, the program will search for a file    --
   -- called rexx-<stylename>.css in the css subdirectory.                     --
@@ -155,7 +156,7 @@ Exit
         End
         When param~startsWith("size=") Then Do
           Parse Var param "size="size
-          If WordPos(size,"10 12 14") == 0 Then ok = 0
+          If \DataType(size,"W") | size < 1 Then ok = 0
         End
         When param~startsWith("sections=") Then Do
           Parse Var param "sections="sectionNumbers
@@ -331,11 +332,14 @@ Exit
               "href='/rexx-parser/css/"filenameSpecificStyle".css'>"
         End
       End
-      When "%sizespecificstyle%"        Then
-        If size == 12 Then Nop
-        Else
-          Say "    <link rel='stylesheet'" -
-              "href='/rexx-parser/css/"filenameSpecificStyle"-"size"pt.css'>"
+      When "%sizespecificstyle%"        Then Do
+        If size \== 12 Then Do
+          sizeFile = .MyPath"../css/"filenameSpecificStyle"-"size"pt.css"
+          If .File~new(sizeFile)~exists Then
+            Say "    <link rel='stylesheet'" -
+                "href='/rexx-parser/css/"filenameSpecificStyle"-"size"pt.css'>"
+        End
+      End
       Otherwise Say line~changeStr("%SectionNumbers%", sectionNumbersClass)
     End
   End

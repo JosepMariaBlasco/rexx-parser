@@ -1,0 +1,586 @@
+/******************************************************************************/
+/*                                                                            */
+/* rexx-electric.css - CSS for Rexx highlighting, "Electric" vivid dark style */
+/* =======================================================================   */
+/*                                                                            */
+/* Flattened version (no CSS nesting) for pagedjs-cli compatibility.          */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260309    0.5  First release (flattened)                                  */
+/*                                                                            */
+/******************************************************************************/
+
+/******************************************************************************/
+/******************************************************************************/
+/* BASE SELECTOR: highlight-rexx-electric                                     */
+/******************************************************************************/
+/******************************************************************************/
+/*   Format: "highlight-rexx-<stylename>"                                     */
+/*   All rules are prefixed with .highlight-rexx-electric.                    */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Default settings                                                           */
+/* ================                                                           */
+/*                                                                            */
+/*   Near-black background, light grey text                                   */
+/*   The "rexx" class is used as a fallback when no suitable class is found   */
+/*                                                                            */
+/******************************************************************************/
+
+.highlight-rexx-electric pre,
+.highlight-rexx-electric .rexx {
+  background-color: #0c0c0f;
+  color: #b0b8d0;
+}
+
+/******************************************************************************/
+/* Support for line numbers                                                   */
+/* ========================                                                   */
+/******************************************************************************/
+
+/* ANSI Driver only */
+.highlight-rexx-electric .rx-lineno {
+  color: #f0c040;
+  font-style: italic;
+}
+.highlight-rexx-electric .rx-linebar {
+  color: #333848;
+}
+
+/* HTML Driver: numbered lines */
+.highlight-rexx-electric pre.number-lines {
+  padding-left: 50px;
+}
+.highlight-rexx-electric pre.number-lines.w3 {
+  padding-left: 58px;
+}
+.highlight-rexx-electric pre.number-lines.w3 code:before {
+  width: 58px;
+}
+.highlight-rexx-electric pre.number-lines.w4 {
+  padding-left: 65px;
+}
+.highlight-rexx-electric pre.number-lines.w4 code:before {
+  width: 65px;
+}
+.highlight-rexx-electric pre.number-lines.w5 {
+  padding-left: 72px;
+}
+.highlight-rexx-electric pre.number-lines.w5 code:before {
+  width: 72px;
+}
+.highlight-rexx-electric pre.number-lines code:before {
+  content: attr(lineno) " | ";
+  position: absolute;
+  left: 10px;
+  width: 50px;
+  text-align: right;
+  color: #333848;
+}
+
+/******************************************************************************/
+/* Whitespace and continuations                                               */
+/* ============================                                               */
+/******************************************************************************/
+
+.highlight-rexx-electric .rx-ws,
+.highlight-rexx-electric .rx-cont {
+  color: #333848;
+}
+
+/******************************************************************************/
+/* Standard (non-doc) comments                                                */
+/* ===========================                                                */
+/******************************************************************************/
+
+.highlight-rexx-electric .rx-cm,          /* Classic, block comments          */
+.highlight-rexx-electric .rx-lncm {       /* Line comments                    */
+  color: #6a7090;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* Doc-comments                                                               */
+/* ============                                                               */
+/******************************************************************************/
+
+/* Default doc-comment style (for "block" highlighting)                       */
+.highlight-rexx-electric .rx-doc-comment,
+.highlight-rexx-electric .rx-doc-comment-markdown {
+  color: #8088b0;
+  font-style: italic;
+}
+
+/* Armature, whitespace and main description                                  */
+.highlight-rexx-electric .rx-doc-comment.rx-doc-comment-armature,
+.highlight-rexx-electric .rx-doc-comment.rx-doc-comment-whitespace,
+.highlight-rexx-electric .rx-doc-comment.rx-doc-comment-main-description,
+.highlight-rexx-electric .rx-doc-comment-markdown.rx-doc-comment-armature,
+.highlight-rexx-electric .rx-doc-comment-markdown.rx-doc-comment-whitespace,
+.highlight-rexx-electric .rx-doc-comment-markdown.rx-doc-comment-main-description {
+  color: #8088b0;
+  font-style: italic;
+}
+
+/* Initial summary statement                                                  */
+.highlight-rexx-electric .rx-doc-comment.rx-doc-comment-summary,
+.highlight-rexx-electric .rx-doc-comment-markdown.rx-doc-comment-summary {
+  color: #f0c040;
+  text-decoration: underline;
+  font-style: normal;
+}
+
+/* @block-tag                                                                 */
+.highlight-rexx-electric .rx-doc-comment.rx-doc-comment-tag,
+.highlight-rexx-electric .rx-doc-comment-markdown.rx-doc-comment-tag {
+  color: #ff4080;
+  font-style: normal;
+}
+
+/* Tag value (as the name in "@param name")                                   */
+.highlight-rexx-electric .rx-doc-comment.rx-doc-comment-tag-value,
+.highlight-rexx-electric .rx-doc-comment-markdown.rx-doc-comment-tag-value {
+  color: #c050ff;
+  font-style: normal;
+}
+
+/* Tag description (text after @deprecated, etc.)                             */
+.highlight-rexx-electric .rx-doc-comment.rx-doc-comment-tag-description,
+.highlight-rexx-electric .rx-doc-comment-markdown.rx-doc-comment-tag-description {
+  color: #30e8a0;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* Shebangs                                                                   */
+/* ========                                                                   */
+/******************************************************************************/
+
+.highlight-rexx-electric .rx-shb {
+  color: #ff4080;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* Keywords and subkeywords, assignment sequences, and "::"                   */
+/* ========================================================                   */
+/******************************************************************************/
+
+.highlight-rexx-electric .rx-kw,          /* Keywords                         */
+.highlight-rexx-electric .rx-skw,         /* Subkeywords                      */
+.highlight-rexx-electric .rx-dkw,         /* Directive keywords               */
+.highlight-rexx-electric .rx-dskw,        /* Directive subkeywords            */
+.highlight-rexx-electric .rx-asg,         /* Assignment sequences (incl. "=") */
+.highlight-rexx-electric .rx-dir {        /* The directive start "::" sequence */
+  color: #4090ff;
+  font-weight: bold;
+}
+
+/* Additionally, directive keywords and subkeywords are underlined            */
+.highlight-rexx-electric .rx-dkw,
+.highlight-rexx-electric .rx-dskw {
+  text-decoration: underline;
+}
+
+/******************************************************************************/
+/* Strings (including taken constants that are strings)                       */
+/* ====================================================                       */
+/******************************************************************************/
+
+/* The inner part of the string                                               */
+.highlight-rexx-electric .rx-str,
+.highlight-rexx-electric .rx-bstr,
+.highlight-rexx-electric .rx-xstr,        /* Classic Rexx strings             */
+.highlight-rexx-electric .rx-ystr,
+.highlight-rexx-electric .rx-pstr,
+.highlight-rexx-electric .rx-gstr,
+.highlight-rexx-electric .rx-tstr,
+.highlight-rexx-electric .rx-ustr {       /* TUTOR Unicode strings            */
+  color: #50e850;
+}
+
+/* String suffix                                                              */
+.highlight-rexx-electric .rx-str.rx-ssuf,
+.highlight-rexx-electric .rx-bstr.rx-ssuf,
+.highlight-rexx-electric .rx-xstr.rx-ssuf,
+.highlight-rexx-electric .rx-ystr.rx-ssuf,
+.highlight-rexx-electric .rx-pstr.rx-ssuf,
+.highlight-rexx-electric .rx-gstr.rx-ssuf,
+.highlight-rexx-electric .rx-tstr.rx-ssuf,
+.highlight-rexx-electric .rx-ustr.rx-ssuf {
+  color: #ff8030;
+}
+
+/* Quotes (opening and closing)                                               */
+.highlight-rexx-electric .rx-str.rx-oquo,
+.highlight-rexx-electric .rx-str.rx-cquo,
+.highlight-rexx-electric .rx-bstr.rx-oquo,
+.highlight-rexx-electric .rx-bstr.rx-cquo,
+.highlight-rexx-electric .rx-xstr.rx-oquo,
+.highlight-rexx-electric .rx-xstr.rx-cquo,
+.highlight-rexx-electric .rx-ystr.rx-oquo,
+.highlight-rexx-electric .rx-ystr.rx-cquo,
+.highlight-rexx-electric .rx-pstr.rx-oquo,
+.highlight-rexx-electric .rx-pstr.rx-cquo,
+.highlight-rexx-electric .rx-gstr.rx-oquo,
+.highlight-rexx-electric .rx-gstr.rx-cquo,
+.highlight-rexx-electric .rx-tstr.rx-oquo,
+.highlight-rexx-electric .rx-tstr.rx-cquo,
+.highlight-rexx-electric .rx-ustr.rx-oquo,
+.highlight-rexx-electric .rx-ustr.rx-cquo {
+  color: #f0c040;
+}
+
+/* Taken constants that are strings: suffix                                   */
+.highlight-rexx-electric .rx-const.rx-ssuf {
+  color: #ff8030;
+}
+
+/* Taken constants that are strings: quotes                                   */
+.highlight-rexx-electric .rx-const.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-cquo {
+  color: #f0c040;
+}
+
+/******************************************************************************/
+/* Numbers                                                                    */
+/* =======                                                                    */
+/******************************************************************************/
+
+/*--------------------------------------------------------------------------*/
+/* Simple highlighting classes (not used by the highlighter)                 */
+/*--------------------------------------------------------------------------*/
+
+.highlight-rexx-electric .rx-int,         /* Integers                         */
+.highlight-rexx-electric .rx-deci,        /* Decimals (w/ a dot, no exponent) */
+.highlight-rexx-electric .rx-exp {        /* Exponentials (w/ or w/o a dot)   */
+  color: #ff8030;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Detailed highlighting (includes non X and B strings that are numbers)     */
+/*--------------------------------------------------------------------------*/
+
+/* Number sign (for strings only)                                             */
+.highlight-rexx-electric .rx-nsign {
+  color: #f0c040;
+}
+
+/* Integer part, fractional part, and the exponent itself                      */
+.highlight-rexx-electric .rx-ipart,
+.highlight-rexx-electric .rx-fpart,
+.highlight-rexx-electric .rx-expon {
+  color: #ff8030;
+}
+
+/* The decimal point                                                          */
+.highlight-rexx-electric .rx-dpoint {
+  color: #f0c040;
+}
+
+/* The exponent mark ("E" or "e")                                             */
+.highlight-rexx-electric .rx-emark {
+  color: #f0c040;
+}
+
+/* The (optional) exponent sign                                               */
+.highlight-rexx-electric .rx-esign {
+  color: #f0c040;
+}
+
+/******************************************************************************/
+/* Variables and constant symbols                                             */
+/* ==============================                                             */
+/******************************************************************************/
+
+/* Common color for all variables (except stems)                              */
+.highlight-rexx-electric .rx-var,
+.highlight-rexx-electric .rx-xvar,
+.highlight-rexx-electric .rx-cmp,
+.highlight-rexx-electric .rx-xcmp {
+  color: #d0d8f0;
+}
+
+/* Stems get their own color to stand out                                     */
+.highlight-rexx-electric .rx-stem,
+.highlight-rexx-electric .rx-xstem {
+  color: #c050ff;
+}
+
+/* Additionally, exposed variables will be italicized                         */
+.highlight-rexx-electric .rx-xvar,
+.highlight-rexx-electric .rx-xstem,
+.highlight-rexx-electric .rx-xcmp {
+  font-style: italic;
+}
+
+/* Environment symbols                                                        */
+.highlight-rexx-electric .rx-env {
+  color: #f0c040;
+  font-style: italic;
+}
+
+/* Const symbols that are not environment symbols                             */
+.highlight-rexx-electric .rx-lit {
+  color: #00e0e0;
+}
+
+/******************************************************************************/
+/* Special characters                                                         */
+/* ==================                                                         */
+/******************************************************************************/
+
+.highlight-rexx-electric .rx-spe {
+  color: #ff4080;
+}
+
+/******************************************************************************/
+/* Operators                                                                  */
+/* =========                                                                  */
+/******************************************************************************/
+
+.highlight-rexx-electric .rx-op {
+  color: #00d0ff;
+}
+
+/******************************************************************************/
+/* Taken constants                                                            */
+/* ===============                                                            */
+/*                                                                            */
+/*   I.e., tokens that are "strings or symbols taken as a constant".          */
+/*   In the case of strings, quotes and suffixes are styled under "strings".  */
+/******************************************************************************/
+
+/*--------------------------------------------------------------------------*/
+/* Default highlighting                                                     */
+/*--------------------------------------------------------------------------*/
+
+.highlight-rexx-electric .rx-const {
+  color: #40c0ff;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Named arguments (Executor)                                               */
+/*--------------------------------------------------------------------------*/
+
+.highlight-rexx-electric .rx-const.rx-argument-name {
+  color: #f0c040;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Built-in functions and procedures                                        */
+/*--------------------------------------------------------------------------*/
+
+/* Color (symbols and strings)                                                */
+.highlight-rexx-electric .rx-const.rx-bif-func,
+.highlight-rexx-electric .rx-const.rx-bif-proc {
+  color: #40c0ff;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-bif-func.rx-ssuf,
+.highlight-rexx-electric .rx-const.rx-bif-proc.rx-ssuf {
+  color: #ff8030;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-bif-func.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-bif-func.rx-cquo,
+.highlight-rexx-electric .rx-const.rx-bif-proc.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-bif-proc.rx-cquo {
+  color: #f0c040;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Internal functions and procedures, labels and block instruction names     */
+/*--------------------------------------------------------------------------*/
+
+/* Color (symbols and strings)                                                */
+.highlight-rexx-electric .rx-const.rx-int-func,
+.highlight-rexx-electric .rx-const.rx-int-proc,
+.highlight-rexx-electric .rx-const.rx-block,
+.highlight-rexx-electric .rx-const.rx-label {
+  color: #ff8030;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-int-func.rx-ssuf,
+.highlight-rexx-electric .rx-const.rx-int-proc.rx-ssuf,
+.highlight-rexx-electric .rx-const.rx-block.rx-ssuf,
+.highlight-rexx-electric .rx-const.rx-label.rx-ssuf {
+  color: #ff8030;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-int-func.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-int-func.rx-cquo,
+.highlight-rexx-electric .rx-const.rx-int-proc.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-int-proc.rx-cquo,
+.highlight-rexx-electric .rx-const.rx-block.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-block.rx-cquo,
+.highlight-rexx-electric .rx-const.rx-label.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-label.rx-cquo {
+  color: #f0c040;
+}
+
+/*--------------------------------------------------------------------------*/
+/* ::ROUTINE names, ::ROUTINE function and procedure calls,                 */
+/* and namespace-qualified ::ROUTINEs                                       */
+/*--------------------------------------------------------------------------*/
+
+/* Color (symbols and strings)                                                */
+.highlight-rexx-electric .rx-const.rx-routine,
+.highlight-rexx-electric .rx-const.rx-pkg-func,
+.highlight-rexx-electric .rx-const.rx-pkg-proc,
+.highlight-rexx-electric .rx-const.rx-ext-pkg-func,
+.highlight-rexx-electric .rx-const.rx-ext-pkg-proc {
+  color: #ff4080;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-routine.rx-ssuf,
+.highlight-rexx-electric .rx-const.rx-pkg-func.rx-ssuf,
+.highlight-rexx-electric .rx-const.rx-pkg-proc.rx-ssuf,
+.highlight-rexx-electric .rx-const.rx-ext-pkg-func.rx-ssuf,
+.highlight-rexx-electric .rx-const.rx-ext-pkg-proc.rx-ssuf {
+  color: #ff8030;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-routine.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-routine.rx-cquo,
+.highlight-rexx-electric .rx-const.rx-pkg-func.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-pkg-func.rx-cquo,
+.highlight-rexx-electric .rx-const.rx-pkg-proc.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-pkg-proc.rx-cquo,
+.highlight-rexx-electric .rx-const.rx-ext-pkg-func.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-ext-pkg-func.rx-cquo,
+.highlight-rexx-electric .rx-const.rx-ext-pkg-proc.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-ext-pkg-proc.rx-cquo {
+  color: #f0c040;
+}
+
+/*--------------------------------------------------------------------------*/
+/* External calls                                                           */
+/*--------------------------------------------------------------------------*/
+
+/* Color and italic (symbols and strings)                                     */
+.highlight-rexx-electric .rx-const.rx-ext-func,
+.highlight-rexx-electric .rx-const.rx-ext-proc {
+  color: #ff4080;
+  font-style: italic;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-ext-func.rx-ssuf,
+.highlight-rexx-electric .rx-const.rx-ext-proc.rx-ssuf {
+  color: #ff8030;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-ext-func.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-ext-func.rx-cquo,
+.highlight-rexx-electric .rx-const.rx-ext-proc.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-ext-proc.rx-cquo {
+  color: #f0c040;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Method names                                                             */
+/*--------------------------------------------------------------------------*/
+
+/* Color and italic (symbols and strings)                                     */
+.highlight-rexx-electric .rx-const.rx-method {
+  color: #f0c040;
+  font-style: italic;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-method.rx-ssuf {
+  color: #ff8030;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-method.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-method.rx-cquo {
+  color: #f0c040;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Namespace names                                                          */
+/*--------------------------------------------------------------------------*/
+
+/* Color (symbols and strings)                                                */
+.highlight-rexx-electric .rx-const.rx-namespace {
+  color: #f0c040;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-namespace.rx-ssuf {
+  color: #ff8030;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-electric .rx-const.rx-namespace.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-namespace.rx-cquo {
+  color: #f0c040;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Resources                                                                */
+/*--------------------------------------------------------------------------*/
+
+/* Resource name                                                              */
+.highlight-rexx-electric .rx-const.rx-resource {
+  color: #f0c040;
+}
+
+/* Resource name: suffix (for strings)                                        */
+.highlight-rexx-electric .rx-const.rx-resource.rx-ssuf {
+  color: #ff8030;
+}
+
+/* Resource name: quotes (for strings)                                        */
+.highlight-rexx-electric .rx-const.rx-resource.rx-oquo,
+.highlight-rexx-electric .rx-const.rx-resource.rx-cquo {
+  color: #f0c040;
+}
+
+/* Resource delimiter                                                         */
+.highlight-rexx-electric .rx-const .rx-res-delimiter {
+  color: #f0c040;
+  text-decoration: underline;
+}
+
+/******************************************************************************/
+/* ::RESOURCE data and ignored stuff                                          */
+/******************************************************************************/
+
+/* Resource data                                                              */
+.highlight-rexx-electric .rx-res-data {
+  color: #f0c040;
+  font-style: italic;
+}
+
+/* Resource ignored stuff                                                     */
+.highlight-rexx-electric .rx-res-ignore {
+  color: #6a7090;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/* END OF BASE SELECTOR highlight-rexx-electric                               */
+/******************************************************************************/
+/******************************************************************************/

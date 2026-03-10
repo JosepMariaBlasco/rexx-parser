@@ -1,0 +1,43 @@
+/******************************************************************************/
+/*                                                                            */
+/* book-11pt.css - Size variant (11pt) for the book document class            */
+/* ================================================================           */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260310    0.5  First version                                             */
+/*                                                                            */
+/******************************************************************************/
+
+/*
+  11pt variant for the book document class.
+
+  Values derived from the LaTeX book class at 11pt (\normalsize = 10.95pt,
+  \baselineskip = 13.6pt, \footnotesize = 8.95pt, \scriptsize = 8pt).
+  Margins interpolated between 10pt and 12pt (base).
+  Inner margin stays proportionally wider for binding.
+*/
+
+:root {
+  --doc-font-size:        11pt;
+  --doc-line-height:      1.25;
+  --doc-footnote-size:    9pt;
+  --doc-fn-marker-size:   6.5pt;
+  --doc-pre-size:         8pt;
+}
+
+@page {
+  margin-top: 2.75cm;
+  margin-bottom: 2.75cm;
+  margin-inside: 3.75cm;
+  margin-outside: 2.75cm;
+}

@@ -374,14 +374,14 @@ div.content blockquote {
   margin-top: 2.5cm;
   margin-bottom: 2.5cm;
   margin-inside: 3.5cm;                /* Binding edge — wider                */
-  margin-outside: 2.5cm;               /* Outer edge — narrower              */
+  margin-outside: 2.5cm;               /* Outer edge — narrower               */
 
   @bottom-center {
     content: none;
   }
 }
 
-/* Recto (right / odd) pages: page number bottom-right,                       */
+/* Recto (right / odd) pages: page number bottom-right,                        */
 /*                             chapter title top-right                         */
 
 @page :right {

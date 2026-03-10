@@ -1,0 +1,587 @@
+/******************************************************************************/
+/*                                                                            */
+/* tokio-night.css - CSS for Rexx highlighting, "Tokio Night" dark style     */
+/* =====================================================================     */
+/*                                                                            */
+/* Flattened version (no CSS nesting) for pagedjs-cli compatibility.          */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260309    0.5  First release (flattened)                                  */
+/*                                                                            */
+/******************************************************************************/
+
+/******************************************************************************/
+/******************************************************************************/
+/* BASE SELECTOR: highlight-rexx-tokio-night                                  */
+/******************************************************************************/
+/******************************************************************************/
+/*   Format: "highlight-rexx-<stylename>"                                     */
+/*   All rules are prefixed with .highlight-rexx-tokio-night (abbreviated     */
+/*   as BASE in comments below).                                              */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Default settings                                                           */
+/* ================                                                           */
+/*                                                                            */
+/*   Blue-tinted dark background, muted lavender-grey text                    */
+/*   The "rexx" class is used as a fallback when no suitable class is found   */
+/*                                                                            */
+/******************************************************************************/
+
+.highlight-rexx-tokio-night pre,
+.highlight-rexx-tokio-night .rexx {
+  background-color: #16161e;
+  color: #9aa5ce;
+}
+
+/******************************************************************************/
+/* Support for line numbers                                                   */
+/* ========================                                                   */
+/******************************************************************************/
+
+/* ANSI Driver only */
+.highlight-rexx-tokio-night .rx-lineno {
+  color: #e0af68;
+  font-style: italic;
+}
+.highlight-rexx-tokio-night .rx-linebar {
+  color: #3b4261;
+}
+
+/* HTML Driver: numbered lines */
+.highlight-rexx-tokio-night pre.number-lines {
+  padding-left: 50px;
+}
+.highlight-rexx-tokio-night pre.number-lines.w3 {
+  padding-left: 58px;
+}
+.highlight-rexx-tokio-night pre.number-lines.w3 code:before {
+  width: 58px;
+}
+.highlight-rexx-tokio-night pre.number-lines.w4 {
+  padding-left: 65px;
+}
+.highlight-rexx-tokio-night pre.number-lines.w4 code:before {
+  width: 65px;
+}
+.highlight-rexx-tokio-night pre.number-lines.w5 {
+  padding-left: 72px;
+}
+.highlight-rexx-tokio-night pre.number-lines.w5 code:before {
+  width: 72px;
+}
+.highlight-rexx-tokio-night pre.number-lines code:before {
+  content: attr(lineno) " | ";
+  position: absolute;
+  left: 10px;
+  width: 50px;
+  text-align: right;
+  color: #3b4261;
+}
+
+/******************************************************************************/
+/* Whitespace and continuations                                               */
+/* ============================                                               */
+/******************************************************************************/
+
+.highlight-rexx-tokio-night .rx-ws,
+.highlight-rexx-tokio-night .rx-cont {
+  color: #3b4261;
+}
+
+/******************************************************************************/
+/* Standard (non-doc) comments                                                */
+/* ===========================                                                */
+/******************************************************************************/
+
+.highlight-rexx-tokio-night .rx-cm,       /* Classic, block comments          */
+.highlight-rexx-tokio-night .rx-lncm {    /* Line comments                    */
+  color: #6272a4;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* Doc-comments                                                               */
+/* ============                                                               */
+/******************************************************************************/
+
+/* Default doc-comment style (for "block" highlighting)                       */
+.highlight-rexx-tokio-night .rx-doc-comment,
+.highlight-rexx-tokio-night .rx-doc-comment-markdown {
+  color: #8690b2;
+  font-style: italic;
+}
+
+/* Armature, whitespace and main description                                  */
+.highlight-rexx-tokio-night .rx-doc-comment.rx-doc-comment-armature,
+.highlight-rexx-tokio-night .rx-doc-comment.rx-doc-comment-whitespace,
+.highlight-rexx-tokio-night .rx-doc-comment.rx-doc-comment-main-description,
+.highlight-rexx-tokio-night .rx-doc-comment-markdown.rx-doc-comment-armature,
+.highlight-rexx-tokio-night .rx-doc-comment-markdown.rx-doc-comment-whitespace,
+.highlight-rexx-tokio-night .rx-doc-comment-markdown.rx-doc-comment-main-description {
+  color: #8690b2;
+  font-style: italic;
+}
+
+/* Initial summary statement                                                  */
+.highlight-rexx-tokio-night .rx-doc-comment.rx-doc-comment-summary,
+.highlight-rexx-tokio-night .rx-doc-comment-markdown.rx-doc-comment-summary {
+  color: #e0af68;
+  text-decoration: underline;
+  font-style: normal;
+}
+
+/* @block-tag                                                                 */
+.highlight-rexx-tokio-night .rx-doc-comment.rx-doc-comment-tag,
+.highlight-rexx-tokio-night .rx-doc-comment-markdown.rx-doc-comment-tag {
+  color: #f7768e;
+  font-style: normal;
+}
+
+/* Tag value (as the name in "@param name")                                   */
+.highlight-rexx-tokio-night .rx-doc-comment.rx-doc-comment-tag-value,
+.highlight-rexx-tokio-night .rx-doc-comment-markdown.rx-doc-comment-tag-value {
+  color: #bb9af7;
+  font-style: normal;
+}
+
+/* Tag description (text after @deprecated, etc.)                             */
+.highlight-rexx-tokio-night .rx-doc-comment.rx-doc-comment-tag-description,
+.highlight-rexx-tokio-night .rx-doc-comment-markdown.rx-doc-comment-tag-description {
+  color: #73daca;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* Shebangs                                                                   */
+/* ========                                                                   */
+/******************************************************************************/
+
+.highlight-rexx-tokio-night .rx-shb {
+  color: #f7768e;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* Keywords and subkeywords, assignment sequences, and "::"                   */
+/* ========================================================                   */
+/******************************************************************************/
+
+.highlight-rexx-tokio-night .rx-kw,       /* Keywords                         */
+.highlight-rexx-tokio-night .rx-skw,      /* Subkeywords                      */
+.highlight-rexx-tokio-night .rx-dkw,      /* Directive keywords               */
+.highlight-rexx-tokio-night .rx-dskw,     /* Directive subkeywords            */
+.highlight-rexx-tokio-night .rx-asg,      /* Assignment sequences (incl. "=") */
+.highlight-rexx-tokio-night .rx-dir {     /* The directive start "::" sequence */
+  color: #7aa2f7;
+  font-weight: bold;
+}
+
+/* Additionally, directive keywords and subkeywords are underlined            */
+.highlight-rexx-tokio-night .rx-dkw,
+.highlight-rexx-tokio-night .rx-dskw {
+  text-decoration: underline;
+}
+
+/******************************************************************************/
+/* Strings (including taken constants that are strings)                       */
+/* ====================================================                       */
+/******************************************************************************/
+
+/* The inner part of the string                                               */
+.highlight-rexx-tokio-night .rx-str,
+.highlight-rexx-tokio-night .rx-bstr,
+.highlight-rexx-tokio-night .rx-xstr,     /* Classic Rexx strings             */
+.highlight-rexx-tokio-night .rx-ystr,
+.highlight-rexx-tokio-night .rx-pstr,
+.highlight-rexx-tokio-night .rx-gstr,
+.highlight-rexx-tokio-night .rx-tstr,
+.highlight-rexx-tokio-night .rx-ustr {    /* TUTOR Unicode strings            */
+  color: #9ece6a;
+}
+
+/* String suffix                                                              */
+.highlight-rexx-tokio-night .rx-str.rx-ssuf,
+.highlight-rexx-tokio-night .rx-bstr.rx-ssuf,
+.highlight-rexx-tokio-night .rx-xstr.rx-ssuf,
+.highlight-rexx-tokio-night .rx-ystr.rx-ssuf,
+.highlight-rexx-tokio-night .rx-pstr.rx-ssuf,
+.highlight-rexx-tokio-night .rx-gstr.rx-ssuf,
+.highlight-rexx-tokio-night .rx-tstr.rx-ssuf,
+.highlight-rexx-tokio-night .rx-ustr.rx-ssuf {
+  color: #ff9e64;
+}
+
+/* Quotes (opening and closing)                                               */
+.highlight-rexx-tokio-night .rx-str.rx-oquo,
+.highlight-rexx-tokio-night .rx-str.rx-cquo,
+.highlight-rexx-tokio-night .rx-bstr.rx-oquo,
+.highlight-rexx-tokio-night .rx-bstr.rx-cquo,
+.highlight-rexx-tokio-night .rx-xstr.rx-oquo,
+.highlight-rexx-tokio-night .rx-xstr.rx-cquo,
+.highlight-rexx-tokio-night .rx-ystr.rx-oquo,
+.highlight-rexx-tokio-night .rx-ystr.rx-cquo,
+.highlight-rexx-tokio-night .rx-pstr.rx-oquo,
+.highlight-rexx-tokio-night .rx-pstr.rx-cquo,
+.highlight-rexx-tokio-night .rx-gstr.rx-oquo,
+.highlight-rexx-tokio-night .rx-gstr.rx-cquo,
+.highlight-rexx-tokio-night .rx-tstr.rx-oquo,
+.highlight-rexx-tokio-night .rx-tstr.rx-cquo,
+.highlight-rexx-tokio-night .rx-ustr.rx-oquo,
+.highlight-rexx-tokio-night .rx-ustr.rx-cquo {
+  color: #e0af68;
+}
+
+/* Taken constants that are strings: suffix                                   */
+.highlight-rexx-tokio-night .rx-const.rx-ssuf {
+  color: #ff9e64;
+}
+
+/* Taken constants that are strings: quotes                                   */
+.highlight-rexx-tokio-night .rx-const.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-cquo {
+  color: #e0af68;
+}
+
+/******************************************************************************/
+/* Numbers                                                                    */
+/* =======                                                                    */
+/******************************************************************************/
+
+/*--------------------------------------------------------------------------*/
+/* Simple highlighting classes (not used by the highlighter)                 */
+/*--------------------------------------------------------------------------*/
+
+.highlight-rexx-tokio-night .rx-int,      /* Integers                         */
+.highlight-rexx-tokio-night .rx-deci,     /* Decimals (w/ a dot, no exponent) */
+.highlight-rexx-tokio-night .rx-exp {     /* Exponentials (w/ or w/o a dot)   */
+  color: #ff9e64;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Detailed highlighting (includes non X and B strings that are numbers)     */
+/*--------------------------------------------------------------------------*/
+
+/* Number sign (for strings only)                                             */
+.highlight-rexx-tokio-night .rx-nsign {
+  color: #e0af68;
+}
+
+/* Integer part, fractional part, and the exponent itself                      */
+.highlight-rexx-tokio-night .rx-ipart,
+.highlight-rexx-tokio-night .rx-fpart,
+.highlight-rexx-tokio-night .rx-expon {
+  color: #ff9e64;
+}
+
+/* The decimal point                                                          */
+.highlight-rexx-tokio-night .rx-dpoint {
+  color: #e0af68;
+}
+
+/* The exponent mark ("E" or "e")                                             */
+.highlight-rexx-tokio-night .rx-emark {
+  color: #e0af68;
+}
+
+/* The (optional) exponent sign                                               */
+.highlight-rexx-tokio-night .rx-esign {
+  color: #e0af68;
+}
+
+/******************************************************************************/
+/* Variables and constant symbols                                             */
+/* ==============================                                             */
+/******************************************************************************/
+
+/* Common color for all variables (except stems)                              */
+.highlight-rexx-tokio-night .rx-var,
+.highlight-rexx-tokio-night .rx-xvar,
+.highlight-rexx-tokio-night .rx-cmp,
+.highlight-rexx-tokio-night .rx-xcmp {
+  color: #c0caf5;
+}
+
+/* Stems get their own color to stand out                                     */
+.highlight-rexx-tokio-night .rx-stem,
+.highlight-rexx-tokio-night .rx-xstem {
+  color: #bb9af7;
+}
+
+/* Additionally, exposed variables will be italicized                         */
+.highlight-rexx-tokio-night .rx-xvar,
+.highlight-rexx-tokio-night .rx-xstem,
+.highlight-rexx-tokio-night .rx-xcmp {
+  font-style: italic;
+}
+
+/* Environment symbols                                                        */
+.highlight-rexx-tokio-night .rx-env {
+  color: #e0af68;
+  font-style: italic;
+}
+
+/* Const symbols that are not environment symbols                             */
+.highlight-rexx-tokio-night .rx-lit {
+  color: #2ac3de;
+}
+
+/******************************************************************************/
+/* Special characters                                                         */
+/* ==================                                                         */
+/******************************************************************************/
+
+.highlight-rexx-tokio-night .rx-spe {
+  color: #de5971;
+}
+
+/******************************************************************************/
+/* Operators                                                                  */
+/* =========                                                                  */
+/******************************************************************************/
+
+.highlight-rexx-tokio-night .rx-op {
+  color: #89ddff;
+}
+
+/******************************************************************************/
+/* Taken constants                                                            */
+/* ===============                                                            */
+/*                                                                            */
+/*   I.e., tokens that are "strings or symbols taken as a constant".          */
+/*   In the case of strings, quotes and suffixes are styled under "strings".  */
+/******************************************************************************/
+
+/*--------------------------------------------------------------------------*/
+/* Default highlighting                                                     */
+/*--------------------------------------------------------------------------*/
+
+.highlight-rexx-tokio-night .rx-const {
+  color: #7dcfff;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Named arguments (Executor)                                               */
+/*--------------------------------------------------------------------------*/
+
+.highlight-rexx-tokio-night .rx-const.rx-argument-name {
+  color: #e0af68;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Built-in functions and procedures                                        */
+/*--------------------------------------------------------------------------*/
+
+/* Color (symbols and strings)                                                */
+.highlight-rexx-tokio-night .rx-const.rx-bif-func,
+.highlight-rexx-tokio-night .rx-const.rx-bif-proc {
+  color: #7dcfff;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-bif-func.rx-ssuf,
+.highlight-rexx-tokio-night .rx-const.rx-bif-proc.rx-ssuf {
+  color: #ff9e64;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-bif-func.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-bif-func.rx-cquo,
+.highlight-rexx-tokio-night .rx-const.rx-bif-proc.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-bif-proc.rx-cquo {
+  color: #e0af68;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Internal functions and procedures, labels and block instruction names     */
+/*--------------------------------------------------------------------------*/
+
+/* Color (symbols and strings)                                                */
+.highlight-rexx-tokio-night .rx-const.rx-int-func,
+.highlight-rexx-tokio-night .rx-const.rx-int-proc,
+.highlight-rexx-tokio-night .rx-const.rx-block,
+.highlight-rexx-tokio-night .rx-const.rx-label {
+  color: #ff9e64;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-int-func.rx-ssuf,
+.highlight-rexx-tokio-night .rx-const.rx-int-proc.rx-ssuf,
+.highlight-rexx-tokio-night .rx-const.rx-block.rx-ssuf,
+.highlight-rexx-tokio-night .rx-const.rx-label.rx-ssuf {
+  color: #ff9e64;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-int-func.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-int-func.rx-cquo,
+.highlight-rexx-tokio-night .rx-const.rx-int-proc.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-int-proc.rx-cquo,
+.highlight-rexx-tokio-night .rx-const.rx-block.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-block.rx-cquo,
+.highlight-rexx-tokio-night .rx-const.rx-label.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-label.rx-cquo {
+  color: #e0af68;
+}
+
+/*--------------------------------------------------------------------------*/
+/* ::ROUTINE names, ::ROUTINE function and procedure calls,                 */
+/* and namespace-qualified ::ROUTINEs                                       */
+/*--------------------------------------------------------------------------*/
+
+/* Color (symbols and strings)                                                */
+.highlight-rexx-tokio-night .rx-const.rx-routine,
+.highlight-rexx-tokio-night .rx-const.rx-pkg-func,
+.highlight-rexx-tokio-night .rx-const.rx-pkg-proc,
+.highlight-rexx-tokio-night .rx-const.rx-ext-pkg-func,
+.highlight-rexx-tokio-night .rx-const.rx-ext-pkg-proc {
+  color: #f7768e;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-routine.rx-ssuf,
+.highlight-rexx-tokio-night .rx-const.rx-pkg-func.rx-ssuf,
+.highlight-rexx-tokio-night .rx-const.rx-pkg-proc.rx-ssuf,
+.highlight-rexx-tokio-night .rx-const.rx-ext-pkg-func.rx-ssuf,
+.highlight-rexx-tokio-night .rx-const.rx-ext-pkg-proc.rx-ssuf {
+  color: #ff9e64;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-routine.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-routine.rx-cquo,
+.highlight-rexx-tokio-night .rx-const.rx-pkg-func.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-pkg-func.rx-cquo,
+.highlight-rexx-tokio-night .rx-const.rx-pkg-proc.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-pkg-proc.rx-cquo,
+.highlight-rexx-tokio-night .rx-const.rx-ext-pkg-func.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-ext-pkg-func.rx-cquo,
+.highlight-rexx-tokio-night .rx-const.rx-ext-pkg-proc.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-ext-pkg-proc.rx-cquo {
+  color: #e0af68;
+}
+
+/*--------------------------------------------------------------------------*/
+/* External calls                                                           */
+/*--------------------------------------------------------------------------*/
+
+/* Color and italic (symbols and strings)                                     */
+.highlight-rexx-tokio-night .rx-const.rx-ext-func,
+.highlight-rexx-tokio-night .rx-const.rx-ext-proc {
+  color: #f7768e;
+  font-style: italic;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-ext-func.rx-ssuf,
+.highlight-rexx-tokio-night .rx-const.rx-ext-proc.rx-ssuf {
+  color: #ff9e64;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-ext-func.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-ext-func.rx-cquo,
+.highlight-rexx-tokio-night .rx-const.rx-ext-proc.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-ext-proc.rx-cquo {
+  color: #e0af68;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Method names                                                             */
+/*--------------------------------------------------------------------------*/
+
+/* Color and italic (symbols and strings)                                     */
+.highlight-rexx-tokio-night .rx-const.rx-method {
+  color: #e0af68;
+  font-style: italic;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-method.rx-ssuf {
+  color: #ff9e64;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-method.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-method.rx-cquo {
+  color: #e0af68;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Namespace names                                                          */
+/*--------------------------------------------------------------------------*/
+
+/* Color (symbols and strings)                                                */
+.highlight-rexx-tokio-night .rx-const.rx-namespace {
+  color: #e0af68;
+}
+
+/* Suffix (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-namespace.rx-ssuf {
+  color: #ff9e64;
+}
+
+/* Quotes (for strings)                                                       */
+.highlight-rexx-tokio-night .rx-const.rx-namespace.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-namespace.rx-cquo {
+  color: #e0af68;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Resources                                                                */
+/*--------------------------------------------------------------------------*/
+
+/* Resource name                                                              */
+.highlight-rexx-tokio-night .rx-const.rx-resource {
+  color: #e0af68;
+}
+
+/* Resource name: suffix (for strings)                                        */
+.highlight-rexx-tokio-night .rx-const.rx-resource.rx-ssuf {
+  color: #ff9e64;
+}
+
+/* Resource name: quotes (for strings)                                        */
+.highlight-rexx-tokio-night .rx-const.rx-resource.rx-oquo,
+.highlight-rexx-tokio-night .rx-const.rx-resource.rx-cquo {
+  color: #e0af68;
+}
+
+/* Resource delimiter                                                         */
+.highlight-rexx-tokio-night .rx-const .rx-res-delimiter {
+  color: #e0af68;
+  text-decoration: underline;
+}
+
+/******************************************************************************/
+/* ::RESOURCE data and ignored stuff                                          */
+/******************************************************************************/
+
+/* Resource data                                                              */
+.highlight-rexx-tokio-night .rx-res-data {
+  color: #e0af68;
+  font-style: italic;
+}
+
+/* Resource ignored stuff                                                     */
+.highlight-rexx-tokio-night .rx-res-ignore {
+  color: #6272a4;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/* END OF BASE SELECTOR highlight-rexx-tokio-night                            */
+/******************************************************************************/
+/******************************************************************************/
