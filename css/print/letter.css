@@ -11,7 +11,7 @@
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
 /* Load AFTER rexxpub-base.css.  Optional size variants:                      */
-/*   letter-10pt.css, letter-14pt.css (load AFTER this file).                 */
+/*   letter-<size>pt.css (load AFTER this file).                              */
 /*                                                                            */
 /* Markdown structure using Pandoc fenced divs:                               */
 /*                                                                            */

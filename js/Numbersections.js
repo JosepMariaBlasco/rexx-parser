@@ -149,10 +149,15 @@
       /* Parts: separate counter, Roman numerals, no effect on chapters    */
       if (h.classList.contains("part")) {
         partCounter++;
-        var partStr = partWord + "\u00A0" + toRoman(partCounter) + ".\u2003";
         var partSpan = document.createElement("span");
         partSpan.className = "section-number";
-        partSpan.textContent = partStr;
+        partSpan.textContent = partWord + "\u00A0" + toRoman(partCounter);
+        /* Hidden separator: included in textContent for the TOC,         */
+        /* but hidden on the part page via CSS                            */
+        var sep = document.createElement("span");
+        sep.className = "section-number-sep";
+        sep.textContent = ".\u2003";
+        partSpan.appendChild(sep);
         h.insertBefore(partSpan, h.firstChild);
         continue;
       }

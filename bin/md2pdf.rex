@@ -70,6 +70,7 @@
   unicode        = 0
   itrace         = 0
   cssDir         = ""
+  checkDeps      = 0
 
 ProcessOptions:
 
@@ -81,7 +82,7 @@ ProcessOptions:
       When "--fix-outline"    Then fixOutline = 1
       When "-h",  "--help"    Then Signal Help
       When "-it", "--itrace"  Then itrace = 1
-      When "--check-deps"     Then Call CheckDeps
+      When "--check-deps"     Then Do; Call CheckDeps; checkDeps = 1; End
       When "--continue"       Then continue = 1
       When "--size"           Then Do
         If args~size == 0 Then
@@ -183,7 +184,10 @@ ProcessOptions:
   ------------------------------------------------------------------------------
 
   Select Case args~items
-    When 0 Then Signal Help
+    When 0 Then Do
+      If checkDeps Then Exit
+      Signal Help
+    End
     When 1 Then Do
       arg1 = args[1]
       If SysIsFileDirectory(arg1) Then

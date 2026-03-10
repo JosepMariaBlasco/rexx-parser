@@ -11,7 +11,7 @@
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
 /* Load AFTER rexxpub-base.css.  Optional size variants:                      */
-/*   default-10pt.css, default-14pt.css (load AFTER this file).               */
+/*   default-<size>pt.css (load AFTER this file).                             */
 /*                                                                            */
 /* This is the fallback document class used by md2pdf when the source         */
 /* filename does not match any of the named classes (article, book,           */

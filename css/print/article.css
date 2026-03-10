@@ -4,7 +4,7 @@
 /* ===============================================                            */
 /*                                                                            */
 /* Load AFTER rexxpub-base.css.  Optional size variants:                      */
-/*   article-10pt.css, article-14pt.css (load AFTER this file).               */
+/*   article-<size>pt.css (load AFTER this file).                             */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -222,7 +222,7 @@ div.content blockquote {
 /*                                                                            */
 /* NOTE: var() may not work inside @page rules in all paged.js versions.      */
 /* The values here are the 12pt defaults.  The size-specific stylesheets      */
-/* (article-10pt.css, article-14pt.css) override these @page rules with       */
+/* (article-<size>pt.css) override these @page rules with                     */
 /* literal values appropriate to each size.                                   */
 /******************************************************************************/
 

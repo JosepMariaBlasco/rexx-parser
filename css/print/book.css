@@ -11,7 +11,7 @@
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
 /* Load AFTER rexxpub-base.css.  Optional size variants:                      */
-/*   book-10pt.css, book-14pt.css (load AFTER this file).                     */
+/*   book-<size>pt.css (load AFTER this file).                                */
 /*                                                                            */
 /* This is the most complete document class in RexxPub, designed for          */
 /* long-form documents with chapters, parts, running headers, facing          */
@@ -230,26 +230,49 @@ div.content dd p { text-indent: 0; }
 
 /******************************************************************************/
 /* Part divider                                                               */
-/* Full page, centred, large title, no running headers.                       */
+/* Full page, vertically centred, no running headers.                         */
+/*                                                                            */
+/* Emulates the LaTeX book.cls \part layout:                                  */
+/*                                                                            */
+/*   \null\vfil                          ← elastic space above                */
+/*   \huge\bfseries  Part N              ← "Part I" in \huge bold             */
+/*   \vskip 20pt                         ← 20pt gap                           */
+/*   \Huge\bfseries  Title               ← title in \Huge bold                */
+/*   \vfil\newpage                       ← elastic space below                */
+/*                                                                            */
+/* The \vfil…\vfil pair centres the block vertically on the page.             */
+/* We approximate this with a large top margin (~40% of the text area).       */
+/*                                                                            */
+/* LaTeX font sizes at 12pt base:                                             */
+/*   \huge  = 24.88pt    \Huge = 24.88pt (capped at \huge in 12pt)           */
+/* At 10pt base:                                                              */
+/*   \huge  = 20.74pt    \Huge = 24.88pt   (ratio ≈ 0.83)                   */
+/*                                                                            */
 /******************************************************************************/
 
 h1.part {
   page: part-page;
   text-align: center;
   text-align-last: center;
-  font-size: 2.2em;
+  font-size: 2.4em;                    /* \Huge — title size                  */
   font-weight: bold;
-  margin-top: 5em;
+  margin-top: 0;                       /* @page part-page handles position    */
   break-before: recto;
   page-break-before: recto;
 }
 
 h1.part .section-number {
   display: block;
-  font-size: 0.55em;
-  font-weight: normal;
-  margin-bottom: 0.5em;
+  width: 100%;
+  text-align: center;
+  font-size: 0.75em;                   /* \huge relative to \Huge ≈ 0.83     */
+  font-weight: bold;                   /* LaTeX: \huge\bfseries               */
+  margin-bottom: 0.7em;               /* \vskip 20pt                         */
 }
+
+h1.part .section-number-sep {
+  display: none;                       /* Hidden on part page; TOC picks it   */
+}                                      /* up via heading.textContent           */
 
 /******************************************************************************/
 /* Chapter heading                                                            */
@@ -363,7 +386,7 @@ div.content blockquote {
 /******************************************************************************/
 
 @media print {
-  h1.newpage, h1.chapter, h1.part {
+  h1.newpage, h1.chapter {
     margin-top: 3em;
   }
 }
@@ -463,8 +486,10 @@ div.content blockquote {
 }
 
 /* Part divider: no headers, no page number, centred                          */
+/* Extra top margin pushes content to vertical centre of the page             */
 
 @page part-page {
+  margin-top: 10cm;
   @top-left    { content: none; }
   @top-right   { content: none; }
   @bottom-left { content: none; }
