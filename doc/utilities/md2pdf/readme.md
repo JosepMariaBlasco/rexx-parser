@@ -50,7 +50,8 @@ Options
 `-it`, `--itrace`                         Print internal traceback on error
 `-l`, `--language` CODE&nbsp;&nbsp;&nbsp; Set document language (e.g. en, es, fr)
 `--outline` N                             Generate outline with H1,...,HN (default: 3, range: 0-6)
-`--section-numbers` N                     Number sections down to depth N (0=off, max 4)
+`--section-numbers` N                     Override section numbering depth (0=off, max 4)
+`--no-number-figures`                     Disable automatic figure/listing numbering
 `--size` SIZE                             Set the font size in pt (default: 12)
 `--style` NAME                            Set the default visual theme for Rexx code blocks
 `-u`, `--tutor`, `--unicode`              Enable TUTOR-flavoured Unicode for all code blocks
@@ -89,20 +90,30 @@ new size, simply create the corresponding CSS file (e.g.
 
 When `--outline` is set to 0, no outline is generated.
 
-When `--section-numbers` is used, headings are automatically
-numbered up to the specified depth: 1 for h1 only, 2 for h1
-and h2, and so on up to 4.  The numbering follows the LaTeX
-convention (e.g. 1., 1.1, 1.1.1).  Headings marked with
-Pandoc's `{.unnumbered}` or `{-}` attribute are excluded from
-numbering, as are headings with the `.part` or `.chapter`
-classes, and headings inside `.title-page` or `.toc-exclude`
-containers.  The default is 0 (no section numbering).
+Headings are automatically numbered by default, following the LaTeX
+convention (e.g. 1., 1.1, 1.1.1).  The default depth depends on
+the document class: 3 for `article` (and `default`, `letter`),
+2 for `book`, and 0 for `slides`.  The `--section-numbers` option
+overrides this default: 1 for h1 only, 2 for h1 and h2, and so
+on up to 4; use `--section-numbers 0` to disable numbering.
+Headings marked with Pandoc's `{.unnumbered}` or `{-}` attribute
+are excluded from numbering, as are headings with the `.part` or
+`.chapter` classes, and headings inside `.title-page` or
+`.toc-exclude` containers.
 
 The `--continue` option is useful in batch mode: when a file fails
 (due to a syntax error in a fenced code block, a missing document
 class, or any other error), processing continues with the remaining
 files instead of aborting.  At the end, a summary reports the number
 of files processed and the number of failures.
+
+By default, figures and code listings that have a caption are
+automatically numbered following the LaTeX convention ("Figure 1",
+"Listing 1", etc.).  Figures and listings use independent counters.
+Listing captions are placed above the code block, and figure captions
+below the image, matching the LaTeX defaults.  The
+`--no-number-figures` option disables this automatic numbering;
+captions are still displayed, but without a number prefix.
 
 The `-xtr`/`--executor`, `-exp`/`--experimental`, and
 `-u`/`--tutor`/`--unicode` options enable the corresponding language

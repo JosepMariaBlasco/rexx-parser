@@ -18,6 +18,7 @@
 /* 20250120    0.1f Add size option                                           */
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250622    0.2d Change fg/bg char separator to ":"                        */
+/* 20260310    0.5  Implement captions                                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -42,12 +43,17 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
   HTMLClass = Options.!HTMLClass
   style     = Options.style
 
+  /* Build optional data-caption attribute                                  */
+  If Options.["CAPTION"] \== "", Options.["CAPTION"] \== 0 Then
+    captionAttr = ' data-caption="'Options.["CAPTION"]'"'
+  Else captionAttr = ""
+
   -- No patch? A simple div will do.
   If patch == .Nil Then Do
-    self~Say( '<div class="highlight-rexx-'style'">' )
+    self~Say( '<div class="highlight-rexx-'style'"'captionAttr'>' )
   End
   Else If patch~getpatch[!Tag2Attr]~isEmpty Then Do
-    self~Say( '<div class="highlight-rexx-'style'">' )
+    self~Say( '<div class="highlight-rexx-'style'"'captionAttr'>' )
   End
   -- We have a patch. We will emit an inline style, indexed to our
   -- unique ID. This does not validate, but it works with all major
@@ -56,7 +62,7 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
   Else Do
 
     id = Options.!UniqueID
-    self~Say( '<div id="rx'id'" class="highlight-rexx-'style'">' )
+    self~Say( '<div id="rx'id'" class="highlight-rexx-'style'"'captionAttr'>' )
     patch.    = patch~getpatch
     Tag2Attr. = patch.!Tag2Attr
     constant  = .EL.TAKEN_CONSTANT

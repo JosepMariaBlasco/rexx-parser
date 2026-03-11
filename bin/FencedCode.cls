@@ -30,6 +30,7 @@
 /* 20251222    0.4a Add support for ```executor                               */
 /* 20251228         Add support for default options                           */
 /* 20251230         Add support for --continue                                */
+/* 20260310    0.5  Add support for captions                                  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -86,6 +87,10 @@
 --     be assigned the same HTML class, all "+=" assignments will be
 --     assigned a different class, and so on). When "full" is specified,
 --     both a generic and a specific class will be assigned.
+--   caption="text"
+--     Add a caption to the code block. The caption text will be emitted
+--     as a data-caption attribute on the outer <div>, and numberFigures.js
+--     will convert it to a visible <figcaption> at render time.
 --   classprefix= "rx-"
 --     Define the class prefix used for HTML classes. Default is "rx-".
 --   constant= "group" | "full" | "detail"
@@ -285,6 +290,7 @@ MissingEndMarker:
   Options.classprefix = "rx-"           -- Default HTML class prefix is "rx-"
   Options.["SOURCE"]  = ""              -- No external source by default
   Options.patch       = ""              -- No patch file by default
+  Options.["CAPTION"]  = ""              -- No caption by default
   Options.html        = 1               -- This is HTML highlighting
   Options.startFrom   = 1               -- Start at line 1
 
@@ -325,6 +331,7 @@ MissingEndMarker:
         When "patch"        Then Options.patch        = value
         When "style"        Then Options.style        = value
         When "size"         Then Options.size         = value
+        When "caption"      Then Options.["CAPTION"]  = value
         When "doccomments"  Then
           Select Case Lower(value)
             When "detailed", "block"       Then Options.doccomments   = Lower(value)
@@ -466,4 +473,3 @@ Syntax:
   res~append("")
 
   Return res
-

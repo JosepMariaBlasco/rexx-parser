@@ -88,8 +88,10 @@
   /* -----------------------------------------------------------------------*/
 
   function partLabel(content) {
-    var lang = (content.documentElement || content.ownerDocument.documentElement)
-               .getAttribute("lang") || "en";
+    var root = content.documentElement
+            || (content.ownerDocument && content.ownerDocument.documentElement)
+            || document.documentElement;
+    var lang = (root && root.getAttribute("lang")) || "en";
     lang = lang.toLowerCase().substring(0, 2);
     var labels = {
       "en": "Part",   "es": "Parte",  "fr": "Partie",

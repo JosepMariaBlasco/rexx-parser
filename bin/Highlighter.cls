@@ -106,6 +106,7 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
       Array("Style names are limited to letters, numbers, '.', '-' and '_'.")
 
   Do tail Over Options.~allIndexes
+    If tail == "CAPTION" Then Iterate
     Options.tail = Lower( options.tail )
   End
   Options.mode = Upper( Options.mode )

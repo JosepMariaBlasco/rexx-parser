@@ -39,6 +39,8 @@ by their highlighted versions.
   will not be processed by this routine. Please note that you should
   specify "rexx" exactly as shown, i.e., all in lowercase letters. This means
   that other variants, like "Rexx" or "REXX", will not be recognized.
++ `executor` is also accepted as a language tag. Using <code>```executor {attributes}</code>
+  is equivalent to <code>```rexx {executor attributes}</code>.
 + If you want to specify additional attributes, you may do so by enclosing
   them between braces after the `rexx` marker. Blanks and/or tabs after
   `rexx` and before the left brace are optional.
@@ -69,8 +71,23 @@ every assigment sequence will get its own, different, HTML class
 (this means, for example, that all simple assignments, "=", will
 be assigned the same HTML class, all "+=" assignments will be
 assigned a different class, and so on). When "full" is specified,
-both a generic and a specific class will be assigned, in This
+both a generic and a specific class will be assigned, in this
 order.
+
+#### <code>caption=<em>"text"</em></code> {#caption}
+
+Add a caption to the code block.  The caption text is emitted as
+a `data-caption` attribute on the outer `<div>`, and
+`numberFigures.js` converts it to a visible `<figcaption>` at
+render time.  When figure numbering is active (the default in
+all pipelines), the caption is prefixed with "Listing N."
+following the LaTeX convention.  Listing captions are placed
+above the code block, and figure captions (for Pandoc images)
+below the image.
+
+~~~rexx {caption="A sample listing"}
+Say "Hello, world!"
+~~~
 
 #### `classprefix= "rx-"`
 
@@ -81,10 +98,21 @@ Define the class prefix used for HTML classes. Default is "rx-".
 Determines how taken constants (strings or symbols taken as a
 constant) will be highlighted.
 
+#### `doccomments= "detailed" | "block"` {#doccomments}
+
+Determines whether doc-comment parts are individually highlighted.
+When "detailed" is specified (the default), each part of a doc-comment
+(tag names, parameter names, descriptive text, etc.) gets its own
+HTML class.  When "block" is specified, the entire doc-comment is
+highlighted as a single block.
+
 #### `executor` {#executor}
 
-Allows executor extensions in the code block.
+Enables Executor extensions in the code block.
 
+#### `experimental` {#experimental}
+
+Enables Experimental features in the code block.
 
 #### <code>extraletters=<em>string</em></code> {#extraletters}
 
@@ -147,12 +175,24 @@ el haya se halla.
 The End
 ~~~
 
-#### <code>patch=<em>filename</em></code> {#patch}
+#### <code>patch=<em>"patches"</em></code> {#patch}
 
-File *filename* will contain the style patch file applied to this code block.
+A semicolon-separated list of inline style patches to be applied
+to the code block.
+
+#### <code>patchfile=<em>filename</em></code> {#patchfile}
+
+Apply the style patches contained in *filename* to the code block.
 *Filename* is relative to the file containing the code block.
 
-#### <code>source=<em>filename</em></code>
+#### <code>size=<em>size</em></code> {#size}
+
+Add <code>style="font-size:<em>size</em>"</code> to the `<pre>` block
+(HTML only).  This allows overriding the font size for individual
+code blocks.  The value is used as-is in the CSS `font-size` property,
+so any valid CSS size value is accepted (e.g. `size=10pt`, `size=0.8em`).
+
+#### <code>source=<em>filename</em></code> {#source}
 
 Read the code to highlight from *filename* instead of the code block.
 *Filename* is relative to the file containing the code block.
@@ -176,23 +216,21 @@ See also [.numberLines](#numberlines) and [numberWidth](#numberwidth).
 Exit
 ~~~
 
-See also [.numberLines](#numberlines).
-
-#### <code>style=<em>style</em></code>
+#### <code>style=<em>style</em></code> {#style}
 
 Enclose the code with a <code>&lt;div class="highlight-rexx-<em>style</em>"&gt;</code> tag.
 Default is "dark". Style names can only use uppercase or lowercase ANSI letters or numbers
-(i.e., XRange("ALNUM"), plus ".", "-" or "_".
+(i.e., XRange("ALNUM")), plus ".", "-" or "_".
 
 #### `tutor` {#tutor}
 
-Enables experimental [TUTOR-flavored Unicode support](/rexx-parser/doc/unicode/).
+Enables [TUTOR-flavored Unicode support](/rexx-parser/doc/unicode/).
 
 See also [unicode](#unicode).
 
 #### `unicode` {#unicode}
 
-Enables experimental [TUTOR-flavored Unicode support](/rexx-parser/doc/unicode/)..
+Enables [TUTOR-flavored Unicode support](/rexx-parser/doc/unicode/).
 
 See also [tutor](#tutor).
 

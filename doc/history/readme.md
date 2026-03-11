@@ -35,6 +35,8 @@ Version history
   <li> Add arbitrary size support to md2pdf and CGI (thanks, JLF!) (20260310).
   <li> Add `--css` option to md2pdf (thanks, JLF!) (20260310).
   <li> Improve size system to 10,11,12,13 and 14pt (20260310).
+  <li> Add caption attribute to rexx fenced code blocks (20260311).
+  <li> Add automatic numbering to captioned figures and listings (20260311).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

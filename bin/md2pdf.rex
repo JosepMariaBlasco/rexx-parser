@@ -21,6 +21,7 @@
 /* 20260308         Add -xtr, --executor, -exp, --experimental, -u, --unicode */
 /* 20260310         Allow arbitrary sizes (thanks, JLF!)                      */
 /* 20260310         Add -c, --css option (thanks, JLF!)                       */
+/* 20260310         Implement figure and code captions                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -64,7 +65,8 @@
   fixOutline     = 0
   size           = 12
   continue       = 0
-  sectionNumbers = 0
+  sectionNumbers = -1                     -- -1 = use docclass default
+  numberFigures  = 1
   executor       = 0
   experimental   = 0
   unicode        = 0
@@ -110,6 +112,7 @@ ProcessOptions:
       End
       When "-xtr", "--executor"           Then executor     = 1
       When "-exp", "--experimental"       Then experimental = 1
+      When "--no-number-figures"          Then numberFigures = 0
       When "-u", "--tutor", "--unicode"   Then unicode      = 1
       When "--default"        Then Do
         If args~size == 0 Then
@@ -306,7 +309,7 @@ BatchMode:
 
 ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   defaultTheme defaultOptions language outline fixOutline size continue -
-  itrace csl sectionNumbers executor experimental unicode mode
+  itrace csl sectionNumbers executor experimental unicode mode numberFigures
 
   Use Strict Arg file, requestedDocClass, outputDir = ""
 
@@ -338,6 +341,14 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
    .Error~Say( "File '"docClassFile"' is a directory." )
     Return 1
   End
+
+  -- Resolve sectionNumbers default based on document class
+  If sectionNumbers == -1 Then
+    Select Case thisDocClass
+      When "book"   Then sectionNumbers = 2  -- chapter, section, subsection
+      When "slides" Then sectionNumbers = 0  -- no numbering in slides
+      Otherwise          sectionNumbers = 3  -- section, subsection, subsubsection
+    End
 
   sizeFile = cssDir"/print/"thisDocClass"-"size"pt.css"
   If \.File~new(sizeFile)~exists Then Do
@@ -481,6 +492,16 @@ AllWentWell:
     sectionNumbersHandler = ""
   End
 
+  If numberFigures
+    Then numberFiguresClass = "number-figures"
+    Else numberFiguresClass = ""
+
+  /* Load numberFigures.js — handles data-caption on code blocks             */
+  /* and numbers <figure> elements when "number-figures" class is present.    */
+  numberFigures = rootDir"/js/numberFigures.js"
+  chunk = CharIn(numberFigures, 1, Chars(numberFigures) )
+  figuresHandler = "<script>"chunk"</script>"
+
   Select Case fileName
     When "article", "slides", "book" Then Do
       Parse Caseless Var contents With "<h1" ">"title"</"
@@ -518,7 +539,9 @@ AllWentWell:
     ~caselessChangeStr("%Content%",        contents           ) -
     ~caselessChangeStr("%Title%",          title              ) -
     ~caselessChangeStr("%TOCHandler%",     TOCHandler         ) -
+    ~caselessChangeStr("%FiguresHandler%", figuresHandler     ) -
     ~caselessChangeStr("%SectionNumbers%", sectionNumbersClass) -
+    ~caselessChangeStr("%NumberFigures%",  numberFiguresClass ) -
     ~caselessChangeStr("%SectionNumbersHandler%", sectionNumbersHandler)
 
   Call SysFileDelete htmlFilename
@@ -647,6 +670,8 @@ Options:
 -it, --itrace         Print internal traceback on error
 -l, --language CODE   Set document language (e.g. en, es, fr)
 --section-numbers n   Number sections down to depth n (0=off, max 4)
+                      Default: 3 for article, 2 for book, 0 for slides
+--no-number-figures   Disable automatic figure/listing numbering
 --size SIZE           Set the size in pt (default: 12)
 --outline n           Generate outline with H1,...,Hn (default: 3)
 --fix-outline         Fix PDF so that the outline shows automatically
@@ -686,11 +711,12 @@ See myhelp for details.
   <body>
     <div class='container bg-white' lang='en'>
       <div class="row">
-         <div class="content %SectionNumbers%">
+         <div class="content %SectionNumbers% %NumberFigures%">
             %Content%
          </div>
       </div>
     </div>
+    %FiguresHandler%
     %SectionNumbersHandler%
     %TOCHandler%
   </body>

@@ -46,6 +46,7 @@
 /* 20260303    0.5  Add support for letter docclass                           */
 /* 20260303         Add support for numbered section headers                  */
 /* 20260310         Allow arbitrary sizes (thanks, JLF!)                      */
+/* 20260310         Add support for figure/listing captions and numbering     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -122,7 +123,8 @@ Exit
 
   ------------------------------------------------------------------------------
   -- Accepted parameters are "style=styleName", "print=pdf", "size=n",        --
-  -- "sections=n", and "view=highlight" (only for .rex and .cls files)        --
+  -- "sections=n", "figures", and "view=highlight" (only for .rex and .cls    --
+  -- files).                                                                  --
   -- When style=styleName is specified, the program will search for a file    --
   -- called rexx-<stylename>.css in the css subdirectory.                     --
   -- For security reasons, only letters, numbers, periods, dashes and         --
@@ -133,7 +135,8 @@ Exit
   view           = "text"
   size           = 12
   print          = 0
-  sectionNumbers = 0
+  sectionNumbers = -1
+  numberFigures  = 1
   If uri~contains("?")  Then Do
     Parse Var uri uri"?"parameters
     Loop While parameters \== ""
@@ -141,6 +144,8 @@ Exit
       ok = 1
       Select
         When param == "print=pdf" Then print = 1
+        When param == "numberfigures=0" Then numberFigures = 0
+        When param == "numberfigures=1" Then numberFigures = 1
         When param~startsWith("view="), -
           (uri~endsWith(".cls") | uri~endsWith(".rex")) Then Do
           Parse Var param "view="view
@@ -202,6 +207,15 @@ Exit
     When "letter.md"  Then filenameSpecificStyle = "print/letter"
     Otherwise              filenameSpecificStyle = "markdown"
   End
+
+  -- Resolve sectionNumbers default based on filename
+  If sectionNumbers == -1 Then
+    Select Case fileName
+      When "book.md"   Then sectionNumbers = 2  -- chapter, section, subsection
+      When "slides.md" Then sectionNumbers = 0  -- no numbering in slides
+      Otherwise             sectionNumbers = 3  -- section, subsection, subsubsection
+    End
+
   printStyle = Stream(file".css","c","Q exists")
   If printStyle \== "" Then Do
     p = LastPos(.File~separator,printStyle)
@@ -302,6 +316,10 @@ Exit
     Then sectionNumbersClass = "section-numbers-"sectionNumbers
     Else sectionNumbersClass = ""
 
+  If numberFigures
+    Then numberFiguresClass = "number-figures"
+    Else numberFiguresClass = ""
+
   template = .Resources~HTML
 
   Do line Over template
@@ -319,6 +337,8 @@ Exit
       When "%printsections%"  Then
         If print & sectionNumbers > 0 Then
           Say "<script src='/rexx-parser/js/numberSections.js'></script>"
+      When "%printfigures%"   Then
+        Say "<script src='/rexx-parser/js/numberFigures.js'></script>"
       When "%printstyle%"    Then
         If printStyle \== "" Then
           Say "    <link rel='stylesheet' media='print' href='"printStyle"'>"
@@ -340,7 +360,8 @@ Exit
                 "href='/rexx-parser/css/"filenameSpecificStyle"-"size"pt.css'>"
         End
       End
-      Otherwise Say line~changeStr("%SectionNumbers%", sectionNumbersClass)
+      Otherwise Say line~changeStr("%SectionNumbers%", sectionNumbersClass) -
+                        ~changeStr("%NumberFigures%",  numberFiguresClass)
     End
   End
 
@@ -510,7 +531,7 @@ View:
       <div class='row'>
         <div class='col-md-9'>
           %contentheader%
-          <div class='content %SectionNumbers%'>
+          <div class='content %SectionNumbers% %NumberFigures%'>
             %contents%
           </div>
         </div>
@@ -522,6 +543,7 @@ View:
     </div>
     <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
     <script src="/js/bootstrap.min.js"></script>
+    %printFigures%
     %printSections%
     %printTOC%
     <script src="/js/chooser.js"></script>

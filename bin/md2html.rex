@@ -22,6 +22,7 @@
 /* 20260102         Standardize help options to -h and --help                 */
 /* 20260307    0.5  Add single-file mode                                      */
 /* 20260308         Add --section-numbers option                              */
+/* 20260310         Add figure/listing caption support and numbering          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -54,7 +55,8 @@
   cssbase        = ""
   jsbase         = ""
   itrace         = 0
-  sectionNumbers = 0
+  sectionNumbers = -1                     -- -1 = use docclass default
+  numberFigures  = 1
   path           = ""
   continue       = 0
 
@@ -82,6 +84,7 @@ ProcessOptions:
           Call Error "Section number depth should be a whole number between 0 and 4, found '"sectionNumbers"'."
         args~delete(1)
       End
+      When "--no-number-figures" Then numberFigures = 0
       When "-c", "--css" Then Do
         If args~size == 0 Then
           Call Error "Missing base directory after '"option"' option."
@@ -322,7 +325,8 @@ TemplateFound:
     End
     Say Time("Long") "Processing" file"..."
     Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, -
-      itrace, attributes, continue, sectionNumbers, singleFileMode
+      itrace, attributes, continue, sectionNumbers, singleFileMode, -
+      numberFigures
     processed += 1
   End
 
@@ -349,7 +353,7 @@ DoSingleFile:
   Call Directory fileObj~parentFile~absolutePath
   Call ProcessFile fileObj, destDir, fileObj~absolutePath, template, -
     cssbase, jsbase, itrace, attributes, continue, sectionNumbers, -
-    singleFileMode
+    singleFileMode, numberFigures
 
   Say Copies("-",80)
   Say Time("Long") "Processed 1 file, took" Time("E") "seconds."
@@ -375,7 +379,7 @@ Help:
 ::Routine ProcessFile
   Use Strict Arg file, directory, sourceFn, template, -
     cssbase, jsbase, itrace, attributes, continue, sectionNumbers, -
-    singleFileMode
+    singleFileMode, numberFigures
 
   filename = file~absolutePath
   name     = FileSpec("Name",filename)
@@ -511,9 +515,23 @@ AllWentWell: Nop
   -- Copy the HTML resource, with some substitutions                          --
   ------------------------------------------------------------------------------
 
+  -- Resolve sectionNumbers default based on filename
+  If sectionNumbers == -1 Then Do
+    baseName = Left(name, Length(name) - 3)  -- Remove ".md"
+    Select Case baseName
+      When "book"   Then sectionNumbers = 2  -- chapter, section, subsection
+      When "slides" Then sectionNumbers = 0  -- no numbering in slides
+      Otherwise          sectionNumbers = 3  -- section, subsection, subsubsection
+    End
+  End
+
   If sectionNumbers > 0
     Then sectionNumbersClass = "section-numbers-"sectionNumbers
     Else sectionNumbersClass = ""
+
+  If numberFigures
+    Then numberFiguresClass = "number-figures"
+    Else numberFiguresClass = ""
 
   Do line Over template
     Select Case Strip(Lower(line))
@@ -536,7 +554,15 @@ AllWentWell: Nop
           res~append(                                                       -
             "    <link rel='stylesheet' href='"cssbase"/"filenameSpecificStyle".css'>"   -
           )
-      Otherwise res~append( line~changeStr("%SectionNumbers%", sectionNumbersClass) )
+      When "%printfigures%"  Then
+        If jsbase \== "" Then
+          res~append(                                                       -
+            "    <script src='"jsbase"/numberFigures.js'></script>"         -
+          )
+      Otherwise res~append( line                                            -
+        ~changeStr("%SectionNumbers%", sectionNumbersClass)                 -
+        ~changeStr("%NumberFigures%",  numberFiguresClass)                  -
+      )
     End
   End
 
@@ -617,6 +643,8 @@ Options:
 -j jsbase, --js jsbase     Where to locate the JavaScript files
 -p path, --path path       Search path for default.md2html and md2html.custom.rex
 --section-numbers n        Number sections down to depth n (0=off, max 4)
+                           Default: 3 for article, 2 for book, 0 for slides
+--no-number-figures        Disable automatic figure/listing numbering
 
 cssbase and jsbase default to "css" and "js" subdirectories
 in the destination directory, when they exist.

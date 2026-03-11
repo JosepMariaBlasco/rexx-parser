@@ -33,6 +33,7 @@
 /*  13. Footnotes (base)                                                      */
 /*  14. Bibliographies (Pandoc CSL)                                           */
 /*  15. Section numbering (opt-in via class on div.content)                   */
+/*  16. Figures and listings (captions, numberFigures.js)                     */
 /*                                                                            */
 /* Version history:                                                           */
 /*                                                                            */
@@ -42,7 +43,8 @@
 /* 20260308         Add support for optional numbered headers                 */
 /* 20260309         Fix: use descendant selectors for section numbering so    */
 /*                  that paged.js fragment wrappers do not break counters;    */
-/*                  explicitly exclude .title-page, .toc-exclude, .abstract  */
+/*                  explicitly exclude .title-page, .toc-exclude, .abstract   */
+/* 20260310         Implement figure and code captions                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -600,4 +602,57 @@ div.content.sections-numbered[class*="section-numbers-"] h2::before,
 div.content.sections-numbered[class*="section-numbers-"] h3::before,
 div.content.sections-numbered[class*="section-numbers-"] h4::before {
   content: none;
+}
+/******************************************************************************/
+/* 16. Figures and Listings                                                   */
+/******************************************************************************/
+/*                                                                            */
+/* Styling for <figure> elements (images) and <figure class="listing">        */
+/* (code blocks with captions).  Numbers are injected by numberFigures.js     */
+/* when div.content carries the class "number-figures".                       */
+/*                                                                            */
+/******************************************************************************/
+
+figure {
+  margin: 1em 0;
+  text-align: center;
+  break-inside: avoid;
+}
+
+figure img {
+  max-width: 100%;
+  height: auto;
+}
+
+figure.listing {
+  text-align: left;
+  margin: 1em 0;
+}
+
+figure.listing pre {
+  margin-top: 0;
+}
+
+figcaption {
+  font-size: 0.9em;
+  color: #444;
+  margin-top: 0.5em;
+  text-align: center;
+  text-align-last: center;
+}
+
+figure.listing figcaption {
+  text-align: left;
+  text-align-last: left;
+  margin-top: 0;
+  margin-bottom: 0.075em;
+  break-after: avoid;
+}
+
+figure:not(.listing) figcaption {
+  break-before: avoid;
+}
+
+.figure-number {
+  font-weight: bold;
 }

@@ -44,7 +44,8 @@ Options
 `-it`, `--itrace`                                                                 Print internal traceback on error
 <code>-j <em>jsbase</em></code>, <code>--js  <em>jsbase</em></code>               Where to locate the JavaScript files
 <code>-p <em>path</em></code>, <code>--path  <em>path</em></code>                 First path to search for `default.md2html` and `md2html.custom.rex`
-`--section-numbers` N                                                             Number sections down to depth N (0=off, max 4)
+`--section-numbers` N                                                             Override section numbering depth (0=off, max 4)
+`--no-number-figures`                                                             Disable automatic figure/listing numbering
 --------------------------------------------------------------------------------- ------------------------------
 
 \
@@ -177,8 +178,18 @@ appear alone on a line, in lowercase):
 : Replaced early during template loading with the values of the corresponding options.
 
 `%SectionNumbers%`
-: Replaced by the CSS class for section numbering (e.g. `section-numbers-3`),
-  or by an empty string when `--section-numbers` is not specified or is 0.
+: Replaced by the CSS class for section numbering (e.g. `section-numbers-3`).
+  The default depth depends on the filename: 3 for `article` (and others),
+  2 for `book`, 0 for `slides`.  Use `--section-numbers 0` to disable.
+
+`%NumberFigures%`
+: Replaced by `number-figures` when figure/listing numbering is active
+  (the default), or by an empty string when `--no-number-figures` is specified.
+
+`%printFigures%`
+: Inserts a `<script>` tag loading `numberFigures.js` from the JavaScript
+  base directory.  This script processes `data-caption` attributes on code
+  blocks and numbers figures and listings.
 
 Structure of the `md2html.custom.rex` file
 ------------------------------------------
