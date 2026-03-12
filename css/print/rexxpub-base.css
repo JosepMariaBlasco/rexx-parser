@@ -633,6 +633,10 @@ figure.listing pre {
   margin-top: 0;
 }
 
+figure.listing div.sourceCode {
+  margin-top: 0;
+}
+
 figcaption {
   font-size: 0.9em;
   color: #444;

@@ -50,6 +50,7 @@
 /* 20260312         Add limited support for YAML front matter blocks          */
 /* 20260312         Add YAML support for docclass and language                */
 /* 20260312         Add YAML listings: and figures: sub-options               */
+/* 20260312         Add YAML highlight-style for Pandoc syntax highlighting  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -140,6 +141,7 @@ Exit
   size           = 12
   print          = 0
   language       = "en"
+  highlightStyle = "pygments"
   sectionNumbers = -1
   numberFigures  = 1
 
@@ -330,6 +332,10 @@ Exit
     End
   End
 
+  -- Read highlight-style from top-level YAML (standard Pandoc metadata)
+  If yaml \== .Nil, yaml~hasIndex("highlight-style") Then
+    highlightStyle = Lower(yaml["highlight-style"])
+
   -- Resolve sectionNumbers default based on docclass
   -- (uses filenameSpecificStyle which may have been overridden by YAML)
   If sectionNumbers == -1 Then
@@ -450,6 +456,8 @@ Exit
       " break-after: auto; break-before: avoid;"             -
       " margin-top: 0.075em; margin-bottom: 0; }" || "0a"x  -
       || "figure.listing pre {"                              -
+      " margin-bottom: 0; }" || "0a"x                       -
+      || "figure.listing div.sourceCode {"                   -
       " margin-bottom: 0; }" || "0a"x
   If listingCaptionStyle == "italic" Then
     overrideCSS ||= "figure.listing figcaption {"            -
@@ -535,6 +543,12 @@ Exit
             Say "    <link rel='stylesheet'" -
                 "href='/rexx-parser/css/"filenameSpecificStyle"-"size"pt.css'>"
         End
+      End
+      When "%highlightstyle%"            Then Do
+        pandocCSSName = highlightStyle".css"
+        If .File~new(.MyPath"../css/pandoc/"pandocCSSName)~exists Then
+          Say "    <link rel='stylesheet'" -
+              "href='/rexx-parser/css/pandoc/"pandocCSSName"'>"
       End
       When "%listingsstyle%"             Then
         If overrideCSS \== "" Then
@@ -700,6 +714,7 @@ View:
 %usedStyles%
     %filenameSpecificStyle%
     %sizeSpecificStyle%
+    %highlightStyle%
     %printStyle%
     %printJs%
     %listingsStyle%

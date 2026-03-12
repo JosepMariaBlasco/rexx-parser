@@ -142,6 +142,34 @@ passes the style name to Pandoc explicitly.  When a `csl` field is
 present in the YAML front matter, Pandoc uses it regardless of the
 `--csl` command-line option.
 
+### Syntax highlighting style (`highlight-style`)
+
+The `highlight-style` field is a standard Pandoc metadata field
+and should be placed at the top level of the YAML front matter,
+not under `rexxpub:`:
+
+```
+---
+highlight-style: kate
+rexxpub:
+  style: dark
+---
+```
+
+This option selects the CSS theme used for syntax highlighting
+of non-Rexx fenced code blocks (Python, Java, SQL, etc.).  These
+blocks are highlighted by Pandoc's built-in skylighting engine;
+RexxPub loads the corresponding CSS from the `css/pandoc/`
+directory.  The available styles are: `pygments` (the default),
+`kate`, `tango`, `espresso`, `zenburn`, `monochrome`,
+`breezeDark`, and `haddock`.
+
+This option does not affect Rexx code blocks, which use the
+Rexx Highlighter and the `style` option under `rexxpub:`.
+
+Note: `md2pdf` also accepts a `--pandoc-highlighting-style`
+command-line option.
+
 ### Listing options (`listings:`)
 
 The `listings:` nested group controls the appearance of code

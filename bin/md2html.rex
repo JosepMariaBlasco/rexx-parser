@@ -26,6 +26,7 @@
 /* 20260312         Add limited support for YAML front matter blocks          */
 /* 20260312         Add YAML support for language; template %Language%        */
 /* 20260312         Add YAML listings: and figures: sub-options               */
+/* 20260312         Add YAML highlight-style for Pandoc syntax highlighting  */
 /*                                                                            */
 /******************************************************************************/
 
@@ -59,6 +60,7 @@
   jsbase         = ""
   itrace         = 0
   language       = "en"
+  highlightStyle = "pygments"
   sectionNumbers = -1                     -- -1 = use docclass default
   numberFigures  = 1
   path           = ""
@@ -482,6 +484,10 @@ Help:
     End
   End
 
+  -- Read highlight-style from top-level YAML (standard Pandoc metadata)
+  If yaml \== .Nil, yaml~hasIndex("highlight-style") Then
+    highlightStyle = Lower(yaml["highlight-style"])
+
   contents = .Array~new                 -- Will hold the pandoc translation
   res      = .Array~new                 -- Will hold the final result
 
@@ -648,6 +654,8 @@ AllWentWell: Nop
       " break-after: auto; break-before: avoid;"             -
       " margin-top: 0.075em; margin-bottom: 0; }" || "0a"x  -
       || "figure.listing pre {"                              -
+      " margin-bottom: 0; }" || "0a"x                       -
+      || "figure.listing div.sourceCode {"                   -
       " margin-bottom: 0; }" || "0a"x
   If listingCaptionStyle == "italic" Then
     overrideCSS ||= "figure.listing figcaption {"            -
@@ -714,6 +722,11 @@ AllWentWell: Nop
         If filenameSpecificStyle \== ""   Then
           res~append(                                                       -
             "    <link rel='stylesheet' href='"cssbase"/"filenameSpecificStyle".css'>"   -
+          )
+      When "%highlightstyle%"            Then
+        If cssbase \== "" Then
+          res~append(                                                       -
+            "    <link rel='stylesheet' href='"cssbase"/pandoc/"highlightStyle".css'>" -
           )
       When "%listingsstyle%"             Then
         If overrideCSS \== "" Then

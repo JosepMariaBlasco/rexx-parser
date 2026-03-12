@@ -65,6 +65,7 @@
 -- For example, if readme.md is being processed and a file called readme.md.css
 -- is found in the same directory, a reference to it will be inserted here.
     %printStyle%
+    %highlightStyle%
     %listingsStyle%
   </head>
   <body>

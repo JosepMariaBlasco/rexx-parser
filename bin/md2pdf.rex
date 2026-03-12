@@ -25,6 +25,7 @@
 /* 20260312         Add limited support for YAML front matter blocks          */
 /* 20260312         Add YAML support for docclass, language, and outline      */
 /* 20260312         Add YAML listings: and figures: sub-options               */
+/* 20260312         Add YAML highlight-style; --pandoc-highlighting-style CLI */
 /*                                                                            */
 /******************************************************************************/
 
@@ -76,6 +77,7 @@
   unicode        = 0
   itrace         = 0
   cssDir         = ""
+  highlightStyle = "pygments"            -- Default Pandoc highlight style
   checkDeps      = 0
 
 ProcessOptions:
@@ -155,6 +157,12 @@ ProcessOptions:
         If args~size == 0 Then
           Call Error "Missing class name after '"option"' option."
         docClass = Lower(args[1])
+        args~delete(1)
+      End
+      When "--pandoc-highlighting-style" Then Do
+        If args~size == 0 Then
+          Call Error "Missing style name after '"option"' option."
+        highlightStyle = Lower(args[1])
         args~delete(1)
       End
       Otherwise Call Error "Invalid option '"option"'."
@@ -316,7 +324,8 @@ BatchMode:
 
 ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   defaultTheme cliStyle defaultOptions language outline fixOutline size continue -
-  itrace csl sectionNumbers executor experimental unicode mode numberFigures
+  itrace csl sectionNumbers executor experimental unicode mode numberFigures -
+  highlightStyle
 
   Use Strict Arg file, requestedDocClass, outputDir = ""
 
@@ -460,6 +469,10 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
     End
   End
 
+  -- Read highlight-style from top-level YAML (standard Pandoc metadata)
+  If yaml \== .Nil, yaml~hasIndex("highlight-style") Then
+    highlightStyle = Lower(yaml["highlight-style"])
+
   -- Resolve sectionNumbers default based on document class
   If sectionNumbers == -1 Then
     Select Case thisDocClass
@@ -489,11 +502,22 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   tmpDir       = .File~temporaryPath~absolutePath
   htmlFilename =  SysTempFileName(tmpDir"/"name"?????.html")
 
-  -- Build the full CSS: common + docclass + size
+  -- Build the full CSS: common + docclass + size + pandoc highlighting
   CSS          =  commonCSS
   CSS        ||=  CharIn(docClassFile, 1, Chars(docClassFile) )
   If sizeFile \== "" Then
     CSS      ||=  CharIn(sizeFile,     1, Chars(sizeFile)     )
+
+  -- Load Pandoc syntax highlighting CSS
+  pandocCSSFile = cssDir"/pandoc/"highlightStyle".css"
+  If .File~new(pandocCSSFile)~exists Then
+    CSS      ||=  CharIn(pandocCSSFile, 1, Chars(pandocCSSFile) )
+  Else Do
+    -- Fall back to pygments if the requested style is not found
+    pandocCSSFile = cssDir"/pandoc/pygments.css"
+    If .File~new(pandocCSSFile)~exists Then
+      CSS    ||=  CharIn(pandocCSSFile, 1, Chars(pandocCSSFile) )
+  End
 
   HTML         =  HTMLtemplate
 
@@ -637,6 +661,8 @@ AllWentWell:
       " break-after: auto; break-before: avoid;"             -
       " margin-top: 0.075em; margin-bottom: 0; }" || "0a"x  -
       || "figure.listing pre {"                              -
+      " margin-bottom: 0; }" || "0a"x                       -
+      || "figure.listing div.sourceCode {"                   -
       " margin-bottom: 0; }" || "0a"x
   If listingCaptionStyle == "italic" Then
     overrideCSS ||= "figure.listing figcaption {"            -
@@ -865,6 +891,9 @@ Options:
 --fix-outline         Fix PDF so that the outline shows automatically
                       (requires python and pikepdf)
 --style NAME          Set the default visual theme for Rexx code blocks
+--pandoc-highlighting-style NAME
+                      Set Pandoc syntax highlighting theme for non-Rexx
+                      code blocks (default: pygments)
 -u, --tutor,
     --unicode         Enable TUTOR-flavoured Unicode for all code blocks
 -xtr, --executor      Enable Executor support for all code blocks

@@ -2323,6 +2323,7 @@ beginning of the file.  RexxPub options are placed under the
 ---
 bibliography: references.bib
 csl: ../../../../csl/rexxpub.csl
+highlight-style: pygments
 rexxpub:
   section-numbers: 3
   number-figures: true
@@ -2333,9 +2334,15 @@ rexxpub:
 ---
 ```
 
-Pandoc reads the top-level fields (`bibliography`, `csl`) for its
-own processing.  RexxPub reads the fields under `rexxpub:` to
-configure the output.  Both share the same front matter block.
+Pandoc reads the top-level fields (`bibliography`, `csl`,
+`highlight-style`) for its own processing.  RexxPub reads the
+fields under `rexxpub:` to configure the output.  Both share the
+same front matter block.
+
+The `highlight-style` field selects the CSS theme for syntax
+highlighting of non-Rexx fenced code blocks; the available styles
+are `pygments` (the default), `kate`, `tango`, `espresso`,
+`zenburn`, `monochrome`, `breezeDark`, and `haddock`.
 
 The currently supported top-level options under `rexxpub:` are
 `style` (highlighting style), `size` (base font size),

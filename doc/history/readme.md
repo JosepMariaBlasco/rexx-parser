@@ -42,6 +42,8 @@ Version history
        and <code>outline</code> options (20260312).
   <li> YAML front matter: add <code>listings:</code> and <code>figures:</code>
        sub-options for configuring captions (20260312).
+  <li> Add Pandoc syntax highlighting for non-Rexx fenced code blocks,
+       with configurable <code>highlight-style</code> (20260312).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).
