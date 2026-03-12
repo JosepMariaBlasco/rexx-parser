@@ -122,8 +122,9 @@ All classes share a common core of typographic conventions: the
 `booktabs` table style, the academic link colour, the blockquote
 treatment, and the code block styling that protects the Rexx
 Highlighter output.  The paginated classes (all except `slides`)
-provide three base font sizes --- 10pt, 12pt, and 14pt --- through
-a parametric system of CSS custom properties.
+support parametric sizing through CSS custom properties; pre-built
+overrides are provided at 10pt, 12pt (the default), and 14pt, and
+additional sizes can be added by creating the corresponding CSS file.
 
 The document you are now reading is itself a `book.md` file, rendered
 by the book document class.  Everything you see on the page ---
@@ -439,8 +440,9 @@ To change the base font size, pass the `--size` option:
 
 ::: noindent
 This produces a 10pt version with wider margins, keeping the line
-length comfortable.  The available sizes are 10, 12 (the default),
-and 14.
+length comfortable.  Pre-built sizes are 10, 12 (the default), and
+14; additional sizes can be added by creating the corresponding CSS
+file (e.g., `article-11pt.css`).
 :::
 
 Viewing in the browser
@@ -589,14 +591,31 @@ md2pdf uses the flattened versions of the Highlighter stylesheets
 (which contain all CSS in a single file) rather than the modular
 versions used by the CGI program.
 
-`--size SIZE` sets the base font size.  The accepted values are 10,
-12, and 14; the default is 12.  When a size other than 12 is
-selected, md2pdf loads the corresponding override stylesheet (for
-example, `article-10pt.css`) in addition to the main document class
-stylesheet.
+`--size SIZE` sets the base font size.  The default is 12.  When a
+size other than 12 is selected, md2pdf loads the corresponding
+override stylesheet (for example, `article-10pt.css`) in addition to
+the main document class stylesheet.  Pre-built overrides are provided
+at 10pt and 14pt; additional sizes can be added by creating the
+corresponding CSS file.
+
+`-c DIR` or `--css DIR` sets the CSS base directory.  When specified,
+all CSS files are loaded from this directory instead of the default
+`css/` directory inside the Rexx Parser installation.  The directory
+is expected to contain the same internal structure: `bootstrap.css`
+at the root, highlighting styles under `flattened/`, and document
+class styles under `print/`.
 
 `--docclass CLASS` overrides the document class that would normally
 be inferred from the filename.
+
+`--section-numbers N` overrides the section numbering depth.  The
+default depends on the document class: 3 for `article` (and
+`default`, `letter`), 2 for `book`, and 0 for `slides`.  Use
+`--section-numbers 0` to disable numbering.
+
+`--no-number-figures` disables the automatic numbering of figures
+and code listings.  Captions are still displayed, but without a
+number prefix.
 
 `--csl NAME` sets the Citation Style Language style for bibliographic
 references.  The default is `rexxpub`.  The style name must correspond
@@ -806,12 +825,14 @@ CGI environment variables.  The processing then follows these steps.
 
 The program first examines the query string for recognised
 parameters: `style=` to select a highlighting style, `size=` to
-choose a base font size (10, 12, or 14), `print=pdf` to activate
-paged.js pagination, and `view=highlight` to request highlighted
-display of `.rex` or `.cls` files.  Unrecognised parameters, or
-parameters with invalid values, result in a 404 response --- a
-deliberate security choice that avoids leaking information about the
-server's capabilities.
+choose a base font size, `sections=` to override the section
+numbering depth, `numberfigures=0` to disable automatic
+figure/listing numbering, `print=pdf` to activate paged.js
+pagination, and `view=highlight` to request highlighted display of
+`.rex` or `.cls` files.  Unrecognised parameters, or parameters with
+invalid values, result in a 404 response --- a deliberate security
+choice that avoids leaking information about the server's
+capabilities.
 
 The style parameter is validated in two ways: first, the style name
 is checked against a whitelist of allowed characters (alphanumeric,
@@ -1456,8 +1477,9 @@ page works across all three.
 Parametric sizing
 -----------------
 
-The article class supports 10pt, 12pt, and 14pt through the
-size-specific override stylesheets.  All values are derived from the
+The article class ships with pre-built overrides at 10pt, 12pt, and
+14pt through the size-specific override stylesheets; additional sizes
+can be added by creating the corresponding CSS file.  All values are derived from the
 LaTeX `article` class at each point size, with minor adjustments for
 Times New Roman.  The parametric sizing table, with the five CSS
 custom properties and the corresponding page margins, is documented
@@ -2012,8 +2034,9 @@ Parametric sizing with CSS custom properties
 --------------------------------------------
 
 The parametric sizing system emerged from a specific design goal:
-supporting the three standard LaTeX sizes (10pt, 12pt, 14pt) without
-duplicating the entire stylesheet for each size.
+supporting multiple font sizes (with the three standard LaTeX sizes
+--- 10pt, 12pt, 14pt --- as the initial targets) without duplicating
+the entire stylesheet for each size.
 
 The solution is a set of five CSS custom properties (the `--doc-*`
 variables) that control all size-dependent parameters.  The main
@@ -2197,6 +2220,10 @@ reports their versions.  The program exits after the check.
 `--continue` continues processing when a file fails in batch mode,
 rather than aborting.
 
+`-c dir` or `--css dir` sets the CSS base directory, allowing custom
+styles and document classes independently of the Rexx Parser
+installation.
+
 `--csl file` specifies a Citation Style Language file for
 bibliographic references (default: `rexxpub`).  Pandoc's `--citeproc`
 is always enabled; this option controls the citation format.
@@ -2222,14 +2249,20 @@ pikepdf.
 `-l language` or `--language language` sets the document language
 (passed to Pandoc as the `lang` attribute).
 
+`--no-number-figures` disables the automatic numbering of figures
+and code listings.
+
 `--outline` generates a PDF document outline from the heading
 structure.
 
-`--size N` selects the base font size.  The accepted values are
-`10`, `12` (the default), and `14`.
+`--section-numbers N` overrides the section numbering depth (default:
+3 for article, 2 for book, 0 for slides).
+
+`--size N` selects the base font size (default: 12).  The value must
+correspond to an existing size override stylesheet.
 
 `--style name` selects the Rexx Highlighter style (for example,
-`dark`, `light`, `rgfdark`).
+`dark`, `light`, `print`, `rgfdark`).
 
 md2html
 -------
@@ -2265,6 +2298,12 @@ file (`default.md2html`) and the customisation file
 (`md2html.custom.rex`).  The path is searched before the default
 locations (current directory, destination directory, source
 directory, and the Rexx external search order).
+
+`--section-numbers N` overrides the section numbering depth (default:
+3 for article, 2 for book, 0 for slides).
+
+`--no-number-figures` disables the automatic numbering of figures
+and code listings.
 
 
 Dependencies and Installation {.chapter}
@@ -2370,8 +2409,11 @@ letter class.  `slides.css` is the slides class (no size variants).
 for generic Markdown files.
 
 The `rexx-*.css` files are the Rexx Highlighter predefined styles:
-`rexx-dark.css`, `rexx-light.css`, `rexx-rgfdark.css`,
-`rexx-rgflight.css`, and the Vim-derived colour schemes.
+`rexx-dark.css`, `rexx-light.css`, `rexx-print.css` (optimised for
+paper output), `rexx-tokio-night.css`, `rexx-tokio-day.css`,
+`rexx-electric.css`, `rexx-rgfdark.css`, `rexx-rgflight.css`, and
+the Vim-derived colour schemes.  Flattened (un-nested) versions for
+pagedjs-cli compatibility are stored in the `flattened/` subdirectory.
 
 The `csl` directory
 -------------------
@@ -2393,6 +2435,10 @@ pipelines:
 `paged.polyfill.js` is the paged.js polyfill, loaded when
 `?print=pdf` is requested.
 `createToc.js` generates the table of contents for book documents.
+`numberSections.js` numbers section headings following the LaTeX
+convention.
+`numberFigures.js` processes `data-caption` attributes on code blocks
+and numbers figures and listings.
 `chooser.js` handles the style chooser, size chooser, and print
 button in the CGI program's toolbar.
 

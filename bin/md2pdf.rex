@@ -132,11 +132,6 @@ ProcessOptions:
         If args~size == 0 Then
           Call Error "Missing CSS directory after '"option"' option."
         cssDir = args[1]
-        If \SysFileExists(cssDir) Then
-          Call Error "CSS directory '"cssDir"' not found."
-        If \SysIsFileDirectory(cssDir) Then
-          Call Error "'"cssDir"' is not a directory."
-        cssDir = .File~new(cssDir)~absolutePath
         args~delete(1)
       End
       When "-l", "--language" Then Do
@@ -163,6 +158,13 @@ ProcessOptions:
 
   -- Determine the CSS base directory
   If cssDir == "" Then cssDir = rootDir"/css"
+  Else Do
+    If \SysFileExists(cssDir) Then
+      Call Error "CSS directory '"cssDir"' not found."
+    If \SysIsFileDirectory(cssDir) Then
+      Call Error "'"cssDir"' is not a directory."
+    cssDir = .File~new(cssDir)~absolutePath
+  End
 
   -- Validate the highlighting style (common to both modes)
   cssFile = cssDir"/flattened/rexx-"defaultTheme".css"
@@ -460,7 +462,7 @@ AllWentWell:
   loaded  = .Set~new
   rest = contents
   Loop While rest~pos('class="highlight-rexx-') > 0
-    Parse Var rest 'class="highlight-rexx-'extraStyle'">'rest
+    Parse Var rest 'class="highlight-rexx-'extraStyle'"'rest
     If extraStyle == "" Then Iterate
     If extraStyle~verify(allowed) > 0 Then Iterate
     If extraStyle == defaultTheme Then Iterate

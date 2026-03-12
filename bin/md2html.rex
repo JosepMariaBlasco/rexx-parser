@@ -587,7 +587,7 @@ Hack:
   allowed = XRange(AlNum)".-_"
   styles = .Array~new
   Do i = i + 1 To res~items
-    Parse Value res[i] With ' class="highlight-rexx-'style'">'
+    Parse Value res[i] With ' class="highlight-rexx-'style'"'
     If style == "" Then Iterate
     If Verify(style, allowed) > 0 Then Iterate
     If \styles~hasItem(style) Then styles~append(style)

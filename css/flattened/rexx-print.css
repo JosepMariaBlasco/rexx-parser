@@ -1,0 +1,505 @@
+/******************************************************************************/
+/*                                                                            */
+/* rexx-print.css - CSS for Rexx highlighting, print-optimized style         */
+/* =================================================================         */
+/*                                                                            */
+/* Flattened version (no CSS nesting) for pagedjs-cli compatibility.          */
+/*                                                                            */
+/* Designed for paper output: white background, high-contrast colours         */
+/* that remain distinguishable when printed in colour or greyscale.           */
+/* Inspired by the conventions of LaTeX listings and printed textbooks.       */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260310    0.5  First release (flattened)                                  */
+/*                                                                            */
+/******************************************************************************/
+
+/******************************************************************************/
+/******************************************************************************/
+/* BASE SELECTOR: highlight-rexx-print                                        */
+/******************************************************************************/
+/******************************************************************************/
+/*   Format: "highlight-rexx-<stylename>"                                     */
+/*   All rules are prefixed with .highlight-rexx-print (abbreviated           */
+/*   as BASE in comments below).                                              */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Default settings                                                           */
+/* ================                                                           */
+/*                                                                            */
+/*   Pure white background, near-black text.                                  */
+/*   The "rexx" class is used as a fallback when no suitable class is found   */
+/*                                                                            */
+/******************************************************************************/
+
+.highlight-rexx-print pre,
+.highlight-rexx-print .rexx {
+  background-color: #ffffff;
+  color: #1a1a1a;
+}
+
+/******************************************************************************/
+/* Support for line numbers                                                   */
+/* ========================                                                   */
+/******************************************************************************/
+
+/* ANSI Driver only */
+.highlight-rexx-print .rx-lineno {
+  color: #888888;
+  font-style: italic;
+}
+.highlight-rexx-print .rx-linebar {
+  color: #aaaaaa;
+}
+
+/* HTML Driver: numbered lines */
+.highlight-rexx-print pre.number-lines {
+  padding-left: 50px;
+}
+.highlight-rexx-print pre.number-lines.w3 {
+  padding-left: 58px;
+}
+.highlight-rexx-print pre.number-lines.w3 code:before {
+  width: 58px;
+}
+.highlight-rexx-print pre.number-lines.w4 {
+  padding-left: 65px;
+}
+.highlight-rexx-print pre.number-lines.w4 code:before {
+  width: 65px;
+}
+.highlight-rexx-print pre.number-lines.w5 {
+  padding-left: 72px;
+}
+.highlight-rexx-print pre.number-lines.w5 code:before {
+  width: 72px;
+}
+.highlight-rexx-print pre.number-lines code:before {
+  content: attr(lineno) " | ";
+  position: absolute;
+  left: 10px;
+  width: 50px;
+  text-align: right;
+  color: #aaaaaa;
+}
+
+/******************************************************************************/
+/* Whitespace and continuations                                               */
+/* ============================                                               */
+/******************************************************************************/
+
+.highlight-rexx-print .rx-ws,
+.highlight-rexx-print .rx-cont {
+  color: #aaaaaa;
+}
+
+/******************************************************************************/
+/* Standard (non-doc) comments                                                */
+/* ===========================                                                */
+/******************************************************************************/
+
+.highlight-rexx-print .rx-cm,
+.highlight-rexx-print .rx-lncm {
+  color: #606060;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* Doc-comments                                                               */
+/* ============                                                               */
+/******************************************************************************/
+
+.highlight-rexx-print .rx-doc-comment,
+.highlight-rexx-print .rx-doc-comment-markdown {
+  color: #505060;
+  font-style: italic;
+}
+
+.highlight-rexx-print .rx-doc-comment.rx-doc-comment-armature,
+.highlight-rexx-print .rx-doc-comment.rx-doc-comment-whitespace,
+.highlight-rexx-print .rx-doc-comment.rx-doc-comment-main-description,
+.highlight-rexx-print .rx-doc-comment-markdown.rx-doc-comment-armature,
+.highlight-rexx-print .rx-doc-comment-markdown.rx-doc-comment-whitespace,
+.highlight-rexx-print .rx-doc-comment-markdown.rx-doc-comment-main-description {
+  color: #505060;
+  font-style: italic;
+}
+
+.highlight-rexx-print .rx-doc-comment.rx-doc-comment-summary,
+.highlight-rexx-print .rx-doc-comment-markdown.rx-doc-comment-summary {
+  color: #8b4500;
+  text-decoration: underline;
+  font-style: normal;
+}
+
+.highlight-rexx-print .rx-doc-comment.rx-doc-comment-tag,
+.highlight-rexx-print .rx-doc-comment-markdown.rx-doc-comment-tag {
+  color: #9a2040;
+  font-style: normal;
+}
+
+.highlight-rexx-print .rx-doc-comment.rx-doc-comment-tag-value,
+.highlight-rexx-print .rx-doc-comment-markdown.rx-doc-comment-tag-value {
+  color: #6a1b9a;
+  font-style: normal;
+}
+
+.highlight-rexx-print .rx-doc-comment.rx-doc-comment-tag-description,
+.highlight-rexx-print .rx-doc-comment-markdown.rx-doc-comment-tag-description {
+  color: #2e6e4e;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* Shebangs                                                                   */
+/* ========                                                                   */
+/******************************************************************************/
+
+.highlight-rexx-print .rx-shb {
+  color: #9a2040;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/* Keywords and subkeywords, assignment sequences, and "::"                   */
+/* ========================================================                   */
+/******************************************************************************/
+
+.highlight-rexx-print .rx-kw,
+.highlight-rexx-print .rx-skw,
+.highlight-rexx-print .rx-dkw,
+.highlight-rexx-print .rx-dskw,
+.highlight-rexx-print .rx-asg,
+.highlight-rexx-print .rx-dir {
+  color: #2b3d8f;
+  font-weight: bold;
+}
+
+/* Additionally, directive keywords and subkeywords are underlined            */
+
+.highlight-rexx-print .rx-dkw,
+.highlight-rexx-print .rx-dskw {
+  text-decoration: underline;
+}
+
+/******************************************************************************/
+/* Strings (including taken constants that are strings)                       */
+/* ====================================================                       */
+/******************************************************************************/
+
+.highlight-rexx-print .rx-str,
+.highlight-rexx-print .rx-bstr,
+.highlight-rexx-print .rx-xstr,
+.highlight-rexx-print .rx-ystr,
+.highlight-rexx-print .rx-pstr,
+.highlight-rexx-print .rx-gstr,
+.highlight-rexx-print .rx-tstr,
+.highlight-rexx-print .rx-ustr {
+  color: #3a6e2e;
+}
+.highlight-rexx-print .rx-str.rx-ssuf,
+.highlight-rexx-print .rx-bstr.rx-ssuf,
+.highlight-rexx-print .rx-xstr.rx-ssuf,
+.highlight-rexx-print .rx-ystr.rx-ssuf,
+.highlight-rexx-print .rx-pstr.rx-ssuf,
+.highlight-rexx-print .rx-gstr.rx-ssuf,
+.highlight-rexx-print .rx-tstr.rx-ssuf,
+.highlight-rexx-print .rx-ustr.rx-ssuf {
+  color: #a04000;
+}
+.highlight-rexx-print .rx-str.rx-oquo,
+.highlight-rexx-print .rx-str.rx-cquo,
+.highlight-rexx-print .rx-bstr.rx-oquo,
+.highlight-rexx-print .rx-bstr.rx-cquo,
+.highlight-rexx-print .rx-xstr.rx-oquo,
+.highlight-rexx-print .rx-xstr.rx-cquo,
+.highlight-rexx-print .rx-ystr.rx-oquo,
+.highlight-rexx-print .rx-ystr.rx-cquo,
+.highlight-rexx-print .rx-pstr.rx-oquo,
+.highlight-rexx-print .rx-pstr.rx-cquo,
+.highlight-rexx-print .rx-gstr.rx-oquo,
+.highlight-rexx-print .rx-gstr.rx-cquo,
+.highlight-rexx-print .rx-tstr.rx-oquo,
+.highlight-rexx-print .rx-tstr.rx-cquo,
+.highlight-rexx-print .rx-ustr.rx-oquo,
+.highlight-rexx-print .rx-ustr.rx-cquo {
+  color: #6a4000;
+}
+
+/* Taken constants that are strings                                           */
+
+.highlight-rexx-print .rx-const.rx-ssuf {
+  color: #a04000;
+}
+.highlight-rexx-print .rx-const.rx-oquo,
+.highlight-rexx-print .rx-const.rx-cquo {
+  color: #6a4000;
+}
+
+/******************************************************************************/
+/* Numbers                                                                    */
+/* =======                                                                    */
+/******************************************************************************/
+
+/*--------------------------------------------------------------------------*/
+/* Simple highlighting classes (not used by the highlighter)                */
+/*--------------------------------------------------------------------------*/
+
+.highlight-rexx-print .rx-int,
+.highlight-rexx-print .rx-deci,
+.highlight-rexx-print .rx-exp {
+  color: #a04000;
+}
+
+/*--------------------------------------------------------------------------*/
+/* Detailed highlighting (includes non X and B strings that are numbers)    */
+/*--------------------------------------------------------------------------*/
+
+.highlight-rexx-print .rx-nsign {
+  color: #6a4000;
+}
+
+.highlight-rexx-print .rx-ipart,
+.highlight-rexx-print .rx-fpart,
+.highlight-rexx-print .rx-expon {
+  color: #a04000;
+}
+
+.highlight-rexx-print .rx-dpoint { color: #6a4000; }
+.highlight-rexx-print .rx-emark  { color: #6a4000; }
+.highlight-rexx-print .rx-esign  { color: #6a4000; }
+
+/******************************************************************************/
+/* Variables and constant symbols                                             */
+/* ==============================                                             */
+/******************************************************************************/
+
+/* Common color for all variables (except stems)                              */
+.highlight-rexx-print .rx-var,
+.highlight-rexx-print .rx-xvar,
+.highlight-rexx-print .rx-cmp,
+.highlight-rexx-print .rx-xcmp {
+  color: #1a1a1a;
+}
+
+/* Stems get their own color to stand out                                     */
+.highlight-rexx-print .rx-stem,
+.highlight-rexx-print .rx-xstem {
+  color: #6a1b9a;
+}
+
+/* Additionally, exposed variables will be italicized                         */
+.highlight-rexx-print .rx-xvar,
+.highlight-rexx-print .rx-xstem,
+.highlight-rexx-print .rx-xcmp {
+  font-style: italic;
+}
+
+/* Environment symbols                                                        */
+.highlight-rexx-print .rx-env {
+  color: #6a1b9a;
+  font-style: italic;
+}
+
+/* Const symbols that are not environment symbols                             */
+.highlight-rexx-print .rx-lit {
+  color: #5a6e50;
+}
+
+/******************************************************************************/
+/* Special characters                                                         */
+/* ==================                                                         */
+/******************************************************************************/
+
+.highlight-rexx-print .rx-spe {
+  color: #9a2040;
+}
+
+/******************************************************************************/
+/* Operators                                                                  */
+/* =========                                                                  */
+/******************************************************************************/
+
+.highlight-rexx-print .rx-op {
+  color: #5a6e50;
+}
+
+/******************************************************************************/
+/* Taken constants                                                            */
+/* ===============                                                            */
+/*                                                                            */
+/*   I.e., tokens that are "strings or symbols taken as a constant".          */
+/*   In the case of strings, quotes and suffixes are styled under "strings".  */
+/******************************************************************************/
+
+/* Default highlighting                                                       */
+.highlight-rexx-print .rx-const {
+  color: #4a5a8a;
+}
+
+/* Named arguments (Executor)                                                 */
+.highlight-rexx-print .rx-const.rx-argument-name {
+  color: #8b4500;
+}
+
+/* Built-in functions and procedures                                          */
+.highlight-rexx-print .rx-const.rx-bif-func,
+.highlight-rexx-print .rx-const.rx-bif-proc {
+  color: #4a5a8a;
+}
+.highlight-rexx-print .rx-const.rx-bif-func.rx-ssuf,
+.highlight-rexx-print .rx-const.rx-bif-proc.rx-ssuf {
+  color: #a04000;
+}
+.highlight-rexx-print .rx-const.rx-bif-func.rx-oquo,
+.highlight-rexx-print .rx-const.rx-bif-func.rx-cquo,
+.highlight-rexx-print .rx-const.rx-bif-proc.rx-oquo,
+.highlight-rexx-print .rx-const.rx-bif-proc.rx-cquo {
+  color: #6a4000;
+}
+
+/* Internal functions and procedures, labels and block instruction names      */
+.highlight-rexx-print .rx-const.rx-int-func,
+.highlight-rexx-print .rx-const.rx-int-proc,
+.highlight-rexx-print .rx-const.rx-block,
+.highlight-rexx-print .rx-const.rx-label {
+  color: #a04000;
+}
+.highlight-rexx-print .rx-const.rx-int-func.rx-ssuf,
+.highlight-rexx-print .rx-const.rx-int-proc.rx-ssuf,
+.highlight-rexx-print .rx-const.rx-block.rx-ssuf,
+.highlight-rexx-print .rx-const.rx-label.rx-ssuf {
+  color: #a04000;
+}
+.highlight-rexx-print .rx-const.rx-int-func.rx-oquo,
+.highlight-rexx-print .rx-const.rx-int-func.rx-cquo,
+.highlight-rexx-print .rx-const.rx-int-proc.rx-oquo,
+.highlight-rexx-print .rx-const.rx-int-proc.rx-cquo,
+.highlight-rexx-print .rx-const.rx-block.rx-oquo,
+.highlight-rexx-print .rx-const.rx-block.rx-cquo,
+.highlight-rexx-print .rx-const.rx-label.rx-oquo,
+.highlight-rexx-print .rx-const.rx-label.rx-cquo {
+  color: #6a4000;
+}
+
+/* ::ROUTINE names, ::ROUTINE function and procedure calls,                   */
+/* and namespace-qualified ::ROUTINEs                                         */
+.highlight-rexx-print .rx-const.rx-routine,
+.highlight-rexx-print .rx-const.rx-pkg-func,
+.highlight-rexx-print .rx-const.rx-pkg-proc,
+.highlight-rexx-print .rx-const.rx-ext-pkg-func,
+.highlight-rexx-print .rx-const.rx-ext-pkg-proc {
+  color: #9a2040;
+}
+.highlight-rexx-print .rx-const.rx-routine.rx-ssuf,
+.highlight-rexx-print .rx-const.rx-pkg-func.rx-ssuf,
+.highlight-rexx-print .rx-const.rx-pkg-proc.rx-ssuf,
+.highlight-rexx-print .rx-const.rx-ext-pkg-func.rx-ssuf,
+.highlight-rexx-print .rx-const.rx-ext-pkg-proc.rx-ssuf {
+  color: #a04000;
+}
+.highlight-rexx-print .rx-const.rx-routine.rx-oquo,
+.highlight-rexx-print .rx-const.rx-routine.rx-cquo,
+.highlight-rexx-print .rx-const.rx-pkg-func.rx-oquo,
+.highlight-rexx-print .rx-const.rx-pkg-func.rx-cquo,
+.highlight-rexx-print .rx-const.rx-pkg-proc.rx-oquo,
+.highlight-rexx-print .rx-const.rx-pkg-proc.rx-cquo,
+.highlight-rexx-print .rx-const.rx-ext-pkg-func.rx-oquo,
+.highlight-rexx-print .rx-const.rx-ext-pkg-func.rx-cquo,
+.highlight-rexx-print .rx-const.rx-ext-pkg-proc.rx-oquo,
+.highlight-rexx-print .rx-const.rx-ext-pkg-proc.rx-cquo {
+  color: #6a4000;
+}
+
+/* External calls                                                             */
+.highlight-rexx-print .rx-const.rx-ext-func,
+.highlight-rexx-print .rx-const.rx-ext-proc {
+  color: #9a2040;
+  font-style: italic;
+}
+.highlight-rexx-print .rx-const.rx-ext-func.rx-ssuf,
+.highlight-rexx-print .rx-const.rx-ext-proc.rx-ssuf {
+  color: #a04000;
+}
+.highlight-rexx-print .rx-const.rx-ext-func.rx-oquo,
+.highlight-rexx-print .rx-const.rx-ext-func.rx-cquo,
+.highlight-rexx-print .rx-const.rx-ext-proc.rx-oquo,
+.highlight-rexx-print .rx-const.rx-ext-proc.rx-cquo {
+  color: #6a4000;
+}
+
+/* Method names                                                               */
+.highlight-rexx-print .rx-const.rx-method {
+  color: #8b4500;
+  font-style: italic;
+}
+.highlight-rexx-print .rx-const.rx-method.rx-ssuf {
+  color: #a04000;
+}
+.highlight-rexx-print .rx-const.rx-method.rx-oquo,
+.highlight-rexx-print .rx-const.rx-method.rx-cquo {
+  color: #6a4000;
+}
+
+/* Namespace names                                                            */
+.highlight-rexx-print .rx-const.rx-namespace {
+  color: #8b4500;
+}
+.highlight-rexx-print .rx-const.rx-namespace.rx-ssuf {
+  color: #a04000;
+}
+.highlight-rexx-print .rx-const.rx-namespace.rx-oquo,
+.highlight-rexx-print .rx-const.rx-namespace.rx-cquo {
+  color: #6a4000;
+}
+
+/* Resource name                                                              */
+.highlight-rexx-print .rx-const.rx-resource {
+  color: #8b4500;
+}
+.highlight-rexx-print .rx-const.rx-resource.rx-ssuf {
+  color: #a04000;
+}
+.highlight-rexx-print .rx-const.rx-resource.rx-oquo,
+.highlight-rexx-print .rx-const.rx-resource.rx-cquo {
+  color: #6a4000;
+}
+
+/* Resource delimiter                                                         */
+.highlight-rexx-print .rx-const .rx-res-delimiter {
+  color: #8b4500;
+  text-decoration: underline;
+}
+
+/******************************************************************************/
+/* ::RESOURCE data and ignored stuff                                          */
+/******************************************************************************/
+
+/* Resource data                                                              */
+.highlight-rexx-print .rx-res-data {
+  color: #8b4500;
+  font-style: italic;
+}
+
+/* Resource ignored stuff                                                     */
+.highlight-rexx-print .rx-res-ignore {
+  color: #606060;
+  font-style: italic;
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/* END OF BASE SELECTOR highlight-rexx-print                                  */
+/******************************************************************************/
+/******************************************************************************/

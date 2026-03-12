@@ -196,7 +196,7 @@ Print:
     Say " ("AorAN(ConstantName(element~subCategory))" taken_constant)"
   End
   Else Do
-    Say " ( A" CategoryName(element~category)")"
+    Say " ("AorAn(CategoryName(element~category))")"
     If element < .ALL.COMPOUND_VARIABLES Then Call Compound
   End
   If value == .Nil Then
@@ -226,8 +226,8 @@ Return
 --------------------------------------------------------------------------------
 
 AorAN:
-  If "AEIOU"~contains(Arg(1)[1]) Then Return "an" Arg(1)
-  Return "a" Arg(1)
+  If "AEIOU"~contains(Arg(1)[1]) Then Return "An" Arg(1)
+  Return "A" Arg(1)
 
 --------------------------------------------------------------------------------
 
