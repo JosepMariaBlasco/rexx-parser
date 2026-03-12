@@ -331,6 +331,8 @@ Crumb:
     When docrexxpub"/letter"       Then Return "Letter to the Rexx Community"
     When docrexxpub"/slides"       Then Return "The slides Document Class"
     When docrexxpub"/book"         Then Return "The RexxPub book"
+    When docrexxpub"/yaml"         Then Return "YAML Front Matter"
+    When docrexxpub"/bibliography" Then Return "The RexxPub Bibliography Style"
 
     -- "/rexx-parser/doc/highlighter"
 

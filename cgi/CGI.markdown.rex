@@ -47,6 +47,9 @@
 /* 20260303         Add support for numbered section headers                  */
 /* 20260310         Allow arbitrary sizes (thanks, JLF!)                      */
 /* 20260310         Add support for figure/listing captions and numbering     */
+/* 20260312         Add limited support for YAML front matter blocks          */
+/* 20260312         Add YAML support for docclass and language                */
+/* 20260312         Add YAML listings: and figures: sub-options               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -136,6 +139,7 @@ Exit
   view           = "text"
   size           = 12
   print          = 0
+  language       = "en"
   sectionNumbers = -1
   numberFigures  = 1
 
@@ -215,14 +219,6 @@ Exit
     Otherwise              filenameSpecificStyle = "markdown"
   End
 
-  -- Resolve sectionNumbers default based on filename
-  If sectionNumbers == -1 Then
-    Select Case fileName
-      When "book.md"   Then sectionNumbers = 2  -- chapter, section, subsection
-      When "slides.md" Then sectionNumbers = 0  -- no numbering in slides
-      Otherwise             sectionNumbers = 3  -- section, subsection, subsubsection
-    End
-
   printStyle = Stream(file".css","c","Q exists")
   If printStyle \== "" Then Do
     p = LastPos(.File~separator,printStyle)
@@ -244,6 +240,17 @@ Exit
   ------------------------------------------------------------------------------
 
   yaml = YAMLFrontMatter(source)
+  -- Listings sub-options (defaults)
+  listingCaptionPosition = "above"
+  listingCaptionStyle    = "normal"
+  listingLabelStyle      = "bold"
+  listingLabel           = ""
+  -- Figures sub-options (defaults)
+  figureCaptionPosition  = "below"
+  figureCaptionStyle     = "normal"
+  figureLabelStyle       = "bold"
+  figureLabel            = ""
+
   If yaml \== .Nil, yaml~hasIndex("rexxpub") Then Do
     rp = yaml["rexxpub"]
     If rp~isA(.StringTable) Then Do
@@ -263,8 +270,74 @@ Exit
           Otherwise Nop                  -- Ignore invalid values
         End
       End
+      -- docclass: YAML overrides filename inference
+      If rp~hasIndex("docclass") Then Do
+        yamlDocClass = Lower(rp["docclass"])
+        validClasses = "article book letter slides"
+        If validClasses~caselessWordPos(yamlDocClass) > 0 Then
+          filenameSpecificStyle = "print/"yamlDocClass
+        -- Otherwise silently ignored
+      End
+      -- language: YAML always wins
+      If rp~hasIndex("language") Then
+        language = rp["language"]
+      -- listings: sub-table with caption options
+      If rp~hasIndex("listings") Then Do
+        lst = rp["listings"]
+        If lst~isA(.StringTable) Then Do
+          If lst~hasIndex("caption-position") Then Do
+            cp = Lower(lst["caption-position"])
+            If cp == "above" | cp == "below" Then
+              listingCaptionPosition = cp
+          End
+          If lst~hasIndex("caption-style") Then Do
+            cs = Lower(lst["caption-style"])
+            If cs == "normal" | cs == "italic" Then
+              listingCaptionStyle = cs
+          End
+          If lst~hasIndex("label-style") Then Do
+            ls = Lower(lst["label-style"])
+            If "normal bold italic bold-italic"~wordPos(ls) > 0 Then
+              listingLabelStyle = ls
+          End
+          If lst~hasIndex("label") Then
+            listingLabel = lst["label"]
+        End
+      End
+      -- figures: sub-table with caption options
+      If rp~hasIndex("figures") Then Do
+        fig = rp["figures"]
+        If fig~isA(.StringTable) Then Do
+          If fig~hasIndex("caption-position") Then Do
+            cp = Lower(fig["caption-position"])
+            If cp == "above" | cp == "below" Then
+              figureCaptionPosition = cp
+          End
+          If fig~hasIndex("caption-style") Then Do
+            cs = Lower(fig["caption-style"])
+            If cs == "normal" | cs == "italic" Then
+              figureCaptionStyle = cs
+          End
+          If fig~hasIndex("label-style") Then Do
+            ls = Lower(fig["label-style"])
+            If "normal bold italic bold-italic"~wordPos(ls) > 0 Then
+              figureLabelStyle = ls
+          End
+          If fig~hasIndex("label") Then
+            figureLabel = fig["label"]
+        End
+      End
     End
   End
+
+  -- Resolve sectionNumbers default based on docclass
+  -- (uses filenameSpecificStyle which may have been overridden by YAML)
+  If sectionNumbers == -1 Then
+    Select Case filenameSpecificStyle
+      When "print/book"   Then sectionNumbers = 2
+      When "print/slides" Then sectionNumbers = 0
+      Otherwise                sectionNumbers = 3
+    End
 
   ------------------------------------------------------------------------------
   -- Special case for .rex or .cls files                                      --
@@ -357,6 +430,72 @@ Exit
     Then numberFiguresClass = "number-figures"
     Else numberFiguresClass = ""
 
+  /* Build listing and figure data-* attributes and CSS overrides            */
+  listingsAttrs = ""
+  figuresAttrs  = ""
+  overrideCSS   = ""
+
+  If listingCaptionPosition \== "above" Then
+    listingsAttrs ||= ' data-listing-caption-position="'listingCaptionPosition'"'
+  If listingLabel \== "" Then
+    listingsAttrs ||= ' data-listing-label="'listingLabel'"'
+  If figureCaptionPosition \== "below" Then
+    figuresAttrs ||= ' data-figure-caption-position="'figureCaptionPosition'"'
+  If figureLabel \== "" Then
+    figuresAttrs ||= ' data-figure-label="'figureLabel'"'
+
+  /* --- Listing CSS overrides ---                                           */
+  If listingCaptionPosition == "below" Then
+    overrideCSS ||= "figure.listing figcaption {"            -
+      " break-after: auto; break-before: avoid;"             -
+      " margin-top: 0.075em; margin-bottom: 0; }" || "0a"x  -
+      || "figure.listing pre {"                              -
+      " margin-bottom: 0; }" || "0a"x
+  If listingCaptionStyle == "italic" Then
+    overrideCSS ||= "figure.listing figcaption {"            -
+      " font-style: italic; }" || "0a"x
+  Select Case listingLabelStyle
+    When "normal" Then
+      overrideCSS ||= "figure.listing .figure-number {"      -
+        " font-weight: normal; font-style: normal; }" || "0a"x
+    When "italic" Then
+      overrideCSS ||= "figure.listing .figure-number {"      -
+        " font-weight: normal; font-style: italic; }" || "0a"x
+    When "bold-italic" Then
+      overrideCSS ||= "figure.listing .figure-number {"      -
+        " font-weight: bold; font-style: italic; }" || "0a"x
+    Otherwise
+      If listingCaptionStyle == "italic" Then
+        overrideCSS ||= "figure.listing .figure-number {"    -
+          " font-style: normal; }" || "0a"x
+  End
+
+  /* --- Figure CSS overrides ---                                            */
+  If figureCaptionPosition == "above" Then
+    overrideCSS ||= "figure:not(.listing) figcaption {"      -
+      " break-before: auto; break-after: avoid;"             -
+      " margin-top: 0; margin-bottom: 0.5em; }" || "0a"x    -
+      || "figure:not(.listing) img {"                        -
+      " margin-top: 0; }" || "0a"x
+  If figureCaptionStyle == "italic" Then
+    overrideCSS ||= "figure:not(.listing) figcaption {"      -
+      " font-style: italic; }" || "0a"x
+  Select Case figureLabelStyle
+    When "normal" Then
+      overrideCSS ||= "figure:not(.listing) .figure-number {" -
+        " font-weight: normal; font-style: normal; }" || "0a"x
+    When "italic" Then
+      overrideCSS ||= "figure:not(.listing) .figure-number {" -
+        " font-weight: normal; font-style: italic; }" || "0a"x
+    When "bold-italic" Then
+      overrideCSS ||= "figure:not(.listing) .figure-number {" -
+        " font-weight: bold; font-style: italic; }" || "0a"x
+    Otherwise
+      If figureCaptionStyle == "italic" Then
+        overrideCSS ||= "figure:not(.listing) .figure-number {" -
+          " font-style: normal; }" || "0a"x
+  End
+
   template = .Resources~HTML
 
   Do line Over template
@@ -397,8 +536,14 @@ Exit
                 "href='/rexx-parser/css/"filenameSpecificStyle"-"size"pt.css'>"
         End
       End
+      When "%listingsstyle%"             Then
+        If overrideCSS \== "" Then
+          Say "    <style>" || overrideCSS || "</style>"
       Otherwise Say line~changeStr("%SectionNumbers%", sectionNumbersClass) -
-                        ~changeStr("%NumberFigures%",  numberFiguresClass)
+                        ~changeStr("%NumberFigures%",  numberFiguresClass)  -
+                        ~changeStr("%ListingsAttrs%",  listingsAttrs)       -
+                        ~changeStr("%FiguresAttrs%",   figuresAttrs)        -
+                        ~changeStr("%Language%",       language)
     End
   End
 
@@ -486,7 +631,7 @@ View:
       When "%contentheader%"         Then Call OptionalCall ContentHeader, uri
       When "%printstyle%"            Then Nop
       When "%filenamespecificstyle%" Then Nop
-      Otherwise Say line
+      Otherwise Say line~changeStr("%Language%", language)
     End
   End
 
@@ -497,7 +642,7 @@ View:
 
 ::Resource DisplayRexx
 <!doctype html>
-<html lang='en'>
+<html lang='%Language%'>
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -543,7 +688,7 @@ View:
 
 ::Resource HTML
 <!doctype html>
-<html lang='en'>
+<html lang='%Language%'>
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -557,18 +702,19 @@ View:
     %sizeSpecificStyle%
     %printStyle%
     %printJs%
+    %listingsStyle%
     <!--[if lt IE 9]>
       <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
     <![endif]-->
   </head>
   <body>
-    <div class='container bg-white' lang='en'>
+    <div class='container bg-white' lang='%Language%'>
       %header%
       <div class='row'>
         <div class='col-md-9'>
           %contentheader%
-          <div class='content %SectionNumbers% %NumberFigures%'>
+          <div class='content %SectionNumbers% %NumberFigures%'%ListingsAttrs%%FiguresAttrs%>
             %contents%
           </div>
         </div>

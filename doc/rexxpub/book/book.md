@@ -2328,6 +2328,8 @@ rexxpub:
   number-figures: true
   size: 12
   style: dark
+  listings:
+    caption-position: above
 ---
 ```
 
@@ -2335,10 +2337,15 @@ Pandoc reads the top-level fields (`bibliography`, `csl`) for its
 own processing.  RexxPub reads the fields under `rexxpub:` to
 configure the output.  Both share the same front matter block.
 
-The currently supported options under `rexxpub:` are `style`
-(highlighting style), `size` (base font size), `section-numbers`
-(numbering depth, 0--4), and `number-figures` (`0`, `1`, `true`,
-or `false`).
+The currently supported top-level options under `rexxpub:` are
+`style` (highlighting style), `size` (base font size),
+`section-numbers` (numbering depth, 0--4), `number-figures` (`0`,
+`1`, `true`, or `false`), `docclass` (document class override),
+`language` (the `<html lang>` attribute), and `outline` (PDF
+bookmark depth, md2pdf only).  Two nested groups, `listings:` and
+`figures:`, provide fine-grained control over caption position,
+caption style, label style, and custom label text for code listings
+and image figures respectively.
 
 Precedence
 ----------

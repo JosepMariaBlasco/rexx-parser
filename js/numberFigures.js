@@ -15,6 +15,8 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260310    0.5  First version.                                            */
+/* 20260312         Add listing caption-position and custom label support     */
+/* 20260312         Add figure caption-position and custom label support      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -99,6 +101,18 @@
     var doNumber = container.classList.contains("number-figures");
     var labels   = getLabels(content);
 
+    /* Read listing options from data-* attributes on div.content         */
+    var listingPosition = container.getAttribute("data-listing-caption-position")
+                       || "above";
+    var listingLabel    = container.getAttribute("data-listing-label")
+                       || "";
+
+    /* Read figure options from data-* attributes on div.content          */
+    var figurePosition  = container.getAttribute("data-figure-caption-position")
+                       || "below";
+    var figureLabel     = container.getAttribute("data-figure-label")
+                       || "";
+
     var figureCounter  = 0;
     var listingCounter = 0;
 
@@ -120,20 +134,26 @@
       div.parentNode.insertBefore(figure, div);
       figure.appendChild(div);
 
-      /* Create <figcaption> above the code block (LaTeX convention)      */
+      /* Create <figcaption>                                              */
       var figcaption = document.createElement("figcaption");
 
       listingCounter++;
       if (doNumber) {
+        var theLabel = listingLabel || labels.listing;
         var numSpan = document.createElement("span");
         numSpan.className = "figure-number";
-        numSpan.textContent = labels.listing + "\u00A0" + listingCounter
+        numSpan.textContent = theLabel + "\u00A0" + listingCounter
                             + ":\u2002";
         figcaption.appendChild(numSpan);
       }
 
       figcaption.appendChild(document.createTextNode(captionText));
-      figure.insertBefore(figcaption, div);
+
+      /* Position: above (before code) or below (after code)             */
+      if (listingPosition === "below")
+        figure.appendChild(figcaption);
+      else
+        figure.insertBefore(figcaption, div);
 
       /* Remove the data-caption attribute (it has been consumed)        */
       div.removeAttribute("data-caption");
@@ -142,23 +162,30 @@
     /* -----------------------------------------------------------------  */
     /* Step 2: Number existing <figure> elements (Pandoc images)          */
     /*         These already have <figcaption> — just prepend the number  */
+    /*         Pandoc places <figcaption> after <img> (below).  If the    */
+    /*         author requests "above", move it before the <img>.         */
     /* -----------------------------------------------------------------  */
 
-    if (doNumber) {
-      var figures = container.querySelectorAll("figure:not(.listing)");
+    var figures = container.querySelectorAll("figure:not(.listing)");
 
-      for (var j = 0; j < figures.length; j++) {
-        var fig = figures[j];
-        var fc  = fig.querySelector("figcaption");
-        if (!fc) continue;
+    for (var j = 0; j < figures.length; j++) {
+      var fig = figures[j];
+      var fc  = fig.querySelector("figcaption");
+      if (!fc) continue;
 
-        figureCounter++;
+      figureCounter++;
+      if (doNumber) {
+        var theFigLabel = figureLabel || labels.figure;
         var numSpan = document.createElement("span");
         numSpan.className = "figure-number";
-        numSpan.textContent = labels.figure + "\u00A0" + figureCounter
+        numSpan.textContent = theFigLabel + "\u00A0" + figureCounter
                             + ":\u2002";
         fc.insertBefore(numSpan, fc.firstChild);
       }
+
+      /* Position: move figcaption above the image if requested          */
+      if (figurePosition === "above")
+        fig.insertBefore(fc, fig.firstChild);
     }
   }
 

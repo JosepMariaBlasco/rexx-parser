@@ -23,6 +23,8 @@
 /* 20260310         Add -c, --css option (thanks, JLF!)                       */
 /* 20260310         Implement figure and code captions                        */
 /* 20260312         Add limited support for YAML front matter blocks          */
+/* 20260312         Add YAML support for docclass, language, and outline      */
+/* 20260312         Add YAML listings: and figures: sub-options               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -358,6 +360,17 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   ------------------------------------------------------------------------------
 
   yaml = YAMLFrontMatter(source)
+  -- Listings sub-options (defaults)
+  listingCaptionPosition = "above"
+  listingCaptionStyle    = "normal"
+  listingLabelStyle      = "bold"
+  listingLabel           = ""
+  -- Figures sub-options (defaults)
+  figureCaptionPosition  = "below"
+  figureCaptionStyle     = "normal"
+  figureLabelStyle       = "bold"
+  figureLabel            = ""
+
   If yaml \== .Nil, yaml~hasIndex("rexxpub") Then Do
     rp = yaml["rexxpub"]
     If rp~isA(.StringTable) Then Do
@@ -375,6 +388,73 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
           When "0", "false" Then numberFigures = 0
           When "1", "true"  Then numberFigures = 1
           Otherwise Nop                  -- Ignore invalid values
+        End
+      End
+      -- docclass: YAML overrides CLI and filename inference
+      If rp~hasIndex("docclass") Then Do
+        yamlDocClass = Lower(rp["docclass"])
+        yamlDocClassFile = cssDir"/print/"yamlDocClass".css"
+        If .File~new(yamlDocClassFile)~exists,  -
+          \.File~new(yamlDocClassFile)~isDirectory Then Do
+          thisDocClass = yamlDocClass
+          docClassFile = yamlDocClassFile
+        End
+        Else
+         .Error~Say( "Warning: YAML docclass '"yamlDocClass"' not found, ignored." )
+      End
+      -- language: YAML always wins
+      If rp~hasIndex("language") Then
+        language = rp["language"]
+      -- outline: YAML always wins
+      If rp~hasIndex("outline") Then Do
+        yamlOutline = rp["outline"]
+        If DataType(yamlOutline,"W"), yamlOutline >= 0, yamlOutline <= 6 Then
+          outline = yamlOutline
+      End
+      -- listings: sub-table with caption options
+      If rp~hasIndex("listings") Then Do
+        lst = rp["listings"]
+        If lst~isA(.StringTable) Then Do
+          If lst~hasIndex("caption-position") Then Do
+            cp = Lower(lst["caption-position"])
+            If cp == "above" | cp == "below" Then
+              listingCaptionPosition = cp
+          End
+          If lst~hasIndex("caption-style") Then Do
+            cs = Lower(lst["caption-style"])
+            If cs == "normal" | cs == "italic" Then
+              listingCaptionStyle = cs
+          End
+          If lst~hasIndex("label-style") Then Do
+            ls = Lower(lst["label-style"])
+            If "normal bold italic bold-italic"~wordPos(ls) > 0 Then
+              listingLabelStyle = ls
+          End
+          If lst~hasIndex("label") Then
+            listingLabel = lst["label"]
+        End
+      End
+      -- figures: sub-table with caption options
+      If rp~hasIndex("figures") Then Do
+        fig = rp["figures"]
+        If fig~isA(.StringTable) Then Do
+          If fig~hasIndex("caption-position") Then Do
+            cp = Lower(fig["caption-position"])
+            If cp == "above" | cp == "below" Then
+              figureCaptionPosition = cp
+          End
+          If fig~hasIndex("caption-style") Then Do
+            cs = Lower(fig["caption-style"])
+            If cs == "normal" | cs == "italic" Then
+              figureCaptionStyle = cs
+          End
+          If fig~hasIndex("label-style") Then Do
+            ls = Lower(fig["label-style"])
+            If "normal bold italic bold-italic"~wordPos(ls) > 0 Then
+              figureLabelStyle = ls
+          End
+          If fig~hasIndex("label") Then
+            figureLabel = fig["label"]
         End
       End
     End
@@ -537,6 +617,76 @@ AllWentWell:
   chunk = CharIn(numberFigures, 1, Chars(numberFigures) )
   figuresHandler = "<script>"chunk"</script>"
 
+  /* Build listing and figure data-* attributes and CSS overrides            */
+  listingsAttrs = ""
+  figuresAttrs  = ""
+  overrideCSS   = ""
+
+  If listingCaptionPosition \== "above" Then
+    listingsAttrs ||= ' data-listing-caption-position="'listingCaptionPosition'"'
+  If listingLabel \== "" Then
+    listingsAttrs ||= ' data-listing-label="'listingLabel'"'
+  If figureCaptionPosition \== "below" Then
+    figuresAttrs ||= ' data-figure-caption-position="'figureCaptionPosition'"'
+  If figureLabel \== "" Then
+    figuresAttrs ||= ' data-figure-label="'figureLabel'"'
+
+  /* --- Listing CSS overrides ---                                           */
+  If listingCaptionPosition == "below" Then
+    overrideCSS ||= "figure.listing figcaption {"            -
+      " break-after: auto; break-before: avoid;"             -
+      " margin-top: 0.075em; margin-bottom: 0; }" || "0a"x  -
+      || "figure.listing pre {"                              -
+      " margin-bottom: 0; }" || "0a"x
+  If listingCaptionStyle == "italic" Then
+    overrideCSS ||= "figure.listing figcaption {"            -
+      " font-style: italic; }" || "0a"x
+  Select Case listingLabelStyle
+    When "normal" Then
+      overrideCSS ||= "figure.listing .figure-number {"      -
+        " font-weight: normal; font-style: normal; }" || "0a"x
+    When "italic" Then
+      overrideCSS ||= "figure.listing .figure-number {"      -
+        " font-weight: normal; font-style: italic; }" || "0a"x
+    When "bold-italic" Then
+      overrideCSS ||= "figure.listing .figure-number {"      -
+        " font-weight: bold; font-style: italic; }" || "0a"x
+    Otherwise
+      If listingCaptionStyle == "italic" Then
+        overrideCSS ||= "figure.listing .figure-number {"    -
+          " font-style: normal; }" || "0a"x
+  End
+
+  /* --- Figure CSS overrides ---                                            */
+  If figureCaptionPosition == "above" Then
+    overrideCSS ||= "figure:not(.listing) figcaption {"      -
+      " break-before: auto; break-after: avoid;"             -
+      " margin-top: 0; margin-bottom: 0.5em; }" || "0a"x    -
+      || "figure:not(.listing) img {"                        -
+      " margin-top: 0; }" || "0a"x
+  If figureCaptionStyle == "italic" Then
+    overrideCSS ||= "figure:not(.listing) figcaption {"      -
+      " font-style: italic; }" || "0a"x
+  Select Case figureLabelStyle
+    When "normal" Then
+      overrideCSS ||= "figure:not(.listing) .figure-number {" -
+        " font-weight: normal; font-style: normal; }" || "0a"x
+    When "italic" Then
+      overrideCSS ||= "figure:not(.listing) .figure-number {" -
+        " font-weight: normal; font-style: italic; }" || "0a"x
+    When "bold-italic" Then
+      overrideCSS ||= "figure:not(.listing) .figure-number {" -
+        " font-weight: bold; font-style: italic; }" || "0a"x
+    Otherwise
+      If figureCaptionStyle == "italic" Then
+        overrideCSS ||= "figure:not(.listing) .figure-number {" -
+          " font-style: normal; }" || "0a"x
+  End
+
+  If overrideCSS \== ""
+    Then listingsStyle = "<style>" || "0a"x || overrideCSS || "</style>"
+    Else listingsStyle = ""
+
   Select Case fileName
     When "article", "slides", "book" Then Do
       Parse Caseless Var contents With "<h1" ">"title"</"
@@ -577,6 +727,9 @@ AllWentWell:
     ~caselessChangeStr("%FiguresHandler%", figuresHandler     ) -
     ~caselessChangeStr("%SectionNumbers%", sectionNumbersClass) -
     ~caselessChangeStr("%NumberFigures%",  numberFiguresClass ) -
+    ~caselessChangeStr("%ListingsAttrs%",  listingsAttrs      ) -
+    ~caselessChangeStr("%FiguresAttrs%",   figuresAttrs       ) -
+    ~caselessChangeStr("%ListingsStyle%",  listingsStyle      ) -
     ~caselessChangeStr("%SectionNumbersHandler%", sectionNumbersHandler)
 
   Call SysFileDelete htmlFilename
@@ -743,11 +896,12 @@ See myhelp for details.
     <style>
       %CSS%
     </style>
+    %ListingsStyle%
   </head>
   <body>
     <div class='container bg-white' lang='en'>
       <div class="row">
-         <div class="content %SectionNumbers% %NumberFigures%">
+         <div class="content %SectionNumbers% %NumberFigures%"%ListingsAttrs%%FiguresAttrs%>
             %Content%
          </div>
       </div>

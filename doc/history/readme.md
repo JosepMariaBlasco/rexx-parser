@@ -38,6 +38,10 @@ Version history
   <li> Add caption attribute to rexx fenced code blocks (20260311).
   <li> Add automatic numbering to captioned figures and listings (20260311).
   <li> Add partial support for Pandoc Markdown YAML front matter blocks (20260312).
+  <li> YAML front matter: add <code>docclass</code>, <code>language</code>,
+       and <code>outline</code> options (20260312).
+  <li> YAML front matter: add <code>listings:</code> and <code>figures:</code>
+       sub-options for configuring captions (20260312).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

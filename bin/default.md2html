@@ -13,6 +13,8 @@
 -- Date     Version Details                                                   --
 -- -------- ------- --------------------------------------------------------- --
 -- 20241223    0.4a First public release                                      --
+-- 20260312    0.5  Add %Language%, %ListingsAttrs%, %FiguresAttrs%,          --
+--                  %listingsStyle% placeholders                              --
 --                                                                            --
 --------------------------------------------------------------------------------
 --
@@ -41,7 +43,7 @@
 --
 --------------------------------------------------------------------------------
 <!doctype html>
-<html lang='en'>
+<html lang='%Language%'>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -63,14 +65,15 @@
 -- For example, if readme.md is being processed and a file called readme.md.css
 -- is found in the same directory, a reference to it will be inserted here.
     %printStyle%
+    %listingsStyle%
   </head>
   <body>
-    <div class='container bg-white' lang='en'>
+    <div class='container bg-white' lang='%Language%'>
       %header%
       <div class='row'>
         <div class='col-md-9'>
           %contentheader%
-          <div class='content %SectionNumbers% %NumberFigures%'>
+          <div class='content %SectionNumbers% %NumberFigures%'%ListingsAttrs%%FiguresAttrs%>
             %contents%
           </div>
         </div>
