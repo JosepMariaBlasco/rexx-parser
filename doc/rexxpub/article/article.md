@@ -437,6 +437,35 @@ The strategy is twofold:
    (`rx-*`), so the Highlighter styles always win inside highlighted
    blocks.
 
+YAML front matter {.newpage}
+=================
+
+RexxPub options can be specified directly in the Markdown source,
+inside the YAML front matter block at the beginning of the file.
+This allows the author to fix structural options --- such as section
+numbering depth, font size, or figure numbering --- as part of the
+document itself, rather than relying on command-line options or URL
+parameters.
+
+```
+---
+bibliography: references.bib
+rexxpub:
+  section-numbers: 3
+  number-figures: true
+  size: 12
+---
+```
+
+Options specified in the YAML front matter take precedence over
+command-line and URL parameters for structural settings, ensuring
+that the author's intent is always respected.  The highlighting
+style is an exception: it can always be overridden by the reader
+via the style chooser or the `?style=` parameter.
+
+See the [YAML front matter documentation](../yaml/) for the full
+list of supported options and the precedence rules.
+
 Acknowledgements {.newpage}
 ================
 

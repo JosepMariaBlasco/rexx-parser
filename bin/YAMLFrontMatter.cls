@@ -43,10 +43,10 @@
   If Strip(source[1]) \== "---" Then Return .Nil
 
   -- Collect YAML lines (between opening "---" and closing "---" or "...")
-  Do i = 1 To source~items
-    s = Strip[source[i]]
+  Loop i = 2 To source~items
+    s = Strip(source[i])
     If s \== "---", s \== "..." Then Iterate
-    yamlLines = source~section(1,i)
+    yamlLines = source~section(2,i-1)
     Signal YAMLFrontMatterFound
   End
 
@@ -66,25 +66,24 @@ YAMLFrontMatterFound:
 ::Routine ParseYAMLBlock
   Use Strict Arg lines, first, last, expectedIndent
 
-  result = .StringTable~new
+  yaml = .StringTable~new
 
-  i = first
-  Do i = first To last
+  Loop i = first To last
     line     = lines[i]
-    stripped = Strip(line)
+    stripped1 = Strip(line)
 
-    If stripped    ==  "" Then Iterate  -- Skip blank lines
-    If stripped[1] == "#" Then Iterate  -- Skip comment lines
+    If stripped1    ==  "" Then Iterate  -- Skip blank lines
+    If stripped1[1] == "#" Then Iterate  -- Skip comment lines
 
     -- Determine indentation
-    stripped = Strip(line, "L")
-    indent   = Length(line) - Length(stripped)
+    stripped2 = Strip(line, "L")
+    indent   = Length(line) - Length(stripped2)
 
     -- If less indented than expected, we've left this block
     If indent < expectedIndent Then Leave
 
     -- Parse key: value
-    Parse Var stripped key":"value
+    Parse Var stripped2 key":"value
     key   = Strip(key)
     value = Strip(value)
 
@@ -96,45 +95,44 @@ YAMLFrontMatterFound:
         value = SubStr(value, 2, Length(value) - 2)
     End
 
+    -- Simple key: value pair
     If value \== "" Then Do
-      -- Simple key: value pair
-      result[key] = value
-      i += 1
+      yaml[key] = value
+      Iterate
     End
-    Else Do
-      -- No value: this is a group. Find the sub-block.
-      subFirst = i + 1
-      If subFirst > last Then Do
-        i += 1
-        Iterate
-      End
-      -- Determine the indent of the sub-block from its first non-blank line
-      Do subFirst = subFirst To last
-        If Strip(lines[subFirst]) \== "",  -
-           Strip(lines[subFirst])[1] \== "#" Then Leave
-      End
-      If subFirst > last Then Do
-        i += 1
-        Iterate
-      End
-      subStripped = Strip(lines[subFirst], "L")
-      subIndent = Length(lines[subFirst]) - Length(subStripped)
-      -- Find the end of the sub-block: all lines with indent >= subIndent
-      subLast = subFirst
-      Do j = subFirst + 1 To last
-        If Strip(lines[j]) == "" | Strip(lines[j])[1] == "#" Then Do
-          subLast = j
-          Iterate
-        End
-        jStripped = Strip(lines[j], "L")
-        jIndent = Length(lines[j]) - Length(jStripped)
-        If jIndent < subIndent Then Leave
+
+    -- No value: this is a group. Find the sub-block.
+    subFirst = i + 1
+    If subFirst > last Then Iterate
+    -- Determine the indent of the sub-block from its first non-blank line
+    Do subFirst = subFirst To last
+      If Strip(lines[subFirst]) \== "",  -
+         Strip(lines[subFirst])[1] \== "#" Then Leave
+    End
+    If subFirst > last Then Iterate
+    subStripped = Strip(lines[subFirst], "L")
+    subIndent = Length(lines[subFirst]) - Length(subStripped)
+    -- If the sub-block is not more indented, there is no sub-block
+    If subIndent <= indent Then Do
+      yaml[key] = .StringTable~new
+      Iterate
+    End
+    -- Find the end of the sub-block: all lines with indent >= subIndent
+    subLast = subFirst
+    Do j = subFirst + 1 To last
+      If Strip(lines[j]) == "" | Strip(lines[j])[1] == "#" Then Do
         subLast = j
+        Iterate
       End
-      -- Recurse
-      result[key] = ParseYAMLBlock(lines, subFirst, subLast, subIndent)
-      i = subLast + 1
+      jStripped = Strip(lines[j], "L")
+      jIndent = Length(lines[j]) - Length(jStripped)
+      If jIndent < subIndent Then Leave
+      subLast = j
     End
+    -- Recurse
+    yaml[key] = ParseYAMLBlock(lines, subFirst, subLast, subIndent)
+    i = subLast
+
   End
 
-  Return result
+  Return yaml

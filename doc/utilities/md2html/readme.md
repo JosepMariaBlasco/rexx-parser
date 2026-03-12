@@ -60,6 +60,36 @@ Prerequisites
 
 A working installation of <a href="https://pandoc.org/">Pandoc</a> is required.
 
+YAML front matter
+-----------------
+
+Md2html reads RexxPub options from the YAML front matter block of each
+Markdown file.  Options are placed under the `rexxpub:` key, separate
+from Pandoc's standard metadata:
+
+```
+---
+bibliography: references.bib
+rexxpub:
+  section-numbers: 3
+  number-figures: true
+  style: light
+---
+```
+
+The supported options are `style`, `section-numbers`, and
+`number-figures` (which accepts `0`, `1`, `true`, or `false`,
+case-insensitive).
+
+Structural options (`section-numbers`, `number-figures`) follow an
+**author-wins** policy: the YAML value always takes precedence over
+command-line options.  Since md2html has no `--style` command-line
+option, the YAML `style` value is always used when present; otherwise,
+the default (`dark`) applies.
+
+See the [YAML front matter documentation](../../rexxpub/yaml/) for the
+full specification.
+
 Program operation
 -----------------
 

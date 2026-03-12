@@ -62,6 +62,7 @@
   local ~ .    = .File~new( mypath"../" )~absolutePath      -- Creates ".."
 
   Call Requires .."/bin/FencedCode.cls"
+  Call Requires .."/bin/YAMLFrontMatter.cls"
   Call Requires mypath"rexx.epbcn.com.optional.cls"
 
  .MyCGI~new~execute
@@ -137,6 +138,11 @@ Exit
   print          = 0
   sectionNumbers = -1
   numberFigures  = 1
+
+  -- Track whether style was explicitly set via URL,
+  -- so that YAML front matter can provide a default.
+  urlStyle = 0
+
   If uri~contains("?")  Then Do
     Parse Var uri uri"?"parameters
     Loop While parameters \== ""
@@ -157,6 +163,7 @@ Exit
           Else Do
             cssName = .MyPath"../css/rexx-"style".css"
             If \.File~new(cssName)~exists Then ok = 0
+            Else urlStyle = 1
           End
         End
         When param~startsWith("size=") Then Do
@@ -228,6 +235,36 @@ Exit
 
   source = CharIn( file, 1, Chars(file) )~makeArray
   Call Stream file, "c", "close"
+
+  ------------------------------------------------------------------------------
+  -- Parse YAML front matter for RexxPub options                              --
+  -- Precedence:                                                              --
+  --   style:          URL > YAML > default  (reader/printer chooses)         --
+  --   everything else: YAML > URL > default  (author's intent prevails)      --
+  ------------------------------------------------------------------------------
+
+  yaml = YAMLFrontMatter(source)
+  If yaml \== .Nil, yaml~hasIndex("rexxpub") Then Do
+    rp = yaml["rexxpub"]
+    If rp~isA(.StringTable) Then Do
+      -- style: only use YAML when the URL did not specify one
+      If \urlStyle, rp~hasIndex("style") Then
+        style = rp["style"]
+      -- For structural options, YAML always wins
+      If rp~hasIndex("size") Then
+        size = rp["size"]
+      If rp~hasIndex("section-numbers") Then
+        sectionNumbers = rp["section-numbers"]
+      If rp~hasIndex("number-figures") Then Do
+        nf = rp["number-figures"]
+        Select Case Lower(nf)
+          When "0", "false" Then numberFigures = 0
+          When "1", "true"  Then numberFigures = 1
+          Otherwise Nop                  -- Ignore invalid values
+        End
+      End
+    End
+  End
 
   ------------------------------------------------------------------------------
   -- Special case for .rex or .cls files                                      --

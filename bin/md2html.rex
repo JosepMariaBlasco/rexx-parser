@@ -23,6 +23,7 @@
 /* 20260307    0.5  Add single-file mode                                      */
 /* 20260308         Add --section-numbers option                              */
 /* 20260310         Add figure/listing caption support and numbering          */
+/* 20260312         Add limited support for YAML front matter blocks          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -391,6 +392,33 @@ Help:
   stream   = .Stream~new(file)
   source   = stream~arrayIn             -- The .md file to translate
   stream~close
+
+  ------------------------------------------------------------------------------
+  -- Parse YAML front matter for RexxPub options                              --
+  -- Precedence:                                                              --
+  --   style:          CLI > YAML > default  (no CLI option in md2html)       --
+  --   everything else: YAML > CLI > default  (author's intent prevails)      --
+  ------------------------------------------------------------------------------
+
+  yaml = YAMLFrontMatter(source)
+  rp = .Nil
+  If yaml \== .Nil, yaml~hasIndex("rexxpub") Then Do
+    rp = yaml["rexxpub"]
+    If rp~isA(.StringTable) Then Do
+      -- For structural options, YAML always wins
+      If rp~hasIndex("section-numbers") Then
+        sectionNumbers = rp["section-numbers"]
+      If rp~hasIndex("number-figures") Then Do
+        nf = rp["number-figures"]
+        Select Case Lower(nf)
+          When "0", "false" Then numberFigures = 0
+          When "1", "true"  Then numberFigures = 1
+          Otherwise Nop                  -- Ignore invalid values
+        End
+      End
+    End
+  End
+
   contents = .Array~new                 -- Will hold the pandoc translation
   res      = .Array~new                 -- Will hold the final result
 
@@ -447,6 +475,10 @@ Help:
   ------------------------------------------------------------------------------
 
   defaultTheme = "dark"
+
+  -- YAML style overrides the default (md2html has no --style CLI option)
+  If rp \== .Nil, rp~isA(.StringTable), rp~hasIndex("style") Then
+    defaultTheme = rp["style"]
 
   Signal On Syntax Name IndividualFileFailed
 
@@ -662,3 +694,4 @@ See myhelp for details.
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "ErrorHandler.cls"
 ::Requires "FencedCode.cls"
+::Requires "YAMLFrontMatter.cls"

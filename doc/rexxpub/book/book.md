@@ -2306,6 +2306,58 @@ directory, and the Rexx external search order).
 and code listings.
 
 
+YAML Front Matter {.chapter}
+=================
+
+All three RexxPub pipelines --- the CGI program, md2html, and
+md2pdf --- can read configuration options from the YAML front matter
+block of a Markdown document.  This allows the author to fix
+structural options as part of the document itself, rather than
+relying on command-line options or URL parameters.
+
+The YAML front matter block is delimited by `---` lines at the very
+beginning of the file.  RexxPub options are placed under the
+`rexxpub:` key, separate from Pandoc's standard metadata fields:
+
+```
+---
+bibliography: references.bib
+csl: ../../../../csl/rexxpub.csl
+rexxpub:
+  section-numbers: 3
+  number-figures: true
+  size: 12
+  style: dark
+---
+```
+
+Pandoc reads the top-level fields (`bibliography`, `csl`) for its
+own processing.  RexxPub reads the fields under `rexxpub:` to
+configure the output.  Both share the same front matter block.
+
+The currently supported options under `rexxpub:` are `style`
+(highlighting style), `size` (base font size), `section-numbers`
+(numbering depth, 0--4), and `number-figures` (`0`, `1`, `true`,
+or `false`).
+
+Precedence
+----------
+
+Options specified in the YAML front matter take precedence over
+command-line and URL parameters for structural settings (`size`,
+`section-numbers`, `number-figures`), ensuring that the author's
+intent is always respected.  The highlighting `style` is an
+exception: it can always be overridden by the reader via the style
+chooser or the `?style=` parameter, because the choice of
+highlighting style is a presentation decision that depends on
+context --- a document may need `dark` on screen but `print` for
+conference proceedings.
+
+See the [YAML front matter documentation](../yaml/) for the
+complete specification, including the precedence rules and the
+supported subset of YAML syntax.
+
+
 Dependencies and Installation {.chapter}
 =============================
 

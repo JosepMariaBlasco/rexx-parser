@@ -11,6 +11,12 @@ Provided document classes
 + [Letter](letter/).
 + [Slides](slides/).
 
+YAML front matter
+-----------------
+
++ [YAML front matter](yaml/) --- read RexxPub options directly
+  from the Markdown document.
+
 Bibliography styles
 -------------------
 

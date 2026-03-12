@@ -22,6 +22,7 @@
 /* 20260310         Allow arbitrary sizes (thanks, JLF!)                      */
 /* 20260310         Add -c, --css option (thanks, JLF!)                       */
 /* 20260310         Implement figure and code captions                        */
+/* 20260312         Add limited support for YAML front matter blocks          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -56,6 +57,7 @@
   End
 
   defaultTheme   = "dark"
+  cliStyle       = 0                    -- Track if --style was specified
   docClass       = ""
   quiet          = .False
   language       = "en"
@@ -144,6 +146,7 @@ ProcessOptions:
         If args~size == 0 Then
           Call Error "Missing style name after '"option"' option."
         defaultTheme = Lower(args[1])
+        cliStyle = 1
         args~delete(1)
       End
       When "--docclass" Then Do
@@ -310,7 +313,7 @@ BatchMode:
 --------------------------------------------------------------------------------
 
 ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
-  defaultTheme defaultOptions language outline fixOutline size continue -
+  defaultTheme cliStyle defaultOptions language outline fixOutline size continue -
   itrace csl sectionNumbers executor experimental unicode mode numberFigures
 
   Use Strict Arg file, requestedDocClass, outputDir = ""
@@ -344,6 +347,39 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
     Return 1
   End
 
+  source       =  CharIn(file,1,Chars(file))~makeArray
+  Call Stream file, "c", "Close"
+
+  ------------------------------------------------------------------------------
+  -- Parse YAML front matter for RexxPub options                              --
+  -- Precedence:                                                              --
+  --   style:          CLI > YAML > default  (reader/printer chooses)         --
+  --   everything else: YAML > CLI > default  (author's intent prevails)      --
+  ------------------------------------------------------------------------------
+
+  yaml = YAMLFrontMatter(source)
+  If yaml \== .Nil, yaml~hasIndex("rexxpub") Then Do
+    rp = yaml["rexxpub"]
+    If rp~isA(.StringTable) Then Do
+      -- style: only use YAML when the CLI did not specify one
+      If \cliStyle, rp~hasIndex("style") Then
+        defaultTheme = rp["style"]
+      -- For structural options, YAML always wins
+      If rp~hasIndex("size") Then
+        size = rp["size"]
+      If rp~hasIndex("section-numbers") Then
+        sectionNumbers = rp["section-numbers"]
+      If rp~hasIndex("number-figures") Then Do
+        nf = rp["number-figures"]
+        Select Case Lower(nf)
+          When "0", "false" Then numberFigures = 0
+          When "1", "true"  Then numberFigures = 1
+          Otherwise Nop                  -- Ignore invalid values
+        End
+      End
+    End
+  End
+
   -- Resolve sectionNumbers default based on document class
   If sectionNumbers == -1 Then
     Select Case thisDocClass
@@ -362,9 +398,6 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
       Return 1
     End
   End
-
-  source       =  CharIn(file,1,Chars(file))~makeArray
-  Call Stream file, "c", "Close"
 
   fileObj      = .File~new(file)
   sep          = .File~separator
@@ -696,6 +729,7 @@ See myhelp for details.
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "ErrorHandler.cls"
 ::Requires "FencedCode.cls"
+::Requires "YAMLFrontMatter.cls"
 
 ::Resource HTML
 <!doctype html>

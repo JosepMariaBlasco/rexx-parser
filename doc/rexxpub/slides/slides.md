@@ -153,6 +153,27 @@ Page layout {.newpage}
 [^fn]: This is a footnote on a slide.  Useful for references or
 attributions without cluttering the slide body.
 
+YAML front matter {.newpage}
+==================
+
+Slides support [YAML front matter](../yaml/) for setting RexxPub
+options directly in the Markdown source:
+
+```
+---
+rexxpub:
+  style: print
+  number-figures: false
+---
+```
+
+Structural options set in the YAML (such as `number-figures` or
+`section-numbers`) take precedence over URL parameters ---
+the author's intent is always respected.
+
+The highlighting `style` is an exception: it can always be
+overridden by the reader via the style chooser.
+
 The closing slide {.newpage}
 ==================
 

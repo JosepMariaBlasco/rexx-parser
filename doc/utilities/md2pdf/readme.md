@@ -122,6 +122,38 @@ are equivalent to specifying `executor`, `experimental`, or `tutor`
 in the `--default` string, or to adding those attributes to every
 individual fenced code block.
 
+YAML front matter
+-----------------
+
+Md2pdf reads RexxPub options from the YAML front matter block of each
+Markdown file.  Options are placed under the `rexxpub:` key, separate
+from Pandoc's standard metadata:
+
+```
+---
+bibliography: references.bib
+rexxpub:
+  section-numbers: 3
+  number-figures: true
+  size: 12
+  style: print
+---
+```
+
+The supported options are `style`, `size`, `section-numbers`, and
+`number-figures` (which accepts `0`, `1`, `true`, or `false`,
+case-insensitive).
+
+Structural options (`size`, `section-numbers`, `number-figures`) follow
+an **author-wins** policy: the YAML value always takes precedence over
+command-line options.  The highlighting `style` follows a
+**reader-wins** policy: the `--style` command-line option takes
+precedence over the YAML value, which in turn takes precedence over the
+default (`dark`).
+
+See the [YAML front matter documentation](../../rexxpub/yaml/) for the
+full specification.
+
 Prerequisites
 -------------
 

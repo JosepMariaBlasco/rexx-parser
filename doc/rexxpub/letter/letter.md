@@ -91,6 +91,22 @@ For example, this is a Rexx fenced code block inside a letter:
 Say "Hello from a letter!"
 ~~~
 
+## YAML front matter
+
+Like all RexxPub document classes, the `letter` class supports
+reading options from the YAML front matter block.  For example,
+a letter that should always be printed at 10pt can specify this
+directly in the source:
+
+```
+---
+rexxpub:
+  size: 10
+---
+```
+
+See the [YAML front matter documentation](../yaml/) for details.
+
 We hope you find the `letter` class useful.  If you have suggestions
 for improvements, please do not hesitate to let us know.
 
