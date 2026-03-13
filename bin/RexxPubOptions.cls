@@ -29,13 +29,13 @@
 /* Returns a StringTable with normalized option values:                       */
 /*                                                                            */
 /*   Top-level (from rexxpub: block):                                         */
-/*     style              - Rexx highlighting style (or "" if not set)        */
-/*     size               - base font size (or "" if not set)                 */
-/*     section-numbers    - numbering depth (or "" if not set)                */
-/*     number-figures     - 0 or 1 (or "" if not set)                         */
-/*     docclass           - document class name (or "" if not set)            */
-/*     language           - HTML lang attribute (or "" if not set)            */
-/*     outline            - PDF bookmark depth (or "" if not set)             */
+/*     style              - Rexx highlighting style (or .Nil if not set)      */
+/*     size               - base font size (or .Nil if not set)               */
+/*     section-numbers    - numbering depth (or .Nil if not set)              */
+/*     number-figures     - 0 or 1 (or .Nil if not set)                       */
+/*     docclass           - document class name (or .Nil if not set)          */
+/*     language           - HTML lang attribute (or .Nil if not set)          */
+/*     outline            - PDF bookmark depth (or .Nil if not set)           */
 /*                                                                            */
 /*   Listing sub-options (from rexxpub: listings:):                           */
 /*     listing-caption-position  - "above" or "below"  (default: "above")     */
@@ -53,7 +53,7 @@
 /*                                                                            */
 /*   Pandoc metadata (from top-level YAML):                                   */
 /*     highlight-style           - Pandoc highlighting theme                  */
-/*                                 (default: "pygments")                      */
+/*                                 (or .Nil if not set)                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -62,14 +62,14 @@
 
   opts = .StringTable~new
 
-  -- Top-level defaults (empty string = "not set by YAML")
-  opts["style"]           = ""
-  opts["size"]            = ""
-  opts["section-numbers"] = ""
-  opts["number-figures"]  = ""
-  opts["docclass"]        = ""
-  opts["language"]        = ""
-  opts["outline"]         = ""
+  -- Top-level defaults (.Nil = "not set by YAML")
+  opts["style"]           = .Nil
+  opts["size"]            = .Nil
+  opts["section-numbers"] = .Nil
+  opts["number-figures"]  = .Nil
+  opts["docclass"]        = .Nil
+  opts["language"]        = .Nil
+  opts["outline"]         = .Nil
 
   -- Listing sub-option defaults
   opts["listing-caption-position"] = "above"
@@ -84,107 +84,107 @@
   opts["figure-label-style"]       = "bold"
   opts["figure-label"]             = ""
 
-  -- Pandoc metadata default
-  opts["highlight-style"]          = "pygments"
+  -- Pandoc metadata (.Nil = "not set by YAML")
+  opts["highlight-style"]          = .Nil
 
   If yaml == .Nil Then Return opts
 
-  -- Read rexxpub: block
-  If yaml~hasIndex("rexxpub") Then Do
-    rp = yaml["rexxpub"]
-    If rp~isA(.StringTable) Then Do
+  -- Process first-level entries
 
-      If rp~hasIndex("style") Then
-        opts["style"] = rp["style"]
+  -- Read highlight-style from top-level YAML (standard Pandoc metadata)
+  If yaml~hasIndex("highlight-style")
+    Then opts["highlight-style"] = Lower(yaml["highlight-style"])
 
-      If rp~hasIndex("size") Then
-        opts["size"] = rp["size"]
+  -- Process second- and third-level entries
 
-      If rp~hasIndex("section-numbers") Then
-        opts["section-numbers"] = rp["section-numbers"]
+  If yaml~hasIndex("rexxpub") Then Call ReadRexxPubBlock
 
-      If rp~hasIndex("number-figures") Then Do
-        nf = Lower(rp["number-figures"])
-        Select Case nf
-          When "0", "false" Then opts["number-figures"] = 0
-          When "1", "true"  Then opts["number-figures"] = 1
-          Otherwise Nop                    -- Ignore invalid values
-        End
-      End
+  Return opts
 
-      If rp~hasIndex("docclass") Then
-        opts["docclass"] = Lower(rp["docclass"])
 
-      If rp~hasIndex("language") Then
-        opts["language"] = rp["language"]
+ConditionalCopyFrom: Procedure Expose opts prefix
+  Use Arg table, key, lowerCase = 0, list = ""
+  newValue = table[key]
+  If newValue == .Nil Then Return
+  If lowerCase Then newValue = Lower(newValue)
+  If list \== "", WordPos(newValue, list) == 0 Then Return
+  newKey = key
+  If prefix \== "" Then newKey = prefix"-"key
+  If table~hasIndex(key) Then opts[newKey] = newValue
+Return
 
-      If rp~hasIndex("outline") Then Do
-        yamlOutline = rp["outline"]
-        If DataType(yamlOutline,"W"), yamlOutline >= 0, yamlOutline <= 6 Then
-          opts["outline"] = yamlOutline
-      End
 
-      -- listings: sub-table
-      If rp~hasIndex("listings") Then Do
-        lst = rp["listings"]
-        If lst~isA(.StringTable) Then Do
-          If lst~hasIndex("caption-position") Then Do
-            cp = Lower(lst["caption-position"])
-            If cp == "above" | cp == "below" Then
-              opts["listing-caption-position"] = cp
-          End
-          If lst~hasIndex("caption-style") Then Do
-            cs = Lower(lst["caption-style"])
-            If cs == "normal" | cs == "italic" Then
-              opts["listing-caption-style"] = cs
-          End
-          If lst~hasIndex("label-style") Then Do
-            ls = Lower(lst["label-style"])
-            If "normal bold italic bold-italic"~wordPos(ls) > 0 Then
-              opts["listing-label-style"] = ls
-          End
-          If lst~hasIndex("label") Then
-            opts["listing-label"] = lst["label"]
-          If lst~hasIndex("frame") Then Do
-            lf = Lower(lst["frame"])
-            If "none tb single leftbar"~wordPos(lf) > 0 Then
-              opts["listing-frame"] = lf
-          End
-        End
-      End
+ReadRexxPubBlock: -- Read rexxpub: block
 
-      -- figures: sub-table
-      If rp~hasIndex("figures") Then Do
-        fig = rp["figures"]
-        If fig~isA(.StringTable) Then Do
-          If fig~hasIndex("caption-position") Then Do
-            cp = Lower(fig["caption-position"])
-            If cp == "above" | cp == "below" Then
-              opts["figure-caption-position"] = cp
-          End
-          If fig~hasIndex("caption-style") Then Do
-            cs = Lower(fig["caption-style"])
-            If cs == "normal" | cs == "italic" Then
-              opts["figure-caption-style"] = cs
-          End
-          If fig~hasIndex("label-style") Then Do
-            ls = Lower(fig["label-style"])
-            If "normal bold italic bold-italic"~wordPos(ls) > 0 Then
-              opts["figure-label-style"] = ls
-          End
-          If fig~hasIndex("label") Then
-            opts["figure-label"] = fig["label"]
-        End
-      End
+  rp = yaml["rexxpub"]
+  If \rp~isA(.StringTable) Then Return
 
+  lowerCase = 1
+  prefix    = ""
+
+  -- Process second-level entries
+
+  Call ConditionalCopyFrom rp, "style"
+  Call ConditionalCopyFrom rp, "size"
+  Call ConditionalCopyFrom rp, "section-numbers"
+  Call ConditionalCopyFrom rp, "number-figures" , lowerCase
+  Call ConditionalCopyFrom rp, "docclass"       , lowerCase
+  Call ConditionalCopyFrom rp, "language"
+  Call ConditionalCopyFrom rp, "outline"
+
+  -- Sanitize values
+
+  opt = opts["number-figures"]
+  If opt \== .Nil Then Do
+    Select Case opt
+      When 0, 1    Then Nop
+      When "true"  Then opts["number-figures"] = 1
+      When "false" Then opts["number-figures"] = 0
+      Otherwise opts~remove("number-figures")
     End
   End
 
-  -- Read highlight-style from top-level YAML (standard Pandoc metadata)
-  If yaml~hasIndex("highlight-style") Then
-    opts["highlight-style"] = Lower(yaml["highlight-style"])
+  outline = opts["outline"]
+  If DataType(outline,"W"), outline >= 0, outline <= 6 Then Nop
+  Else opts~remove("outline")
 
-  Return opts
+  -- Process third-level entries
+
+  -- listings: sub-table
+  If rp~hasIndex("listings") Then Call ProcessListings
+
+  -- figures: sub-table
+  If rp~hasIndex("figures")  Then Call ProcessFigures
+
+Return
+
+ProcessListings:
+  lst = rp["listings"]
+  If \lst~isA(.StringTable) Then Return
+
+  prefix = "listing"
+
+  Call ConditionalCopyFrom lst, "caption-position", lowerCase, "above below"
+  Call ConditionalCopyFrom lst, "caption-style",    lowerCase, "normal italic"
+  Call ConditionalCopyFrom lst, "label-style",      lowerCase, -
+    "normal bold italic bold-italic"
+  Call ConditionalCopyFrom lst, "frame",           lowerCase, -
+    "none tb single leftbar"
+  Call ConditionalCopyFrom lst, "label"
+Return
+
+ProcessFigures:
+  fig = rp["figures"]
+  If \fig~isA(.StringTable) Then Return
+
+  prefix = "figure"
+
+  Call ConditionalCopyFrom fig, "caption-position", lowerCase, "above below"
+  Call ConditionalCopyFrom fig, "caption-style",    lowerCase, "normal italic"
+  Call ConditionalCopyFrom fig, "label-style",      lowerCase, -
+    "normal bold italic bold-italic"
+  Call ConditionalCopyFrom fig, "label"
+Return
 
 
 /******************************************************************************/
@@ -302,12 +302,12 @@
           " font-style: normal; }" || NL
   End
 
-  result = .StringTable~new
-  result["overrideCSS"]   = overrideCSS
-  result["listingsAttrs"] = listingsAttrs
-  result["figuresAttrs"]  = figuresAttrs
+  res = .StringTable~new
+  res["overrideCSS"]   = overrideCSS
+  res["listingsAttrs"] = listingsAttrs
+  res["figuresAttrs"]  = figuresAttrs
 
-  Return result
+  Return res
 
 
 /******************************************************************************/
@@ -322,7 +322,9 @@
 ::Routine DefaultSectionNumbers Public
   Use Strict Arg docclass
   Select Case docclass
-    When "book"   Then Return 2
-    When "slides" Then Return 0
-    Otherwise          Return 3
+    When "article" Then Return 3
+    When "letter"  Then Return 0
+    When "book"    Then Return 2
+    When "slides"  Then Return 0
+    Otherwise           Return 3
   End

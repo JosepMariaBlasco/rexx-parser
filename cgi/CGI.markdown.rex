@@ -50,7 +50,8 @@
 /* 20260312         Add limited support for YAML front matter blocks          */
 /* 20260312         Add YAML support for docclass and language                */
 /* 20260312         Add YAML listings: and figures: sub-options               */
-/* 20260312         Add YAML highlight-style for Pandoc syntax highlighting  */
+/* 20260312         Add YAML highlight-style for Pandoc syntax highlighting   */
+/* 20260313         Refactor YAML/caption code to RexxPubOptions.cls          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -67,6 +68,7 @@
 
   Call Requires .."/bin/FencedCode.cls"
   Call Requires .."/bin/YAMLFrontMatter.cls"
+  Call Requires .."/bin/RexxPubOptions.cls"
   Call Requires mypath"rexx.epbcn.com.optional.cls"
 
  .MyCGI~new~execute
@@ -242,114 +244,32 @@ Exit
   ------------------------------------------------------------------------------
 
   yaml = YAMLFrontMatter(source)
-  -- Listings sub-options (defaults)
-  listingCaptionPosition = "above"
-  listingCaptionStyle    = "normal"
-  listingLabelStyle      = "bold"
-  listingLabel           = ""
-  listingFrame           = "none"
-  -- Figures sub-options (defaults)
-  figureCaptionPosition  = "below"
-  figureCaptionStyle     = "normal"
-  figureLabelStyle       = "bold"
-  figureLabel            = ""
+  opts = ParseRexxPubYAML(yaml)
 
-  If yaml \== .Nil, yaml~hasIndex("rexxpub") Then Do
-    rp = yaml["rexxpub"]
-    If rp~isA(.StringTable) Then Do
-      -- style: only use YAML when the URL did not specify one
-      If \urlStyle, rp~hasIndex("style") Then
-        style = rp["style"]
-      -- For structural options, YAML always wins
-      If rp~hasIndex("size") Then
-        size = rp["size"]
-      If rp~hasIndex("section-numbers") Then
-        sectionNumbers = rp["section-numbers"]
-      If rp~hasIndex("number-figures") Then Do
-        nf = rp["number-figures"]
-        Select Case Lower(nf)
-          When "0", "false" Then numberFigures = 0
-          When "1", "true"  Then numberFigures = 1
-          Otherwise Nop                  -- Ignore invalid values
-        End
-      End
-      -- docclass: YAML overrides filename inference
-      If rp~hasIndex("docclass") Then Do
-        yamlDocClass = Lower(rp["docclass"])
-        validClasses = "article book letter slides"
-        If validClasses~caselessWordPos(yamlDocClass) > 0 Then
-          filenameSpecificStyle = "print/"yamlDocClass
-        -- Otherwise silently ignored
-      End
-      -- language: YAML always wins
-      If rp~hasIndex("language") Then
-        language = rp["language"]
-      -- listings: sub-table with caption options
-      If rp~hasIndex("listings") Then Do
-        lst = rp["listings"]
-        If lst~isA(.StringTable) Then Do
-          If lst~hasIndex("caption-position") Then Do
-            cp = Lower(lst["caption-position"])
-            If cp == "above" | cp == "below" Then
-              listingCaptionPosition = cp
-          End
-          If lst~hasIndex("caption-style") Then Do
-            cs = Lower(lst["caption-style"])
-            If cs == "normal" | cs == "italic" Then
-              listingCaptionStyle = cs
-          End
-          If lst~hasIndex("label-style") Then Do
-            ls = Lower(lst["label-style"])
-            If "normal bold italic bold-italic"~wordPos(ls) > 0 Then
-              listingLabelStyle = ls
-          End
-          If lst~hasIndex("label") Then
-            listingLabel = lst["label"]
-          If lst~hasIndex("frame") Then Do
-            lf = Lower(lst["frame"])
-            If "none tb single leftbar"~wordPos(lf) > 0 Then
-              listingFrame = lf
-          End
-        End
-      End
-      -- figures: sub-table with caption options
-      If rp~hasIndex("figures") Then Do
-        fig = rp["figures"]
-        If fig~isA(.StringTable) Then Do
-          If fig~hasIndex("caption-position") Then Do
-            cp = Lower(fig["caption-position"])
-            If cp == "above" | cp == "below" Then
-              figureCaptionPosition = cp
-          End
-          If fig~hasIndex("caption-style") Then Do
-            cs = Lower(fig["caption-style"])
-            If cs == "normal" | cs == "italic" Then
-              figureCaptionStyle = cs
-          End
-          If fig~hasIndex("label-style") Then Do
-            ls = Lower(fig["label-style"])
-            If "normal bold italic bold-italic"~wordPos(ls) > 0 Then
-              figureLabelStyle = ls
-          End
-          If fig~hasIndex("label") Then
-            figureLabel = fig["label"]
-        End
-      End
-    End
+  -- style: URL > YAML > default
+  If \urlStyle, opts["style"] \== .Nil Then style = opts["style"]
+  -- For structural options, YAML always wins
+  If opts["size"]            \== .Nil Then size           = opts["size"]
+  If opts["section-numbers"] \== .Nil Then sectionNumbers = opts["section-numbers"]
+  If opts["number-figures"]  \== .Nil Then numberFigures  = opts["number-figures"]
+  If opts["language"]        \== .Nil Then language       = opts["language"]
+  If opts["highlight-style"] \== .Nil Then highlightStyle = opts["highlight-style"]
+  -- docclass: YAML overrides filename inference
+  If opts["docclass"] \== .Nil Then Do
+    yamlDocClass = opts["docclass"]
+    validClasses = "article book letter slides"
+    If validClasses~caselessWordPos(yamlDocClass) > 0 Then
+      filenameSpecificStyle = "print/"yamlDocClass
   End
-
-  -- Read highlight-style from top-level YAML (standard Pandoc metadata)
-  If yaml \== .Nil, yaml~hasIndex("highlight-style") Then
-    highlightStyle = Lower(yaml["highlight-style"])
 
   -- Resolve sectionNumbers default based on docclass
   -- (uses filenameSpecificStyle which may have been overridden by YAML)
-  If sectionNumbers == -1 Then
-    Select Case filenameSpecificStyle
-      When "print/book"   Then sectionNumbers = 2
-      When "print/slides" Then sectionNumbers = 0
-      Otherwise                sectionNumbers = 3
-    End
+  If sectionNumbers == -1 Then Do
+    If filenameSpecificStyle~startsWith("print/")
+      Then docclass = SubStr(filenameSpecificStyle, 7)
+      Else docclass = filenameSpecificStyle
+    sectionNumbers = DefaultSectionNumbers(docclass)
+  End
 
   ------------------------------------------------------------------------------
   -- Special case for .rex or .cls files                                      --
@@ -443,89 +363,10 @@ Exit
     Else numberFiguresClass = ""
 
   /* Build listing and figure data-* attributes and CSS overrides            */
-  listingsAttrs = ""
-  figuresAttrs  = ""
-  overrideCSS   = ""
-
-  If listingCaptionPosition \== "above" Then
-    listingsAttrs ||= ' data-listing-caption-position="'listingCaptionPosition'"'
-  If listingLabel \== "" Then
-    listingsAttrs ||= ' data-listing-label="'listingLabel'"'
-  If figureCaptionPosition \== "below" Then
-    figuresAttrs ||= ' data-figure-caption-position="'figureCaptionPosition'"'
-  If figureLabel \== "" Then
-    figuresAttrs ||= ' data-figure-label="'figureLabel'"'
-
-  /* --- Listing CSS overrides ---                                           */
-  If listingCaptionPosition == "below" Then
-    overrideCSS ||= "figure.listing figcaption {"            -
-      " break-after: auto; break-before: avoid;"             -
-      " margin-top: 0.075em; margin-bottom: 0; }" || "0a"x  -
-      || "figure.listing pre {"                              -
-      " margin-bottom: 0; }" || "0a"x                       -
-      || "figure.listing div.sourceCode {"                   -
-      " margin-bottom: 0; }" || "0a"x
-  If listingCaptionStyle == "italic" Then
-    overrideCSS ||= "figure.listing figcaption {"            -
-      " font-style: italic; }" || "0a"x
-  Select Case listingLabelStyle
-    When "normal" Then
-      overrideCSS ||= "figure.listing .figure-number {"      -
-        " font-weight: normal; font-style: normal; }" || "0a"x
-    When "italic" Then
-      overrideCSS ||= "figure.listing .figure-number {"      -
-        " font-weight: normal; font-style: italic; }" || "0a"x
-    When "bold-italic" Then
-      overrideCSS ||= "figure.listing .figure-number {"      -
-        " font-weight: bold; font-style: italic; }" || "0a"x
-    Otherwise
-      If listingCaptionStyle == "italic" Then
-        overrideCSS ||= "figure.listing .figure-number {"    -
-          " font-style: normal; }" || "0a"x
-  End
-  /* --- Listing frame CSS overrides ---                                      */
-  Select Case listingFrame
-    When "tb" Then
-      overrideCSS ||= "div.sourceCode {"                           -
-        " border-top: 0.4pt solid #000;"                           -
-        " border-bottom: 0.4pt solid #000;"                        -
-        " padding: 0.5em 1em; }" || "0a"x
-    When "single" Then
-      overrideCSS ||= "div.sourceCode {"                           -
-        " border: 0.4pt solid #000;"                               -
-        " padding: 0.5em 1em; }" || "0a"x
-    When "leftbar" Then
-      overrideCSS ||= "div.sourceCode {"                           -
-        " border-left: 2pt solid #ccc;"                            -
-        " padding: 0.5em 1em; }" || "0a"x
-    Otherwise Nop                          -- "none": no frame
-  End
-
-  /* --- Figure CSS overrides ---                                            */
-  If figureCaptionPosition == "above" Then
-    overrideCSS ||= "figure:not(.listing) figcaption {"      -
-      " break-before: auto; break-after: avoid;"             -
-      " margin-top: 0; margin-bottom: 0.5em; }" || "0a"x    -
-      || "figure:not(.listing) img {"                        -
-      " margin-top: 0; }" || "0a"x
-  If figureCaptionStyle == "italic" Then
-    overrideCSS ||= "figure:not(.listing) figcaption {"      -
-      " font-style: italic; }" || "0a"x
-  Select Case figureLabelStyle
-    When "normal" Then
-      overrideCSS ||= "figure:not(.listing) .figure-number {" -
-        " font-weight: normal; font-style: normal; }" || "0a"x
-    When "italic" Then
-      overrideCSS ||= "figure:not(.listing) .figure-number {" -
-        " font-weight: normal; font-style: italic; }" || "0a"x
-    When "bold-italic" Then
-      overrideCSS ||= "figure:not(.listing) .figure-number {" -
-        " font-weight: bold; font-style: italic; }" || "0a"x
-    Otherwise
-      If figureCaptionStyle == "italic" Then
-        overrideCSS ||= "figure:not(.listing) .figure-number {" -
-          " font-style: normal; }" || "0a"x
-  End
+  captionResult = BuildCaptionOverrides(opts)
+  overrideCSS   = captionResult["overrideCSS"]
+  listingsAttrs = captionResult["listingsAttrs"]
+  figuresAttrs  = captionResult["figuresAttrs"]
 
   template = .Resources~HTML
 

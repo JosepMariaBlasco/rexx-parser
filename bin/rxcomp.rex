@@ -15,6 +15,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260117    0.4a First release                                             */
+/* 20260313    0.5  Move error handling to ErrorHandler.cls                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -176,38 +177,22 @@ Help:
   Exit 1
 
 --------------------------------------------------------------------------------
--- Standard Rexx Parser error handler                                         --
+-- Delegate parsing errors to the standard ErrorHandler                       --
 --------------------------------------------------------------------------------
 
 Syntax:
   co = condition("O")
+  -- Not a 98.900? This is an application error
   If co~code \== 98.900 Then Do
    .Error~Say( "Error" co~code "in" co~program", line" co~position":" )
     Raise Propagate
   End
-  additional = Condition("A")
-  section = additional~section(2)
-  extra = Additional~lastItem
-  line  = extra~position
-  code  = extra~code
-  Parse Var code major"."minor
- .Error~Say( Right(line,6) "*-*" source[line] )
- .Error~Say( "Error" major "in" fullpath", line" line": " ErrorText(major) )
- .Error~Say( "Error" code": " Ansi.ErrorText( code, section ) )
-
-  If itrace Then Do
-   .Error~Say
-   .Error~Say( "Trace follows:" )
-   .Error~Say( Copies("-",80) )
-   .Error~Say( co~stackFrames~makeArray )
-  End
-
-  Exit -major
+  Exit ErrorHandler( fullPath, source, co, itrace)
 
 --------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"
-::Requires "ANSI.ErrorText.cls"
+::Requires "ErrorHandler.cls"
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "modules/print/print.cls"
 
