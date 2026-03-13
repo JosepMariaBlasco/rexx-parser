@@ -26,6 +26,7 @@
 /* 20260312         Add YAML support for docclass, language, and outline      */
 /* 20260312         Add YAML listings: and figures: sub-options               */
 /* 20260312         Add YAML highlight-style; --pandoc-highlighting-style CLI */
+/* 20260313         Move error handling to ErrorHandler.cls                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -374,6 +375,7 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   listingCaptionStyle    = "normal"
   listingLabelStyle      = "bold"
   listingLabel           = ""
+  listingFrame           = "none"
   -- Figures sub-options (defaults)
   figureCaptionPosition  = "below"
   figureCaptionStyle     = "normal"
@@ -441,6 +443,11 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
           End
           If lst~hasIndex("label") Then
             listingLabel = lst["label"]
+          If lst~hasIndex("frame") Then Do
+            lf = Lower(lst["frame"])
+            If "none tb single leftbar"~wordPos(lf) > 0 Then
+              listingFrame = lf
+          End
         End
       End
       -- figures: sub-table with caption options
@@ -540,34 +547,7 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   Signal AllWentWell
 
 IndividualFileFailed:
-  co         = condition("O")
-  additional = Condition("A")
-  extra = additional~lastitem
-  If \extra~hasMethod("position") Then Raise Propagate
-  line  = extra~position
-  Parse Value co~code With major"."minor
- .Error~Say( Right(line,6) "*-*" extra~sourceline                            )
-   -- Try to reconstruct the line number if we have enough information
-  name = extra~name
-  majorMessagePrinted = 0
-  If Right(name,1) == "]" Then Do
-    Parse Var name name1" [lines "start"-"end"]"
-    If name == name1" [lines "start"-"end"]" Then Do
-      majorMessagePrinted = 1
-     .Error~Say( "Error" major "in" name1", line" (start+line)": " ErrorText(major) )
-    End
-  End
-  If \majorMessagePrinted Then
-   .Error~Say( "Error" major "in" extra~name", line" line": " ErrorText(major) )
- .Error~Say( "Error" co~code": " Ansi.ErrorText( co~code, additional )       )
-
-  If itrace Then Do
-   .Error~Say
-   .Error~Say( "Trace follows:"         )
-   .Error~Say( Copies("-",80)           )
-   .Error~Say( co~stackFrames~makeArray )
-  End
-
+  If \IsAParseError(co, itrace) Then Raise Propagate
   Return 1
 
 AllWentWell:
@@ -681,6 +661,23 @@ AllWentWell:
       If listingCaptionStyle == "italic" Then
         overrideCSS ||= "figure.listing .figure-number {"    -
           " font-style: normal; }" || "0a"x
+  End
+  /* --- Listing frame CSS overrides ---                                      */
+  Select Case listingFrame
+    When "tb" Then
+      overrideCSS ||= "div.sourceCode {"                           -
+        " border-top: 0.4pt solid #000;"                           -
+        " border-bottom: 0.4pt solid #000;"                        -
+        " padding: 0.5em 1em; }" || "0a"x
+    When "single" Then
+      overrideCSS ||= "div.sourceCode {"                           -
+        " border: 0.4pt solid #000;"                               -
+        " padding: 0.5em 1em; }" || "0a"x
+    When "leftbar" Then
+      overrideCSS ||= "div.sourceCode {"                           -
+        " border-left: 2pt solid #ccc;"                            -
+        " padding: 0.5em 1em; }" || "0a"x
+    Otherwise Nop                          -- "none": no frame
   End
 
   /* --- Figure CSS overrides ---                                            */
@@ -907,12 +904,6 @@ Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
 See myhelp for details.
 ::End
 
-::Requires "ANSI.ErrorText.cls"
-::Requires "BaseClassesAndRoutines.cls"
-::Requires "ErrorHandler.cls"
-::Requires "FencedCode.cls"
-::Requires "YAMLFrontMatter.cls"
-
 ::Resource HTML
 <!doctype html>
 <html lang='%Language%'>
@@ -941,3 +932,8 @@ See myhelp for details.
   </body>
 </html>
 ::END
+
+::Requires "BaseClassesAndRoutines.cls"
+::Requires "ErrorHandler.cls"
+::Requires "FencedCode.cls"
+::Requires "YAMLFrontMatter.cls"

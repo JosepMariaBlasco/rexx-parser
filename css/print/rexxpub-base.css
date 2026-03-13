@@ -637,6 +637,25 @@ figure.listing div.sourceCode {
   margin-top: 0;
 }
 
+/* Reset Bootstrap's pre/code styling inside Pandoc-highlighted blocks        */
+/* and provide a LaTeX-like default appearance (listings frame=none).          */
+div.sourceCode {
+  background-color: #f8f8f8;
+  padding: 0.5em 1em;
+}
+div.sourceCode pre {
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+div.sourceCode code {
+  color: inherit;
+  background-color: transparent;
+  padding: 0;
+  font-size: inherit;
+}
+
 figcaption {
   font-size: 0.9em;
   color: #444;

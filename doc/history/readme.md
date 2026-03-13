@@ -44,6 +44,11 @@ Version history
        sub-options for configuring captions (20260312).
   <li> Add Pandoc syntax highlighting for non-Rexx fenced code blocks,
        with configurable <code>highlight-style</code> (20260312).
+       Reset Bootstrap styling inside Pandoc-highlighted code blocks so that highlight-style CSS controls the appearance (20260312).
+  <li> Reset Bootstrap styling inside Pandoc-highlighted code blocks
+       so that the Pandoc `highlight-style` CSS controls the appearance (20260312).
+  <li> Add default LaTeX-like background for Pandoc code blocks (20260312).
+  <li> YAML front matter: add frame option to listings: (none, tb, single, leftbar) (20260312).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

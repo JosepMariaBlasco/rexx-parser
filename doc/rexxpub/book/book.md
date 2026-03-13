@@ -2331,6 +2331,7 @@ rexxpub:
   style: dark
   listings:
     caption-position: above
+    frame: tb
 ---
 ```
 
@@ -2351,7 +2352,8 @@ The currently supported top-level options under `rexxpub:` are
 `language` (the `<html lang>` attribute), and `outline` (PDF
 bookmark depth, md2pdf only).  Two nested groups, `listings:` and
 `figures:`, provide fine-grained control over caption position,
-caption style, label style, and custom label text for code listings
+caption style, label style, custom label text, and frame style
+(for Pandoc-highlighted code blocks) for code listings
 and image figures respectively.
 
 Precedence

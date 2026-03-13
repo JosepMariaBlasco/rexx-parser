@@ -247,6 +247,7 @@ Exit
   listingCaptionStyle    = "normal"
   listingLabelStyle      = "bold"
   listingLabel           = ""
+  listingFrame           = "none"
   -- Figures sub-options (defaults)
   figureCaptionPosition  = "below"
   figureCaptionStyle     = "normal"
@@ -304,6 +305,11 @@ Exit
           End
           If lst~hasIndex("label") Then
             listingLabel = lst["label"]
+          If lst~hasIndex("frame") Then Do
+            lf = Lower(lst["frame"])
+            If "none tb single leftbar"~wordPos(lf) > 0 Then
+              listingFrame = lf
+          End
         End
       End
       -- figures: sub-table with caption options
@@ -476,6 +482,23 @@ Exit
       If listingCaptionStyle == "italic" Then
         overrideCSS ||= "figure.listing .figure-number {"    -
           " font-style: normal; }" || "0a"x
+  End
+  /* --- Listing frame CSS overrides ---                                      */
+  Select Case listingFrame
+    When "tb" Then
+      overrideCSS ||= "div.sourceCode {"                           -
+        " border-top: 0.4pt solid #000;"                           -
+        " border-bottom: 0.4pt solid #000;"                        -
+        " padding: 0.5em 1em; }" || "0a"x
+    When "single" Then
+      overrideCSS ||= "div.sourceCode {"                           -
+        " border: 0.4pt solid #000;"                               -
+        " padding: 0.5em 1em; }" || "0a"x
+    When "leftbar" Then
+      overrideCSS ||= "div.sourceCode {"                           -
+        " border-left: 2pt solid #ccc;"                            -
+        " padding: 0.5em 1em; }" || "0a"x
+    Otherwise Nop                          -- "none": no frame
   End
 
   /* --- Figure CSS overrides ---                                            */
