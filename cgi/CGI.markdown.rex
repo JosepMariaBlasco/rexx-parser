@@ -383,7 +383,7 @@ Exit
       When "%printtoc%"      Then
         Say "<script src='/rexx-parser/js/createToc.js'></script>"
       When "%printsections%"  Then
-        If print & sectionNumbers > 0 Then
+        If sectionNumbers > 0 Then
           Say "<script src='/rexx-parser/js/numberSections.js'></script>"
       When "%printfigures%"   Then
         Say "<script src='/rexx-parser/js/numberFigures.js'></script>"

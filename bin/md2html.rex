@@ -564,6 +564,11 @@ AllWentWell: Nop
       When "%listingsstyle%"             Then
         If overrideCSS \== "" Then
           res~append( "    <style>" || overrideCSS || "</style>" )
+      When "%printsections%"  Then
+        If jsbase \== "" & sectionNumbers > 0 Then
+          res~append(                                                       -
+            "    <script src='"jsbase"/numberSections.js'></script>"        -
+          )
       When "%printfigures%"  Then
         If jsbase \== "" Then
           res~append(                                                       -
