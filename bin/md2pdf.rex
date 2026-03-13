@@ -547,7 +547,7 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   Signal AllWentWell
 
 IndividualFileFailed:
-  If \IsAParseError(co, itrace) Then Raise Propagate
+  If \IsAParseError(Condition("O"), itrace) Then Raise Propagate
   Return 1
 
 AllWentWell:
