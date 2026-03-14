@@ -207,12 +207,10 @@ Normalize:
   Select Case Length(Arg(1))
     When 6, 8 Then Return Arg(1)
     When 3 Then Do
-      If Length(Arg(1)) == 6 Then Return Arg(1)
       Parse Value Arg(1) With a +1 b +1 c +1
       Return Space( a a b b c c , 0 )
     End
     When 4 Then Do
-      If Length(Arg(1)) == 6 Then Return Arg(1)
       Parse Value Arg(1) With r +1 g +1 b +1 a +1
       Return Space( r r g g b b a a , 0 )
     End

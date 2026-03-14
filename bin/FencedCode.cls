@@ -400,9 +400,8 @@ BadOptions:
   End
   Else If options.patchfile \== "" Then Do
     fn = options.path"/"options.patchfile
-    patches = CharIn(fn,1,Chars(fn))~makeArray
+    patches = File2Array(fn)
     patches = .StylePatch~of( patches )
-    Call Stream fn,"c","close"
   End
 
   fn = options.["SOURCE"]

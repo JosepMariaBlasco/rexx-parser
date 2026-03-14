@@ -65,7 +65,7 @@
 
   options.default     = ""
 
-  myPath              = FileSpec("Location",myself)
+  myPath              = FileSpec("Location",myName)
   sep                 = .File~separator
   patch               = .Nil
   styleSpecified      = 0
@@ -111,10 +111,8 @@
         args~delete(1)
         file = Stream(value,"C", "Q Exists")
         If file == "" Then Call Error "File '"value"' not found."
-        value = CharIn( file, 1, Chars(file) )~makeArray
-        Call Stream file, "C", "Close"
+        value = File2Array( file )
         patch = .StylePatch~of( value )
-        args~delete(1)
       End
 
       When "--startfrom"         Then options.startFrom    = Natural(value)
@@ -154,8 +152,7 @@
   Else Do
     fullPath = .context~package~findProgram(file)
     If fullPath == .Nil Then Call Error "File '"file"' does not exist."
-    source = CharIn(fullPath,1,Chars(fullPath))~makeArray
-    Call Stream fullPath,"c","close"
+    source = File2Array(fullPath)
   End
 
   If Options.css == 0 Then Do

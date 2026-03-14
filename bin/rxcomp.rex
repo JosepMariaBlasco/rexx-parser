@@ -85,14 +85,12 @@ ProcessOptions:
   If experimental Then Options~append(("EXPERIMENTAL", 1))
   If executor     Then Options~append(("EXECUTOR", 1))
 
-  source   = CharIn(file1,1,Chars(file1))~makeArray
-  Call CharOut file1
+  source   = File2Array(file1)
   fullpath = file1
   parser1  = .Rexx.Parser~new(file1, source, Options)
   element1 = parser1~firstElement
 
-  source   = CharIn(file2,1,Chars(file2))~makeArray
-  Call CharOut file2
+  source   = File2Array(file2)
   fullpath = file2
   parser2  = .Rexx.Parser~new(file2, source, Options)
   element2 = parser2~firstElement

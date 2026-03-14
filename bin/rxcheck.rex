@@ -127,8 +127,7 @@
   If fullPath == .Nil Then
     Call Error "File '"file"' does not exist."
 
-  source = CharIn(fullPath, 1, Chars(fullPath))~makeArray
-  Call Stream fullPath, 'c', 'close'
+  source = File2Array(fullPath)
 
 Code:
 

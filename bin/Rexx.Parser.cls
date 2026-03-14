@@ -96,8 +96,7 @@
     .Parser.Options[ earlyCheck ] = Set()
 
   If Arg(2,'O') | Arg(2) == .Nil Then Do
-    source = CharIn(name,1,Chars(name))~makeArray
-    Call CharOut name
+    source = File2Array(name)
   End
   Else If source~isA( .String ) Then source = Array( source )
 

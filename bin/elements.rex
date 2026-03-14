@@ -100,8 +100,7 @@ ProcessOptions:
   If fullPath == .Nil Then Call Error "File '"file"' does not exist."
 
   -- We need to compute the source separately to properly handle syntax errors
-  source = CharIn(fullPath,1,Chars(fullPath))~makeArray
-  Call CharOut fullPath
+  source = File2Array(fullPath)
 
   -- Adjust "opTo" if necessary
 

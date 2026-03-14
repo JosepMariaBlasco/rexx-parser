@@ -34,7 +34,7 @@ Expressions.cls         Expression parsing
 Elements.cls            Element definitions
 SecondPass.cls          Second-pass analysis
 Globals.cls             Global definitions and environment
-BaseClassesAndRoutines.cls  Base classes and shared routines
+BaseClassesAndRoutines.cls  Base classes and shared routines (incl. File2Array)
 BIFs.cls                Built-in function definitions
 ANSI.ErrorText.cls      ANSI-standard error messages
 UnicodeSupport.cls      Unicode/TUTOR support
@@ -65,9 +65,9 @@ md2html.rex             Markdown → static HTML
 ```
 
 All three require: `FencedCode.cls`, `YAMLFrontMatter.cls`,
-`ErrorHandler.cls`.
+`RexxPubOptions.cls`, `ErrorHandler.cls`.
 
-**Shared modules** (created o updated during the March 2026 refactoring):
+**Shared modules** (created or updated during the March 2026 refactoring):
 ```
 RexxPubOptions.cls      ParseRexxPubYAML(), BuildCaptionOverrides(),
                         DefaultSectionNumbers() — common option handling
@@ -76,9 +76,8 @@ ErrorHandler.cls        ErrorHandler() for standalone utilities,
 YAMLFrontMatter.cls     Parses YAML front matter from Markdown source
 ```
 
-The refactoring to integrate RexxPubOptions into the three pipelines
-is in progress. Currently the YAML parsing and CSS override generation
-code is still duplicated in each pipeline (~475 lines total).
+The refactoring is complete: all YAML parsing and CSS override
+generation is now centralized in `RexxPubOptions.cls`.
 
 ### Utilities
 ```
@@ -97,6 +96,7 @@ rr2svg.rex              Railroad diagram to SVG converter
 ### Other
 ```
 default.md2html         HTML template for md2html pipeline
+md2html.custom.rex     Sample customization layer for md2html
 fix_pdf_outline.py      Python helper for PDF outline fixing
 EnableExperimentalFeatures.rex  Enables experimental parser features
 DebugSettings.cls       Debug configuration
@@ -148,7 +148,7 @@ css/
 
 ```
 numberFigures.js        Figure/listing numbering and caption handling
-Numbersections.js       Section heading numbering
+numbersections.js       Section heading numbering
 createToc.js            Table of contents generation
 numberFigures.js reads  data-* attributes from div.content for
                         caption position, label overrides, etc.
@@ -181,6 +181,7 @@ doc/
   todo/                           TODO items
   unicode/                        Unicode support notes
   experimental/                   Experimental features docs
+  executor/                       Executor support documentation
   oorexx-bugs/                    ooRexx bug reports/workarounds
 ```
 
@@ -189,16 +190,19 @@ doc/
 ```
 md2pdf.rex ──requires──▶ FencedCode.cls
                          YAMLFrontMatter.cls
+                         RexxPubOptions.cls
                          ErrorHandler.cls
                          BaseClassesAndRoutines.cls
 
 md2html.rex ──requires──▶ FencedCode.cls
                           YAMLFrontMatter.cls
+                          RexxPubOptions.cls
                           ErrorHandler.cls
                           BaseClassesAndRoutines.cls
 
 CGI.markdown.rex ──Call Requires──▶ FencedCode.cls
                                     YAMLFrontMatter.cls
+                                    RexxPubOptions.cls
                  ──::Requires──▶ Rexx.CGI.cls
 
 FencedCode.cls ──requires──▶ Highlighter.cls

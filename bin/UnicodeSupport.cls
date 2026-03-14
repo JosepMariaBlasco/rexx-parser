@@ -422,10 +422,8 @@ IsReserved: Procedure
   name2Code. = ""
 
   -- We know that these two files exist because we checked it in the prolog
-  UnicodeData = CharIn(.UnicodeData, 1, Chars(.UnicodeData))~makeArray
-  Call Stream .UnicodeData, "c", "close"
-  NameAliases = CharIn(.NameAliases, 1, Chars(.NameAliases))~makeArray
-  Call Stream .NameAliases, "c", "close"
+  UnicodeData = File2Array(.UnicodeData)
+  NameAliases = File2Array(.NameAliases)
 
   skipNextLine = 0
 

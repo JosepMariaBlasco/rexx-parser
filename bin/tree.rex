@@ -73,8 +73,7 @@ ProcessOptions:
     Exit 1
   End
 
-  source = CharIn(fullPath, 1, Chars(fullPath))~makeArray
-  Call Stream fullPath, 'c', 'close'
+  source = File2Array(fullPath)
 
   -- Parse our program, and get the first element
   Options = .Array~new

@@ -25,6 +25,7 @@
 /* 20251226    0.4a Send error messages to .error, not .output                */
 /* 20251226         Add support for "=" and "==" at end of expression         */
 /* 20251227         Add ArgArray routine                                      */
+/* 20260314         Add File2Array routine                                    */
 /*                                                                            */
 /******************************************************************************/
 
@@ -795,3 +796,13 @@ End.Clause:
   next~prev     = inserted
 
   Return          inserted
+
+--------------------------------------------------------------------------------
+-- File2Array -- Read a file into an array and close it                       --
+--------------------------------------------------------------------------------
+
+::Routine File2Array Public
+  Use Strict Arg file
+  array = CharIn(file, 1, Chars(file))~makeArray
+  Call Stream file, "c", "close"
+  Return array
