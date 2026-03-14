@@ -27,7 +27,9 @@
 /* 20260312         Add YAML listings: and figures: sub-options               */
 /* 20260312         Add YAML highlight-style; --pandoc-highlighting-style CLI */
 /* 20260313         Move error handling to ErrorHandler.cls                   */
-/* 20260313    0.5  Refactor YAML/caption code to RexxPubOptions.cls          */
+/* 20260314         Remove author-only CLI options: --size, --outline,        */
+/*                  --section-numbers, --no-number-figures, --docclass,       */
+/*                  --language (now YAML-only)                                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -63,7 +65,6 @@
 
   defaultTheme   = "dark"
   cliStyle       = 0                    -- Track if --style was specified
-  docClass       = ""
   quiet          = .False
   language       = "en"
   defaultOptions = ""
@@ -94,33 +95,8 @@ ProcessOptions:
       When "-it", "--itrace"  Then itrace = 1
       When "--check-deps"     Then Do; Call CheckDeps; checkDeps = 1; End
       When "--continue"       Then continue = 1
-      When "--size"           Then Do
-        If args~size == 0 Then
-          Call Error "Missing size after '"option"' option."
-        size = args[1]
-        If Words(size) > 1 | \DataType(size,"W") | size < 1 Then
-          Call Error "Size has to be a positive whole number, found '"size"'."
-        args~delete(1)
-      End
-      When "--outline"        Then Do
-        If args~size == 0 Then
-          Call Error "Missing outline number after '"option"' option."
-        outline = args[1]
-        If \DataType(outline,"W") | outline < 0 | outline > 6 Then
-          Call Error "Outline should be a non-negative whole number smaller than 7, found '"outline"'."
-        args~delete(1)
-      End
-      When "--section-numbers" Then Do
-        If args~size == 0 Then
-          Call Error "Missing depth after '"option"' option."
-        sectionNumbers = args[1]
-        If \DataType(sectionNumbers,"W") | sectionNumbers < 0 | sectionNumbers > 4 Then
-          Call Error "Section number depth should be a whole number between 0 and 4, found '"sectionNumbers"'."
-        args~delete(1)
-      End
       When "-xtr", "--executor"           Then executor     = 1
       When "-exp", "--experimental"       Then experimental = 1
-      When "--no-number-figures"          Then numberFigures = 0
       When "-u", "--tutor", "--unicode"   Then unicode      = 1
       When "--default"        Then Do
         If args~size == 0 Then
@@ -142,23 +118,11 @@ ProcessOptions:
         cssDir = args[1]
         args~delete(1)
       End
-      When "-l", "--language" Then Do
-        If args~size == 0 Then
-          Call Error "Missing language code after '"option"' option."
-        language = Lower(args[1])
-        args~delete(1)
-      End
       When "--style" Then Do
         If args~size == 0 Then
           Call Error "Missing style name after '"option"' option."
         defaultTheme = Lower(args[1])
         cliStyle = 1
-        args~delete(1)
-      End
-      When "--docclass" Then Do
-        If args~size == 0 Then
-          Call Error "Missing class name after '"option"' option."
-        docClass = Lower(args[1])
         args~delete(1)
       End
       When "--pandoc-highlighting-style" Then Do
@@ -221,7 +185,7 @@ ProcessOptions:
         Else Call Error "File '"file"' not found."
       End
       Call Directory .File~new(file)~parentFile~absolutePath
-      Call ProcessFile file, docClass
+      Call ProcessFile file, ""
       Exit
     End
     When 2 Then Do
@@ -298,8 +262,8 @@ BatchMode:
     savedDir = Directory()
     Call Directory file~parent
     If destination \== ""
-      Then processRC = ProcessFile(file~absolutePath, docClass, newDir~absolutePath)
-      Else processRC = ProcessFile(file~absolutePath, docClass)
+      Then processRC = ProcessFile(file~absolutePath, "", newDir~absolutePath)
+      Else processRC = ProcessFile(file~absolutePath, "")
     Call Directory savedDir
     If processRC \== 0 Then Do
       failed += 1
@@ -367,38 +331,127 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   -- Parse YAML front matter for RexxPub options                              --
   -- Precedence:                                                              --
   --   style:          CLI > YAML > default  (reader/printer chooses)         --
-  --   everything else: YAML > CLI > default  (author's intent prevails)      --
+  --   everything else: YAML > default       (author's intent prevails)       --
   ------------------------------------------------------------------------------
 
   yaml = YAMLFrontMatter(source)
-  opts = ParseRexxPubYAML(yaml)
+  -- Listings sub-options (defaults)
+  listingCaptionPosition = "above"
+  listingCaptionStyle    = "normal"
+  listingLabelStyle      = "bold"
+  listingLabel           = ""
+  listingFrame           = "none"
+  -- Figures sub-options (defaults)
+  figureCaptionPosition  = "below"
+  figureCaptionStyle     = "normal"
+  figureLabelStyle       = "bold"
+  figureLabel            = ""
 
-  -- style: CLI > YAML > default
-  If \cliStyle, opts["style"] \== .Nil Then
-    defaultTheme = opts["style"]
-  -- For structural options, YAML always wins
-  If opts["size"]            \== .Nil Then size           = opts["size"]
-  If opts["section-numbers"] \== .Nil Then sectionNumbers = opts["section-numbers"]
-  If opts["number-figures"]  \== .Nil Then numberFigures  = opts["number-figures"]
-  If opts["language"]        \== .Nil Then language       = opts["language"]
-  If opts["outline"]         \== .Nil Then outline        = opts["outline"]
-  If opts["highlight-style"] \== .Nil Then highlightStyle = opts["highlight-style"]
-  -- docclass: YAML overrides CLI and filename inference
-  If opts["docclass"] \== .Nil Then Do
-    yamlDocClass = opts["docclass"]
-    yamlDocClassFile = cssDir"/print/"yamlDocClass".css"
-    If .File~new(yamlDocClassFile)~exists,  -
-      \.File~new(yamlDocClassFile)~isDirectory Then Do
-      thisDocClass = yamlDocClass
-      docClassFile = yamlDocClassFile
+  If yaml \== .Nil, yaml~hasIndex("rexxpub") Then Do
+    rp = yaml["rexxpub"]
+    If rp~isA(.StringTable) Then Do
+      -- style: only use YAML when the CLI did not specify one
+      If \cliStyle, rp~hasIndex("style") Then
+        defaultTheme = rp["style"]
+      -- For structural options, YAML always wins
+      If rp~hasIndex("size") Then
+        size = rp["size"]
+      If rp~hasIndex("section-numbers") Then
+        sectionNumbers = rp["section-numbers"]
+      If rp~hasIndex("number-figures") Then Do
+        nf = rp["number-figures"]
+        Select Case Lower(nf)
+          When "0", "false" Then numberFigures = 0
+          When "1", "true"  Then numberFigures = 1
+          Otherwise Nop                  -- Ignore invalid values
+        End
+      End
+      -- docclass: YAML overrides CLI and filename inference
+      If rp~hasIndex("docclass") Then Do
+        yamlDocClass = Lower(rp["docclass"])
+        yamlDocClassFile = cssDir"/print/"yamlDocClass".css"
+        If .File~new(yamlDocClassFile)~exists,  -
+          \.File~new(yamlDocClassFile)~isDirectory Then Do
+          thisDocClass = yamlDocClass
+          docClassFile = yamlDocClassFile
+        End
+        Else
+         .Error~Say( "Warning: YAML docclass '"yamlDocClass"' not found, ignored." )
+      End
+      -- language: YAML always wins
+      If rp~hasIndex("language") Then
+        language = rp["language"]
+      -- outline: YAML always wins
+      If rp~hasIndex("outline") Then Do
+        yamlOutline = rp["outline"]
+        If DataType(yamlOutline,"W"), yamlOutline >= 0, yamlOutline <= 6 Then
+          outline = yamlOutline
+      End
+      -- listings: sub-table with caption options
+      If rp~hasIndex("listings") Then Do
+        lst = rp["listings"]
+        If lst~isA(.StringTable) Then Do
+          If lst~hasIndex("caption-position") Then Do
+            cp = Lower(lst["caption-position"])
+            If cp == "above" | cp == "below" Then
+              listingCaptionPosition = cp
+          End
+          If lst~hasIndex("caption-style") Then Do
+            cs = Lower(lst["caption-style"])
+            If cs == "normal" | cs == "italic" Then
+              listingCaptionStyle = cs
+          End
+          If lst~hasIndex("label-style") Then Do
+            ls = Lower(lst["label-style"])
+            If "normal bold italic bold-italic"~wordPos(ls) > 0 Then
+              listingLabelStyle = ls
+          End
+          If lst~hasIndex("label") Then
+            listingLabel = lst["label"]
+          If lst~hasIndex("frame") Then Do
+            lf = Lower(lst["frame"])
+            If "none tb single leftbar"~wordPos(lf) > 0 Then
+              listingFrame = lf
+          End
+        End
+      End
+      -- figures: sub-table with caption options
+      If rp~hasIndex("figures") Then Do
+        fig = rp["figures"]
+        If fig~isA(.StringTable) Then Do
+          If fig~hasIndex("caption-position") Then Do
+            cp = Lower(fig["caption-position"])
+            If cp == "above" | cp == "below" Then
+              figureCaptionPosition = cp
+          End
+          If fig~hasIndex("caption-style") Then Do
+            cs = Lower(fig["caption-style"])
+            If cs == "normal" | cs == "italic" Then
+              figureCaptionStyle = cs
+          End
+          If fig~hasIndex("label-style") Then Do
+            ls = Lower(fig["label-style"])
+            If "normal bold italic bold-italic"~wordPos(ls) > 0 Then
+              figureLabelStyle = ls
+          End
+          If fig~hasIndex("label") Then
+            figureLabel = fig["label"]
+        End
+      End
     End
-    Else
-     .Error~Say( "Warning: YAML docclass '"yamlDocClass"' not found, ignored." )
   End
+
+  -- Read highlight-style from top-level YAML (standard Pandoc metadata)
+  If yaml \== .Nil, yaml~hasIndex("highlight-style") Then
+    highlightStyle = Lower(yaml["highlight-style"])
 
   -- Resolve sectionNumbers default based on document class
   If sectionNumbers == -1 Then
-    sectionNumbers = DefaultSectionNumbers(thisDocClass)
+    Select Case thisDocClass
+      When "book"   Then sectionNumbers = 2  -- chapter, section, subsection
+      When "slides" Then sectionNumbers = 0  -- no numbering in slides
+      Otherwise          sectionNumbers = 3  -- section, subsection, subsubsection
+    End
 
   sizeFile = cssDir"/print/"thisDocClass"-"size"pt.css"
   If \.File~new(sizeFile)~exists Then Do
@@ -459,7 +512,7 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   Signal AllWentWell
 
 IndividualFileFailed:
-  If \IsAParseError(Condition("O"), itrace) Then Raise Propagate
+  If \IsAParseError(co, itrace) Then Raise Propagate
   Return 1
 
 AllWentWell:
@@ -534,10 +587,89 @@ AllWentWell:
   figuresHandler = "<script>"chunk"</script>"
 
   /* Build listing and figure data-* attributes and CSS overrides            */
-  captionResult = BuildCaptionOverrides(opts)
-  overrideCSS   = captionResult["overrideCSS"]
-  listingsAttrs = captionResult["listingsAttrs"]
-  figuresAttrs  = captionResult["figuresAttrs"]
+  listingsAttrs = ""
+  figuresAttrs  = ""
+  overrideCSS   = ""
+
+  If listingCaptionPosition \== "above" Then
+    listingsAttrs ||= ' data-listing-caption-position="'listingCaptionPosition'"'
+  If listingLabel \== "" Then
+    listingsAttrs ||= ' data-listing-label="'listingLabel'"'
+  If figureCaptionPosition \== "below" Then
+    figuresAttrs ||= ' data-figure-caption-position="'figureCaptionPosition'"'
+  If figureLabel \== "" Then
+    figuresAttrs ||= ' data-figure-label="'figureLabel'"'
+
+  /* --- Listing CSS overrides ---                                           */
+  If listingCaptionPosition == "below" Then
+    overrideCSS ||= "figure.listing figcaption {"            -
+      " break-after: auto; break-before: avoid;"             -
+      " margin-top: 0.075em; margin-bottom: 0; }" || "0a"x  -
+      || "figure.listing pre {"                              -
+      " margin-bottom: 0; }" || "0a"x                       -
+      || "figure.listing div.sourceCode {"                   -
+      " margin-bottom: 0; }" || "0a"x
+  If listingCaptionStyle == "italic" Then
+    overrideCSS ||= "figure.listing figcaption {"            -
+      " font-style: italic; }" || "0a"x
+  Select Case listingLabelStyle
+    When "normal" Then
+      overrideCSS ||= "figure.listing .figure-number {"      -
+        " font-weight: normal; font-style: normal; }" || "0a"x
+    When "italic" Then
+      overrideCSS ||= "figure.listing .figure-number {"      -
+        " font-weight: normal; font-style: italic; }" || "0a"x
+    When "bold-italic" Then
+      overrideCSS ||= "figure.listing .figure-number {"      -
+        " font-weight: bold; font-style: italic; }" || "0a"x
+    Otherwise
+      If listingCaptionStyle == "italic" Then
+        overrideCSS ||= "figure.listing .figure-number {"    -
+          " font-style: normal; }" || "0a"x
+  End
+  /* --- Listing frame CSS overrides ---                                      */
+  Select Case listingFrame
+    When "tb" Then
+      overrideCSS ||= "div.sourceCode {"                           -
+        " border-top: 0.4pt solid #000;"                           -
+        " border-bottom: 0.4pt solid #000;"                        -
+        " padding: 0.5em 1em; }" || "0a"x
+    When "single" Then
+      overrideCSS ||= "div.sourceCode {"                           -
+        " border: 0.4pt solid #000;"                               -
+        " padding: 0.5em 1em; }" || "0a"x
+    When "leftbar" Then
+      overrideCSS ||= "div.sourceCode {"                           -
+        " border-left: 2pt solid #ccc;"                            -
+        " padding: 0.5em 1em; }" || "0a"x
+    Otherwise Nop                          -- "none": no frame
+  End
+
+  /* --- Figure CSS overrides ---                                            */
+  If figureCaptionPosition == "above" Then
+    overrideCSS ||= "figure:not(.listing) figcaption {"      -
+      " break-before: auto; break-after: avoid;"             -
+      " margin-top: 0; margin-bottom: 0.5em; }" || "0a"x    -
+      || "figure:not(.listing) img {"                        -
+      " margin-top: 0; }" || "0a"x
+  If figureCaptionStyle == "italic" Then
+    overrideCSS ||= "figure:not(.listing) figcaption {"      -
+      " font-style: italic; }" || "0a"x
+  Select Case figureLabelStyle
+    When "normal" Then
+      overrideCSS ||= "figure:not(.listing) .figure-number {" -
+        " font-weight: normal; font-style: normal; }" || "0a"x
+    When "italic" Then
+      overrideCSS ||= "figure:not(.listing) .figure-number {" -
+        " font-weight: normal; font-style: italic; }" || "0a"x
+    When "bold-italic" Then
+      overrideCSS ||= "figure:not(.listing) .figure-number {" -
+        " font-weight: bold; font-style: italic; }" || "0a"x
+    Otherwise
+      If figureCaptionStyle == "italic" Then
+        overrideCSS ||= "figure:not(.listing) .figure-number {" -
+          " font-style: normal; }" || "0a"x
+  End
 
   If overrideCSS \== ""
     Then listingsStyle = "<style>" || "0a"x || overrideCSS || "</style>"
@@ -708,16 +840,9 @@ Options:
 -c, --css DIR         Set the CSS base directory
 --csl NAME            Sets the Citation Style Language style
 --default OPTIONS     Set default options for Rexx code blocks
---docclass CLASS      Control overall layout and CSS class
 -exp, --experimental  Enable Experimental features for all code blocks
 -h, --help            Display this help
 -it, --itrace         Print internal traceback on error
--l, --language CODE   Set document language (e.g. en, es, fr)
---section-numbers n   Number sections down to depth n (0=off, max 4)
-                      Default: 3 for article, 2 for book, 0 for slides
---no-number-figures   Disable automatic figure/listing numbering
---size SIZE           Set the size in pt (default: 12)
---outline n           Generate outline with H1,...,Hn (default: 3)
 --fix-outline         Fix PDF so that the outline shows automatically
                       (requires python and pikepdf)
 --style NAME          Set the default visual theme for Rexx code blocks
@@ -770,4 +895,3 @@ See myhelp for details.
 ::Requires "ErrorHandler.cls"
 ::Requires "FencedCode.cls"
 ::Requires "YAMLFrontMatter.cls"
-::Requires "RexxPubOptions.cls"

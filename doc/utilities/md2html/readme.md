@@ -44,8 +44,6 @@ Options
 `-it`, `--itrace`                                                                 Print internal traceback on error
 <code>-j <em>jsbase</em></code>, <code>--js  <em>jsbase</em></code>               Where to locate the JavaScript files
 <code>-p <em>path</em></code>, <code>--path  <em>path</em></code>                 First path to search for `default.md2html` and `md2html.custom.rex`
-`--section-numbers` N                                                             Override section numbering depth (0=off, max 4)
-`--no-number-figures`                                                             Disable automatic figure/listing numbering
 --------------------------------------------------------------------------------- ------------------------------
 
 \
@@ -73,19 +71,20 @@ bibliography: references.bib
 rexxpub:
   section-numbers: 3
   number-figures: true
+  language: en
   style: light
 ---
 ```
 
-The supported options are `style`, `section-numbers`, and
+The supported options under `rexxpub:` include `style`, `section-numbers`,
 `number-figures` (which accepts `0`, `1`, `true`, or `false`,
-case-insensitive).
+case-insensitive), and `language`, as well as `listings:` and `figures:`
+sub-tables for caption and frame customization, and the Pandoc top-level
+`highlight-style`.
 
-Structural options (`section-numbers`, `number-figures`) follow an
-**author-wins** policy: the YAML value always takes precedence over
-command-line options.  Since md2html has no `--style` command-line
-option, the YAML `style` value is always used when present; otherwise,
-the default (`dark`) applies.
+All options are set exclusively in the YAML front matter.  Since md2html
+has no `--style` command-line option, the YAML `style` value is always
+used when present; otherwise, the default (`dark`) applies.
 
 See the [YAML front matter documentation](../../rexxpub/yaml/) for the
 full specification.
@@ -210,11 +209,11 @@ appear alone on a line, in lowercase):
 `%SectionNumbers%`
 : Replaced by the CSS class for section numbering (e.g. `section-numbers-3`).
   The default depth depends on the filename: 3 for `article` (and others),
-  2 for `book`, 0 for `slides`.  Use `--section-numbers 0` to disable.
+  2 for `book`, 0 for `slides`.  Can be overridden in the YAML front matter.
 
 `%NumberFigures%`
 : Replaced by `number-figures` when figure/listing numbering is active
-  (the default), or by an empty string when `--no-number-figures` is specified.
+  (the default), or by an empty string when disabled in the YAML front matter.
 
 `%printFigures%`
 : Inserts a `<script>` tag loading `numberFigures.js` from the JavaScript
@@ -326,9 +325,3 @@ of the whole Markdown tree under `C:\Test`.
 Please note that, since this is a sample demo run,
 header, footer, and sidebar links point to
 <https://rexx.epbcn.com/>.
-
-Program source
---------------
-
-~~~rexx {source=../../../bin/md2html.rex}
-~~~

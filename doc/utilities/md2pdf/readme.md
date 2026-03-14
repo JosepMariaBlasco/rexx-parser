@@ -29,7 +29,7 @@ If a <em>destination-directory</em> is given, the output PDF files
 are placed there, replicating the source directory structure;
 otherwise, each PDF is placed alongside its source `.md` file.
 
-When called without arguments, display help information and exit.
+When called without arguments, md2pdf displays help information and exits.
 
 Options
 -------
@@ -42,26 +42,22 @@ Options
 `-c`, `--css` DIR                         Set the CSS base directory
 `--csl` NAME                              Set the Citation Style Language style
 `--default` "options"                     Default options for all code blocks
-`--docclass` CLASS                        Control the overall layout and CSS
 `-exp`, `--experimental`                  Enable Experimental features for all code blocks
 `--fix-outline`                           Fix PDF so that the outline shows automatically
                                           (requires python and pikepdf)
 `-h`, `--help`                            Display help and exit
 `-it`, `--itrace`                         Print internal traceback on error
-`-l`, `--language` CODE&nbsp;&nbsp;&nbsp; Set document language (e.g. en, es, fr)
-`--outline` N                             Generate outline with H1,...,HN (default: 3, range: 0-6)
-`--section-numbers` N                     Override section numbering depth (0=off, max 4)
-`--no-number-figures`                     Disable automatic figure/listing numbering
-`--size` SIZE                             Set the font size in pt (default: 12)
 `--style` NAME                            Set the default visual theme for Rexx code blocks
+`--pandoc-highlighting-style` NAME        Set Pandoc syntax highlighting theme for
+                                          non-Rexx code blocks (default: pygments)
 `-u`, `--tutor`, `--unicode`              Enable TUTOR-flavoured Unicode for all code blocks
 `-xtr`, `--executor`                      Enable Executor support for all code blocks
 ----------------------------------------- ------------------------------
 
 \
 
-The default language is `en`, the default Citation Style Language
-style is `rexxpub`, and the default Rexx highlighting theme is `dark`.
+The default Citation Style Language style is `rexxpub`, and the default
+Rexx highlighting theme is `dark`.
 CSL files should be stored in the `csl` subdirectory.
 
 When `--css` is used, all CSS files are loaded from the specified
@@ -73,33 +69,11 @@ This allows users to publish their own documents using custom
 styles and document classes independently of the Rexx Parser
 installation.
 
-When `--docclass` is not specified, the document class defaults to
-the base name of the input file (e.g. `article` for `article.md`).
-If the inferred document class does not correspond to an existing
-CSS file, the `default` class is used as a fallback.
-
-When `--size` is used, md2pdf looks for a CSS file named
-`<docclass>-<size>pt.css` in the `print/` subdirectory.
-For example, `--size 14` with the `article` document class
-will look for `article-14pt.css`.  If the file is not found
-and the requested size is 12, md2pdf assumes that 12pt is the
-default for the document class and proceeds without a size override.
-For any other size, an error is reported.  To add support for a
-new size, simply create the corresponding CSS file (e.g.
-`article-11pt.css`).
-
-When `--outline` is set to 0, no outline is generated.
-
-Headings are automatically numbered by default, following the LaTeX
-convention (e.g. 1., 1.1, 1.1.1).  The default depth depends on
-the document class: 3 for `article` (and `default`, `letter`),
-2 for `book`, and 0 for `slides`.  The `--section-numbers` option
-overrides this default: 1 for h1 only, 2 for h1 and h2, and so
-on up to 4; use `--section-numbers 0` to disable numbering.
-Headings marked with Pandoc's `{.unnumbered}` or `{-}` attribute
-are excluded from numbering, as are headings with the `.part` or
-`.chapter` classes, and headings inside `.title-page` or
-`.toc-exclude` containers.
+The document class defaults to the base name of the input file
+(e.g. `article` for `article.md`).  If the inferred document class
+does not correspond to an existing CSS file, the `default` class is
+used as a fallback.  The document class can be overridden in the
+YAML front matter using the `docclass` option.
 
 The `--continue` option is useful in batch mode: when a file fails
 (due to a syntax error in a fenced code block, a missing document
@@ -111,9 +85,8 @@ By default, figures and code listings that have a caption are
 automatically numbered following the LaTeX convention ("Figure 1",
 "Listing 1", etc.).  Figures and listings use independent counters.
 Listing captions are placed above the code block, and figure captions
-below the image, matching the LaTeX defaults.  The
-`--no-number-figures` option disables this automatic numbering;
-captions are still displayed, but without a number prefix.
+below the image, matching the LaTeX defaults.  These defaults can be
+changed in the YAML front matter.
 
 The `-xtr`/`--executor`, `-exp`/`--experimental`, and
 `-u`/`--tutor`/`--unicode` options enable the corresponding language
@@ -133,23 +106,26 @@ from Pandoc's standard metadata:
 ---
 bibliography: references.bib
 rexxpub:
+  docclass: article
+  language: es
   section-numbers: 3
   number-figures: true
   size: 12
   style: print
+  outline: 3
 ---
 ```
 
-The supported options are `style`, `size`, `section-numbers`, and
-`number-figures` (which accepts `0`, `1`, `true`, or `false`,
-case-insensitive).
+The supported options under `rexxpub:` include `style`, `size`,
+`section-numbers`, `number-figures` (which accepts `0`, `1`, `true`,
+or `false`, case-insensitive), `docclass`, `language`, `outline`,
+as well as `listings:` and `figures:` sub-tables for caption and
+frame customization, and the Pandoc top-level `highlight-style`.
 
-Structural options (`size`, `section-numbers`, `number-figures`) follow
-an **author-wins** policy: the YAML value always takes precedence over
-command-line options.  The highlighting `style` follows a
-**reader-wins** policy: the `--style` command-line option takes
-precedence over the YAML value, which in turn takes precedence over the
-default (`dark`).
+All options except `style` are author options and can only be set in the
+YAML front matter.  The highlighting `style` follows a **reader-wins**
+policy: the `--style` command-line option takes precedence over the YAML
+value, which in turn takes precedence over the default (`dark`).
 
 See the [YAML front matter documentation](../../rexxpub/yaml/) for the
 full specification.
@@ -162,6 +138,9 @@ Prerequisites
 + To be able to install `pagedjs-cli`, you will have to install
   <a href="https://nodejs.org">Node.js</a> first. `Node.js` automatically
   installs `npm`.
++ The `--fix-outline` option additionally requires
+  <a href="https://www.python.org/">Python</a> and the
+  <a href="https://pypi.org/project/pikepdf/">pikepdf</a> library.
 
 You can verify that all dependencies are correctly installed by running:
 
@@ -195,9 +174,3 @@ applying the same pipeline to each file.  The document class for each
 file is inferred from its filename, so a directory tree containing
 `article.md`, `slides.md` and `readme.md` files will produce PDFs
 using the `article`, `slides` and `default` classes respectively.
-
-Program source
---------------
-
-~~~rexx {source=../../../bin/md2pdf.rex}
-~~~

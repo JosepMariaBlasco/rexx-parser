@@ -50,6 +50,8 @@ Version history
   <li> Add default LaTeX-like background for Pandoc code blocks (20260312).
   <li> YAML front matter: add frame option to listings: (none, tb, single, leftbar) (20260312).
   <li> Refactor md2pdf, md2html and CGI pipelines (20260313).
+  <li> Remove author-only CLI/URL options (size, sections, docclass,
+       language, outline, number-figures); these are now set exclusively via YAML front matter (20260314).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

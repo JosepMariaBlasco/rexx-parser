@@ -22,6 +22,7 @@
 /* 20260303    0.5  Add optional size chooser support and print button        */
 /* 20260308         Added section numbering chooser                           */
 /* 20260310         Generate size chooser dynamically (thanks, JLF!)          */
+/* 20260314         Remove size and sections choosers (now YAML-only)         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -121,47 +122,6 @@
   Say pad'    </select>'
   Say pad'  </div>'
 If Words(name) == 1, WordPos(name, "article.md book.md letter.md slides.md") > 0 Then Do
-If name \== "slides.md" Then Do
-  Parse Var name docClass".md"
-  Call SysFileTree myDir"../css/print/"docClass"-*pt.css",S.,"FO"
-  sizes = .Array~new
-  Do i = 1 To S.0
-    sName = FileSpec("Name", S.i)
-    Parse Var sName (docClass)"-"sizeVal"pt.css"
-    If sizeVal \== "", DataType(sizeVal,"W") Then sizes~append(sizeVal)
-  End
-  sizes~stableSort
-  Say pad'  <div class="form-group" style="margin-left: 20px;">'
-  Say pad'    <label for="size-chooser" style="margin-right: 10px;">'
-  Say pad'      <span class="glyphicon glyphicon-text-size" aria-hidden="true"></span> Size'
-  Say pad'    </label>'
-  Say pad'    <select class="form-control" id="size-chooser" style="width: auto; display: inline-block;">'
-  Do s Over sizes
-    If s < 12 Then
-      Say pad'      <option value="'s'">'s'pt</option>'
-  End
-  Say pad'      <option value="12" selected>12pt (default)</option>'
-  Do s Over sizes
-    If s > 12 Then
-      Say pad'      <option value="'s'">'s'pt</option>'
-  End
-  Say pad'    </select>'
-  Say pad'  </div>'
-End
-If WordPos(name, "article.md book.md") > 0 Then Do
-  Say pad'  <div class="form-group" style="margin-left: 20px;">'
-  Say pad'    <label for="sections-chooser" style="margin-right: 10px;">'
-  Say pad'      <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> Sections'
-  Say pad'    </label>'
-  Say pad'    <select class="form-control" id="sections-chooser" style="width: auto; display: inline-block;">'
-  Say pad'      <option value="0" selected>None (default)</option>'
-  Say pad'      <option value="1">1 level</option>'
-  Say pad'      <option value="2">2 levels</option>'
-  Say pad'      <option value="3">3 levels</option>'
-  Say pad'      <option value="4">4 levels</option>'
-  Say pad'    </select>'
-  Say pad'  </div>'
-End
   Say pad'  <div class="form-group" style="margin-left: 20px;">'
   Say pad'    <button type="button" class="btn btn-default" id="print-button">'
   Say pad'      <span class="glyphicon glyphicon-print" aria-hidden="true"></span> Print'
