@@ -74,10 +74,15 @@ RexxPubOptions.cls      ParseRexxPubYAML(), BuildCaptionOverrides(),
 ErrorHandler.cls        ErrorHandler() for standalone utilities,
                         IsAParseError() for pipeline error handling
 YAMLFrontMatter.cls     Parses YAML front matter from Markdown source
+CLISupport.cls          InitCLI() — common CLI initialization for all
+                        standalone utilities (name, help URL, args)
 ```
 
 The refactoring is complete: all YAML parsing and CSS override
 generation is now centralized in `RexxPubOptions.cls`.
+All standalone utilities use `InitCLI()` from `CLISupport.cls`
+for program name extraction, help URL construction, and argument
+resolution (except `rr2svg.rex`, which has a different author/style).
 
 ### Utilities
 ```

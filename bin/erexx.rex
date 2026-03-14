@@ -22,23 +22,16 @@
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
 /* 20260102         Standardize help options to -h and --help                 */
+/* 20260314    0.5  Use InitCLI() from CLISupport.cls                         */
 /*                                                                            */
 /******************************************************************************/
 
   Signal On Syntax
 
-  package =  .context~package
-
-  myName  =   package~name
-  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
-  myHelp  = ChangeStr(                                         -
-   "myName",                                                   -
-   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
-    myName)
-  Parse Source . how .
-  If how == "COMMAND", .SysCArgs \== .Nil
-    Then args = .SysCArgs
-    Else args = ArgArray(Arg(1))
+  CLIhelper    = InitCLI()
+  myName       = CLIhelper~name
+  myHelp       = CLIhelper~help
+  args         = CLIhelper~args
 
   list     = 0
   executor = 0
@@ -144,6 +137,7 @@ Syntax:
 ::Requires "Rexx.Parser.cls"                      -- The Parser
 ::Requires "BaseClassesAndRoutines.cls"           -- For ArgArray et al
 ::Requires "ErrorHandler.cls"                     -- Standard error handling
+::Requires "CLISupport.cls"                       -- InitCLI()
 ::Requires "modules/print/print.cls"              -- Helps in debug
 ::Requires "modules/identity/compile.cls"         -- The Identity compiler
 ::Requires "modules/identity/Clauses.cls"

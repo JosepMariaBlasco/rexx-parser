@@ -22,6 +22,7 @@
 /* 20251226         Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
 /* 20260102         Standardize help options to -h and --help                 */
+/* 20260314    0.5  Use InitCLI() from CLISupport.cls                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -40,18 +41,10 @@
   --
 
 
-  package =  .context~package
-
-  myName  =   package~name
-  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
-  myHelp  = ChangeStr(                                         -
-   "myName",                                                   -
-   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
-    myName)
-  Parse Source . how .
-  If how == "COMMAND", .SysCArgs \== .Nil
-    Then args = .SysCArgs
-    Else args = ArgArray(Arg(1))
+  CLIhelper    = InitCLI()
+  myName       = CLIhelper~name
+  myHelp       = CLIhelper~help
+  args         = CLIhelper~args
 
   elements           = 1
   tree               = 1
@@ -211,7 +204,7 @@ Options:
   -ne, --noelements      Don't run the elident test
   -nr, --norex, --norexx Don't analyze .rex files
   -nt, --notree          Don't run the trident test
-  
+
 If you specify "start", the myname tests are started; otherwise, this
 help is displayed.
 
@@ -223,3 +216,5 @@ Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
 
 See myhelp for details.
 ::End
+
+::Requires "CLISupport.cls"

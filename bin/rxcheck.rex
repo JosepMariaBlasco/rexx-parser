@@ -29,21 +29,14 @@
 /* 20251226    0.4a Send error messages to .error, not .output                */
 /* 20251227         Use .SysCArgs when available                              */
 /* 20260102         Standardize help options to -h and --help                 */
+/* 20260314    0.5  Use InitCLI() from CLISupport.cls                         */
 /*                                                                            */
 /******************************************************************************/
 
-  package =  .context~package
-
-  myName  =   package~name
-  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
-  myHelp  = ChangeStr(                                         -
-   "myName",                                                   -
-   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
-    myName)
-  Parse Source . how .
-  If how == "COMMAND", .SysCArgs \== .Nil
-    Then args = .SysCArgs
-    Else args = ArgArray(Arg(1))
+  CLIhelper    = InitCLI()
+  myName       = CLIhelper~name
+  myHelp       = CLIhelper~help
+  args         = CLIhelper~args
 
   If args~items == 0 Then Signal Help
 
@@ -180,6 +173,7 @@ Help:
 
 ::Requires "Rexx.Parser.cls"
 ::Requires "ErrorHandler.cls"
+::Requires "CLISupport.cls"
 ::Requires "modules/print/print.cls"
 
 ::Resource help

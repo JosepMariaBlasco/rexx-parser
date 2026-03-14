@@ -57,6 +57,8 @@ local~NameAliases        = NameAliases
 -- ...and the fact that we haven't loaded their string yet
 local~UnicodeData.Loaded = 0
 
+::Requires "BaseClassesAndRoutines.cls"
+
 /******************************************************************************/
 /* Name2Code(name)                                                            */
 /*   Returns "" if the name is not found, else the corresponding              */

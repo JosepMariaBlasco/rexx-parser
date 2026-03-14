@@ -32,25 +32,18 @@
 /*                  --section-numbers, --no-number-figures, --docclass,       */
 /*                  --language (now YAML-only)                                */
 /* 20260314         Add support for file-level css                            */
+/* 20260314         Use InitCLI() from CLISupport.cls                         */
 /*                                                                            */
 /******************************************************************************/
 
   Call Time "R"
 
-  package =  .context~package
-
-  myName  =  package~name
-  rootDir = .File~new(myName)~parentFile~parent
-  rootDir =  ChangeStr("\",rootDir,"/")
-  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
-  myHelp  = ChangeStr(                                         -
-   "myName",                                                   -
-   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
-    myName)
-  Parse Source . how .
-  If how == "COMMAND", .SysCArgs \== .Nil
-    Then args = .SysCArgs
-    Else args = ArgArray(Arg(1))
+  CLIhelper    = InitCLI()
+  myName       = CLIhelper~name
+  myHelp       = CLIhelper~help
+  args         = CLIhelper~args
+  rootDir      = .File~new(.context~package~name)~parentFile~parent
+  rootDir      = ChangeStr("\",rootDir,"/")
 
   check = "✔"
   fail  = "❌"
@@ -731,6 +724,7 @@ See myhelp for details.
 
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "ErrorHandler.cls"
+::Requires "CLISupport.cls"
 ::Requires "FencedCode.cls"
 ::Requires "YAMLFrontMatter.cls"
 ::Requires "RexxPubOptions.cls"

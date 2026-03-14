@@ -431,7 +431,7 @@ Error:
   End
   Else If \ directives~hasItem( name~value ) Then Signal 99.916
 
-  Call SetKeyword name, .True
+  Call Set.Directive.Keyword name
 
   If elements~items > 2, elements[3]~ignorable Then elements~delete( 3 )
 

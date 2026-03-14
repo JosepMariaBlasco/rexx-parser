@@ -16,23 +16,16 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20260117    0.4a First release                                             */
 /* 20260313    0.5  Move error handling to ErrorHandler.cls                   */
+/* 20260314         Use InitCLI() from CLISupport.cls                         */
 /*                                                                            */
 /******************************************************************************/
 
   Signal On Syntax
 
-  package =  .context~package
-
-  myName  =   package~name
-  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
-  myHelp  = ChangeStr(                                         -
-   "myName",                                                   -
-   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
-    myName)
-  Parse Source . how .
-  If how == "COMMAND", .SysCArgs \== .Nil
-    Then args = .SysCArgs
-    Else args = ArgArray(Arg(1))
+  CLIhelper    = InitCLI()
+  myName       = CLIhelper~name
+  myHelp       = CLIhelper~help
+  args         = CLIhelper~args
 
   If args~items == 0 Then Signal Help
 
@@ -191,6 +184,7 @@ Syntax:
 
 ::Requires "Rexx.Parser.cls"
 ::Requires "ErrorHandler.cls"
+::Requires "CLISupport.cls"
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "modules/print/print.cls"
 

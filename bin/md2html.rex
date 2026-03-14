@@ -30,25 +30,17 @@
 /* 20260313         Refactor YAML/caption code to RexxPubOptions.cls          */
 /* 20260314         Remove --section-numbers and --no-number-figures CLI      */
 /*                  options (now YAML-only)                                   */
+/* 20260314         Use InitCLI() from CLISupport.cls                         */
 /*                                                                            */
 /******************************************************************************/
 
   Call Time R
 
-  package =  .context~package
-
-  myName  =   package~name
-  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
-  myHelp  = ChangeStr(                                         -
-   "myName",                                                   -
-   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
-    myName)
-  Parse Source . how .
-  If how == "COMMAND", .SysCArgs \== .Nil
-    Then args = .SysCArgs
-    Else args = ArgArray(Arg(1))
-  myself = FileSpec("Name"    ,myName)
-  mydir  = FileSpec("Location",myName)
+  CLIhelper    = InitCLI()
+  myName       = CLIhelper~name
+  myHelp       = CLIhelper~help
+  args         = CLIhelper~args
+  myself       = myName
 
   ------------------------------------------------------------------------------
   -- Ensure that we have access to pandoc                                     --
@@ -663,6 +655,7 @@ See myhelp for details.
 
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "ErrorHandler.cls"
+::Requires "CLISupport.cls"
 ::Requires "FencedCode.cls"
 ::Requires "YAMLFrontMatter.cls"
 ::Requires "RexxPubOptions.cls"

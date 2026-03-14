@@ -36,28 +36,22 @@
 /* 20251228         Add support for --default                                 */
 /* 20251230         Add support for --continue                                */
 /* 20260102         Standardize help options to -h and --help                 */
+/* 20260314    0.5  Use InitCLI() from CLISupport.cls                         */
 /*                                                                            */
 /******************************************************************************/
 
   Signal On Syntax
 
-  package =  .context~package
-
-  myName  =   package~name
-  Parse Caseless Value FileSpec( "Name", myName ) With myName".rex"
-  myHelp  = ChangeStr(                                         -
-   "myName",                                                   -
-   "https://rexx.epbcn.com/rexx-parser/doc/utilities/myName/", -
-    myName)
-  Parse Source . how .
-  If how == "COMMAND", .SysCArgs \== .Nil
-    Then args = .SysCArgs
-    Else args = ArgArray(Arg(1))
+  CLIhelper    = InitCLI()
+  myName       = CLIhelper~name
+  myHelp       = CLIhelper~help
+  args         = CLIhelper~args
 
   -- We will store our processed options in a stem
   options. = 0
 
   -- Set default mode to ANSI if called from the command line...
+  Parse Source . how .
   If how == "COMMAND"
     Then options.mode = ANSI
     -- ...otherwise, assume HTML.
@@ -65,7 +59,7 @@
 
   options.default     = ""
 
-  myPath              = FileSpec("Location",myName)
+  myPath              = FileSpec("Location",.context~package~name)
   sep                 = .File~separator
   patch               = .Nil
   styleSpecified      = 0
@@ -269,6 +263,7 @@ Help:
 
 ::Requires "Highlighter.cls"
 ::Requires "FencedCode.cls"
+::Requires "CLISupport.cls"
 ::Requires "ANSI.ErrorText.cls"
 
 ::Resource Help

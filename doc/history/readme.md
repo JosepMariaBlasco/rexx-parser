@@ -52,6 +52,7 @@ Version history
   <li> Refactor md2pdf, md2html and CGI pipelines (20260313).
   <li> Remove author-only CLI/URL options (size, sections, docclass,
        language, outline, number-figures); these are now set exclusively via YAML front matter (20260314).
+  <li> Add support for per-file CSS in <code>md2pdf</code> (20260314).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

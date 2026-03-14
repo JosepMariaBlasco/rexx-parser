@@ -300,10 +300,9 @@ Error:
 --------------------------------------------------------------------------------
 
 ::Routine SetKeyword Public
-  Use Strict Arg keyword, directive = .False
+  Use Strict Arg keyword
 
-  If directive Then Call SetCategory keyword, .EL.DIRECTIVE_KEYWORD
-  Else              Call SetCategory keyword, .EL.KEYWORD
+  Call SetCategory keyword, .EL.KEYWORD
 
   before = TheElementBefore( keyword )
   If before < .ALL.WHITESPACE_LIKE Then before~ignorable = 1
