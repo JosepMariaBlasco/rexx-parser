@@ -1,0 +1,973 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Highlighter.testGroup - Tests for Highlighter.cls, ANSI driver, StylePatch */
+/* =======================================================================    */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260316    0.5  First version                                             */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Highlighter.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "Highlighter.cls"
+::Requires "StylePatch.cls"
+
+::Class Highlighter.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* Helper methods                                                             */
+/******************************************************************************/
+
+::Method htmlOptions Private
+  options. = 0
+  options.mode = "HTML"
+  options.style = "dark"
+  Return options.
+
+::Method ansiOptions Private
+  options. = 0
+  options.mode = "ANSI"
+  options.style = "dark"
+  Return options.
+
+::Method highlight Private
+  Use Arg source, options., patch = .nil
+  hl = .Highlighter~new("test", source, options.)
+  If patch == .nil Then
+    result = hl~parse
+  Else
+    result = hl~parse(patch)
+  Return result~makeString('L', "0A"x)
+
+/******************************************************************************/
+/* HTML: basic highlighting                                                   */
+/******************************************************************************/
+
+::Method test_html_basic_returns_array
+  options. = self~htmlOptions
+  source = .Array~of('Say "Hello"')
+  hl = .Highlighter~new("test", source, options.)
+  result = hl~parse
+  self~assertTrue(result~isA(.Array), -
+    "HTML basic: returns an array")
+
+::Method test_html_basic_highlight_div
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') > 0, -
+    "HTML basic: contains highlight div with dark style")
+
+::Method test_html_basic_pre_code
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('<pre><code') > 0, -
+    "HTML basic: contains pre/code tags")
+
+::Method test_html_basic_keyword
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('rx-kw') > 0, -
+    "HTML basic: Say is highlighted as keyword")
+
+::Method test_html_basic_string
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('rx-str') > 0, -
+    "HTML basic: string is highlighted")
+
+/******************************************************************************/
+/* HTML: light style                                                          */
+/******************************************************************************/
+
+::Method test_html_light_style
+  options. = self~htmlOptions
+  options.style = "light"
+  flat = self~highlight(.Array~of('Nop'), options.)
+  self~assertTrue(flat~caselessPos('highlight-rexx-light') > 0, -
+    "HTML light: contains highlight div with light style")
+
+::Method test_html_light_no_dark
+  options. = self~htmlOptions
+  options.style = "light"
+  flat = self~highlight(.Array~of('Nop'), options.)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') == 0, -
+    "HTML light: does not contain dark style")
+
+/******************************************************************************/
+/* HTML: custom classprefix                                                   */
+/******************************************************************************/
+
+::Method test_html_classprefix_applied
+  options. = self~htmlOptions
+  options.classprefix = "my-"
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('my-kw') > 0, -
+    "HTML classprefix: custom prefix applied to keyword")
+
+::Method test_html_classprefix_no_default
+  options. = self~htmlOptions
+  options.classprefix = "my-"
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('rx-kw') == 0, -
+    "HTML classprefix: default prefix not present")
+
+/******************************************************************************/
+/* HTML: operator group vs full                                               */
+/******************************************************************************/
+
+::Method test_html_operator_group_has_rxop
+  options. = self~htmlOptions
+  options.operator = "group"
+  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
+  self~assertTrue(flat~caselessPos('rx-op') > 0, -
+    "HTML operator=group: contains rx-op")
+
+::Method test_html_operator_group_no_rxadd
+  options. = self~htmlOptions
+  options.operator = "group"
+  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
+  self~assertTrue(flat~caselessPos('rx-add') == 0, -
+    "HTML operator=group: does not contain rx-add")
+
+::Method test_html_operator_full_has_rxop
+  options. = self~htmlOptions
+  options.operator = "full"
+  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
+  self~assertTrue(flat~caselessPos('rx-op') > 0, -
+    "HTML operator=full: contains generic rx-op")
+
+::Method test_html_operator_full_has_rxadd
+  options. = self~htmlOptions
+  options.operator = "full"
+  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
+  self~assertTrue(flat~caselessPos('rx-add') > 0, -
+    "HTML operator=full: contains detailed rx-add")
+
+/******************************************************************************/
+/* HTML: constant group vs full                                               */
+/******************************************************************************/
+
+::Method test_html_constant_group_has_rxconst
+  options. = self~htmlOptions
+  options.constant = "group"
+  flat = self~highlight(.Array~of('Call Exit'), options.)
+  self~assertTrue(flat~caselessPos('rx-const') > 0, -
+    "HTML constant=group: contains rx-const")
+
+::Method test_html_constant_group_no_detail
+  options. = self~htmlOptions
+  options.constant = "group"
+  flat = self~highlight(.Array~of('Call Exit'), options.)
+  self~assertTrue(flat~caselessPos('rx-ext-proc') == 0, -
+    "HTML constant=group: does not contain detailed class")
+
+::Method test_html_constant_full_has_rxconst
+  options. = self~htmlOptions
+  options.constant = "full"
+  flat = self~highlight(.Array~of('Call Exit'), options.)
+  self~assertTrue(flat~caselessPos('rx-const') > 0, -
+    "HTML constant=full: contains generic rx-const")
+
+::Method test_html_constant_full_has_detail
+  options. = self~htmlOptions
+  options.constant = "full"
+  flat = self~highlight(.Array~of('Call Exit'), options.)
+  self~assertTrue(flat~caselessPos('rx-ext-proc') > 0, -
+    "HTML constant=full: contains detailed rx-ext-proc")
+
+/******************************************************************************/
+/* HTML: numberLines + startFrom                                              */
+/******************************************************************************/
+
+::Method test_html_numberlines_class
+  options. = self~htmlOptions
+  options.numberLines = .True
+  options.startFrom = 10
+  flat = self~highlight(.Array~of('Say 1', 'Say 2', 'Say 3'), options.)
+  self~assertTrue(flat~caselessPos('number-lines') > 0, -
+    "HTML numberLines: pre has number-lines class")
+
+::Method test_html_startfrom_first
+  options. = self~htmlOptions
+  options.numberLines = .True
+  options.startFrom = 10
+  flat = self~highlight(.Array~of('Say 1', 'Say 2', 'Say 3'), options.)
+  self~assertTrue(flat~caselessPos('lineNo="10"') > 0, -
+    "HTML startFrom: first line number is 10")
+
+::Method test_html_startfrom_third
+  options. = self~htmlOptions
+  options.numberLines = .True
+  options.startFrom = 10
+  flat = self~highlight(.Array~of('Say 1', 'Say 2', 'Say 3'), options.)
+  self~assertTrue(flat~caselessPos('lineno="12"') > 0, -
+    "HTML startFrom: third line number is 12")
+
+/******************************************************************************/
+/* HTML: docComments detailed vs block                                        */
+/******************************************************************************/
+
+::Method test_html_doccomments_detailed_armature
+  options. = self~htmlOptions
+  options.docComments = "detailed"
+  flat = self~highlight(.Array~of('---', '--- A doc comment', '---'), options.)
+  self~assertTrue(flat~caselessPos('rx-doc-comment-armature') > 0, -
+    "HTML docComments=detailed: contains armature sub-element")
+
+::Method test_html_doccomments_detailed_summary
+  options. = self~htmlOptions
+  options.docComments = "detailed"
+  flat = self~highlight(.Array~of('---', '--- A doc comment', '---'), options.)
+  self~assertTrue(flat~caselessPos('rx-doc-comment-summary') > 0, -
+    "HTML docComments=detailed: contains summary sub-element")
+
+::Method test_html_doccomments_block_class
+  options. = self~htmlOptions
+  options.docComments = "block"
+  flat = self~highlight(.Array~of('---', '--- A doc comment', '---'), options.)
+  self~assertTrue(flat~caselessPos('rx-doc-comment-markdown') > 0, -
+    "HTML docComments=block: contains doc-comment class")
+
+::Method test_html_doccomments_block_no_armature
+  options. = self~htmlOptions
+  options.docComments = "block"
+  flat = self~highlight(.Array~of('---', '--- A doc comment', '---'), options.)
+  self~assertTrue(flat~caselessPos('rx-doc-comment-armature') == 0, -
+    "HTML docComments=block: no armature sub-element")
+
+/******************************************************************************/
+/* HTML: multi-line comment                                                   */
+/******************************************************************************/
+
+::Method test_html_multiline_comment_class
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('/* line 1', '   line 2 */'), options.)
+  self~assertTrue(flat~caselessPos('rx-cm') > 0, -
+    "HTML multi-line comment: contains comment class")
+
+::Method test_html_multiline_comment_content
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('/* line 1', '   line 2 */'), options.)
+  self~assertTrue(flat~pos('line 2') > 0, -
+    "HTML multi-line comment: second line is present")
+
+/******************************************************************************/
+/* HTML: compound variable highlighting                                       */
+/******************************************************************************/
+
+::Method test_html_compound_stem
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('a.2d.bar.3 = 1'), options.)
+  self~assertTrue(flat~caselessPos('rx-stem') > 0, -
+    "HTML compound: stem name has rx-stem class")
+
+::Method test_html_compound_stem_dot
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('a.2d.bar.3 = 1'), options.)
+  self~assertTrue(flat~pos('>a.</span>') > 0, -
+    "HTML compound: stem includes its dot")
+
+::Method test_html_compound_constant
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('a.2d.bar.3 = 1'), options.)
+  self~assertTrue(flat~caselessPos('rx-lit') > 0, -
+    "HTML compound: constant symbol (2d) has rx-lit class")
+
+::Method test_html_compound_variable
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('a.2d.bar.3 = 1'), options.)
+  self~assertTrue(flat~caselessPos('rx-var') > 0, -
+    "HTML compound: variable tail (bar) has rx-var class")
+
+::Method test_html_compound_number
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('a.2d.bar.3 = 1'), options.)
+  self~assertTrue(flat~caselessPos('rx-int') > 0, -
+    "HTML compound: numeric tail (3) has rx-int class")
+
+::Method test_html_compound_separator
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('a.2d.bar.3 = 1'), options.)
+  self~assertTrue(flat~caselessPos('rx-spe') > 0, -
+    "HTML compound: tail dot separators have rx-spe class")
+
+/******************************************************************************/
+/* HTML element categories: symbols                                           */
+/******************************************************************************/
+
+::Method test_cat_keyword
+  options. = self~htmlOptions
+  source = .Array~of( -
+    'Do i = 1 To 10 By 2', -
+    '  Nop', -
+    'End', -
+    '::Class Foo SubClass Bar Public' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-kw') > 0, -
+    "Categories: keyword (Do) has rx-kw")
+
+::Method test_cat_subkeyword
+  options. = self~htmlOptions
+  source = .Array~of( -
+    'Do i = 1 To 10 By 2', -
+    '  Nop', -
+    'End', -
+    '::Class Foo SubClass Bar Public' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-skw') > 0, -
+    "Categories: subkeyword (To, By) has rx-skw")
+
+::Method test_cat_directive
+  options. = self~htmlOptions
+  source = .Array~of( -
+    'Do i = 1 To 10 By 2', -
+    '  Nop', -
+    'End', -
+    '::Class Foo SubClass Bar Public' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-dir') > 0, -
+    "Categories: directive start (::) has rx-dir")
+
+::Method test_cat_directive_keyword
+  options. = self~htmlOptions
+  source = .Array~of( -
+    'Do i = 1 To 10 By 2', -
+    '  Nop', -
+    'End', -
+    '::Class Foo SubClass Bar Public' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-dkw') > 0, -
+    "Categories: directive keyword (Class) has rx-dkw")
+
+::Method test_cat_directive_subkeyword
+  options. = self~htmlOptions
+  source = .Array~of( -
+    'Do i = 1 To 10 By 2', -
+    '  Nop', -
+    'End', -
+    '::Class Foo SubClass Bar Public' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-dskw') > 0, -
+    "Categories: directive subkeyword (SubClass, Public) has rx-dskw")
+
+/******************************************************************************/
+/* HTML element categories: variable types                                    */
+/******************************************************************************/
+
+::Method test_cat_simple_variable
+  options. = self~htmlOptions
+  source = .Array~of( -
+    'x = 1', -
+    '::Class Foo', -
+    '::Method bar', -
+    '  Expose name', -
+    '  Say name' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-var') > 0, -
+    "Categories: simple variable (x) has rx-var")
+
+::Method test_cat_exposed_variable
+  options. = self~htmlOptions
+  source = .Array~of( -
+    'x = 1', -
+    '::Class Foo', -
+    '::Method bar', -
+    '  Expose name', -
+    '  Say name' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-xvar') > 0, -
+    "Categories: exposed variable (name after Expose) has rx-xvar")
+
+/******************************************************************************/
+/* HTML element categories: environment symbol and symbol literal             */
+/******************************************************************************/
+
+::Method test_cat_environment_symbol
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = .true', 'y = 3abc'), options.)
+  self~assertTrue(flat~caselessPos('rx-env') > 0, -
+    "Categories: environment symbol (.true) has rx-env")
+
+::Method test_cat_symbol_literal
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = .true', 'y = 3abc'), options.)
+  self~assertTrue(flat~caselessPos('rx-lit') > 0, -
+    "Categories: symbol literal (3abc) has rx-lit")
+
+/******************************************************************************/
+/* HTML element categories: numbers (integer, decimal, exponential)           */
+/******************************************************************************/
+
+::Method test_cat_integer
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = 42 + 3.14 + 1.5e+3'), options.)
+  self~assertTrue(flat~caselessPos('rx-int') > 0, -
+    "Categories: integer (42) has rx-int")
+
+::Method test_cat_integer_part
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = 42 + 3.14 + 1.5e+3'), options.)
+  self~assertTrue(flat~caselessPos('rx-ipart') > 0, -
+    "Categories: integer part sub-element has rx-ipart")
+
+::Method test_cat_decimal
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = 42 + 3.14 + 1.5e+3'), options.)
+  self~assertTrue(flat~caselessPos('rx-deci') > 0, -
+    "Categories: decimal (3.14) has rx-deci")
+
+::Method test_cat_decimal_point
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = 42 + 3.14 + 1.5e+3'), options.)
+  self~assertTrue(flat~caselessPos('rx-dpoint') > 0, -
+    "Categories: decimal point sub-element has rx-dpoint")
+
+::Method test_cat_fractional_part
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = 42 + 3.14 + 1.5e+3'), options.)
+  self~assertTrue(flat~caselessPos('rx-fpart') > 0, -
+    "Categories: fractional part sub-element has rx-fpart")
+
+::Method test_cat_exponential
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = 42 + 3.14 + 1.5e+3'), options.)
+  self~assertTrue(flat~caselessPos('rx-exp') > 0, -
+    "Categories: exponential (1.5e+3) has rx-exp")
+
+::Method test_cat_exponent_mark
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = 42 + 3.14 + 1.5e+3'), options.)
+  self~assertTrue(flat~caselessPos('rx-emark') > 0, -
+    "Categories: exponent mark sub-element has rx-emark")
+
+::Method test_cat_exponent_sign
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = 42 + 3.14 + 1.5e+3'), options.)
+  self~assertTrue(flat~caselessPos('rx-esign') > 0, -
+    "Categories: exponent sign sub-element has rx-esign")
+
+::Method test_cat_exponent
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = 42 + 3.14 + 1.5e+3'), options.)
+  self~assertTrue(flat~caselessPos('rx-expon') > 0, -
+    "Categories: exponent sub-element has rx-expon")
+
+/******************************************************************************/
+/* HTML element categories: strings (regular, hex, binary)                    */
+/******************************************************************************/
+
+::Method test_cat_string
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = "hello" || "FF"x || "1010"b'), options.)
+  self~assertTrue(flat~caselessPos('rx-str') > 0, -
+    "Categories: regular string has rx-str")
+
+::Method test_cat_opening_quote
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = "hello" || "FF"x || "1010"b'), options.)
+  self~assertTrue(flat~caselessPos('rx-oquo') > 0, -
+    "Categories: opening quote has rx-oquo")
+
+::Method test_cat_closing_quote
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = "hello" || "FF"x || "1010"b'), options.)
+  self~assertTrue(flat~caselessPos('rx-cquo') > 0, -
+    "Categories: closing quote has rx-cquo")
+
+::Method test_cat_hex_string
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = "hello" || "FF"x || "1010"b'), options.)
+  self~assertTrue(flat~caselessPos('rx-xstr') > 0, -
+    "Categories: hex string has rx-xstr")
+
+::Method test_cat_binary_string
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = "hello" || "FF"x || "1010"b'), options.)
+  self~assertTrue(flat~caselessPos('rx-bstr') > 0, -
+    "Categories: binary string has rx-bstr")
+
+::Method test_cat_string_suffix
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('x = "hello" || "FF"x || "1010"b'), options.)
+  self~assertTrue(flat~caselessPos('rx-ssuf') > 0, -
+    "Categories: string suffix (x, b) has rx-ssuf")
+
+/******************************************************************************/
+/* HTML element categories: comments (standard, line, doc)                    */
+/******************************************************************************/
+
+::Method test_cat_standard_comment
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('/* block */', '-- line comment', '--- doc comment'), options.)
+  self~assertTrue(flat~caselessPos('rx-cm') > 0, -
+    "Categories: standard comment has rx-cm")
+
+::Method test_cat_line_comment
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('/* block */', '-- line comment', '--- doc comment'), options.)
+  self~assertTrue(flat~caselessPos('rx-lncm') > 0, -
+    "Categories: line comment has rx-lncm")
+
+::Method test_cat_doc_comment
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('/* block */', '-- line comment', '--- doc comment'), options.)
+  self~assertTrue(flat~caselessPos('rx-doc-comment') > 0, -
+    "Categories: doc-comment has rx-doc-comment")
+
+/******************************************************************************/
+/* HTML element categories: whitespace and continuation                       */
+/******************************************************************************/
+
+::Method test_cat_whitespace
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('Say -', '  1'), options.)
+  self~assertTrue(flat~caselessPos('rx-ws') > 0, -
+    "Categories: whitespace has rx-ws")
+
+::Method test_cat_continuation
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('Say -', '  1'), options.)
+  self~assertTrue(flat~caselessPos('rx-cont') > 0, -
+    "Categories: continuation (-) has rx-cont")
+
+/******************************************************************************/
+/* HTML element categories: shebang                                           */
+/******************************************************************************/
+
+::Method test_cat_shebang
+  options. = self~htmlOptions
+  flat = self~highlight(.Array~of('#!/usr/bin/env rexx', 'Say 1'), options.)
+  self~assertTrue(flat~caselessPos('rx-shb') > 0, -
+    "Categories: shebang has rx-shb")
+
+/******************************************************************************/
+/* HTML element categories: resource data                                     */
+/******************************************************************************/
+
+::Method test_cat_resource_data
+  options. = self~htmlOptions
+  source = .Array~of( -
+    '::Routine foo', -
+    '  Return', -
+    '::Resource bar', -
+    'Some data', -
+    '::END' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-res-data') > 0, -
+    "Categories: resource data has rx-res-data")
+
+::Method test_cat_resource_delimiter
+  options. = self~htmlOptions
+  source = .Array~of( -
+    '::Routine foo', -
+    '  Return', -
+    '::Resource bar', -
+    'Some data', -
+    '::END' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-res-delimiter') > 0, -
+    "Categories: resource delimiter (::END) has rx-res-delimiter")
+
+/******************************************************************************/
+/* HTML element categories: specials with full detail                         */
+/******************************************************************************/
+
+::Method test_cat_paren_full
+  options. = self~htmlOptions
+  options.special = "full"
+  flat = self~highlight(.Array~of('Call foo(1, 2)'), options.)
+  self~assertTrue(flat~caselessPos('rx-spe rx-paren') > 0, -
+    "Categories: parentheses have rx-spe rx-paren (full)")
+
+::Method test_cat_comma_full
+  options. = self~htmlOptions
+  options.special = "full"
+  flat = self~highlight(.Array~of('Call foo(1, 2)'), options.)
+  self~assertTrue(flat~caselessPos('rx-spe rx-comma') > 0, -
+    "Categories: comma has rx-spe rx-comma (full)")
+
+/******************************************************************************/
+/* HTML element categories: taken constants (function/class/method names)     */
+/******************************************************************************/
+
+::Method test_cat_class_name_full
+  options. = self~htmlOptions
+  options.constant = "full"
+  source = .Array~of( -
+    '::Class Foo', -
+    '::Method bar', -
+    '::Routine baz', -
+    '  Return' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-const rx-class') > 0, -
+    "Categories: class name (Foo) has rx-const rx-class (full)")
+
+::Method test_cat_method_name_full
+  options. = self~htmlOptions
+  options.constant = "full"
+  source = .Array~of( -
+    '::Class Foo', -
+    '::Method bar', -
+    '::Routine baz', -
+    '  Return' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-const rx-method') > 0, -
+    "Categories: method name (bar) has rx-const rx-method (full)")
+
+::Method test_cat_routine_name_full
+  options. = self~htmlOptions
+  options.constant = "full"
+  source = .Array~of( -
+    '::Class Foo', -
+    '::Method bar', -
+    '::Routine baz', -
+    '  Return' -
+  )
+  flat = self~highlight(source, options.)
+  self~assertTrue(flat~caselessPos('rx-const rx-routine') > 0, -
+    "Categories: routine name (baz) has rx-const rx-routine (full)")
+
+/******************************************************************************/
+/* HTML: options.additional as string patch                                   */
+/******************************************************************************/
+
+::Method test_html_additional_bold
+  options. = self~htmlOptions
+  options.additional = "Element keyword bold red"
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('font-weight:bold') > 0, -
+    "HTML additional: bold applied via options.additional")
+
+::Method test_html_additional_red
+  options. = self~htmlOptions
+  options.additional = "Element keyword bold red"
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('#ff0000') > 0, -
+    "HTML additional: red color applied via options.additional")
+
+/******************************************************************************/
+/* HTML: Syntax error in source is propagated                                 */
+/******************************************************************************/
+
+::Method test_html_syntax_error
+  options. = self~htmlOptions
+  self~expectSyntax(36.901)
+  hl = .Highlighter~new("test", .Array~of('Say (('), options.)
+  hl~parse
+
+/******************************************************************************/
+/* ANSI: basic output                                                         */
+/******************************************************************************/
+
+::Method test_ansi_basic_has_esc
+  options. = self~ansiOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("1B"x) > 0, -
+    "ANSI basic: output contains ESC sequences")
+
+::Method test_ansi_basic_has_sgr_reset
+  options. = self~ansiOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("1B"x"[0m") > 0, -
+    "ANSI basic: output contains SGR reset")
+
+::Method test_ansi_basic_no_div
+  options. = self~ansiOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('<div') == 0, -
+    "ANSI basic: no HTML div tags")
+
+::Method test_ansi_basic_no_span
+  options. = self~ansiOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('<span') == 0, -
+    "ANSI basic: no HTML span tags")
+
+/******************************************************************************/
+/* ANSI: numberLines                                                          */
+/******************************************************************************/
+
+::Method test_ansi_numberlines
+  options. = self~ansiOptions
+  options.numberLines = .True
+  flat = self~highlight(.Array~of('Say 1', 'Say 2'), options.)
+  self~assertTrue(flat~pos(' | ') > 0, -
+    "ANSI numberLines: contains line number separator")
+
+/******************************************************************************/
+/* ANSI: width padding                                                        */
+/******************************************************************************/
+
+::Method test_ansi_width_has_esc
+  options. = self~ansiOptions
+  options.width = 40
+  flat = self~highlight(.Array~of('Nop'), options.)
+  self~assertTrue(flat~pos("1B"x) > 0, -
+    "ANSI width: padded output contains ESC sequences")
+
+::Method test_ansi_width_wider
+  options. = self~ansiOptions
+  options.width = 40
+  flat = self~highlight(.Array~of('Nop'), options.)
+  self~assertTrue(flat~length > 40, -
+    "ANSI width=40: output is wider than source alone")
+
+/******************************************************************************/
+/* ANSI: StylePatch changes SGR output                                        */
+/******************************************************************************/
+
+::Method test_ansi_patch_differs
+  options. = self~ansiOptions
+  source = .Array~of('Say "Hello"')
+  plain = self~highlight(source, options.)
+  patch = .StylePatch~of("All Strings bold red")
+  patched = self~highlight(source, options., patch)
+  self~assertTrue(plain \== patched, -
+    "ANSI patch: patched output differs from unpatched")
+
+::Method test_ansi_patch_red_sgr
+  options. = self~ansiOptions
+  patch = .StylePatch~of("All Strings bold red")
+  patched = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(patched~pos('38;2;255;0;0;') > 0, -
+    "ANSI patch: red color appears as SGR 38;2;255;0;0")
+
+/******************************************************************************/
+/* StylePatch: from string                                                    */
+/******************************************************************************/
+
+::Method test_stylepatch_string_bold
+  options. = self~htmlOptions
+  patch = .StylePatch~of("All Strings bold red")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('font-weight:bold') > 0, -
+    "StylePatch string: bold applied")
+
+::Method test_stylepatch_string_red
+  options. = self~htmlOptions
+  patch = .StylePatch~of("All Strings bold red")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('#ff0000') > 0, -
+    "StylePatch string: red color applied")
+
+/******************************************************************************/
+/* StylePatch: from array                                                     */
+/******************************************************************************/
+
+::Method test_stylepatch_array_red
+  options. = self~htmlOptions
+  patch = .StylePatch~of(.Array~of("All Strings bold red", "Element keyword italic"))
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('#ff0000') > 0, -
+    "StylePatch array: red color from first spec")
+
+::Method test_stylepatch_array_italic
+  options. = self~htmlOptions
+  patch = .StylePatch~of(.Array~of("All Strings bold red", "Element keyword italic"))
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('font-style:italic') > 0, -
+    "StylePatch array: italic from second spec")
+
+/******************************************************************************/
+/* StylePatch: Element mode                                                   */
+/******************************************************************************/
+
+::Method test_stylepatch_element_underline
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword underline green")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('text-decoration:underline') > 0, -
+    "StylePatch Element: underline applied to keyword")
+
+::Method test_stylepatch_element_green
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword underline green")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('#008000') > 0, -
+    "StylePatch Element: green color applied")
+
+/******************************************************************************/
+/* StylePatch: Name mode                                                      */
+/******************************************************************************/
+
+::Method test_stylepatch_name_bold
+  options. = self~htmlOptions
+  source = .Array~of('Call MyProc', '', 'MyProc:', '  Return')
+  patch = .StylePatch~of("Name INTERNAL.SUBROUTINE bold green")
+  flat = self~highlight(source, options., patch)
+  self~assertTrue(flat~caselessPos('font-weight:bold') > 0, -
+    "StylePatch Name: bold applied to named constant")
+
+::Method test_stylepatch_name_green
+  options. = self~htmlOptions
+  source = .Array~of('Call MyProc', '', 'MyProc:', '  Return')
+  patch = .StylePatch~of("Name INTERNAL.SUBROUTINE bold green")
+  flat = self~highlight(source, options., patch)
+  self~assertTrue(flat~caselessPos('#008000') > 0, -
+    "StylePatch Name: green color applied to named constant")
+
+/******************************************************************************/
+/* StylePatch: bold, italic, underline, no bold                               */
+/******************************************************************************/
+
+::Method test_stylepatch_attrs_bold
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword bold italic underline red")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('font-weight:bold') > 0, -
+    "StylePatch attrs: bold applied")
+
+::Method test_stylepatch_attrs_italic
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword bold italic underline red")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('font-style:italic') > 0, -
+    "StylePatch attrs: italic applied")
+
+::Method test_stylepatch_attrs_underline
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword bold italic underline red")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('text-decoration:underline') > 0, -
+    "StylePatch attrs: underline applied")
+
+::Method test_stylepatch_attrs_no_bold
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword no bold")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('font-weight:normal') > 0, -
+    "StylePatch attrs: 'no bold' produces font-weight:normal")
+
+/******************************************************************************/
+/* StylePatch: hex colors #rrggbb and #rgb                                    */
+/******************************************************************************/
+
+::Method test_stylepatch_hex_rrggbb
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword #ff8800")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('ff8800') > 0, -
+    "StylePatch #rrggbb: hex color applied")
+
+::Method test_stylepatch_hex_rgb_expanded
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword #f80")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('ff8800') > 0, -
+    "StylePatch #rgb: shorthand expanded to rrggbb")
+
+/******************************************************************************/
+/* StylePatch: foreground:background                                          */
+/******************************************************************************/
+
+::Method test_stylepatch_fgbg_foreground
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword red:blue")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('#ff0000') > 0, -
+    "StylePatch fg:bg: foreground red applied")
+
+::Method test_stylepatch_fgbg_bgpresent
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword red:blue")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('background-color') > 0, -
+    "StylePatch fg:bg: background-color present")
+
+::Method test_stylepatch_fgbg_background
+  options. = self~htmlOptions
+  patch = .StylePatch~of("Element keyword red:blue")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('#0000ff') > 0, -
+    "StylePatch fg:bg: background blue applied")
+
+/******************************************************************************/
+/* StylePatch: semicolon-separated specs in a single string                   */
+/******************************************************************************/
+
+::Method test_stylepatch_semicolon_first
+  options. = self~htmlOptions
+  patch = .StylePatch~of("All Strings red; Element keyword italic")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('#ff0000') > 0, -
+    "StylePatch semicolon: first spec (red strings) applied")
+
+::Method test_stylepatch_semicolon_second
+  options. = self~htmlOptions
+  patch = .StylePatch~of("All Strings red; Element keyword italic")
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('font-style:italic') > 0, -
+    "StylePatch semicolon: second spec (italic keyword) applied")
+
+/******************************************************************************/
+/* StylePatch: comment lines (--) are skipped                                 */
+/******************************************************************************/
+
+::Method test_stylepatch_comments_skipped
+  options. = self~htmlOptions
+  patch = .StylePatch~of(.Array~of("-- This is a comment", "All Strings red"))
+  flat = self~highlight(.Array~of('Say "Hello"'), options., patch)
+  self~assertTrue(flat~caselessPos('#ff0000') > 0, -
+    "StylePatch comments: comment line skipped, red applied")
+
+/******************************************************************************/
+/* StylePatch errors                                                          */
+/******************************************************************************/
+
+::Method test_stylepatch_error_bad_mode
+  self~expectSyntax(88.900)
+  .StylePatch~of("Bogus Strings red")
+
+::Method test_stylepatch_error_bad_class
+  self~expectSyntax(88.900)
+  .StylePatch~of("Element boguscat red")
+
+::Method test_stylepatch_error_bad_fg_color
+  self~expectSyntax(93.900)
+  .StylePatch~of("Element keyword notacolor")
+
+::Method test_stylepatch_error_bad_bg_color
+  self~expectSyntax(93.900)
+  .StylePatch~of("Element keyword red:notacolor")
+
+::Method test_stylepatch_error_bad_hex
+  self~expectSyntax(93.900)
+  .StylePatch~of("Element keyword #zzzzzz")
+
+::Method test_stylepatch_error_bad_name
+  self~expectSyntax(88.900)
+  .StylePatch~of("Name NONEXISTENT.THING bold")
+
+::Method test_stylepatch_error_trailing_no
+  self~expectSyntax(93.900)
+  .StylePatch~of("Element keyword no")

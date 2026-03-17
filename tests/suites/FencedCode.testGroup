@@ -1,0 +1,359 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* FencedCode.testGroup - Tests for FencedCode.cls                            */
+/* ================================================                           */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260316    0.5  First version                                             */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.FencedCode.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "FencedCode.cls"
+
+::Class FencedCode.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* Basic highlighting                                                         */
+/******************************************************************************/
+
+::Method test_basic_returns_array
+  result = FencedCode("test.md", .resources~Basic)
+  self~assertTrue(result~isA(.Array), -
+    "FencedCode returns an array")
+
+::Method test_basic_highlight_div
+  result = FencedCode("test.md", .resources~Basic)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('<div class="highlight-rexx-dark">') > 0, -
+    "Basic: contains highlight div with default style")
+
+::Method test_basic_pre_code_tags
+  result = FencedCode("test.md", .resources~Basic)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('<pre><code') > 0, -
+    "Basic: contains pre/code tags")
+
+::Method test_basic_keyword_highlight
+  result = FencedCode("test.md", .resources~Basic)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('class="rx-kw"') > 0, -
+    "Basic: Say is highlighted as keyword")
+
+::Method test_basic_string_highlight
+  result = FencedCode("test.md", .resources~Basic)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('class="rx-str') > 0, -
+    "Basic: string is highlighted")
+
+::Method test_basic_preserves_text_before
+  result = FencedCode("test.md", .resources~Basic)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos("# Test") > 0, -
+    "Basic: non-code lines are preserved (before)")
+
+::Method test_basic_preserves_text_after
+  result = FencedCode("test.md", .resources~Basic)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos("Done.") > 0, -
+    "Basic: non-code lines are preserved (after)")
+
+::Method test_basic_no_fence_markers
+  result = FencedCode("test.md", .resources~Basic)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('```') == 0, -
+    "Basic: fence markers are not in output")
+
+/******************************************************************************/
+/* Non-rexx blocks are passed through                                         */
+/******************************************************************************/
+
+::Method test_nonrexx_not_highlighted
+  result = FencedCode("test.md", .resources~NonRexx)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx') == 0, -
+    "Non-rexx: python block is not highlighted")
+
+::Method test_nonrexx_content_preserved
+  result = FencedCode("test.md", .resources~NonRexx)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos("print('hello')") > 0, -
+    "Non-rexx: python content is preserved")
+
+/******************************************************************************/
+/* Multiple rexx blocks                                                       */
+/******************************************************************************/
+
+::Method test_multiple_text_preserved
+  result = FencedCode("test.md", .resources~Multiple)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos("Middle text") > 0, -
+    "Multiple blocks: text between blocks is preserved")
+
+::Method test_multiple_two_highlight_divs
+  result = FencedCode("test.md", .resources~Multiple)
+  flat   = result~makeString('L', "0A"x)
+  count = 0
+  pos   = 1
+  Loop Forever
+    pos = flat~caselessPos('highlight-rexx-dark', pos)
+    If pos == 0 Then Leave
+    count += 1
+    pos   += 1
+  End
+  self~assertEquals(2, count, -
+    "Multiple blocks: two rexx blocks produce two highlight divs")
+
+/******************************************************************************/
+/* Twiddle markers (~~~)                                                      */
+/******************************************************************************/
+
+::Method test_twiddles
+  result = FencedCode("test.md", .resources~Twiddles)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') > 0, -
+    "Twiddles: ~~~ markers work")
+
+/******************************************************************************/
+/* Extended markers (more than 3 backticks)                                   */
+/******************************************************************************/
+
+::Method test_extended_markers
+  result = FencedCode("test.md", .resources~Extended)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') > 0, -
+    "Extended markers: ```` works")
+
+/******************************************************************************/
+/* style= attribute                                                           */
+/******************************************************************************/
+
+::Method test_style_light_applied
+  result = FencedCode("test.md", .resources~StyleLight)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-light') > 0, -
+    "Style attribute: style=light is applied")
+
+::Method test_style_light_no_dark
+  result = FencedCode("test.md", .resources~StyleLight)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') == 0, -
+    "Style attribute: default dark is NOT present")
+
+/******************************************************************************/
+/* defaultStyle parameter                                                     */
+/******************************************************************************/
+
+::Method test_default_style
+  result = FencedCode("test.md", .resources~PlainBlock, "light")
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-light') > 0, -
+    "Default style: defaultStyle='light' is applied")
+
+/******************************************************************************/
+/* .numberLines attribute                                                     */
+/******************************************************************************/
+
+::Method test_number_lines
+  result = FencedCode("test.md", .resources~NumberLines)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('class="number-lines') > 0, -
+    "Line numbers: .numberLines produces number-lines class on pre")
+
+/******************************************************************************/
+/* caption= attribute                                                         */
+/******************************************************************************/
+
+::Method test_caption
+  result = FencedCode("test.md", .resources~Caption)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('data-caption="My listing"') > 0, -
+    "Caption: caption= produces data-caption attribute")
+
+/******************************************************************************/
+/* ```executor is accepted                                                    */
+/******************************************************************************/
+
+::Method test_executor_tag
+  result = FencedCode("test.md", .resources~Executor)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') > 0, -
+    "Executor: ```executor is accepted as language tag")
+
+/******************************************************************************/
+/* Nested non-rexx block inside extended markers                              */
+/******************************************************************************/
+
+::Method test_nested_not_highlighted
+  result = FencedCode("test.md", .resources~Nested)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx') == 0, -
+    "Nested: rexx inside non-rexx extended block is not highlighted")
+
+/******************************************************************************/
+/* Missing end marker                                                         */
+/******************************************************************************/
+
+::Method test_missing_end_marker
+  self~expectSyntax(88.900)
+  result = FencedCode("test.md", .resources~MissingEnd)
+
+/******************************************************************************/
+/* Invalid option                                                             */
+/******************************************************************************/
+
+::Method test_bad_option
+  self~expectSyntax(88.900)
+  result = FencedCode("test.md", .resources~BadOption)
+
+/******************************************************************************/
+/* --continue: error in Rexx code does not abort                              */
+/******************************************************************************/
+
+::Method test_continue_error_box
+  defaultOptions.         = 0
+  defaultOptions.continue = 1
+  result = FencedCode("test.md", .resources~BadRexx, "dark", defaultOptions.)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos("background-color: red") > 0, -
+    "Continue: parse error produces red error box")
+
+::Method test_continue_error_info
+  defaultOptions.         = 0
+  defaultOptions.continue = 1
+  result = FencedCode("test.md", .resources~BadRexx, "dark", defaultOptions.)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos("Error") > 0, -
+    "Continue: error box contains error information")
+
+/******************************************************************************/
+/* Empty code block                                                           */
+/******************************************************************************/
+
+::Method test_empty_block
+  result = FencedCode("test.md", .resources~EmptyBlock)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') > 0, -
+    "Empty block: produces highlight div even when empty")
+
+/******************************************************************************/
+/* Test data                                                                  */
+/******************************************************************************/
+
+::Resource Basic
+# Test
+
+```rexx
+Say "Hello, world!"
+```
+
+Done.
+::END
+
+::Resource NonRexx
+```python
+print('hello')
+```
+::END
+
+::Resource Multiple
+```rexx
+Say 1
+```
+Middle text
+```rexx
+Say 2
+```
+::END
+
+::Resource Twiddles
+~~~rexx
+Nop
+~~~
+::END
+
+::Resource Extended
+````rexx
+Nop
+````
+::END
+
+::Resource StyleLight
+```rexx {style=light}
+Nop
+```
+::END
+
+::Resource PlainBlock
+```rexx
+Nop
+```
+::END
+
+::Resource NumberLines
+```rexx {.numberLines}
+Say 1
+Say 2
+```
+::END
+
+::Resource Caption
+```rexx {caption="My listing"}
+Say 1
+```
+::END
+
+::Resource Executor
+```executor
+Nop
+```
+::END
+
+::Resource Nested
+````markdown
+```rexx
+Say 'nested'
+```
+````
+::END
+
+::Resource MissingEnd
+```rexx
+Say 1
+::END
+
+::Resource BadOption
+```rexx {bogus=value}
+Nop
+```
+::END
+
+::Resource BadRexx
+```rexx
+Say ((
+```
+::END
+
+::Resource EmptyBlock
+```rexx
+```
+::END

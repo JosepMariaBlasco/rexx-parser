@@ -53,6 +53,8 @@ Version history
   <li> Remove author-only CLI/URL options (size, sections, docclass,
        language, outline, number-figures); these are now set exclusively via YAML front matter (20260314).
   <li> Add support for per-file CSS in <code>md2pdf</code> (20260314).
+  <li> md2pdf: allow specifying path in --csl (20260315).
+  <li> Refactor test suite to use ooRexxUnit, add new tests (20260315-17).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).
@@ -316,7 +318,7 @@ Version history
        [ANSI terminals](/rexx-parser/doc/highlighter/ansi/),
        and [(Lua)LaTeX](/rexx-parser/doc/highlighter/latex/).
   <li> Document the [Highlighter](/rexx-parser/doc/ref/classes/highlighter/) class.
-  <li> Create a new [Utilitites and samples](/rexx-parser/doc/samples) document.
+  <li> Create a new Utilitites and samples document.
   <li> Add `--prolog` and `--noprolog` options to [highligth.rex](/rexx-parser/doc/utilities/highlight/),
        and a corresponding boolean `prolog` option to the
        [Highlighter](/rexx-parser/doc/ref/classes/highlighter/) class.

@@ -1,0 +1,429 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* YAMLFrontMatter.testGroup - Tests for YAMLFrontMatter.cls                  */
+/* =========================================================                  */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260316    0.5  Migrated from YAMLFrontMatter.test to ooRexxUnit          */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.YAMLFrontMatter.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "YAMLFrontMatter.cls"
+
+::Class YAMLFrontMatter.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* No YAML: various cases                                                     */
+/******************************************************************************/
+
+::Method test_no_yaml_empty
+  self~assertEquals(.Nil, YAMLFrontMatter(.Array~new), -
+    "No YAML: empty source returns .Nil")
+
+::Method test_no_yaml_no_marker
+  self~assertEquals(.Nil, YAMLFrontMatter(.resources~NoYAML), -
+    "No YAML: source without --- returns .Nil")
+
+::Method test_no_yaml_unclosed
+  self~assertEquals(.Nil, YAMLFrontMatter(.resources~Unclosed), -
+    "No YAML: unclosed front matter returns .Nil")
+
+/******************************************************************************/
+/* Basic key-value pairs                                                      */
+/******************************************************************************/
+
+::Method test_basic_not_nil
+  yaml = YAMLFrontMatter(.resources~Basic)
+  self~assertTrue(yaml \== .Nil, -
+    "Basic: returns non-.Nil")
+
+::Method test_basic_is_stringtable
+  yaml = YAMLFrontMatter(.resources~Basic)
+  self~assertTrue(yaml~isA(.StringTable), -
+    "Basic: returns a StringTable")
+
+::Method test_basic_title
+  yaml = YAMLFrontMatter(.resources~Basic)
+  self~assertEquals("My Document", yaml["title"], -
+    "Basic: title is parsed")
+
+::Method test_basic_author
+  yaml = YAMLFrontMatter(.resources~Basic)
+  self~assertEquals("Josep Maria Blasco", yaml["author"], -
+    "Basic: author is parsed")
+
+::Method test_basic_date
+  yaml = YAMLFrontMatter(.resources~Basic)
+  self~assertEquals("2026-03-15", yaml["date"], -
+    "Basic: date is parsed")
+
+/******************************************************************************/
+/* Closing with "..."                                                         */
+/******************************************************************************/
+
+::Method test_dot_closing_not_nil
+  yaml = YAMLFrontMatter(.resources~DotClosing)
+  self~assertTrue(yaml \== .Nil, -
+    "Dot closing: returns non-.Nil")
+
+::Method test_dot_closing_value
+  yaml = YAMLFrontMatter(.resources~DotClosing)
+  self~assertEquals("Dot Closing", yaml["title"], -
+    "Dot closing: value is parsed")
+
+/******************************************************************************/
+/* Quoted values                                                              */
+/******************************************************************************/
+
+::Method test_quoted_double
+  yaml = YAMLFrontMatter(.resources~Quoted)
+  self~assertEquals("Double Quoted", yaml["double"], -
+    "Quoted: double quotes are stripped")
+
+::Method test_quoted_single
+  yaml = YAMLFrontMatter(.resources~Quoted)
+  self~assertEquals("Single Quoted", yaml["single"], -
+    "Quoted: single quotes are stripped")
+
+::Method test_quoted_unquoted
+  yaml = YAMLFrontMatter(.resources~Quoted)
+  self~assertEquals("plain value", yaml["unquoted"], -
+    "Quoted: unquoted value is preserved")
+
+/******************************************************************************/
+/* Comments and blank lines                                                   */
+/******************************************************************************/
+
+::Method test_comments_before
+  yaml = YAMLFrontMatter(.resources~Comments)
+  self~assertEquals("1", yaml["before"], -
+    "Comments: key before comment is parsed")
+
+::Method test_comments_after
+  yaml = YAMLFrontMatter(.resources~Comments)
+  self~assertEquals("2", yaml["after"], -
+    "Comments: key after comment is parsed")
+
+::Method test_comments_spaced
+  yaml = YAMLFrontMatter(.resources~Comments)
+  self~assertEquals("3", yaml["spaced"], -
+    "Comments: key after blank line is parsed")
+
+::Method test_comments_not_parsed
+  yaml = YAMLFrontMatter(.resources~Comments)
+  self~assertTrue(yaml~hasIndex("# this is") = .False, -
+    "Comments: comment line is not parsed as key")
+
+/******************************************************************************/
+/* Two-level nesting                                                          */
+/******************************************************************************/
+
+::Method test_twolevel_key_exists
+  yaml = YAMLFrontMatter(.resources~TwoLevel)
+  self~assertTrue(yaml~hasIndex("rexxpub"), -
+    "Two-level: rexxpub key exists")
+
+::Method test_twolevel_is_stringtable
+  yaml = YAMLFrontMatter(.resources~TwoLevel)
+  rp = yaml["rexxpub"]
+  self~assertTrue(rp~isA(.StringTable), -
+    "Two-level: rexxpub is a StringTable")
+
+::Method test_twolevel_nested_style
+  yaml = YAMLFrontMatter(.resources~TwoLevel)
+  rp = yaml["rexxpub"]
+  self~assertEquals("dark", rp["style"], -
+    "Two-level: nested style is parsed")
+
+::Method test_twolevel_nested_size
+  yaml = YAMLFrontMatter(.resources~TwoLevel)
+  rp = yaml["rexxpub"]
+  self~assertEquals("11pt", rp["size"], -
+    "Two-level: nested size is parsed")
+
+::Method test_twolevel_after_block
+  yaml = YAMLFrontMatter(.resources~TwoLevel)
+  self~assertEquals("value", yaml["other"], -
+    "Two-level: key after nested block is parsed")
+
+/******************************************************************************/
+/* Three-level nesting                                                        */
+/******************************************************************************/
+
+::Method test_threelevel_listings_is_stringtable
+  yaml = YAMLFrontMatter(.resources~ThreeLevel)
+  lst = yaml["rexxpub"]["listings"]
+  self~assertTrue(lst~isA(.StringTable), -
+    "Three-level: listings is a StringTable")
+
+::Method test_threelevel_listings_caption
+  yaml = YAMLFrontMatter(.resources~ThreeLevel)
+  lst = yaml["rexxpub"]["listings"]
+  self~assertEquals("below", lst["caption-position"], -
+    "Three-level: caption-position is parsed")
+
+::Method test_threelevel_listings_frame
+  yaml = YAMLFrontMatter(.resources~ThreeLevel)
+  lst = yaml["rexxpub"]["listings"]
+  self~assertEquals("tb", lst["frame"], -
+    "Three-level: frame is parsed")
+
+::Method test_threelevel_figures_is_stringtable
+  yaml = YAMLFrontMatter(.resources~ThreeLevel)
+  fig = yaml["rexxpub"]["figures"]
+  self~assertTrue(fig~isA(.StringTable), -
+    "Three-level: figures is a StringTable")
+
+::Method test_threelevel_figures_caption
+  yaml = YAMLFrontMatter(.resources~ThreeLevel)
+  fig = yaml["rexxpub"]["figures"]
+  self~assertEquals("above", fig["caption-position"], -
+    "Three-level: figure caption-position is parsed")
+
+::Method test_threelevel_sibling
+  yaml = YAMLFrontMatter(.resources~ThreeLevel)
+  rp = yaml["rexxpub"]
+  self~assertEquals("light", rp["style"], -
+    "Three-level: sibling of sub-tables is parsed")
+
+/******************************************************************************/
+/* Empty group                                                                */
+/******************************************************************************/
+
+::Method test_empty_group_is_stringtable
+  yaml = YAMLFrontMatter(.resources~EmptyGroup)
+  self~assertTrue(yaml["group"]~isA(.StringTable), -
+    "Empty group: returns an empty StringTable")
+
+::Method test_empty_group_no_items
+  yaml = YAMLFrontMatter(.resources~EmptyGroup)
+  self~assertEquals(0, yaml["group"]~items, -
+    "Empty group: StringTable has no items")
+
+::Method test_empty_group_after
+  yaml = YAMLFrontMatter(.resources~EmptyGroup)
+  self~assertEquals("yes", yaml["after"], -
+    "Empty group: key after empty group is parsed")
+
+/******************************************************************************/
+/* Value with colon (e.g. URLs, times)                                        */
+/******************************************************************************/
+
+::Method test_colon_in_url
+  yaml = YAMLFrontMatter(.resources~ColonInValue)
+  self~assertTrue(yaml["url"]~pos("https:") > 0, -
+    "Colon in value: URL is parsed (first colon separates key)")
+
+::Method test_colon_in_time
+  yaml = YAMLFrontMatter(.resources~ColonInValue)
+  self~assertEquals("12:30:00", yaml["time"], -
+    "Colon in value: time value is preserved")
+
+/******************************************************************************/
+/* Indentation with tabs                                                      */
+/******************************************************************************/
+
+::Method test_mixed_indent
+  yaml = YAMLFrontMatter(.resources~MixedIndent)
+  self~assertEquals("1", yaml["top"], -
+    "Mixed indent: top-level key is parsed")
+
+/******************************************************************************/
+/* Multiple documents marker (second ---) closes first block                  */
+/******************************************************************************/
+
+::Method test_double_marker_first
+  yaml = YAMLFrontMatter(.resources~DoubleMarker)
+  self~assertEquals("yes", yaml["first"], -
+    "Double marker: first key is parsed")
+
+::Method test_double_marker_second_excluded
+  yaml = YAMLFrontMatter(.resources~DoubleMarker)
+  self~assertTrue(yaml~hasIndex("second") = .False, -
+    "Double marker: key after second --- is not included")
+
+/******************************************************************************/
+/* Realistic RexxPub document front matter                                    */
+/******************************************************************************/
+
+::Method test_realistic_title
+  yaml = YAMLFrontMatter(.resources~Realistic)
+  self~assertEquals("A Sample Article", yaml["title"], -
+    "Realistic: title is parsed")
+
+::Method test_realistic_highlight_style
+  yaml = YAMLFrontMatter(.resources~Realistic)
+  self~assertEquals("kate", yaml["highlight-style"], -
+    "Realistic: highlight-style is parsed")
+
+::Method test_realistic_docclass
+  yaml = YAMLFrontMatter(.resources~Realistic)
+  rp = yaml["rexxpub"]
+  self~assertEquals("article", rp["docclass"], -
+    "Realistic: docclass is parsed")
+
+::Method test_realistic_section_numbers
+  yaml = YAMLFrontMatter(.resources~Realistic)
+  rp = yaml["rexxpub"]
+  self~assertEquals("3", rp["section-numbers"], -
+    "Realistic: section-numbers is parsed")
+
+::Method test_realistic_listing_caption
+  yaml = YAMLFrontMatter(.resources~Realistic)
+  lst = yaml["rexxpub"]["listings"]
+  self~assertEquals("below", lst["caption-position"], -
+    "Realistic: listing caption-position is parsed")
+
+::Method test_realistic_listing_frame
+  yaml = YAMLFrontMatter(.resources~Realistic)
+  lst = yaml["rexxpub"]["listings"]
+  self~assertEquals("tb", lst["frame"], -
+    "Realistic: listing frame is parsed")
+
+::Method test_realistic_figure_label
+  yaml = YAMLFrontMatter(.resources~Realistic)
+  fig = yaml["rexxpub"]["figures"]
+  self~assertEquals("Fig.", fig["label"], -
+    "Realistic: figure label is parsed")
+
+/******************************************************************************/
+/* Test data                                                                  */
+/******************************************************************************/
+
+::Resource NoYAML
+# Just Markdown
+No front matter here.
+::END
+
+::Resource Unclosed
+---
+title: This is never closed
+and it goes on forever
+::END
+
+::Resource Basic
+---
+title: My Document
+author: Josep Maria Blasco
+date: 2026-03-15
+---
+# Content starts here
+::END
+
+::Resource DotClosing
+---
+title: Dot Closing
+...
+# Content
+::END
+
+::Resource Quoted
+---
+double: "Double Quoted"
+single: 'Single Quoted'
+unquoted: plain value
+---
+::END
+
+::Resource Comments
+---
+before: 1
+# this is a comment
+after: 2
+
+spaced: 3
+---
+::END
+
+::Resource TwoLevel
+---
+rexxpub:
+  style: dark
+  size: 11pt
+other: value
+---
+::END
+
+::Resource ThreeLevel
+---
+rexxpub:
+  style: light
+  listings:
+    caption-position: below
+    frame: tb
+  figures:
+    caption-position: above
+---
+::END
+
+::Resource EmptyGroup
+---
+group:
+after: yes
+---
+::END
+
+::Resource ColonInValue
+---
+url: "https://rexx.epbcn.com"
+time: "12:30:00"
+---
+::END
+
+::Resource MixedIndent
+---
+top: 1
+---
+::END
+
+::Resource DoubleMarker
+---
+first: yes
+---
+second: no
+---
+::END
+
+::Resource Realistic
+---
+title: A Sample Article
+author: Josep Maria Blasco
+date: 2026-03-15
+highlight-style: kate
+rexxpub:
+  docclass: article
+  style: vim-dark
+  section-numbers: 3
+  listings:
+    caption-position: below
+    caption-style: italic
+    label: Listing
+    frame: tb
+  figures:
+    caption-position: above
+    label: "Fig."
+---
+# Introduction
+
+This is a sample RexxPub article.
+::END

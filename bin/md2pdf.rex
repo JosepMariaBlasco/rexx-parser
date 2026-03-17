@@ -33,6 +33,7 @@
 /*                  --language (now YAML-only)                                */
 /* 20260314         Add support for file-level css                            */
 /* 20260314         Use InitCLI() from CLISupport.cls                         */
+/* 20260315         Allow --csl to accept a full path                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -102,9 +103,7 @@ ProcessOptions:
       When "--csl"            Then Do
         If args~size == 0 Then
           Call Error "Missing CSL style name after '"option"' option."
-        csl = Lower(args[1])
-        If \.File~new(rootDir"/csl/"csl".csl")~exists Then
-          Call Error 'CSL style "'csl'.csl" not found in the "'rootDir'/csl" directory.'
+        csl = args[1]
         args~delete(1)
       End
       When "-c", "--css"      Then Do
@@ -154,6 +153,20 @@ ProcessOptions:
   commonCSS    =  CharIn(bootstrap, 1, Chars(bootstrap) )
   commonCSS  ||=  CharIn(cssFile,   1, Chars(cssFile)   )
   commonCSS  ||=  CharIn(baseFile,  1, Chars(baseFile)  )
+
+  -- Resolve the CSL file path.
+  -- If csl contains a path separator, treat it as a path; otherwise look
+  -- in the distribution's csl/ directory.
+  If csl~contains("/") | csl~contains("\") Then Do
+    cslPath = csl
+    If \.File~new(cslPath)~exists Then
+      Call Error 'CSL file "'cslPath'" not found.'
+  End
+  Else Do
+    cslPath = rootDir"/csl/"Lower(csl)".csl"
+    If \.File~new(cslPath)~exists Then
+      Call Error 'CSL style "'csl'.csl" not found in the "'rootDir'/csl" directory.'
+  End
 
   -- The HTML template is the same for all files
   HTMLtemplate = .Resources~HTML~makeString
@@ -285,7 +298,7 @@ BatchMode:
 
 ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
   defaultTheme cliStyle defaultOptions language outline fixOutline size continue -
-  itrace csl sectionNumbers executor experimental unicode mode numberFigures -
+  itrace cslPath sectionNumbers executor experimental unicode mode numberFigures -
   highlightStyle
 
   Use Strict Arg file, requestedDocClass, outputDir = ""
@@ -430,7 +443,7 @@ AllWentWell:
   contents = .Array~new
   pandocCommand = 'pandoc' -
     '--citeproc' -
-    '--csl="'rootDir'/csl/'csl'.csl"' -
+    '--csl="'cslPath'"' -
     '-M link-citations=true' -
     '--lua-filter="'rootDir'/cgi/inline-footnotes.lua"'
   -- Say pandocCommand /* For debug */
@@ -669,7 +682,8 @@ Options:
 --check-deps          Checks that all the dependencies are installed
 --continue            Continue when a file fails (batch mode)
 -c, --css DIR         Set the CSS base directory
---csl NAME            Sets the Citation Style Language style
+--csl NAME|PATH       Sets the Citation Style Language style
+                      (name looks in csl/; path is used as-is)
 --default OPTIONS     Set default options for Rexx code blocks
 -exp, --experimental  Enable Experimental features for all code blocks
 -h, --help            Display this help

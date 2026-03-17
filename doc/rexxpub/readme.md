@@ -25,8 +25,9 @@ means it can use any of the thousands of
 [Citation Style Language (CSL)](https://citationstyles.org/) styles
 available from the
 [CSL style repository](https://github.com/citation-style-language/styles).
-CSL files should be placed in the `csl` subdirectory of the
-distribution.
+CSL files can be placed in the `csl` subdirectory of the
+distribution and referenced by name (e.g. `--csl rexxpub`),
+or referenced by full path (e.g. `--csl /path/to/mystyle.csl`).
 
 The distribution includes two styles:
 

@@ -138,9 +138,11 @@ for citation processing with `--citeproc`.  RexxPub does not need
 to duplicate this field.
 
 Note: `md2pdf` also accepts a `--csl` command-line option, which
-passes the style name to Pandoc explicitly.  When a `csl` field is
-present in the YAML front matter, Pandoc uses it regardless of the
-`--csl` command-line option.
+passes the style to Pandoc explicitly.  The argument can be a plain
+name (looked up in the `csl/` directory of the distribution) or a
+full path to a `.csl` file.  When a `csl` field is present in the
+YAML front matter, Pandoc uses it regardless of the `--csl`
+command-line option.
 
 ### Syntax highlighting style (`highlight-style`)
 

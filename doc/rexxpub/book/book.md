@@ -188,8 +188,8 @@ development of the md2html utility, which was originally built to
 serve his documentation needs, and contributed the horizontal
 scrollbar mechanism for wide images.
 
-This book itself was written in collaboration with Claude
-(Anthropic), through a process of detailed technical discussion
+This book itself was written in collaboration with several
+IA assistants, through a process of detailed technical discussion
 followed by joint drafting and editing.
 
 The Four Pipelines {.chapter}
@@ -617,11 +617,13 @@ default depends on the document class: 3 for `article` (and
 and code listings.  Captions are still displayed, but without a
 number prefix.
 
-`--csl NAME` sets the Citation Style Language style for bibliographic
-references.  The default is `rexxpub`.  The style name must correspond
-to a `.csl` file in the distribution's `csl` directory.  This option
-allows documents with Pandoc citations to use any of the thousands
-of available CSL styles.
+`--csl NAME|PATH` sets the Citation Style Language style for bibliographic
+references.  The default is `rexxpub`.  When the argument is a plain name
+(no path separators), it is looked up as a `.csl` file in the
+distribution's `csl` directory.  When the argument contains `/` or `\`,
+it is treated as a file path and used as-is.  This option allows
+documents with Pandoc citations to use any of the thousands of available
+CSL styles.
 
 `-l CODE` or `--language CODE` sets the document language, which is
 written into the `lang` attribute of the HTML `<html>` element.  The
@@ -2224,9 +2226,11 @@ rather than aborting.
 styles and document classes independently of the Rexx Parser
 installation.
 
-`--csl file` specifies a Citation Style Language file for
-bibliographic references (default: `rexxpub`).  Pandoc's `--citeproc`
-is always enabled; this option controls the citation format.
+`--csl name|path` specifies a Citation Style Language style for
+bibliographic references (default: `rexxpub`).  A plain name is
+looked up in the `csl/` directory; a path (containing `/` or `\`)
+is used as-is.  Pandoc's `--citeproc` is always enabled; this option
+controls the citation format.
 
 `--default attributes` passes default attributes to FencedCode for
 Rexx fenced code blocks (for example, `--default number` to enable

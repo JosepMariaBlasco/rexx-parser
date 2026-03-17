@@ -1,0 +1,73 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* KeywordInstructions.testGroup - Parser checks for keyword instructions     */
+/* =====================================================================      */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260316    0.5  Migrated from ParserChecks.test to ooRexxUnit             */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.KeywordInstructions.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "ParserTestCase.cls"
+
+::Class KeywordInstructions.testGroup Subclass ParserTestCase Public
+
+/******************************************************************************/
+/* LEAVE / ITERATE                                                            */
+/******************************************************************************/
+
+::Method test_leave_iterate
+  self~parserError(28.001, "If 1 = 1 Then Leave")
+  self~parserError(28.002, "If 1 = 1 Then Iterate")
+  self~parserError(28.003, "Do i = 1 To 2; Leave what?; End")
+  self~parserError(28.004, "Do i = 1 To 2; iterate what?; End")
+
+/******************************************************************************/
+/* GUARD                                                                      */
+/******************************************************************************/
+
+::Method test_guard
+  self~parserError(99.911, "Guard On")
+  self~parserError(99.911, "Guard Off")
+  self~parserOK(           "::Method M; Guard ON")
+
+/******************************************************************************/
+/* SIGNAL                                                                     */
+/******************************************************************************/
+
+::Method test_signal
+  self~parserError(16.001, "Signal Label")
+  self~parserError(16.001, "Signal On Syntax; 1/0")
+  self~parserError(16.001, "Signal On Syntax Name UH; 1/0")
+  self~parserError(16.001, (              -
+    "Signal On User Cond",            -
+    "Call p",                         -
+    "p: Procedure",                   -
+    "  Raise User Cond Return"        -
+   ))
+  self~parserError(16.001, (              -
+    "Signal On User Cond Name Label", -
+    "Call p",                         -
+    "p: Procedure",                   -
+    "  Raise User Cond Return"        -
+   ))

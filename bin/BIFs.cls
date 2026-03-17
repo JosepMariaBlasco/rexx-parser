@@ -162,8 +162,8 @@
   BIFARGS.ERRORTEXT    = "r0_99"
   BIFARGS.FILESPEC     = "rDELNP rANY"
   BIFARGS.GC           = "oF"
-  -- INSERT Bug: Arg(3) should be POS. See ooRexx bug n. 2012
-  BIFARGS.INSERT       = "rANY rANY oLENGTH oLENGTH oPAD"
+  -- INSERT: ooRexx bug 2012 fixed in r13112. Arg(3) error is now 93.906.
+  BIFARGS.INSERT       = "rANY rANY oWHOLE>=0 oLENGTH oPAD"
   BIFARGS.LASTPOS      = "rANY rANY oPOS oLENGTH"
   BIFARGS.LEFT         = "rANY rLENGTH oPAD"
   BIFARGS.LOWER        = "rANY oPOS oLENGTH"
@@ -419,7 +419,7 @@ If .rxcheck.debug = 1 Then Trace ?a
             End
             Else If value <  0 Then Do
               If BIFName == "RANDOM"                                   Then Signal 40.013
-              If WordPos(BIFName, "CHANGESTR COPIES FORMAT TRUNC") > 0 Then Signal 93.906 -- See bug 2010
+              If WordPos(BIFName, "CHANGESTR COPIES FORMAT INSERT TRUNC") > 0 Then Signal 93.906 -- See bugs 2010, 2012
             End
             Else If BIFName == "RANDOM", value > 999999999             Then Signal 40.013
           End

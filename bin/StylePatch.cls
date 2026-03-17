@@ -174,7 +174,7 @@ BadMode:
           Parse Var color color":"background
           If background[1] \== "#" Then Do
             bg = .HTML.Color[background]
-            If bg == .Nil Then Signal BadBackground
+            If bg == "" Then Signal BadBackground
             bg = bg || "ff"
           End
           Else Do
@@ -186,7 +186,7 @@ BadMode:
         End
         If color[1] \== "#" Then Do
           fg = .HTML.Color[color]
-          If fg == .Nil Then Signal BadColor
+          If fg == "" Then Signal BadColor
           fg = fg || "ff"
         End
         Else Do

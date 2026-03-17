@@ -223,10 +223,13 @@ SkipOverDocComms:
   Signal SkipOverOperator
 
 Operator:
+  -- Valid values ("group", "full", "detail") are sanitized by callers
+  -- (FencedCode.cls ParseOptions). Otherwise Nop is defensive.
   Select Case Options.operator
     When "group"  Then Call Assign Arg(1), "op"
     When "full"   Then Call Assign Arg(1), "op" Arg(2)
     When "detail" Then Call Assign Arg(1), Arg(2)
+    Otherwise Nop
   End
 Return
 
@@ -314,10 +317,13 @@ SkipOverOperator:
   Signal SkipOverAssignment
 
 Assignment:
+  -- Valid values ("group", "full", "detail") are sanitized by callers
+  -- (FencedCode.cls ParseOptions). Otherwise Nop is defensive.
   Select Case Options.assignment
     When "group"  Then Call Assign Arg(1), "asg"
     When "full"   Then Call Assign Arg(1), "asg" Arg(2)
     When "detail" Then Call Assign Arg(1), Arg(2)
+    Otherwise Nop
   End
 Return
 
@@ -346,10 +352,13 @@ SkipOverAssignment:
   Signal SkipOverSpecial
 
 Special:
+  -- Valid values ("group", "full", "detail") are sanitized by callers
+  -- (FencedCode.cls ParseOptions). Otherwise Nop is defensive.
   Select Case Options.special
     When "group"  Then Call Assign Arg(1), "spe"
     When "full"   Then Call Assign Arg(1), "spe" Arg(2)
     When "detail" Then Call Assign Arg(1), Arg(2)
+    Otherwise Nop
   End
 Return
 
@@ -452,10 +461,13 @@ SkipOverStrings:
   Signal SkipOverConstant
 
 Constant:
+  -- Valid values ("group", "full", "detail") are sanitized by callers
+  -- (FencedCode.cls ParseOptions). Otherwise Nop is defensive.
   Select Case Options.["CONSTANT"]
     When "group"  Then value = prefix"const"
     When "full"   Then value = prefix"const" prefix||Arg(2)
     When "detail" Then value = prefix||Arg(2)
+    Otherwise          value = prefix"const"
   End
   HTMLClass[ constant, Arg(1) ] = value
 

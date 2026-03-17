@@ -1,8 +1,0 @@
-z = .Complex[3, 4]
-Say z              -- 3+4i
-Say z~conjugate    -- 3-4i
-
-::Method Conjugate Extends Complex
-  Return self~class~new(self~real, -self~imaginary)
-
-::Requires Complex.cls

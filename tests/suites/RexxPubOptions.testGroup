@@ -1,0 +1,595 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* RexxPubOptions.testGroup - Tests for RexxPubOptions.cls                    */
+/* =======================================================                    */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260316    0.5  First version                                             */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.RexxPubOptions.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "RexxPubOptions.cls"
+
+::Class RexxPubOptions.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* ParseRexxPubYAML: .Nil input                                               */
+/******************************************************************************/
+
+::Method test_nil_returns_stringtable
+  opts = ParseRexxPubYAML(.Nil)
+  self~assertTrue(opts~isA(.StringTable), -
+    "Nil input: returns a StringTable")
+
+::Method test_nil_style
+  opts = ParseRexxPubYAML(.Nil)
+  self~assertEquals(.Nil, opts["style"], -
+    "Nil input: style is .Nil")
+
+::Method test_nil_listing_caption_position
+  opts = ParseRexxPubYAML(.Nil)
+  self~assertEquals("above", opts["listing-caption-position"], -
+    "Nil input: listing-caption-position defaults to 'above'")
+
+::Method test_nil_figure_caption_position
+  opts = ParseRexxPubYAML(.Nil)
+  self~assertEquals("below", opts["figure-caption-position"], -
+    "Nil input: figure-caption-position defaults to 'below'")
+
+::Method test_nil_listing_frame
+  opts = ParseRexxPubYAML(.Nil)
+  self~assertEquals("none", opts["listing-frame"], -
+    "Nil input: listing-frame defaults to 'none'")
+
+::Method test_nil_listing_label
+  opts = ParseRexxPubYAML(.Nil)
+  self~assertEquals("", opts["listing-label"], -
+    "Nil input: listing-label defaults to empty")
+
+::Method test_nil_highlight_style
+  opts = ParseRexxPubYAML(.Nil)
+  self~assertEquals(.Nil, opts["highlight-style"], -
+    "Nil input: highlight-style is .Nil")
+
+/******************************************************************************/
+/* ParseRexxPubYAML: empty YAML (no rexxpub: block)                          */
+/******************************************************************************/
+
+::Method test_empty_style
+  yaml = .StringTable~new
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(.Nil, opts["style"], -
+    "Empty YAML: style is .Nil")
+
+::Method test_empty_defaults
+  yaml = .StringTable~new
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("above", opts["listing-caption-position"], -
+    "Empty YAML: defaults are preserved")
+
+/******************************************************************************/
+/* ParseRexxPubYAML: highlight-style (top-level Pandoc metadata)             */
+/******************************************************************************/
+
+::Method test_highlight_style_lowercased
+  yaml = .StringTable~new
+  yaml["highlight-style"] = "Kate"
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("kate", opts["highlight-style"], -
+    "Highlight-style: top-level value is lowercased")
+
+/******************************************************************************/
+/* ParseRexxPubYAML: rexxpub top-level options                               */
+/******************************************************************************/
+
+::Method test_toplevel_style
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["style"]           = "vim-dark"
+  rp["size"]            = "11pt"
+  rp["section-numbers"] = 4
+  rp["docclass"]        = "Article"
+  rp["language"]        = "es"
+  rp["outline"]         = 3
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("vim-dark", opts["style"], -
+    "Top-level: style is copied")
+
+::Method test_toplevel_size
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["size"] = "11pt"
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("11pt", opts["size"], -
+    "Top-level: size is copied")
+
+::Method test_toplevel_section_numbers
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["section-numbers"] = 4
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(4, opts["section-numbers"], -
+    "Top-level: section-numbers is copied")
+
+::Method test_toplevel_docclass_lowercased
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["docclass"] = "Article"
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("article", opts["docclass"], -
+    "Top-level: docclass is lowercased")
+
+::Method test_toplevel_language
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["language"] = "es"
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("es", opts["language"], -
+    "Top-level: language is copied")
+
+::Method test_toplevel_outline
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["outline"] = 3
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(3, opts["outline"], -
+    "Top-level: outline is copied")
+
+/******************************************************************************/
+/* ParseRexxPubYAML: number-figures normalization                            */
+/******************************************************************************/
+
+::Method test_number_figures_true
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["number-figures"] = "true"
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(1, opts["number-figures"], -
+    "number-figures: 'true' becomes 1")
+
+::Method test_number_figures_false
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["number-figures"] = "false"
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(0, opts["number-figures"], -
+    "number-figures: 'false' becomes 0")
+
+::Method test_number_figures_invalid
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["number-figures"] = "bogus"
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(.Nil, opts["number-figures"], -
+    "number-figures: invalid value is removed (becomes .Nil)")
+
+/******************************************************************************/
+/* ParseRexxPubYAML: outline validation                                      */
+/******************************************************************************/
+
+::Method test_outline_too_large
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["outline"] = 99
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(.Nil, opts["outline"], -
+    "outline: value > 6 is removed")
+
+::Method test_outline_negative
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["outline"] = -1
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(.Nil, opts["outline"], -
+    "outline: negative value is removed")
+
+::Method test_outline_zero_valid
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["outline"] = 0
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(0, opts["outline"], -
+    "outline: 0 is valid")
+
+::Method test_outline_six_valid
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  rp["outline"] = 6
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(6, opts["outline"], -
+    "outline: 6 is valid")
+
+/******************************************************************************/
+/* ParseRexxPubYAML: listings sub-table                                      */
+/******************************************************************************/
+
+::Method test_listings_caption_position
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  lst  = .StringTable~new
+  lst["caption-position"] = "Below"
+  lst["caption-style"]    = "Italic"
+  lst["label-style"]      = "Bold-Italic"
+  lst["label"]            = "Listing"
+  lst["frame"]            = "TB"
+  rp["listings"] = lst
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("below", opts["listing-caption-position"], -
+    "Listings: caption-position is lowercased")
+
+::Method test_listings_caption_style
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  lst  = .StringTable~new
+  lst["caption-style"] = "Italic"
+  rp["listings"] = lst
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("italic", opts["listing-caption-style"], -
+    "Listings: caption-style is lowercased")
+
+::Method test_listings_label_style
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  lst  = .StringTable~new
+  lst["label-style"] = "Bold-Italic"
+  rp["listings"] = lst
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("bold-italic", opts["listing-label-style"], -
+    "Listings: label-style is lowercased")
+
+::Method test_listings_label_asis
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  lst  = .StringTable~new
+  lst["label"] = "Listing"
+  rp["listings"] = lst
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("Listing", opts["listing-label"], -
+    "Listings: label is copied as-is (not lowercased)")
+
+::Method test_listings_frame
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  lst  = .StringTable~new
+  lst["frame"] = "TB"
+  rp["listings"] = lst
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("tb", opts["listing-frame"], -
+    "Listings: frame is lowercased")
+
+/******************************************************************************/
+/* ParseRexxPubYAML: listings invalid values are ignored                     */
+/******************************************************************************/
+
+::Method test_listings_invalid_caption_position
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  lst  = .StringTable~new
+  lst["caption-position"] = "middle"
+  lst["frame"]            = "dotted"
+  rp["listings"] = lst
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("above", opts["listing-caption-position"], -
+    "Listings: invalid caption-position keeps default")
+
+::Method test_listings_invalid_frame
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  lst  = .StringTable~new
+  lst["frame"] = "dotted"
+  rp["listings"] = lst
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("none", opts["listing-frame"], -
+    "Listings: invalid frame keeps default")
+
+/******************************************************************************/
+/* ParseRexxPubYAML: figures sub-table                                       */
+/******************************************************************************/
+
+::Method test_figures_caption_position
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  fig  = .StringTable~new
+  fig["caption-position"] = "Above"
+  fig["caption-style"]    = "Italic"
+  fig["label-style"]      = "Normal"
+  fig["label"]            = "Fig."
+  rp["figures"] = fig
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("above", opts["figure-caption-position"], -
+    "Figures: caption-position is lowercased")
+
+::Method test_figures_caption_style
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  fig  = .StringTable~new
+  fig["caption-style"] = "Italic"
+  rp["figures"] = fig
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("italic", opts["figure-caption-style"], -
+    "Figures: caption-style is lowercased")
+
+::Method test_figures_label_style
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  fig  = .StringTable~new
+  fig["label-style"] = "Normal"
+  rp["figures"] = fig
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("normal", opts["figure-label-style"], -
+    "Figures: label-style is lowercased")
+
+::Method test_figures_label_asis
+  yaml = .StringTable~new
+  rp   = .StringTable~new
+  fig  = .StringTable~new
+  fig["label"] = "Fig."
+  rp["figures"] = fig
+  yaml["rexxpub"] = rp
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("Fig.", opts["figure-label"], -
+    "Figures: label is copied as-is")
+
+/******************************************************************************/
+/* ParseRexxPubYAML: rexxpub value is not a StringTable                      */
+/******************************************************************************/
+
+::Method test_scalar_rexxpub_ignored
+  yaml = .StringTable~new
+  yaml["rexxpub"] = "scalar"
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals(.Nil, opts["style"], -
+    "Scalar rexxpub: ignored gracefully, defaults preserved")
+
+/******************************************************************************/
+/* BuildCaptionOverrides: all defaults (no CSS, no attrs)                    */
+/******************************************************************************/
+
+::Method test_bco_returns_stringtable
+  opts = ParseRexxPubYAML(.Nil)
+  res  = BuildCaptionOverrides(opts)
+  self~assertTrue(res~isA(.StringTable), -
+    "BuildCaptionOverrides: returns a StringTable")
+
+::Method test_bco_defaults_no_css
+  opts = ParseRexxPubYAML(.Nil)
+  res  = BuildCaptionOverrides(opts)
+  self~assertEquals("", res["overrideCSS"], -
+    "Defaults: no CSS overrides")
+
+::Method test_bco_defaults_no_listing_attrs
+  opts = ParseRexxPubYAML(.Nil)
+  res  = BuildCaptionOverrides(opts)
+  self~assertEquals("", res["listingsAttrs"], -
+    "Defaults: no listing data-* attributes")
+
+::Method test_bco_defaults_no_figure_attrs
+  opts = ParseRexxPubYAML(.Nil)
+  res  = BuildCaptionOverrides(opts)
+  self~assertEquals("", res["figuresAttrs"], -
+    "Defaults: no figure data-* attributes")
+
+/******************************************************************************/
+/* BuildCaptionOverrides: listing caption below                              */
+/******************************************************************************/
+
+::Method test_bco_listing_below_css
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-caption-position"] = "below"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("figure.listing figcaption") > 0, -
+    "Listing below: generates figcaption CSS")
+
+::Method test_bco_listing_below_break
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-caption-position"] = "below"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("break-before: avoid") > 0, -
+    "Listing below: includes break-before: avoid")
+
+::Method test_bco_listing_below_attr
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-caption-position"] = "below"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["listingsAttrs"]~pos('data-listing-caption-position="below"') > 0, -
+    "Listing below: generates data-* attribute")
+
+/******************************************************************************/
+/* BuildCaptionOverrides: listing frame variants                             */
+/******************************************************************************/
+
+::Method test_bco_frame_tb_top
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-frame"] = "tb"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("border-top") > 0, -
+    "Frame tb: generates border-top CSS")
+
+::Method test_bco_frame_tb_bottom
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-frame"] = "tb"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("border-bottom") > 0, -
+    "Frame tb: generates border-bottom CSS")
+
+::Method test_bco_frame_single
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-frame"] = "single"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("border:") > 0, -
+    "Frame single: generates border CSS")
+
+::Method test_bco_frame_leftbar
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-frame"] = "leftbar"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("border-left:") > 0, -
+    "Frame leftbar: generates border-left CSS")
+
+/******************************************************************************/
+/* BuildCaptionOverrides: listing italic caption, bold label                  */
+/******************************************************************************/
+
+::Method test_bco_listing_italic_caption
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-caption-style"] = "italic"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("font-style: italic") > 0, -
+    "Listing italic caption: generates italic CSS")
+
+::Method test_bco_listing_italic_label_reset
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-caption-style"] = "italic"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("figure.listing .figure-number") > 0, -
+    "Listing italic caption + bold label: resets label style")
+
+/******************************************************************************/
+/* BuildCaptionOverrides: listing label styles                               */
+/******************************************************************************/
+
+::Method test_bco_label_normal
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-label-style"] = "normal"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("font-weight: normal") > 0, -
+    "Label normal: generates font-weight: normal")
+
+::Method test_bco_label_italic
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-label-style"] = "italic"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("font-style: italic") > 0, -
+    "Label italic: generates font-style: italic")
+
+::Method test_bco_label_bold_italic
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-label-style"] = "bold-italic"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("font-weight: bold") > 0, -
+    "Label bold-italic: generates font-weight: bold")
+
+/******************************************************************************/
+/* BuildCaptionOverrides: listing custom label                               */
+/******************************************************************************/
+
+::Method test_bco_listing_custom_label
+  opts = ParseRexxPubYAML(.Nil)
+  opts["listing-label"] = "Listado"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["listingsAttrs"]~pos('data-listing-label="Listado"') > 0, -
+    "Custom listing label: generates data-* attribute")
+
+/******************************************************************************/
+/* BuildCaptionOverrides: figure caption above                               */
+/******************************************************************************/
+
+::Method test_bco_figure_above_css
+  opts = ParseRexxPubYAML(.Nil)
+  opts["figure-caption-position"] = "above"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("figure:not(.listing) figcaption") > 0, -
+    "Figure above: generates figcaption CSS")
+
+::Method test_bco_figure_above_break
+  opts = ParseRexxPubYAML(.Nil)
+  opts["figure-caption-position"] = "above"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("break-after: avoid") > 0, -
+    "Figure above: includes break-after: avoid")
+
+::Method test_bco_figure_above_attr
+  opts = ParseRexxPubYAML(.Nil)
+  opts["figure-caption-position"] = "above"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["figuresAttrs"]~pos('data-figure-caption-position="above"') > 0, -
+    "Figure above: generates data-* attribute")
+
+/******************************************************************************/
+/* BuildCaptionOverrides: figure italic caption                              */
+/******************************************************************************/
+
+::Method test_bco_figure_italic
+  opts = ParseRexxPubYAML(.Nil)
+  opts["figure-caption-style"] = "italic"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["overrideCSS"]~pos("figure:not(.listing) figcaption") > 0, -
+    "Figure italic: generates figcaption CSS")
+
+/******************************************************************************/
+/* BuildCaptionOverrides: figure custom label                                */
+/******************************************************************************/
+
+::Method test_bco_figure_custom_label
+  opts = ParseRexxPubYAML(.Nil)
+  opts["figure-label"] = "Figura"
+  res = BuildCaptionOverrides(opts)
+  self~assertTrue(res["figuresAttrs"]~pos('data-figure-label="Figura"') > 0, -
+    "Custom figure label: generates data-* attribute")
+
+/******************************************************************************/
+/* DefaultSectionNumbers                                                     */
+/******************************************************************************/
+
+::Method test_dsn_article
+  self~assertEquals(3, DefaultSectionNumbers("article"), -
+    "DefaultSectionNumbers: article = 3")
+
+::Method test_dsn_book
+  self~assertEquals(2, DefaultSectionNumbers("book"), -
+    "DefaultSectionNumbers: book = 2")
+
+::Method test_dsn_letter
+  self~assertEquals(0, DefaultSectionNumbers("letter"), -
+    "DefaultSectionNumbers: letter = 0")
+
+::Method test_dsn_slides
+  self~assertEquals(0, DefaultSectionNumbers("slides"), -
+    "DefaultSectionNumbers: slides = 0")
+
+::Method test_dsn_unknown
+  self~assertEquals(3, DefaultSectionNumbers("unknown"), -
+    "DefaultSectionNumbers: unknown class defaults to 3")

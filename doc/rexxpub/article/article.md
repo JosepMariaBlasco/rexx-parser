@@ -469,8 +469,7 @@ list of supported options and the precedence rules.
 Acknowledgements {.newpage}
 ================
 
-The design of `article.css` was developed in collaboration between
-the author and Claude (Anthropic), through a detailed comparative
+The design of `article.css` was developed by making a detailed comparative
 analysis of LaTeX `article` 12pt defaults, Bootstrap 3 base styles,
 and the specific requirements of the Rexx Highlighter output.
 

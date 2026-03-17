@@ -1,14 +1,6 @@
 The Rexx Parser
 ===============
 
-```
-/********************************* WARNING ************************************
- * This version of the Rexx Parser is a work-in-progress. In particular, some *
- * parts of the APIs (like the Tree API) are largely undocumented; they will  *
- * be defined at a later stage of the package development.                    *
- ******************************************************************************/
-```
-
 The Rexx Parser is hosted on:
 
 - <https://rexx.epbcn.com/rexx-parser/> (daily builds *and* releases,
@@ -72,8 +64,8 @@ in the corresponding copyright notices.
 Current version and downloads {#download}
 -----------------------------
 
-The current release is beta 0.5, refresh 20260314.
-You can download it <a href="Rexx-Parser-0.5-20260314.zip">here</a>.
+The current release is beta 0.5, refresh 20260317.
+You can download it <a href="Rexx-Parser-0.5-20260317.zip">here</a>.
 Daily builds can be found at <https://rexx.epbcn.com/rexx-parser/>.
 
 - [Version history](doc/history/).
@@ -92,7 +84,7 @@ You may be interested in browsing our [documentation](doc/).
 In particular, you may want to use one the following quick links:
 
 - [Installation and first steps](doc/guide/install/).
-- [Utitities](doc/samples/) and [consistency tests](tests/).
+- [Utitities](doc/utilities/) and [consistency tests](tests/).
 - [Error handling](doc/guide/errors/).
 
 Child projects

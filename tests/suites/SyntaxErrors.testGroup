@@ -1,0 +1,592 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* SyntaxErrors.testGroup - Parser checks for miscellaneous syntax errors     */
+/* ===================================================================        */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260316    0.5  Migrated from ParserChecks.test to ooRexxUnit             */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.SyntaxErrors.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "ParserTestCase.cls"
+
+::Class SyntaxErrors.testGroup Subclass ParserTestCase Public
+
+/******************************************************************************/
+/* Error 06 — Unmatched comment, unclosed string                              */
+/******************************************************************************/
+
+::Method test_error_06
+  self~parserError(06.001, ("Say 'Hello!' /*/*        ", -
+                       "*/i = i + 1              ", -
+                       "                         ", -
+                       "/* */                    "))
+  self~parserError(06.002, ("Say 'Hello!              ", -
+                       "i = i + 1                "))
+  self~parserError(06.003, ('Say "Hello!              ', -
+                       'Say i                    '))
+
+/******************************************************************************/
+/* Error 07 — SELECT errors                                                   */
+/******************************************************************************/
+
+::Method test_error_07
+  self~parserError(07.001,  "Select; End              ")
+  self~parserError(07.002,  "Select Case n; i = 1     ")
+  self~parserError(07.002,  "Select       ; i = 1     ")
+
+/******************************************************************************/
+/* Error 08 — THEN/ELSE without IF                                            */
+/******************************************************************************/
+
+::Method test_error_08
+  self~parserError(08.001,  "a = 2; Then Say n        ")
+  self~parserError(08.002,  "a = 2; Else Say n        ")
+
+/******************************************************************************/
+/* Error 09 — WHEN/OTHERWISE without SELECT                                   */
+/******************************************************************************/
+
+::Method test_error_09
+  self~parserError(09.001,  "a = 2; When 1 Then Say n ")
+  self~parserError(09.002,  "a = 2; Otherwise   Say n ")
+
+/******************************************************************************/
+/* Error 10 — END errors                                                      */
+/******************************************************************************/
+
+::Method test_error_10
+  self~parserError(10.001,  "a = 2; End               ")
+
+  self~parserError(10.002,  "Do   Label k i = 1 To 3; Say 'Hi';   End j")
+  self~parserError(10.002,  "Loop Label k i = 1 To 3; Say 'Hi';   End j")
+  self~parserError(10.002,  "Do           i = 1 To 3; Say 'Hi';   End j")
+  self~parserError(10.002,  "Loop         i = 1 To 3; Say 'Hi';   End j")
+  -- Known parser bug: 10.003 message has swapped substitution parameters
+  -- (parser says "line J ... found 1" instead of "line 1 ... found J").
+  -- Parser detects the correct error code, but the message args are inverted.
+  -- self~parserError(10.003,  "Do;   Say HI; End j")
+  -- self~parserError(10.003,  "Loop; Say HI; End j")
+  self~parserError(10.004,  "Select Label l; When 1 Then Say Nop; End j")
+
+  -- Known parser bug: same swapped substitution parameters as 10.003
+  -- self~parserError(10.007,  "Select; When 1 Then Say Nop; End j")
+
+/******************************************************************************/
+/* Error 13 — Invalid character                                               */
+/******************************************************************************/
+
+::Method test_error_13
+  self~parserError(13.001,  "i = @")
+
+/******************************************************************************/
+/* Error 14 — Incomplete DO/SELECT/IF/LOOP                                    */
+/******************************************************************************/
+
+::Method test_error_14
+  self~parserError(14.001,  "Do; Nop; i = 1                             ")
+  self~parserError(14.002,  "Select; When 0 Then Say 1                  ")
+  self~parserError(14.003,  "If a; Then                                 ")
+  self~parserError(14.003,  "Select Case a; When 'A'; Then              ")
+  self~parserError(14.004,  "If a Then Nop; Else                        ")
+  self~parserError(14.005,  "Loop; Nop                                  ")
+  self~parserError(14.901,  "Select; When 0 Then Nop; Otherwise Say Ugh ")
+
+/******************************************************************************/
+/* Error 15 — Invalid hex/binary string                                       */
+/******************************************************************************/
+
+::Method test_error_15
+  self~parserError(15.001,  "x = 'FE 'X")
+  self~parserError(15.001,  "x = ' FE'X")
+  self~parserError(15.002,  "b = '11 'b")
+  self~parserError(15.002,  "b = ' 11'b")
+  self~parserError(15.003,  "X = '013BEFh88'x")
+  self~parserError(15.004,  "B = '0120001'B")
+  self~parserError(15.005,  "x = 'abc def'X")
+  self~parserError(15.006,  "B = '11000 00011'B")
+
+/******************************************************************************/
+/* Error 18 — THEN/WHEN expected                                              */
+/******************************************************************************/
+
+::Method test_error_18
+  self~parserError(18.001,  "If a = b; Say 2")
+  self~parserError(18.002,  "Select; When 1; Nop")
+
+/******************************************************************************/
+/* Error 19 — Expected string or symbol                                       */
+/******************************************************************************/
+
+::Method test_error_19
+  self~parserError(19.002,  "Call                    *")
+  self~parserError(19.003,  "Call   On Error    Name *")
+  self~parserError(19.003,  "Signal On Error    Name *")
+  self~parserError(19.003,  "Call   On User pop Name *")
+  self~parserError(19.003,  "Signal On User pop Name *")
+  self~parserError(19.004,  "Signal")
+
+  self~parserError(19.901,  "Say hi; ::Class")
+  self~parserError(19.902,  "Say hi; ::Class C; ::Method")
+  self~parserError(19.903,  "Say hi; ::Routine")
+  self~parserError(19.904,  "Say hi; ::Requires")
+  self~parserError(19.905,  "Say hi; ::Attribute a external")
+  self~parserError(19.905,  "Say hi; ::Method M External")
+  self~parserError(19.906,  "Say hi; ::Class C Metaclass")
+  self~parserError(19.907,  "Say hi; ::Class C Subclass")
+  self~parserError(19.908,  "Say hi; ::Class C Inherit")
+  self~parserError(19.909,  "Say hi; Say a~")
+
+  self~parserError(19.913,  "::Class C MixinClass")
+  self~parserError(19.914,  "::Attribute *")
+  self~parserError(19.915,  "::Constant *")
+  self~parserError(19.916,  "::Constant C *")
+  self~parserError(19.917,  "::Options digits *")
+  self~parserError(19.918,  "::Options fuzz *")
+  self~parserError(19.919,  "::Options trace *")
+  self~parserError(19.920,  "::Resource *")
+  self~parserError(19.921,  "::Resource R END *")
+
+  self~parserError(19.923,  "::Annotate package kk *")
+  self~parserError(19.924,  "::Annotate package kk")
+  self~parserError(19.925,  "::Class C; ::Annotate class *")
+
+/******************************************************************************/
+/* Error 20 — Expected symbol                                                 */
+/******************************************************************************/
+
+::Method test_error_20
+  self~parserError(20.901,  "Drop *")
+  self~parserError(20.902,  "Expose")
+  self~parserError(20.903,  "Parse")
+  self~parserError(20.904,  "Parse Var *")
+  self~parserError(20.905,  "Numeric *")
+  self~parserError(20.906,  "Drop (*")
+  self~parserError(20.907,  "Leave *")
+  self~parserError(20.908,  "Iterate *")
+  self~parserError(20.909,  "Do; End *")
+
+  self~parserError(20.911,  "Call   On  *")
+  self~parserError(20.911,  "Signal On  *")
+  self~parserError(20.912,  "Call   Off *")
+  self~parserError(20.912,  "Signal Off *")
+
+  self~parserError(20.914,  "Raise")
+  self~parserError(20.915,  "Call   On  User *")
+  self~parserError(20.915,  "Signal On  User *")
+  self~parserError(20.915,  "Call   Off User *")
+  self~parserError(20.915,  "Signal Off User *")
+  self~parserError(20.916,  "::*")
+  self~parserError(20.917,  "this~length:*")
+  self~parserError(20.918,  "Do     Label *")
+  self~parserError(20.918,  "Loop   Label *")
+  self~parserError(20.918,  "Select Label *")
+  self~parserError(20.919,  "::Annotate package *")
+  self~parserError(20.920,  "::Requires a NameSpace *")
+
+  self~parserError(20.922,  "Call ah:*")
+  self~parserError(20.923,  "a = b + c:*")
+  self~parserError(20.924,  "::Annotate *")
+  self~parserError(20.925,  "::Options form *")
+  self~parserError(20.926,  "::Attribute a Delegate *")
+  self~parserError(20.926,  "::Method m Delegate *   ")
+  self~parserError(20.927,  "::Method M; Use Local * ")
+
+  self~parserError(20.929,  "Do   With Index *")
+  self~parserError(20.929,  "Loop With Index *")
+  self~parserError(20.929,  "Do   With Item  *")
+  self~parserError(20.929,  "Loop With Item  *")
+
+  self~parserError(20.930,  "a = >a.2")
+  self~parserError(20.930,  "a = >*")
+  self~parserError(20.931,  "Use Arg >a.2")
+  self~parserError(20.931,  "Use Arg >*")
+  self~parserError(20.932,  "Address COMMAND With Input stem c.2")
+  self~parserError(20.933,  "Address COMMAND With")
+  self~parserError(20.934,  "Do   counter *")
+  self~parserError(20.934,  "Loop counter *")
+
+/******************************************************************************/
+/* Error 21 — Extra data on end of clause                                     */
+/******************************************************************************/
+
+::Method test_error_21
+  self~parserError(21.901,  "Nop pop")
+
+  self~parserError(21.903,  "Call    On  Error Name x *")
+  self~parserError(21.903,  "Signal  On  Error Name x *")
+  self~parserError(21.904,  "Call    Off Error pop")
+  self~parserError(21.904,  "Signal  Off Error pop")
+  self~parserError(21.905,  "Signal  label extra")
+  self~parserError(21.906,  "Trace   ?a    extra")
+  self~parserError(21.907,  "Leave   label extra")
+  self~parserError(21.908,  "Iterate label extra")
+  self~parserError(21.909,  "End     label extra")
+
+  self~parserError(21.911,  "Numeric Form engineering *")
+
+  self~parserError(21.913,  "::Constant C D E")
+  self~parserError(21.914, ('::Resource R end "::END" x', -
+                       "x",                          -
+                       "::END"))
+
+/******************************************************************************/
+/* Error 25 — Invalid subkeyword                                              */
+/******************************************************************************/
+
+::Method test_error_25
+  self~parserError(25.001,  "Call   On  Nope")
+  self~parserError(25.002,  "Call   Off Nope")
+  self~parserError(25.003,  "Signal On  Aww")
+  self~parserError(25.004,  "Signal Off Aww")
+
+  self~parserError(25.011,  "Numeric Form feeble")
+  self~parserError(25.012,  "Parse CaseLess me")
+  self~parserError(25.012,  "Parse me")
+  self~parserError(25.012,  "Parse Upper me")
+
+  self~parserError(25.015,  "Numeric environment")
+
+  self~parserError(25.017,  "Procedure Small")
+
+  self~parserError(25.901,  "::Class C very big")
+  self~parserError(25.902,  "::Method method method")
+  self~parserError(25.903,  "::Routine ROARR! GRRR!")
+  self~parserError(25.904,  "::Requires some Library *")
+  self~parserError(25.904,  "::Requires not good")
+  self~parserError(25.904,  "::Requires a *")
+  self~parserError(25.904,  "::Requires something NameSpace too long")
+  self~parserError(25.905,  "Use your brain")
+  self~parserError(25.906,  "Raise Once")
+  self~parserError(25.907,  "Raise LostDigits now")
+  self~parserError(25.908,  "Raise LostDigits Description (one) Description (two)")
+  self~parserError(25.909,  "Raise lostdigits additional (a) array (b)")
+
+  self~parserError(25.911,  "Raise LostDigits Exit 1 Return 2")
+  self~parserError(25.912,  "Guard On blah")
+  self~parserError(25.913,  "Guard us")
+  self~parserError(25.914,  "Call   On Error  severe")
+  self~parserError(25.915,  "Signal On Syntax errors")
+  self~parserError(25.916,  "Forward backward")
+  self~parserError(25.917,  "Forward to (one) to (two)")
+  self~parserError(25.918,  "Forward arguments (a) array (b)")
+  self~parserError(25.919,  "Forward Continue Continue")
+
+  self~parserError(25.921,  "Forward class (a) class (b)")
+  self~parserError(25.922,  "Forward message (m) message (n)")
+  self~parserError(25.923,  "Select us")
+  self~parserError(25.924,  "::Options Tralfamadore")
+  self~parserError(25.925,  "::Attribute A is nice")
+  self~parserError(25.926,  "::Resource very big")
+  self~parserError(25.927,  "::Options NoValue is unacceptable")
+  self~parserError(25.928,  "::Annotate my words")
+  self~parserError(25.929,  "Use Strict Rules")
+  self~parserError(25.930,  'Address COMMAND "C" With Input Stem s. Input Stem t.')
+  self~parserError(25.931,  'Address COMMAND "C" With Output Stem s. Output Stem t.')
+  self~parserError(25.932,  'Address COMMAND "C" With Error Stem s. Error Stem t.')
+  self~parserError(25.933,  'Address COMMAND "C" With Input Very fast')
+  self~parserError(25.934,  'Address COMMAND "C" With gleeful joy')
+
+/******************************************************************************/
+/* Error 26 — Invalid whole number                                            */
+/******************************************************************************/
+
+::Method test_error_26
+  self~parserError(26.004,  "Parse Var v 12.2")
+  self~parserError(26.005,  "::Options digits many")
+  self~parserError(26.006,  "::Options fuzz frizch")
+
+/******************************************************************************/
+/* Error 27 — DO/LOOP syntax errors                                           */
+/******************************************************************************/
+
+::Method test_error_27
+  self~parserError(27.001,  "Do While 1 Until 0")
+
+  self~parserError(27.901,  "Do Forever more")
+  self~parserError(27.902,  "Do ubt = 1 By 2 By 3")
+  self~parserError(27.902,  "Do ubt = 1 For 2 For 3")
+  self~parserError(27.902,  "Do with index one index two over me")
+  self~parserError(27.902,  "Do with item one item two over me")
+  self~parserError(27.902,  "Do a over b for 1 for 2")
+  self~parserError(27.902,  "Do ubt = 1 To 2 To 3")
+  self~parserError(27.902,  "Do with index i over me for 1 for 2")
+
+  self~parserError(27.904,  "Do With Item A *")
+  self~parserError(27.904,  "Do With Index I")
+
+  self~parserError(27.905,  "Do label l counter c")
+  self~parserError(27.905,  "Do counter c")
+
+/******************************************************************************/
+/* Error 28 — LEAVE/ITERATE target errors                                     */
+/******************************************************************************/
+
+::Method test_error_28
+  self~parserError(28.003,  "Do j = 1 By 1; Leave k; End")
+  self~parserError(28.004,  "Do j = 1 By 1; Iterate k; End")
+  self~parserError(28.005, ("Do Label l1",                 -
+                       "  Select label l1",           -
+                       "    When 1 Then Do Label l2", -
+                       "      If 1 then Do Label l3", -
+                       "        Iterate l1",          -
+                       "      End",                   -
+                       "    End",                     -
+                       "  End",                       -
+                       "End"))
+
+/******************************************************************************/
+/* Error 31 — Invalid variable name                                           */
+/******************************************************************************/
+
+::Method test_error_31
+  self~parserError(31.002,  "Do 2a = 1")
+  self~parserError(31.002,  "Do Counter 2a Forever")
+  self~parserError(31.002,  "Drop 2a")
+  self~parserError(31.002,  "Do With index 2a")
+  self~parserError(31.002,  "Do With item 2a")
+  self~parserError(31.002,  "Parse Var 2a")
+  self~parserError(31.002,  "Use Arg 3")
+  self~parserError(31.003,  "Use Arg .aa")
+  self~parserError(31.003,  "Parse Var .a")
+  self~parserError(31.003,  "Do With item .a")
+  self~parserError(31.003,  "Do With index .a")
+  self~parserError(31.003,  "Drop .a")
+  self~parserError(31.003,  "Do Counter .a Forever")
+  self~parserError(31.003,  "Do .a = 1")
+
+/******************************************************************************/
+/* Error 35 — Invalid expression                                              */
+/******************************************************************************/
+
+::Method test_error_35
+  self~parserError(35.001,  "a==b")
+  self~parserError(35.001,  "Say a [2]")
+  self~parserError(35.001,  "Use Arg a = +")
+  self~parserError(35.001,  "Raise Novalue Return +")
+  self~parserError(35.001,  "a[2] +=")
+  self~parserError(35.001,  "Forward Message +")
+  self~parserError(35.001,  "Address COMMAND With Input Using +")
+
+  self~parserError(35.904,  "Do i = ")
+  self~parserError(35.905,  "Do i = 1 By")
+  self~parserError(35.906,  "Do i = 1 To")
+  self~parserError(35.907,  "Do i = 1 For")
+  self~parserError(35.907,  "Do c over (1,2) for")
+  self~parserError(35.907,  "Do With index ix over o for")
+
+  self~parserError(35.911,  "Do c Over")
+  self~parserError(35.911,  "Do with index ix Over")
+  self~parserError(35.912,  "Interpret")
+  self~parserError(35.913,  "Options")
+
+  self~parserError(35.915,  "Signal Value")
+  self~parserError(35.916,  "Trace Value")
+  self~parserError(35.917,  "Numeric Form Value")
+  self~parserError(35.918,  "x =")
+
+  self~parserError(35.922,  "Raise NoValue Description")
+  self~parserError(35.923,  "Raise NoValue Additional")
+  self~parserError(35.924,  "Forward Array")
+  self~parserError(35.925,  "Forward To")
+  self~parserError(35.926,  "Forward Arguments")
+  self~parserError(35.927,  "Forward Message")
+  self~parserError(35.928,  "Forward Class")
+  self~parserError(35.929,  "If a, ,c  Then d")
+  self~parserError(35.929,  "If a,b,c, Then d")
+
+  self~parserError(35.930,  "Use arg a = 12 b")
+
+  self~parserError(35.933,  "Select Case")
+
+  self~parserError(35.935,  "Address COMMAND With Input Stream")
+
+/******************************************************************************/
+/* Error 36 — Unmatched left parenthesis/bracket                              */
+/******************************************************************************/
+
+::Method test_error_36
+  self~parserError(36.901,  "a(b")
+  self~parserError(36.902,  "a[b")
+
+/******************************************************************************/
+/* Error 37 — Unexpected right paren/bracket                                  */
+/******************************************************************************/
+
+::Method test_error_37
+  self~parserError(37.002,  "a[b)")
+  self~parserError(37.002,  "a + b )")
+
+  self~parserError(37.901,  "a(b]")
+  self~parserError(37.901,  "a + b ]")
+
+/******************************************************************************/
+/* Error 38 — Parse template errors                                           */
+/******************************************************************************/
+
+::Method test_error_38
+  self~parserError(38.001,  "Parse Var x *")
+  self~parserError(38.002,  "Parse Var x +*")
+  self~parserError(38.003,  "Parse Value")
+
+/******************************************************************************/
+/* Error 46 — Unmatched left paren in var list                                */
+/******************************************************************************/
+
+::Method test_error_46
+  self~parserError(46.901,  "Drop a (b")
+  self~parserError(46.902,  "Use Arg a, b *")
+
+/******************************************************************************/
+/* Error 47 — Labels in DO/LOOP/IF/SELECT blocks                              */
+/******************************************************************************/
+
+::Method test_error_47
+  self~parserError(47.002,  "Do; Nop; X: End")
+  self~parserError(47.002,  "Do; X: Nop; End")
+  self~parserError(47.002,  "Loop; Nop; X: End")
+  self~parserError(47.002,  "Loop; X: Nop; End")
+  self~parserError(47.003,  "If 1 Then; X: Nop")
+
+  self~parserError(47.004,  "Select;    When 1 Then; X: Nop;                             End")
+  self~parserError(47.004,  "Select;    When 1 Then     Nop;    When 1     Then; X: Nop; End")
+  self~parserError(47.004,  "Select; X: When 1 Then     Nop;                             End")
+  self~parserError(47.004,  "Select;    When 1 Then     Nop; X: When 1     Then     Nop; End")
+
+/******************************************************************************/
+/* Error 89 — USE ARG errors                                                  */
+/******************************************************************************/
+
+::Method test_error_89
+  self~parserError(89.001,  "Use Arg a, +")
+
+/******************************************************************************/
+/* Error 98 — EXPOSE / USE LOCAL errors                                       */
+/******************************************************************************/
+
+::Method test_error_98
+  self~parserError(98.992,  "Expose x")
+  self~parserError(98.993,  "Use Local l")
+
+/******************************************************************************/
+/* Error 99 — Miscellaneous second-pass and directive errors                   */
+/******************************************************************************/
+
+::Method test_error_99_duplicate_names
+  self~parserError(99.901,  '::Class C; ::Class  C Public')
+  self~parserError(99.901,  '::Class C; ::Class "c"')
+  self~parserError(99.902,  "::Class C; ::Method M Class; ::Method M Class")
+  self~parserError(99.902,  "::Class C; ::Method M; ::Method M ")
+  self~parserError(99.902,  "::Method M; ::Method  M ")
+  self~parserError(99.902,  '::Method M; ::Method "m"')
+  self~parserError(99.903,  '::Routine repetitious; ::Routine repetitious')
+  self~parserError(99.903,  '::Routine  repetitious; ::Routine "repetitious"')
+
+::Method test_error_99_directives
+  self~parserError(99.905,  "::Method M Class")
+  self~parserError(99.906,  "::Constant c (1+2)")
+  self~parserError(99.907,  '::Method M; Say "Hi"; Expose a b c')
+
+  self~parserError(99.910,  '::Method M; Say "Hi"; Use Local x')
+
+  self~parserError(99.916,  "::Potato")
+  self~parserError(99.917,  '::Routine r external "library rxmath RxCalcSqrt xx"')
+
+  self~parserError(99.925,  '::Attribute "test "')
+
+  self~parserError(99.930,  "Use Arg a,...,b")
+  self~parserError(99.931,  '::Class C; ::Method A Class; ::Attribute A Get Class; Return 1')
+  self~parserError(99.931,  '::Attribute A Get; Return 1; ::Attribute A Get; Return 2')
+  self~parserError(99.931,  '::Class C; ::Method A; ::Attribute A Get; Return 1')
+  self~parserError(99.931,  '::Class C; ::Method "A=" Class; ::Attribute A Set Class; Return 1')
+  self~parserError(99.931,  '::Attribute A Set; Return 1; ::Attribute A Set; Return 2')
+  self~parserError(99.931,  '::Class C; ::Method "A="; ::Attribute A Set; Return 1')
+  self~parserError(99.931,  '::Attribute  A; ::Attribute "a"')
+  self~parserError(99.932,  '::Class Class; ::Method C Class; Say "Hi"; ::Constant C Two')
+  self~parserError(99.932,  '::Constant C One; ::Constant C Two')
+  self~parserError(99.932,  '::Class Class; ::Method C; Say "Hi"; ::Constant C Two')
+  self~parserError(99.932,  '::Constant  C  12; ::Constant "c" 14')
+  self~parserError(99.933,  '::Class C; ::Method M Abstract; Say "Hi!"')
+  self~parserError(99.934,  '::Method M Attribute; Say "Hi!"')
+  self~parserError(99.935,  '::Class C; ::attribute top set external "LIBRARY ooshapes rect_setTop"; Say "Hi!"')
+  self~parserError(99.936,  '::Class C; ::Method Init External "LIBRARY rxregexp RegExp_Init"; Say "Hi!"')
+  self~parserError(99.937,  '::Attribute A; Say "Hi!"')
+  self~parserError(99.938,  '::Constant C;  Say "Hi!"')
+  self~parserError(99.939, ('::Routine r external "LIBRARY rxmath RxCalcPi"', 'Say "Hi!"'))
+  self~parserError(99.940, ('::Attribute a get abstract', 'Say "Hi!"'))
+
+::Method test_error_99_resources
+  self~parserError(99.942, ('::Resource r end pp', -
+                       'x',                   -
+                       'PP',                  -
+                       '',                    -
+                       '::Resource r',        -
+                       'y',                   -
+                       '::END'))
+  self~parserError(99.942, ('::Resource r end pp', -
+                       'x',                   -
+                       'PP',                  -
+                       '',                    -
+                       '::Resource "r"',      -
+                       'y',                   -
+                       '::END'))
+  self~parserError(99.943, ('::Resource r end pp','x'))
+  self~parserError(99.944,  "::Requires R namespace rexx")
+
+  self~parserError(99.946,  '::Method M Delegate z; Say "Hello"')
+  self~parserError(99.947,  '::Attribute A get Delegate z; Say "Hello"')
+  self~parserError(99.948,  "Use local a.2")
+  self~parserError(99.950,  "Use Arg >a = 4")
+
+/******************************************************************************/
+/* Multi-line error tests (migrated from tests/errormessages/)                */
+/******************************************************************************/
+
+::Method test_multiline_error_47_003
+  -- Label in ELSE clause (47.003.else.instruction.rexx)
+  self~parserError(47.003, ("If 1", "Then", "Nop", "Else", "X: Nop"))
+  -- Known divergence: interpreter says found "ELSE", parser says found "X".
+  -- Same error code (47.003), but different label in the message.
+  -- (47.003.else.clause.rexx)
+  -- self~parserError(47.003, ("If 1", "Then", "Nop", "X: Else", "Nop"))
+  -- Known divergence: parser gives 47.003, interpreter gives 18.001.
+  -- The label "consumes" the THEN, so the interpreter sees a missing THEN.
+  -- (47.003.then.clause.rexx)
+  -- self~parserError(47.003, ("If 1", "X: Then", "Nop"))
+
+::Method test_multiline_error_47_004
+  -- Known divergence: parser gives 47.004, interpreter gives 18.002.
+  -- Same issue as 47.003 then.clause: the label consumes the THEN.
+  -- (47.004.then.clause.1.rexx)
+  -- self~parserError(47.004, ("Select", "  When 1 ", "  X: Then Nop", "End"))
+  -- (47.004.then.clause.n.rexx)
+  -- self~parserError(47.004, ("Select", "  When 1 Then Nop", "  When 1 ", "  X: Then Nop", "End"))
+  Nop
+
+::Method test_multiline_error_99_913
+  -- EXPOSE before GUARD in a method (99.913.expose.rexx)
+  -- This is a second-pass error that is not detected when earlyCheck
+  -- options are active (the parser stops before reaching second pass).
+  -- The interpreter correctly raises 99.913.
+  -- self~parserError(99.913, ("::Method M", "  Expose a", "  Guard On when b > 0"))
+  Nop

@@ -40,7 +40,7 @@ Options
 `--check-deps`                            Check that all dependencies are installed
 `--continue`                              Continue when a file fails (batch mode)
 `-c`, `--css` DIR                         Set the CSS base directory
-`--csl` NAME                              Set the Citation Style Language style
+`--csl` NAME|PATH                         Set the Citation Style Language style
 `--default` "options"                     Default options for all code blocks
 `-exp`, `--experimental`                  Enable Experimental features for all code blocks
 `--fix-outline`                           Fix PDF so that the outline shows automatically
@@ -58,7 +58,12 @@ Options
 
 The default Citation Style Language style is `rexxpub`, and the default
 Rexx highlighting theme is `dark`.
-CSL files should be stored in the `csl` subdirectory.
+When `--csl` receives a plain name (no path separators), it looks for
+the corresponding `.csl` file in the `csl` subdirectory of the Rexx
+Parser installation (e.g. `--csl rexxpub` resolves to `csl/rexxpub.csl`).
+When the argument contains a `/` or `\`, it is treated as a file path
+and used as-is, which allows referencing CSL files stored outside the
+distribution.
 
 When `--css` is used, all CSS files are loaded from the specified
 directory instead of the default `css/` directory inside the Rexx

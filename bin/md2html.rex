@@ -31,6 +31,7 @@
 /* 20260314         Remove --section-numbers and --no-number-figures CLI      */
 /*                  options (now YAML-only)                                   */
 /* 20260314         Use InitCLI() from CLISupport.cls                         */
+/* 20260315         Extract FindFile internal routine for file search          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -201,31 +202,10 @@ CommonSetup:
 
   template = "default.md2html"
 
-  -- 0) If --path has been specified, look there
-  If path \== "" Then Do
-    try = path"/"template
-    If .File~new(try)~exists Then Signal TemplateFound
-  End
+  -- If FindFile succeeds, it sets the variable "try"
+  If FindFile(template) Then Signal TemplateFound
 
-  -- 1) Look in the current directory
-
-  try = Directory()"/"template
-  If .File~new(try)~exists Then Signal TemplateFound
-
-  -- 2) Look in the destination directory
-
-  try = destination"/"template
-  If .File~new(try)~exists Then Signal TemplateFound
-
-  -- 3) In batch mode, look in the source directory
-
-  If \singleFileMode Then Do
-    try = fullSource"/"template
-    If .File~new(try)~exists Then Signal TemplateFound
-  End
-
-  -- 4) Use the normal Rexx external search order
-
+  -- Fallback: use the normal Rexx external search order
   try = .context~package~findProgram(template)
   -- Check that this is really the file we are looking for
   -- (could be default.md2html.rex or default.md2html.cls...)
@@ -255,34 +235,10 @@ TemplateFound:
 
   custom = "md2html.custom.rex"
 
-  -- 0) If --path has been specified, look there
+  -- If FindFile succeeds, it sets the variable "try"
+  If \FindFile(custom) Then try = custom
 
-  If path \== "" Then Do
-    try = path"/"custom
-    If .File~new(try)~exists Then Signal CustomFound
-  End
-
-  -- 1) Look in the current directory
-
-  try = Directory()"/"custom
-  If .File~new(try)~exists Then Signal CustomFound
-
-  -- 2) Look in the destination directory
-
-  try = destination"/"custom
-  If .File~new(try)~exists Then Signal CustomFound
-
-  -- 3) In batch mode, look in the source directory
-
-  If \singleFileMode Then Do
-    try = fullSource"/"custom
-    If .File~new(try)~exists Then Signal CustomFound
-  End
-
-  -- 4) Use the normal Rexx external search order
-
-  try = custom
-
+  -- Fallback: use the normal Rexx external search order
   CustomFound:
     Call (try)
 
@@ -351,6 +307,38 @@ DoSingleFile:
   Say Time("Long") "Processed 1 file, took" Time("E") "seconds."
 
   Exit
+
+--------------------------------------------------------------------------------
+-- FindFile -- Search for a file in the standard search path.                 --
+-- Sets 'try' to the full path if found. Returns 1 if found, 0 if not.       --
+--------------------------------------------------------------------------------
+
+FindFile:
+  Parse Arg findName
+
+  -- 0) If --path has been specified, look there
+
+  If path \== "" Then Do
+    try = path"/"findName
+    If .File~new(try)~exists Then Return 1
+  End
+
+  -- 1) Look in the current directory
+
+  try = Directory()"/"findName
+  If .File~new(try)~exists Then Return 1
+
+  -- 2) Look in the destination directory
+
+  try = destination"/"findName
+  If .File~new(try)~exists Then Return 1
+
+  -- 3) In batch mode, look in the source directory
+
+  If singleFileMode Then Return 0
+
+  try = fullSource"/"findName
+  Return .File~new(try)~exists
 
 --------------------------------------------------------------------------------
 

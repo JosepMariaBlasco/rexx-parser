@@ -123,7 +123,6 @@
               <br><a href="https://rexx.epbcn.com/rexx-parser/tests/">Tests</a>
               <br><a href="https://rexx.epbcn.com/rexx-parser/doc/todo/">To-do</a>
               <br><a href="https://rexx.epbcn.com/rexx-parser/doc/utilities/">Utilities</a>
-              <br><a href="https://rexx.epbcn.com/rexx-parser/doc/samples/">Samples</a>
               <br><a href="https://rexx.epbcn.com/rexx-parser/doc/executor/">Executor support</a>
               <br><a href="https://rexx.epbcn.com/rexx-parser/doc/experimental/">Experimental</a>
             </div>

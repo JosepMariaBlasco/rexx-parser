@@ -1,0 +1,971 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* BIFs.testGroup - Parser checks for Built-In Functions                      */
+/* =====================================================                      */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260316    0.5  New version                                               */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.BIFs.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "ParserTestCase.cls"
+
+::Class BIFs.testGroup Subclass ParserTestCase Public
+
+/******************************************************************************/
+/* Functions with no arguments                                                */
+/* ADDRESS, DIGITS, FORM, FUZZ, ENDLOCAL, QUEUED, SETLOCAL, USERID           */
+/******************************************************************************/
+
+::Method test_noArgs
+  noArgs = (                                       -
+    "ADDRESS",  "DIGITS", "FORM",     "FUZZ",   -
+    "ENDLOCAL", "QUEUED", "SETLOCAL", "USERID"  -
+  )
+  Do BIF Over noArgs
+    self~parserError(40.004, "Call" BIF "a")
+  End
+
+/******************************************************************************/
+/* ABBREV                                                                     */
+/******************************************************************************/
+
+::Method test_abbrev
+  self~parserError(40.003, "Call Abbrev a                ")
+  self~parserError(40.004, "Call Abbrev a,b,c,d          ")
+  self~parserError(40.005, "Call Abbrev ,b               ")
+  self~parserError(40.005, "Call Abbrev a,,c             ")
+  self~parserError(40.012, "Call Abbrev a,b,'*'          ")
+  self~parserError(93.923, "Call Abbrev a,b, -1          ")
+
+/******************************************************************************/
+/* ABS                                                                        */
+/******************************************************************************/
+
+::Method test_abs
+  self~parserError(40.003, "Call Abs                     ")
+  self~parserError(40.004, "Call Abs a,b                 ")
+  self~parserError(93.943, "Call Abs '*'                 ")
+
+/******************************************************************************/
+/* ARG                                                                        */
+/******************************************************************************/
+
+::Method test_arg
+  self~parserError(40.004, "Call Arg a,b,c               ")
+  self~parserError(40.005, "Call Arg ,'e'                ")
+  self~parserError(40.012, "Call Arg '*'                 ")
+  self~parserError(40.014, "Call Arg 0                   ")
+  self~parserError(40.904, "Call Arg 1,'*'               ")
+
+/******************************************************************************/
+/* B2X                                                                        */
+/******************************************************************************/
+
+::Method test_b2x
+  self~parserError(40.003, "Call B2X                     ")
+  self~parserError(40.004, "Call B2X a, b                ")
+  self~parserError(93.934, "Call B2X '*'                 ")
+  self~parserError(93.932, "Call B2X ' 1 1010'           ")
+  self~parserError(93.932, "Call B2X '1 1010 '           ")
+  self~parserError(93.977, "Call B2X '1 101'             ")
+  self~parserError(93.977, "Call B2X '1 10101'           ")
+
+/******************************************************************************/
+/* BEEP                                                                       */
+/******************************************************************************/
+
+::Method test_beep
+  self~parserError(88.901, "Call Beep 12                 ")
+  self~parserError(88.901, "Call Beep , 120              ")
+  self~parserError(88.907, "Call Beep 37 ,-1             ")
+  self~parserError(88.907, "Call Beep 12, 1              ")
+  self~parserError(88.922, "Call Beep 100,200,300        ")
+
+/******************************************************************************/
+/* BITAND, BITOR, BITXOR                                                      */
+/******************************************************************************/
+
+::Method test_bitand_bitor_bitxor
+  Do name Over ("BITAND", "BITOR", "BITXOR")
+    call = "Call" name
+    self~parserError(40.003, call "                      ")
+    self~parserError(40.004, call "a, b, c, d            ")
+    self~parserError(40.005, call " , b, c               ")
+    self~parserError(40.023, call "a, b, ''              ")
+    self~parserOK(           call "a, b, 'a'             ")
+    self~parserError(40.023, call "a, b, '**'            ")
+  End
+
+/******************************************************************************/
+/* C2D                                                                        */
+/******************************************************************************/
+
+::Method test_c2d
+  self~parserError(40.003, "Call C2D                     ")
+  self~parserError(40.004, "Call C2D a, b, c             ")
+  self~parserError(40.005, "Call C2D , b                 ")
+  self~parserError(40.012, "Call C2D a, '*'              ")
+  self~parserError(93.923, "Call C2D a, -1               ")
+  self~parserOK(           "Call C2D a,  0               ")
+
+/******************************************************************************/
+/* C2X                                                                        */
+/******************************************************************************/
+
+::Method test_c2x
+  self~parserError(40.003, "Call C2X                     ")
+  self~parserError(40.004, "Call C2X a, b                ")
+
+/******************************************************************************/
+/* CENTER, CENTRE                                                             */
+/******************************************************************************/
+
+::Method test_center_centre
+  Do name Over ("CENTER", "CENTRE")
+    call = "Call" name
+    self~parserError(40.003, call "                      ")
+    self~parserError(40.004, call "a, b, c, d            ")
+    self~parserError(40.005, call " , b, c               ")
+    self~parserError(40.005, call "a,  , c               ")
+    self~parserError(40.012, call "a, '*'                ")
+    self~parserError(93.923, call "a, -1                 ")
+    self~parserOK(           call "a,  0                 ")
+    self~parserError(40.023, call "a, 1, ''              ")
+    self~parserOK(           call "a, 1, '*'             ")
+    self~parserError(40.023, call "a, 1, '**'            ")
+  End
+
+/******************************************************************************/
+/* CHANGESTR                                                                  */
+/******************************************************************************/
+
+::Method test_changestr
+  self~parserError(40.003, "Call ChangeStr a, b          ")
+  self~parserError(40.004, "Call ChangeStr a, b, c, d, e ")
+  self~parserError(40.005, "Call ChangeStr  , b, c       ")
+  self~parserError(40.005, "Call ChangeStr a,  , c       ")
+  self~parserError(40.005, "Call ChangeStr a, b,  , d    ")
+  self~parserError(40.012, "Call ChangeStr a, b, c, '*'  ")
+  self~parserError(93.906, "Call ChangeStr a, b, c,  -1  ")
+  self~parserOK(           "Call ChangeStr a, b, c,   0  ")
+
+/******************************************************************************/
+/* CHARIN                                                                     */
+/******************************************************************************/
+
+::Method test_charin
+  self~parserError(40.004, "Call CharIn a, b, c, d       ")
+  self~parserError(40.012, "Call CharIn a, '*'           ")
+  self~parserError(40.012, "Call CharIn a,    , '*'      ")
+
+/******************************************************************************/
+/* CHAROUT                                                                    */
+/******************************************************************************/
+
+::Method test_charout
+  self~parserError(40.004, "Call CharOut a, b, c, d       ")
+  self~parserError(40.012, "Call CharOut a,  , '*'        ")
+
+/******************************************************************************/
+/* CHARS                                                                      */
+/******************************************************************************/
+
+::Method test_chars
+  self~parserError(40.004, "Call Chars a, b               ")
+
+/******************************************************************************/
+/* COMPARE                                                                    */
+/******************************************************************************/
+
+::Method test_compare
+  self~parserError(40.003, "Call Compare a                ")
+  self~parserError(40.004, "Call Compare a, b, c, d       ")
+  self~parserError(40.005, "Call Compare  , b, c          ")
+  self~parserError(40.005, "Call Compare a,  , c          ")
+  self~parserError(40.023, "Call Compare a, b, ''         ")
+  self~parserOK(           "Call Compare a, b, '*'        ")
+  self~parserError(40.023, "Call Compare a, b, '**'       ")
+
+/******************************************************************************/
+/* CONDITION                                                                  */
+/******************************************************************************/
+
+::Method test_condition
+  self~parserError(40.004, "Call Condition a, b          ")
+  self~parserError(40.904, "Call Condition '*'           ")
+  self~parserOK(           "Call Condition 'A'           ")
+  self~parserOK(           "Call Condition 'C'           ")
+  self~parserOK(           "Call Condition 'D'           ")
+  self~parserOK(           "Call Condition 'E'           ")
+  self~parserOK(           "Call Condition 'I'           ")
+  self~parserOK(           "Call Condition 'O'           ")
+  self~parserOK(           "Call Condition 'R'           ")
+  self~parserOK(           "Call Condition 'S'           ")
+
+/******************************************************************************/
+/* COPIES                                                                     */
+/******************************************************************************/
+
+::Method test_copies
+  self~parserError(40.003, "Call Copies a                ")
+  self~parserError(40.004, "Call Copies a, b, c          ")
+  self~parserError(40.005, "Call Copies  , b             ")
+  self~parserError(40.012, "Call Copies a, '*'           ")
+  self~parserError(93.906, "Call Copies a, -1            ")
+  self~parserOK(           "Call Copies a, 0             ")
+
+/******************************************************************************/
+/* COUNTSTR                                                                   */
+/******************************************************************************/
+
+::Method test_countstr
+  self~parserError(40.003, "Call CountStr a              ")
+  self~parserError(40.004, "Call CountStr a, b, c        ")
+  self~parserError(40.005, "Call CountStr  , b           ")
+
+/******************************************************************************/
+/* D2C, D2X                                                                   */
+/******************************************************************************/
+
+::Method test_d2c_d2x
+  Do name Over ("D2C", "D2X")
+    call = "Call" name
+    self~parserError(40.003, call "                      ")
+    self~parserError(40.004, call " a,  b,  c            ")
+    self~parserError(40.005, call "  ,  b                ")
+    self~parserError(93.923, call " 1, -1                ")
+    self~parserError(93.927, call "-1                    ")
+    self~parserOK(           call "-1,  2                ")
+  End
+  self~parserError(93.929, "Call D2C 'a'                 ")
+  self~parserError(93.928, "Call D2X 'a'                 ")
+
+/******************************************************************************/
+/* DATATYPE                                                                   */
+/******************************************************************************/
+
+::Method test_datatype
+  self~parserError(40.003, "Call DataType                ")
+  self~parserError(40.004, "Call DataType a, b, c        ")
+  self~parserError(40.005, "Call DataType  , b           ")
+  self~parserError(93.915, "Call DataType a, '*'         ")
+  self~parserOK(           "Call DataType a, 'A'         ")
+  self~parserOK(           "Call DataType a, 'B'         ")
+  self~parserOK(           "Call DataType a, 'I'         ")
+  self~parserOK(           "Call DataType a, 'L'         ")
+  self~parserOK(           "Call DataType a, 'M'         ")
+  self~parserOK(           "Call DataType a, 'N'         ")
+  self~parserOK(           "Call DataType a, 'O'         ")
+  self~parserOK(           "Call DataType a, 'S'         ")
+  self~parserOK(           "Call DataType a, 'U'         ")
+  self~parserOK(           "Call DataType a, 'V'         ")
+  self~parserOK(           "Call DataType a, 'W'         ")
+  self~parserOK(           "Call DataType a, 'X'         ")
+  self~parserOK(           "Call DataType a, '9'         ")
+
+/******************************************************************************/
+/* DATE                                                                       */
+/******************************************************************************/
+
+::Method test_date
+  self~parserError(40.004, "Call Date a, b, c, d, e, f   ")
+  self~parserError(40.904, "Call Date '*'                ")
+  self~parserOK(           "Call Date 'B'                ")
+  self~parserOK(           "Call Date 'D'                ")
+  self~parserOK(           "Call Date 'E'                ")
+  self~parserOK(           "Call Date 'F'                ")
+  self~parserOK(           "Call Date 'I'                ")
+  self~parserOK(           "Call Date 'L'                ")
+  self~parserOK(           "Call Date 'M'                ")
+  self~parserOK(           "Call Date 'N'                ")
+  self~parserOK(           "Call Date 'O'                ")
+  self~parserOK(           "Call Date 'S'                ")
+  self~parserOK(           "Call Date 'T'                ")
+  self~parserOK(           "Call Date 'U'                ")
+  self~parserOK(           "Call Date 'W'                ")
+  self~parserError(40.904, "Call Date ,'20 Apr 2025','*' ")
+  self~parserOK(           "Call Date ,739360,             'B' ")
+  self~parserOK(           "Call Date , 110,               'D' ")
+  self~parserOK(           "Call Date ,'20/04/25',         'E' ")
+  self~parserOK(           "Call Date , 63880770048381000, 'F' ")
+  self~parserOK(           "Call Date ,'2025-04-20',       'I' ")
+  self~parserOK(           "Call Date ,'20 Apr 2025',      'N' ")
+  self~parserOK(           "Call Date ,'25/04/20',         'O' ")
+  self~parserOK(           "Call Date , 20250420,          'S' ")
+  self~parserOK(           "Call Date , 1745173340,        'T' ")
+  self~parserOK(           "Call Date ,'04/20/25',         'U' ")
+  self~parserError(40.043, "Call Date ,'20/04/25', 'E', '**'   ")
+  self~parserError(40.043, "Call Date ,'20/04/25','O','+','//' ")
+
+/******************************************************************************/
+/* DELSTR                                                                     */
+/******************************************************************************/
+
+::Method test_delstr
+  self~parserError(40.003, "Call DelStr                  ")
+  self~parserError(40.004, "Call DelStr a, b, c, d       ")
+  self~parserError(40.005, "Call DelStr  , b             ")
+  self~parserError(40.012, "Call DelStr a, '*'           ")
+  self~parserError(93.924, "Call DelStr a, 0             ")
+  self~parserOK(           "Call DelStr a, 1             ")
+  self~parserError(40.012, "Call DelStr a,  , '*'        ")
+  self~parserError(93.923, "Call DelStr a,  , -1         ")
+  self~parserOK(           "Call DelStr a,  ,  0         ")
+
+/******************************************************************************/
+/* DELWORD                                                                    */
+/******************************************************************************/
+
+::Method test_delword
+  self~parserError(40.003, "Call DelWord                 ")
+  self~parserError(40.004, "Call DelWord a, b, c, d      ")
+  self~parserError(40.005, "Call DelWord  , b            ")
+  self~parserError(40.005, "Call DelWord a,  , c         ")
+  self~parserError(40.012, "Call DelWord a, '*'          ")
+  self~parserError(93.924, "Call DelWord a, 0            ")
+  self~parserError(40.012, "Call DelWord a, 1,'*'        ")
+  self~parserOK(           "Call DelWord a, 1            ")
+  self~parserError(93.923, "Call DelWord a, 1, -1        ")
+  self~parserOK(           "Call DelWord a, 1,  0        ")
+
+/******************************************************************************/
+/* DIRECTORY                                                                  */
+/******************************************************************************/
+
+::Method test_directory
+  self~parserError(88.922, "Call Directory a, b          ")
+
+/******************************************************************************/
+/* ERRORTEXT                                                                  */
+/******************************************************************************/
+
+::Method test_errortext
+  self~parserError(40.003, "Call ErrorText               ")
+  self~parserError(40.004, "Call ErrorText a, b          ")
+  self~parserError(40.012, "Call ErrorText  '*'          ")
+  self~parserError(40.903, "Call ErrorText   -1          ")
+  self~parserOK(           "Call ErrorText    0          ")
+  self~parserOK(           "Call ErrorText   99          ")
+  self~parserError(40.903, "Call ErrorText  100          ")
+
+/******************************************************************************/
+/* FILESPEC                                                                   */
+/******************************************************************************/
+
+::Method test_filespec
+  self~parserError(88.901, "Call FileSpec a              ")
+  self~parserError(88.922, "Call FileSpec a, b, c        ")
+  self~parserError(88.901, "Call FileSpec  , b           ")
+  self~parserError(40.904, "Call FileSpec '*', b         ")
+  self~parserOK(           "Call FileSpec 'D', b         ")
+  self~parserOK(           "Call FileSpec 'E', b         ")
+  self~parserOK(           "Call FileSpec 'L', b         ")
+  self~parserOK(           "Call FileSpec 'N', b         ")
+  self~parserOK(           "Call FileSpec 'P', b         ")
+
+/******************************************************************************/
+/* FORMAT                                                                     */
+/******************************************************************************/
+
+::Method test_format
+  self~parserError(40.003, "Call Format                  ")
+  self~parserError(40.004, "Call Format a, b, c, d, e, f ")
+  self~parserError(40.005, "Call Format  , b             ")
+  self~parserError(93.943, "Call Format '*'              ")
+  self~parserError(40.012, "Call Format a, '*'           ")
+  self~parserError(93.906, "Call Format 12, -1           ")
+  self~parserOK(           "Call Format 12,  3           ")
+  self~parserError(40.012, "Call Format a,, '*'          ")
+  self~parserError(93.906, "Call Format 12,, -1          ")
+  self~parserOK(           "Call Format 12,,  0          ")
+  self~parserError(40.012, "Call Format a,,, '*'         ")
+  self~parserError(93.906, "Call Format 12,,, -1         ")
+  self~parserOK(           "Call Format 12,,,  0         ")
+  self~parserError(40.012, "Call Format a,,,, '*'        ")
+  self~parserError(93.906, "Call Format 12,,,, -1        ")
+  self~parserOK(           "Call Format 12,,,,  0        ")
+
+/******************************************************************************/
+/* INSERT                                                                     */
+/******************************************************************************/
+
+::Method test_insert
+  self~parserError(40.003, "Call Insert a                ")
+  self~parserError(40.004, "Call Insert a, b, c, d, e, f ")
+  self~parserError(40.005, "Call Insert  , b             ")
+  self~parserError(40.005, "Call Insert a,  , c          ")
+  self~parserError(40.012, "Call Insert a, b, '*'        ")
+  self~parserError(93.906, "Call Insert a, b, -1         ")
+  self~parserOK(           "Call Insert a, b,  0         ")
+  self~parserError(40.012, "Call Insert a, b,, '*'       ")
+  self~parserError(93.923, "Call Insert a, b,, -1        ")
+  self~parserOK(           "Call Insert a, b,,  0        ")
+  self~parserError(40.023, "Call Insert a, b,,, ''       ")
+  self~parserOK(           "Call Insert a, b,,, 'a'      ")
+  self~parserError(40.023, "Call Insert a, b,,, 'aa'     ")
+
+/******************************************************************************/
+/* LASTPOS                                                                    */
+/******************************************************************************/
+
+::Method test_lastpos
+  self~parserError(40.003, "Call LastPos a               ")
+  self~parserError(40.004, "Call LastPos a, b, c, d, e   ")
+  self~parserError(40.005, "Call LastPos  , b            ")
+  self~parserError(40.005, "Call LastPos a,  , c         ")
+  self~parserError(40.012, "Call LastPos a, b, '*'       ")
+  self~parserError(93.924, "Call LastPos a, b,  0        ")
+  self~parserOK(           "Call LastPos a, b,  1        ")
+  self~parserError(40.012, "Call LastPos a, b,, '*'      ")
+  self~parserError(93.923, "Call LastPos a, b,, -1       ")
+  self~parserOK(           "Call LastPos a, b,,  0       ")
+
+/******************************************************************************/
+/* LEFT                                                                       */
+/******************************************************************************/
+
+::Method test_left
+  self~parserError(40.003, "Call Left a                  ")
+  self~parserError(40.004, "Call Left a, b, c, d         ")
+  self~parserError(40.005, "Call Left  , b               ")
+  self~parserError(40.005, "Call Left a,  , c            ")
+  self~parserError(40.012, "Call Left a, '*'             ")
+  self~parserError(93.923, "Call Left a,  -1             ")
+  self~parserOK(           "Call Left a,   0             ")
+  self~parserError(40.023, "Call Left a, 1, ''           ")
+  self~parserOK(           "Call Left a, 1, 'a'          ")
+  self~parserError(40.023, "Call Left a, 1, 'aa'         ")
+
+/******************************************************************************/
+/* LENGTH                                                                     */
+/******************************************************************************/
+
+::Method test_length
+  self~parserError(40.003, "Call Length                  ")
+  self~parserError(40.004, "Call Length a, b             ")
+
+/******************************************************************************/
+/* LINEIN                                                                     */
+/******************************************************************************/
+
+::Method test_linein
+  self~parserError(40.004, "Call LineIn a, b, c, d       ")
+  self~parserError(40.012, "Call LineIn a, '*'           ")
+  self~parserError(40.012, "Call LineIn a,, '*'          ")
+
+/******************************************************************************/
+/* LINEOUT                                                                    */
+/******************************************************************************/
+
+::Method test_lineout
+  self~parserError(40.004, "Call LineOut a, b, c, d      ")
+  self~parserError(40.012, "Call LineOut a,, '*'         ")
+
+/******************************************************************************/
+/* LINES                                                                      */
+/******************************************************************************/
+
+::Method test_lines
+  self~parserError(40.004, "Call Lines a, b, c           ")
+  self~parserError(40.904, "Call Lines , '*'             ")
+  self~parserOK(           "Call Lines , 'C'             ")
+  self~parserOK(           "Call Lines , 'N'             ")
+
+/******************************************************************************/
+/* LOWER                                                                      */
+/******************************************************************************/
+
+::Method test_lower
+  self~parserError(40.003, "Call Lower                   ")
+  self~parserError(40.004, "Call Lower a, b, c, d        ")
+  self~parserError(40.005, "Call Lower  , b              ")
+  self~parserError(40.012, "Call Lower a, '*'            ")
+  self~parserError(93.924, "Call Lower a, 0              ")
+  self~parserOK(           "Call Lower a, 1              ")
+  self~parserError(40.012, "Call Lower a,, '*'           ")
+  self~parserError(93.923, "Call Lower a,, -1            ")
+  self~parserOK(           "Call Lower a,,  0            ")
+
+/******************************************************************************/
+/* MAX                                                                        */
+/******************************************************************************/
+
+::Method test_max
+  self~parserError(40.003, "Call Max                     ")
+  self~parserError(40.005, "Call Max , 12                ")
+  self~parserError(93.903, "Call Max 11, , 13            ")
+  self~parserError(93.943, "Call Max 'a'                 ")
+  self~parserError(93.904, "Call Max 1, 'a'              ")
+
+/******************************************************************************/
+/* MIN                                                                        */
+/******************************************************************************/
+
+::Method test_min
+  self~parserError(40.003, "Call Min                     ")
+  self~parserError(40.005, "Call Min , 12                ")
+  self~parserError(93.903, "Call Min 11, , 13            ")
+  self~parserError(93.943, "Call Min 'a'                 ")
+  self~parserError(93.904, "Call Min 1, 'a'              ")
+
+/******************************************************************************/
+/* OVERLAY                                                                    */
+/******************************************************************************/
+
+::Method test_overlay
+  self~parserError(40.003, "Call Overlay a               ")
+  self~parserError(40.005, "Call Overlay  , b            ")
+  self~parserError(40.005, "Call Overlay a,  , c         ")
+  self~parserError(40.004, "Call Overlay a, b, c, d,e,f  ")
+  self~parserError(40.012, "Call Overlay a, b, '*'       ")
+  self~parserError(93.924, "Call Overlay a, b, 0         ")
+  self~parserOK(           "Call Overlay a, b, 1         ")
+  self~parserError(40.012, "Call Overlay a, b,, '*'      ")
+  self~parserError(93.923, "Call Overlay a, b,, -1       ")
+  self~parserOK(           "Call Overlay a, b,,  0       ")
+  self~parserError(40.023, "Call Overlay a, b,,, ''      ")
+  self~parserOK(           "Call Overlay a, b,,, 'a'     ")
+  self~parserError(40.023, "Call Overlay a, b,,, 'aa'    ")
+
+/******************************************************************************/
+/* POS                                                                        */
+/******************************************************************************/
+
+::Method test_pos
+  self~parserError(40.003, "Call Pos a                   ")
+  self~parserError(40.004, "Call Pos a, b, c, d, e       ")
+  self~parserError(40.005, "Call Pos  , b                ")
+  self~parserError(40.005, "Call Pos a,  , c             ")
+  self~parserError(40.012, "Call Pos a, b, '*'           ")
+  self~parserError(93.924, "Call Pos a, b, 0             ")
+  self~parserOK(           "Call Pos a, b, 1             ")
+  self~parserError(40.012, "Call Pos a, b,, '*'          ")
+  self~parserError(93.923, "Call Pos a, b,, -1           ")
+  self~parserOK(           "Call Pos a, b,,  0           ")
+
+/******************************************************************************/
+/* QUALIFY                                                                    */
+/******************************************************************************/
+
+::Method test_qualify
+  self~parserError(40.003, "Call Qualify                 ")
+  self~parserError(40.004, "Call Qualify a, b            ")
+
+/******************************************************************************/
+/* RANDOM                                                                     */
+/******************************************************************************/
+
+::Method test_random
+  self~parserError(40.004, "Call Random a, b, c, d, e    ")
+  self~parserError(40.012, "Call Random '*', b           ")
+  self~parserError(40.012, "Call Random -100, '*'        ")
+  self~parserError(40.012, "Call Random -100, 100, '*'   ")
+  self~parserError(40.013, "Call Random -100, 100, -1    ")
+  self~parserOK(           "Call Random -100, 100,  0    ")
+  self~parserOK(           "Call Random -1, 1 ,999999999 ")
+
+/******************************************************************************/
+/* REVERSE                                                                    */
+/******************************************************************************/
+
+::Method test_reverse
+  self~parserError(40.003, "Call Reverse                 ")
+  self~parserError(40.004, "Call Reverse a, b            ")
+
+/******************************************************************************/
+/* RIGHT                                                                      */
+/******************************************************************************/
+
+::Method test_right
+  self~parserError(40.003, "Call Right a                 ")
+  self~parserError(40.004, "Call Right a, b, c, d        ")
+  self~parserError(40.005, "Call Right  , b              ")
+  self~parserError(40.005, "Call Right a,  , c           ")
+  self~parserError(40.012, "Call Right a, '*'            ")
+  self~parserError(93.923, "Call Right a,  -1            ")
+  self~parserOK(           "Call Right a,   0            ")
+  self~parserError(40.023, "Call Right a, 1, ''          ")
+  self~parserOK(           "Call Right a, 1, 'a'         ")
+  self~parserError(40.023, "Call Right a, 1, 'aa'        ")
+
+/******************************************************************************/
+/* RXFUNCADD                                                                  */
+/******************************************************************************/
+
+::Method test_rxfuncadd
+  self~parserError(40.003, "Call RxFuncAdd a             ")
+  self~parserError(40.004, "Call RxFuncAdd a, b, c, d    ")
+  self~parserError(40.005, "Call RxFuncAdd  , b          ")
+  self~parserError(40.005, "Call RxFuncAdd a,  , c       ")
+
+/******************************************************************************/
+/* RXFUNCDROP                                                                 */
+/******************************************************************************/
+
+::Method test_rxfuncdrop
+  self~parserError(40.003, "Call RxFuncDrop              ")
+  self~parserError(40.004, "Call RxFuncDrop a, b         ")
+
+/******************************************************************************/
+/* RXFUNCQUERY                                                                */
+/******************************************************************************/
+
+::Method test_rxfuncquery
+  self~parserError(40.003, "Call RxFuncQuery             ")
+  self~parserError(40.004, "Call RxFuncQuery a, b        ")
+
+/******************************************************************************/
+/* RXQUEUE                                                                    */
+/******************************************************************************/
+
+::Method test_rxqueue
+  self~parserError(40.003, "Call RxQueue                 ")
+  self~parserError(40.004, "Call RxQueue a, b, c         ")
+  self~parserError(40.005, "Call RxQueue  , b            ")
+  self~parserError(40.904, "Call RxQueue '*'             ")
+  self~parserOK(           "Call RxQueue 'C'             ")
+  self~parserOK(           "Call RxQueue 'D', b          ")
+  self~parserOK(           "Call RxQueue 'E', b          ")
+  self~parserOK(           "Call RxQueue 'G'             ")
+  self~parserOK(           "Call RxQueue 'O', b          ")
+  self~parserOK(           "Call RxQueue 'S', b          ")
+
+/******************************************************************************/
+/* SIGN                                                                       */
+/******************************************************************************/
+
+::Method test_sign
+  self~parserError(40.003, "Call Sign                    ")
+  self~parserError(40.004, "Call Sign a,b                ")
+  self~parserError(93.943, "Call Sign '*'                ")
+  self~parserOK(           "Call Sign 12.3               ")
+
+/******************************************************************************/
+/* SOURCELINE                                                                 */
+/******************************************************************************/
+
+::Method test_sourceline
+  self~parserError(40.004, "Call SourceLine a,b          ")
+  self~parserError(40.012, "Call SourceLine '*'          ")
+  self~parserError(40.014, "Call SourceLine   0          ")
+  self~parserOK(           "Call SourceLine   1          ")
+
+/******************************************************************************/
+/* SPACE                                                                      */
+/******************************************************************************/
+
+::Method test_space
+  self~parserError(40.003, "Call Space                   ")
+  self~parserError(40.004, "Call Space a, b, c, d        ")
+  self~parserError(40.005, "Call Space  , b              ")
+  self~parserError(40.012, "Call Space a, '*'            ")
+  self~parserError(93.923, "Call Space a,-1              ")
+  self~parserOK(           "Call Space a, 0              ")
+  self~parserError(40.023, "Call Space a, 1,   ''        ")
+  self~parserOK(           "Call Space a, 1,  'a'        ")
+  self~parserError(40.023, "Call Space a, 1, 'aa'        ")
+
+/******************************************************************************/
+/* STREAM                                                                     */
+/******************************************************************************/
+
+::Method test_stream
+  self~parserError(40.003, "Call Stream                  ")
+  self~parserError(40.004, "Call Stream a, b, c, d       ")
+  self~parserError(40.005, "Call Stream  , b             ")
+  self~parserError(40.904, "Call Stream a, '*'           ")
+  self~parserOK(           "Call Stream a, 'S'           ")
+  self~parserOK(           "Call Stream a, 'D'           ")
+  self~parserOK(           "Call Stream a, 'C', 'q e'    ")
+
+/******************************************************************************/
+/* STRIP                                                                      */
+/******************************************************************************/
+
+::Method test_strip
+  self~parserError(40.003, "Call Strip                   ")
+  self~parserError(40.004, "Call Strip a, b, c, d        ")
+  self~parserError(40.005, "Call Strip  , b              ")
+  self~parserError(93.915, "Call Strip a, '*'            ")
+  self~parserOK(           "Call Strip a, 'B'            ")
+  self~parserOK(           "Call Strip a, 'L'            ")
+  self~parserOK(           "Call Strip a, 'T',           ")
+
+/******************************************************************************/
+/* SUBSTR                                                                     */
+/******************************************************************************/
+
+::Method test_substr
+  self~parserError(40.003, "Call SubStr a                ")
+  self~parserError(40.004, "Call SubStr a, b, c, d, e    ")
+  self~parserError(40.005, "Call SubStr  , b             ")
+  self~parserError(40.005, "Call SubStr a,  , c          ")
+  self~parserError(40.012, "Call SubStr a, '*'           ")
+  self~parserError(93.924, "Call SubStr a, 0             ")
+  self~parserOK(           "Call SubStr a, 1             ")
+  self~parserError(40.012, "Call SubStr a, 1, '*'        ")
+  self~parserError(93.923, "Call SubStr a, 1, -1         ")
+  self~parserOK(           "Call SubStr a, 1,  0         ")
+  self~parserError(40.023, "Call SubStr a, 1, 1, ''      ")
+  self~parserOK(           "Call SubStr a, 1, 1, 'a'     ")
+  self~parserError(40.023, "Call SubStr a, 1, 1, 'aa'    ")
+
+/******************************************************************************/
+/* SUBWORD                                                                    */
+/******************************************************************************/
+
+::Method test_subword
+  self~parserError(40.003, "Call SubWord a               ")
+  self~parserError(40.004, "Call SubWord a, b, c, d      ")
+  self~parserError(40.005, "Call SubWord  , b            ")
+  self~parserError(40.005, "Call SubWord a,  , c         ")
+  self~parserError(40.012, "Call SubWord a, '*'          ")
+  self~parserError(93.924, "Call SubWord a, 0            ")
+  self~parserOK(           "Call SubWord a, 1            ")
+  self~parserError(40.012, "Call SubWord a, 1, '*'       ")
+  self~parserError(93.923, "Call SubWord a, 1, -1        ")
+  self~parserOK(           "Call SubWord a, 1,  0        ")
+
+/******************************************************************************/
+/* SYMBOL                                                                     */
+/******************************************************************************/
+
+::Method test_symbol
+  self~parserError(40.003, "Call Symbol                  ")
+  self~parserError(40.004, "Call Symbol a, b             ")
+
+/******************************************************************************/
+/* TIME                                                                       */
+/******************************************************************************/
+
+::Method test_time
+  self~parserError(40.004, "Call Time a, b, c, d         ")
+  self~parserError(40.904, "Call Time '*'                ")
+  self~parserOK(           "Call Time 'C'                ")
+  self~parserOK(           "Call Time 'E'                ")
+  self~parserOK(           "Call Time 'F'                ")
+  self~parserOK(           "Call Time 'H'                ")
+  self~parserOK(           "Call Time 'L'                ")
+  self~parserOK(           "Call Time 'M'                ")
+  self~parserOK(           "Call Time 'N'                ")
+  self~parserOK(           "Call Time 'O'                ")
+  self~parserOK(           "Call Time 'R'                ")
+  self~parserOK(           "Call Time 'S'                ")
+  self~parserOK(           "Call Time 'T'                ")
+  self~parserError(40.904, "Call Time ,'11:27:21','*'    ")
+  self~parserOK(           "Call Time ,'9:24am','C'      ")
+  self~parserOK(           "Call Time , 63880824296384000, 'F' ")
+  self~parserOK(           "Call Time , 9, 'H'           ")
+  self~parserOK(           "Call Time , '09:26:17.935000', 'L' ")
+  self~parserOK(           "Call Time , 567, 'M'         ")
+  self~parserOK(           "Call Time , '09:27:43', 'N'  ")
+  self~parserOK(           "Call Time , 7200000000, 'O'  ")
+  self~parserOK(           "Call Time , 34168, 'S'       ")
+  self~parserOK(           "Call Time , 1745227804, 'T'  ")
+
+/******************************************************************************/
+/* TRACE                                                                      */
+/******************************************************************************/
+
+::Method test_trace
+  self~parserError(40.004, "Call Trace a, b              ")
+  self~parserError(24.001, "Call Trace '*'               ")
+  self~parserOK(           "Call Trace 'C'; Trace Normal ")
+  self~parserOK(           "Call Trace 'F'; Trace Normal ")
+  self~parserOK(           "Call Trace 'N'               ")
+  self~parserOK(           "Call Trace 'O'; Trace Normal ")
+
+/******************************************************************************/
+/* TRANSLATE                                                                  */
+/******************************************************************************/
+
+::Method test_translate
+  self~parserError(40.003, "Call Translate               ")
+  self~parserError(40.004, "Call Translate a,b,c,d,e,f,g ")
+  self~parserError(40.005, "Call Translate  , b          ")
+  self~parserError(40.023, "Call Translate a, b, c, ''   ")
+  self~parserOK(           "Call Translate a, b, c, 'a'  ")
+  self~parserError(40.023, "Call Translate a, b, c, 'aa' ")
+  self~parserError(40.012, "Call Translate a,,,,'*'      ")
+  self~parserError(93.924, "Call Translate a,,,,0        ")
+  self~parserOK(           "Call Translate a,,,,1        ")
+  self~parserError(40.012, "Call Translate a,,,,,'*'     ")
+  self~parserError(93.923, "Call Translate a,,,,, -1     ")
+  self~parserOK(           "Call Translate a,,,,,  0     ")
+
+/******************************************************************************/
+/* TRUNC                                                                      */
+/******************************************************************************/
+
+::Method test_trunc
+  self~parserError(40.003, "Call Trunc                   ")
+  self~parserError(40.004, "Call Trunc a, b, c           ")
+  self~parserError(40.005, "Call Trunc  , b              ")
+  self~parserError(93.943, "Call Trunc '*'               ")
+  self~parserError(40.012, "Call Trunc a, '*'            ")
+  self~parserError(93.906, "Call Trunc 1,  -1            ")
+  self~parserOK(           "Call Trunc 1,   0            ")
+
+/******************************************************************************/
+/* UPPER                                                                      */
+/******************************************************************************/
+
+::Method test_upper
+  self~parserError(40.003, "Call Upper                   ")
+  self~parserError(40.004, "Call Upper a, b, c, d        ")
+  self~parserError(40.005, "Call Upper  , b              ")
+  self~parserError(40.012, "Call Upper a, '*'            ")
+  self~parserError(93.924, "Call Upper a, 0              ")
+  self~parserOK(           "Call Upper a, 1              ")
+  self~parserError(40.012, "Call Upper a,, '*'           ")
+  self~parserError(93.923, "Call Upper a,, -1            ")
+  self~parserOK(           "Call Upper a,,  0            ")
+
+/******************************************************************************/
+/* VALUE                                                                      */
+/******************************************************************************/
+
+::Method test_value
+  self~parserError(40.003, "Call Value                   ")
+  self~parserError(40.004, "Call Value a, b, c, d        ")
+  self~parserError(40.005, "Call Value  , b              ")
+
+/******************************************************************************/
+/* VAR                                                                        */
+/******************************************************************************/
+
+::Method test_var
+  self~parserError(40.003, "Call Var                     ")
+  self~parserError(40.004, "Call Var a, b                ")
+
+/******************************************************************************/
+/* VERIFY                                                                     */
+/******************************************************************************/
+
+::Method test_verify
+  self~parserError(40.003, "Call Verify a                ")
+  self~parserError(40.004, "Call Verify a, b, c, d, e, f ")
+  self~parserError(40.005, "Call Verify  , b             ")
+  self~parserError(40.005, "Call Verify a, , c           ")
+  self~parserError(93.915, "Call Verify a, b, '*'        ")
+  self~parserOK(           "Call Verify a, b, 'M'        ")
+  self~parserOK(           "Call Verify a, b, 'N'        ")
+  self~parserError(40.012, "Call Verify a, b, , '*'      ")
+  self~parserError(93.924, "Call Verify a, b, ,  0       ")
+  self~parserOK(           "Call Verify a, b, ,  1       ")
+  self~parserError(40.012, "Call Verify a, b, , , '*'    ")
+  self~parserError(93.923, "Call Verify a, b, , , -1     ")
+  self~parserOK(           "Call Verify a, b, , ,  0     ")
+
+/******************************************************************************/
+/* WORD, WORDINDEX, WORDLENGTH                                                */
+/******************************************************************************/
+
+::Method test_word_wordindex_wordlength
+  Do name Over ("WORD", "WORDINDEX", "WORDLENGTH")
+    call = "Call" name
+    self~parserError(40.003, call "a                     ")
+    self~parserError(40.004, call "a, b, c               ")
+    self~parserError(40.005, call " , b                  ")
+    self~parserError(40.012, call "a, '*'                ")
+    self~parserError(93.924, call "a,  0                 ")
+    self~parserOK(           call "a,  1                 ")
+  End
+
+/******************************************************************************/
+/* WORDPOS                                                                    */
+/******************************************************************************/
+
+::Method test_wordpos
+  self~parserError(40.003, "Call WordPos a               ")
+  self~parserError(40.004, "Call WordPos a, b, c, d      ")
+  self~parserError(40.005, "Call WordPos  , b            ")
+  self~parserError(40.005, "Call WordPos a, , c          ")
+  self~parserError(40.012, "Call WordPos a, b, '*'       ")
+  self~parserError(93.924, "Call WordPos a, b,  0        ")
+  self~parserOK(           "Call WordPos a, b,  1        ")
+
+/******************************************************************************/
+/* WORDS                                                                      */
+/******************************************************************************/
+
+::Method test_words
+  self~parserError(40.003, "Call Words                   ")
+  self~parserError(40.004, "Call Words a, b              ")
+
+/******************************************************************************/
+/* X2B, X2C                                                                   */
+/******************************************************************************/
+
+::Method test_x2b_x2c
+  Do name Over ("X2B", "X2C")
+    call = "Call" name
+    self~parserError(40.003, call "                      ")
+    self~parserError(40.004, call "a, b                  ")
+    self~parserError(93.931, call "' FF'                 ")
+    self~parserError(93.931, call "'FF '                 ")
+    self~parserError(93.933, call "'*'                   ")
+    self~parserError(93.976, call "'E FFF'               ")
+  End
+
+/******************************************************************************/
+/* X2D                                                                        */
+/******************************************************************************/
+
+::Method test_x2d
+  self~parserError(40.003, "Call X2D                     ")
+  self~parserError(40.004, "Call X2D a, b, c             ")
+  self~parserError(40.005, "Call X2D  , b                ")
+  self~parserError(40.012, "Call X2D '', '*'             ")
+  self~parserError(93.923, "Call X2D '', -1              ")
+  self~parserOK(           "Call X2D '',  0              ")
+
+/******************************************************************************/
+/* XRANGE                                                                     */
+/******************************************************************************/
+
+::Method test_xrange
+  self~parserError(40.028, "Call XRange 'no'             ")
+  self~parserOK(           "Call XRange 'a'              ")
+  self~parserOK(           "Call XRange 'a','z'          ")
+  self~parserOK(           "Call XRange    ,'z'          ")
+  self~parserOK(           "Call XRange 'AlNum'          ")
+  self~parserOK(           "Call XRange 'Alpha'          ")
+  self~parserOK(           "Call XRange 'Blank'          ")
+  self~parserOK(           "Call XRange 'Cntrl'          ")
+  self~parserOK(           "Call XRange 'Digit'          ")
+  self~parserOK(           "Call XRange 'Graph'          ")
+  self~parserOK(           "Call XRange 'Lower'          ")
+  self~parserOK(           "Call XRange 'Print'          ")
+  self~parserOK(           "Call XRange 'Punct'          ")
+  self~parserOK(           "Call XRange 'Space'          ")
+  self~parserOK(           "Call XRange 'Upper'          ")
+  self~parserOK(           "Call XRange 'XDigit'         ")
+
+/******************************************************************************/
+/* XRANGE (from otherChecks — error 40.028)                                   */
+/******************************************************************************/
+
+::Method test_xrange_error_40_028
+  self~parserError(40.028, 'Call XRange "Clang"')
