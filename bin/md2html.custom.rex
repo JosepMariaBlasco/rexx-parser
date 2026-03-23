@@ -34,10 +34,11 @@
   -- .FilenameSpecificStyle will be used by md2html.FilenameSpecificStyle below
   pkgLocal~FilenameSpecificStyle = .Stem~new
  .FilenameSpecificStyle[] = ""          -- .Nil means no change
- .FilenameSpecificStyle["article.md"] = "article"
- .FilenameSpecificStyle["book.md"]    = "book"
- .FilenameSpecificStyle["letter.md"]  = "letter"
- .FilenameSpecificStyle["slides.md" ] = "slides"
+ .FilenameSpecificStyle["article.md"] = "print/article"
+ .FilenameSpecificStyle["book.md"]    = "print/book"
+ .FilenameSpecificStyle["letter.md"]  = "print/letter"
+ .FilenameSpecificStyle["slides.md" ] = "print/slides"
+ .FilenameSpecificStyle["rexxdoc-chapter.md"] = "print/rexxdoc-chapter"
 
   -- Output files will have this extension. See md2html.Extension
   pkgLocal~Extension = "html"
@@ -93,9 +94,10 @@
 
 ::Routine md2html.ContentHeader Public
 
-  Use Arg filename
+  Use Arg filename, filenameSpecificStyle
 
   -- You might generate a breadcrumb from parts of the filename here
+  -- filenameSpecificStyle is available for print button logic
 
 --------------------------------------------------------------------------------
 -- Side bar                                                                   --

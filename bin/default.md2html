@@ -58,7 +58,7 @@
 -- in Rexx fenced code blocks here.
 --
 %usedStyles%
-    <link rel='stylesheet' href='%cssbase%/markdown.css'>
+    %markdownStyle%
 -- Optionally load a filename-specific style
     %filenameSpecificStyle%
 -- A further customization will be applied if a file with the same name
@@ -75,7 +75,7 @@
       <div class='row'>
         <div class='col-md-9'>
           %contentheader%
-          <div class='content %SectionNumbers% %NumberFigures%'%ListingsAttrs%%FiguresAttrs%>
+          <div class='content %SectionNumbers% %NumberFigures%'%ListingsAttrs%%FiguresAttrs%%ChapterAttrs%>
             %contents%
           </div>
         </div>

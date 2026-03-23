@@ -9,6 +9,7 @@ Provided document classes
 + [Article](article/).
 + [Book](book/).
 + [Letter](letter/).
++ [Rexx documentation - Chapter](rexxdoc-chapter/).
 + [Slides](slides/).
 
 YAML front matter

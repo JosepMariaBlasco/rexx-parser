@@ -23,6 +23,12 @@
   sl = .File~separator
   myDir = myPath~left(myPath~lastPos(sl))
 
+  -- Parse arguments: --fix enables auto-regeneration of generated files
+  fix = .false
+  Do i = 1 To Arg()
+    If Arg(i)~caselessEquals("--fix") Then fix = .true
+  End
+
   -- Path separator: ";" on Windows, ":" elsewhere
   If sl == "\" Then pathSep = ";"
                 Else pathSep = ":"
@@ -48,6 +54,16 @@
     Say "Message consistency check passed."
   Else Do
     Say "Message consistency check FAILED — aborting."
+    Exit 1
+  End
+
+  -- Sanity check: verify ANSI.ErrorText.cls is up to date
+  Say "Checking ANSI.ErrorText.cls..."
+  Call (myDir"CheckErrorText.rex") binDir, resourcesDir, fix
+  If result Then
+    Say "ANSI.ErrorText.cls check passed."
+  Else Do
+    Say "ANSI.ErrorText.cls check FAILED — aborting."
     Exit 1
   End
   Say

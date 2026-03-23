@@ -11,7 +11,7 @@ See the project instructions for coding style and conventions.
 
 ```
 readme.md               Project overview and quick start
-LICENSE                  Common Public License v1.0
+LICENSE                 Common Public License v1.0
 setenv.sh, setenv.cmd   PATH setup for Linux / Windows
 agents.md               This file
 ```
@@ -70,6 +70,7 @@ substitute template placeholders, generate output.
 ```
 md2pdf.rex              Markdown → PDF (via Pandoc + pagedjs-cli)
 md2html.rex             Markdown → static HTML
+md2epub.rex             Markdown → EPUB (via Pandoc)
 ../cgi/CGI.markdown.rex Markdown → HTML via Apache CGI (live web,
                                    optionally print to PDF with paged.js)
 ```
@@ -106,8 +107,6 @@ erexx.rex               Enhanced Rexx runner
 identtest.rex           Identifier test utility
 tree.rex                Parse tree display
 trident.rex             Trident utility
-GenErrorText.rex        Generates ANSI.ErrorText.cls from rexxmsg.xml
-                        (internal maintenance tool)
 ```
 
 ### Railroad diagram tools
@@ -126,6 +125,8 @@ third-party-licenses.txt  Licenses for rr.war and its dependencies
 ```
 default.md2html         HTML template for md2html pipeline
 md2html.custom.rex      Sample customization layer for md2html
+                        (maps article, book, letter, slides, and
+                        rexxdoc-chapter filenames to print/ docclasses)
 fix_pdf_outline.py      Python helper for PDF outline fixing
 EnableExperimentalFeatures.rex  Enables experimental parser features
 DebugSettings.cls       Debug configuration
@@ -188,6 +189,7 @@ css/
   print/                              Print/PDF document class styles
     rexxpub-base.css                  Base print styles (Bootstrap reset, etc.)
     article.css, book.css, letter.css, slides.css, default.css
+    rexxdoc-chapter.css               ooRexx documentation chapter style
     {article,book,default,letter}-{10,11,13,14}pt.css
                                       Size-specific overrides per class
   vim/                                Vim color scheme source data
@@ -220,6 +222,7 @@ doc/
     readme.md                     RexxPub overview and installation
     yaml/readme.md                YAML front matter specification
     article/, book/, letter/, slides/  Document class documentation
+    rexxdoc-chapter/              rexxdoc-chapter class documentation
     bibliography/                 Bibliography support docs
   publications/                   Symposium papers (36th, 37th, etc.)
   highlighter/                    Highlighter internals documentation
@@ -239,7 +242,11 @@ doc/
 ```
 tests/
   RunTests.rex               ooRexxUnit test runner (discovers all .testGroup files)
+                             Supports --fix to auto-regenerate generated files
   CheckMessages.rex          Sanity check: parser source comments vs rexxmsg.xml
+  CheckErrorText.rex         Sanity check: ANSI.ErrorText.cls is up to date
+                             (with --fix: regenerates it automatically)
+  GenErrorText.rex           Generates ANSI.ErrorText.cls from rexxmsg.xml
   test.rex, test.md          Minimal examples referenced in documentation
   readme.md                  Test suite documentation
   experimental/              Experimental features: class extensions example,
@@ -257,11 +264,35 @@ tests/
     BIFs.testGroup           Parser checks: all BIF argument validation (70 tests, 549 assertions)
     SyntaxErrors.testGroup   Parser checks: error codes 6-47, 89, 98, 99 (31 tests, 297 assertions)
     Regressions.testGroup    Regression tests from shouldwork.rex (8 tests, 10 assertions)
+  cgi/                       CGI integration tests (NOT run by RunTests.rex)
+    CGI.testGroup            Test suite for CGI.markdown.rex (39 tests)
+    CGITestCase.cls          ooTestCase subclass with httpGet, assertContains
+    RunCGITests.rex          Interactive runner (checks Apache, Pandoc, configures all)
+    fixtures/                Markdown fixtures (basic, with-yaml, docclass-*, rexx-code, hello.rex)
+    readme.md                CGI test documentation
+  pdf/                       PDF integration tests (NOT run by RunTests.rex)
+    PDF.testGroup            Test suite for md2pdf.rex (18 tests)
+    PDFTestCase.cls          ooTestCase subclass with runMd2pdf, pdfInfo, pdfText, assertPDF
+    RunPDFTests.rex          Interactive runner (checks Pandoc, Node.js, pagedjs-cli, poppler-utils)
+    fixtures/                Markdown fixtures (basic, article, chapter, fenced-code, section-numbers)
+    readme.md                PDF test documentation
 ```
 
-`RunTests.rex` is the primary test runner. It first runs `CheckMessages.rex`
-to verify that parser source comments match `rexxmsg.xml`, then discovers all
-`.testGroup` files in `suites/` and runs them via ooRexxUnit (351 tests total).
+`RunTests.rex` is the primary test runner. It performs two sanity checks
+before running any suite:
+
+1. `CheckMessages.rex` — verifies that parser source comments match
+   `rexxmsg.xml`.
+2. `CheckErrorText.rex` — verifies that `bin/ANSI.ErrorText.cls` is up
+   to date with `rexxmsg.xml`. With `--fix`, regenerates it automatically
+   using `GenErrorText.rex`.
+
+If either check fails, the run aborts. Then it discovers all `.testGroup`
+files in `suites/` and runs them via ooRexxUnit (351 unit tests total).
+Integration tests live in separate directories: `cgi/` (39 tests,
+require Apache) and `pdf/` (18 tests, require Pandoc + pagedjs-cli +
+poppler-utils). These are NOT run by `RunTests.rex` — each has its
+own runner (`RunCGITests.rex`, `RunPDFTests.rex`).
 Each `.testGroup` is also independently executable:
 `cd tests && PATH="framework:suites:../bin:$PATH" rexx suites/X.testGroup`.
 
@@ -287,6 +318,12 @@ md2html.rex ──requires──▶ FencedCode.cls
                           ErrorHandler.cls
                           BaseClassesAndRoutines.cls
 
+md2epub.rex ──requires──▶ FencedCode.cls
+                          YAMLFrontMatter.cls
+                          RexxPubOptions.cls
+                          ErrorHandler.cls
+                          BaseClassesAndRoutines.cls
+
 CGI.markdown.rex ──Call Requires──▶ FencedCode.cls
                                     YAMLFrontMatter.cls
                                     RexxPubOptions.cls
@@ -307,17 +344,90 @@ When modifying YAML option handling or caption/frame logic, these
 files typically need coordinated changes:
 
 - `bin/RexxPubOptions.cls` (shared option parsing and CSS generation)
-- `bin/md2pdf.rex`, `bin/md2html.rex`, `cgi/CGI.markdown.rex`
-  (the three pipelines that consume the options)
+- `bin/md2pdf.rex`, `bin/md2html.rex`, `bin/md2epub.rex`,
+  `cgi/CGI.markdown.rex` (the four pipelines that consume the options)
 - `js/numberFigures.js` (reads data-* attributes set by the pipelines)
 - `doc/rexxpub/yaml/readme.md` (YAML option documentation)
 
 When modifying Rexx highlighting themes:
 - `css/rexx-*.css` (the theme files)
-- `css/flattened/rexx-*.css` (flattened versions for md2pdf)
+- `css/flattened/rexx-*.css` (flattened versions for md2pdf and md2epub)
 - `bin/StyleSheet.cls` (generates CSS from theme definitions)
 
 When modifying print/PDF layout:
 - `css/print/*.css` (document class and size styles)
 - `css/print/rexxpub-base.css` (base print styles)
 - `bin/md2pdf.rex` (PDF pipeline)
+
+When modifying document class detection or the `docclass` YAML option:
+- `bin/md2pdf.rex`, `bin/md2html.rex`, `cgi/CGI.markdown.rex`
+  (the three pipelines that use docclass; md2epub does not use docclass)
+- `bin/md2html.custom.rex` (filename → docclass mapping for md2html)
+- `cgi/rexx.epbcn.com.optional.cls` (print button logic uses
+  `filenameSpecificStyle~caselessStartsWith("print/")`)
+- `bin/RexxPubOptions.cls` (parses `docclass:` from YAML)
+
+## Recent changes (sessions 12c–12f, March 2026)
+
+### Document class detection via YAML `docclass:`
+
+The document class can now be specified in YAML front matter with
+`docclass:` under `rexxpub:`, taking precedence over both the
+filename convention and the `--docclass` CLI option.  All three
+pipelines support this.  The `chapter:` option sets the chapter
+number for the `rexxdoc-chapter` class.
+
+### `rexxdoc-chapter` document class
+
+New document class that replicates the visual style of the official
+ooRexx documentation (DocBook XSL + Apache FOP).  Files:
+- `css/print/rexxdoc-chapter.css`
+- `doc/rexxpub/rexxdoc-chapter/rexxdoc-chapter.md` (self-documenting)
+
+### Print button by docclass (session 12f)
+
+The CGI print button now appears based on
+`filenameSpecificStyle~caselessStartsWith("print/")` instead of
+hardcoded filenames.  This means any file with `docclass: X` in its
+YAML shows the print button.  `OptionalCall` was extended to pass
+`filenameSpecificStyle` as an additional argument to `ContentHeader`.
+
+### `highlightStyle` as argument to `ProcessFile` (session 12f)
+
+In `md2html.rex`, `highlightStyle` is now passed explicitly as an
+argument to the `ProcessFile` routine, fixing a bug where
+`%highlightStyle%` was not resolved in the generated HTML.
+
+### Documentation updates (session 12g)
+
+`doc/rexxpub/book/book.md` — updated to document `rexxdoc-chapter`
+throughout: document class list, Quick Start, Document class detection,
+new chapter in Part III, Filename as convention, YAML appendix, and
+File Inventory.
+
+`doc/rexxpub/article/article.md` — YAML front matter section updated
+to document the `docclass:` option.
+
+`doc/publications/37/.../article.md` (Symposium 37 RexxPub paper) —
+updated document class list (five → six), CGI docclass detection,
+YAML options list, and md2pdf `--docclass` description.
+
+### New `md2epub.rex` utility (session 12g)
+
+New pipeline for EPUB ebook generation.  Same front-end as md2pdf
+(FencedCode, YAMLFrontMatter, RexxPubOptions) but simpler back-end:
+Pandoc generates the EPUB directly with `--to epub`, no pagedjs-cli
+needed.  Uses flattened CSS (EPUB readers don't support CSS nesting).
+Supports `--cover`, `--chapter-level`, `--csl`, `--style`, and all
+the standard FencedCode options.  Title extracted from the first
+Markdown heading.
+
+Files:
+- `bin/md2epub.rex`
+- `doc/utilities/md2epub/readme.md`
+
+References updated in: `doc/utilities/readme.md`,
+`doc/rexxpub/yaml/readme.md`, `doc/rexxpub/bibliography/readme.md`,
+`doc/rexxpub/rexxdoc-chapter/rexxdoc-chapter.md`, `doc/readme.md`,
+`doc/history/readme.md`, `css/pandoc/readme.md`,
+`cgi/rexx.epbcn.com.optional.cls`.

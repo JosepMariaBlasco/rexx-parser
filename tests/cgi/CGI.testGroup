@@ -1,0 +1,296 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* CGI.testGroup - Integration tests for CGI.markdown.rex                     */
+/* ======================================================                     */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* These tests require Apache configured with the CGI pipeline.               */
+/* Run via: rexx tests/cgi/RunCGITests.rex                                    */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260323    0.5  First version                                             */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.CGI.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "CGITestCase.cls"
+
+::Class CGI.testGroup Subclass CGITestCase Public
+
+/******************************************************************************/
+/* Class-level: base URL for all requests                                     */
+/******************************************************************************/
+
+::Attribute baseURL Class
+
+::Method activate Class
+  self~baseURL = "http://127.0.0.1"
+
+/******************************************************************************/
+/* Helper: build full URL for a fixture                                       */
+/******************************************************************************/
+
+::Method fixtureURL
+  Use Strict Arg path
+  Return self~class~baseURL"/tests/cgi/fixtures/"path
+
+/******************************************************************************/
+/* Basic .md response                                                         */
+/******************************************************************************/
+
+::Method test_basic_status_200
+  r = self~httpGet(self~fixtureURL("basic.md"))
+  self~assertEquals("200", r~entry("status"), -
+    "Basic .md returns HTTP 200")
+
+::Method test_basic_is_html
+  r = self~httpGet(self~fixtureURL("basic.md"))
+  self~assertContains(r~entry("body"), "<!doctype html>", -
+    "Basic .md returns HTML document")
+
+::Method test_basic_title
+  r = self~httpGet(self~fixtureURL("basic.md"))
+  self~assertContains(r~entry("body"), "<title>", -
+    "Basic .md contains <title>")
+
+::Method test_basic_title_text
+  r = self~httpGet(self~fixtureURL("basic.md"))
+  self~assertContains(r~entry("body"), "Basic test", -
+    "Basic .md title extracted from heading")
+
+::Method test_basic_default_lang
+  r = self~httpGet(self~fixtureURL("basic.md"))
+  self~assertContains(r~entry("body"), "lang='en'", -
+    "Basic .md defaults to lang=en")
+
+::Method test_basic_markdown_css
+  r = self~httpGet(self~fixtureURL("basic.md"))
+  self~assertContains(r~entry("body"), "markdown.css", -
+    "Basic .md loads markdown.css (no docclass)")
+
+::Method test_basic_no_rexxpub_base
+  r = self~httpGet(self~fixtureURL("basic.md"))
+  self~assertNotContains(r~entry("body"), "rexxpub-base.css", -
+    "Basic .md does not load rexxpub-base.css")
+
+::Method test_basic_default_highlight_style
+  r = self~httpGet(self~fixtureURL("basic.md"))
+  self~assertContains(r~entry("body"), "pandoc/pygments.css", -
+    "Basic .md defaults to pygments highlight style")
+
+/******************************************************************************/
+/* YAML front matter options                                                  */
+/******************************************************************************/
+
+::Method test_yaml_language
+  r = self~httpGet(self~fixtureURL("with-yaml.md"))
+  self~assertContains(r~entry("body"), "lang='es'", -
+    "YAML language: es sets lang attribute")
+
+::Method test_yaml_highlight_style
+  r = self~httpGet(self~fixtureURL("with-yaml.md"))
+  self~assertContains(r~entry("body"), "pandoc/tango.css", -
+    "YAML highlight-style: tango loads tango.css")
+
+::Method test_yaml_section_numbers
+  r = self~httpGet(self~fixtureURL("with-yaml.md"))
+  self~assertContains(r~entry("body"), "section-numbers-2", -
+    "YAML section-numbers: 2 sets CSS class")
+
+/******************************************************************************/
+/* Docclass: article                                                          */
+/******************************************************************************/
+
+::Method test_docclass_article_rexxpub_base
+  r = self~httpGet(self~fixtureURL("docclass-article.md"))
+  self~assertContains(r~entry("body"), "rexxpub-base.css", -
+    "docclass: article loads rexxpub-base.css")
+
+::Method test_docclass_article_css
+  r = self~httpGet(self~fixtureURL("docclass-article.md"))
+  self~assertContains(r~entry("body"), "print/article.css", -
+    "docclass: article loads article.css")
+
+::Method test_docclass_article_no_markdown_css
+  r = self~httpGet(self~fixtureURL("docclass-article.md"))
+  self~assertNotContains(r~entry("body"), "markdown.css", -
+    "docclass: article does not load markdown.css")
+
+/******************************************************************************/
+/* Docclass: rexxdoc-chapter                                                  */
+/******************************************************************************/
+
+::Method test_docclass_chapter_rexxpub_base
+  r = self~httpGet(self~fixtureURL("docclass-chapter.md"))
+  self~assertContains(r~entry("body"), "rexxpub-base.css", -
+    "docclass: rexxdoc-chapter loads rexxpub-base.css")
+
+::Method test_docclass_chapter_css
+  r = self~httpGet(self~fixtureURL("docclass-chapter.md"))
+  self~assertContains(r~entry("body"), "print/rexxdoc-chapter.css", -
+    "docclass: rexxdoc-chapter loads rexxdoc-chapter.css")
+
+::Method test_docclass_chapter_data_attribute
+  r = self~httpGet(self~fixtureURL("docclass-chapter.md"))
+  self~assertContains(r~entry("body"), 'data-chapter="5"', -
+    "docclass: rexxdoc-chapter sets data-chapter attribute")
+
+::Method test_docclass_chapter_label
+  r = self~httpGet(self~fixtureURL("docclass-chapter.md"))
+  self~assertContains(r~entry("body"), "Chapter 5.", -
+    "docclass: rexxdoc-chapter sets chapter label")
+
+::Method test_docclass_chapter_section_numbers
+  r = self~httpGet(self~fixtureURL("docclass-chapter.md"))
+  self~assertContains(r~entry("body"), "section-numbers-4", -
+    "docclass: rexxdoc-chapter defaults to section-numbers-4")
+
+/******************************************************************************/
+/* Rexx fenced code blocks                                                    */
+/******************************************************************************/
+
+::Method test_fenced_code_highlight_div
+  r = self~httpGet(self~fixtureURL("rexx-code.md"))
+  self~assertContains(r~entry("body"), 'class="highlight-rexx-dark"', -
+    "Rexx fenced code produces highlight div")
+
+::Method test_fenced_code_keyword
+  r = self~httpGet(self~fixtureURL("rexx-code.md"))
+  self~assertContains(r~entry("body"), 'class="rx-kw"', -
+    "Rexx fenced code highlights keywords")
+
+::Method test_fenced_code_theme_css
+  r = self~httpGet(self~fixtureURL("rexx-code.md"))
+  self~assertContains(r~entry("body"), "rexx-dark.css", -
+    "Rexx fenced code triggers theme CSS loading")
+
+/******************************************************************************/
+/* URL parameter: style                                                       */
+/******************************************************************************/
+
+::Method test_url_style_light
+  r = self~httpGet(self~fixtureURL("rexx-code.md?style=light"))
+  self~assertContains(r~entry("body"), 'highlight-rexx-light', -
+    "style=light URL param changes highlight class")
+
+::Method test_url_style_light_css
+  r = self~httpGet(self~fixtureURL("rexx-code.md?style=light"))
+  self~assertContains(r~entry("body"), "rexx-light.css", -
+    "style=light URL param loads rexx-light.css")
+
+/******************************************************************************/
+/* URL parameter: print=pdf (basic, no docclass)                              */
+/******************************************************************************/
+
+::Method test_print_basic_paged_js
+  r = self~httpGet(self~fixtureURL("basic.md?print=pdf"))
+  self~assertContains(r~entry("body"), "paged.polyfill.js", -
+    "print=pdf loads paged.polyfill.js")
+
+::Method test_print_basic_no_rexxpub_base
+  r = self~httpGet(self~fixtureURL("basic.md?print=pdf"))
+  self~assertNotContains(r~entry("body"), "rexxpub-base.css", -
+    "print=pdf without docclass does not load rexxpub-base.css")
+
+/******************************************************************************/
+/* URL parameter: print=pdf (docclass: article)                               */
+/******************************************************************************/
+
+::Method test_print_article_paged_js
+  r = self~httpGet(self~fixtureURL("docclass-article.md?print=pdf"))
+  self~assertContains(r~entry("body"), "paged.polyfill.js", -
+    "print=pdf article loads paged.polyfill.js")
+
+::Method test_print_article_rexxpub_base
+  r = self~httpGet(self~fixtureURL("docclass-article.md?print=pdf"))
+  self~assertContains(r~entry("body"), "rexxpub-base.css", -
+    "print=pdf article loads rexxpub-base.css")
+
+::Method test_print_article_css
+  r = self~httpGet(self~fixtureURL("docclass-article.md?print=pdf"))
+  self~assertContains(r~entry("body"), "print/article.css", -
+    "print=pdf article loads print/article.css")
+
+/******************************************************************************/
+/* URL parameter: print=pdf (docclass: rexxdoc-chapter)                       */
+/******************************************************************************/
+
+::Method test_print_chapter_paged_js
+  r = self~httpGet(self~fixtureURL("docclass-chapter.md?print=pdf"))
+  self~assertContains(r~entry("body"), "paged.polyfill.js", -
+    "print=pdf chapter loads paged.polyfill.js")
+
+::Method test_print_chapter_rexxpub_base
+  r = self~httpGet(self~fixtureURL("docclass-chapter.md?print=pdf"))
+  self~assertContains(r~entry("body"), "rexxpub-base.css", -
+    "print=pdf chapter loads rexxpub-base.css")
+
+::Method test_print_chapter_css
+  r = self~httpGet(self~fixtureURL("docclass-chapter.md?print=pdf"))
+  self~assertContains(r~entry("body"), "print/rexxdoc-chapter.css", -
+    "print=pdf chapter loads print/rexxdoc-chapter.css")
+
+/******************************************************************************/
+/* URL parameter: invalid                                                     */
+/******************************************************************************/
+
+::Method test_invalid_param_404
+  r = self~httpGet(self~fixtureURL("basic.md?foo=bar"))
+  self~assertEquals("404", r~entry("status"), -
+    "Invalid URL parameter returns 404")
+
+/******************************************************************************/
+/* Nonexistent file                                                           */
+/******************************************************************************/
+
+::Method test_nonexistent_404
+  r = self~httpGet(self~fixtureURL("nonexistent.md"))
+  self~assertEquals("404", r~entry("status"), -
+    "Nonexistent file returns 404")
+
+/******************************************************************************/
+/* .rex file: view=highlight                                                  */
+/******************************************************************************/
+
+::Method test_rex_highlight_status
+  r = self~httpGet(self~fixtureURL("hello.rex?view=highlight"))
+  self~assertEquals("200", r~entry("status"), -
+    ".rex?view=highlight returns 200")
+
+::Method test_rex_highlight_div
+  r = self~httpGet(self~fixtureURL("hello.rex?view=highlight"))
+  self~assertContains(r~entry("body"), 'highlight-rexx-dark', -
+    ".rex?view=highlight produces highlight div")
+
+::Method test_rex_highlight_keyword
+  r = self~httpGet(self~fixtureURL("hello.rex?view=highlight"))
+  self~assertContains(r~entry("body"), 'class="rx-kw"', -
+    ".rex?view=highlight highlights keywords")
+
+::Method test_rex_plain_text
+  r = self~httpGet(self~fixtureURL("hello.rex"))
+  self~assertNotContains(r~entry("body"), "highlight-rexx", -
+    ".rex without view=highlight returns plain text")
+
+::Method test_rex_invalid_view_404
+  r = self~httpGet(self~fixtureURL("hello.rex?view=foo"))
+  self~assertEquals("404", r~entry("status"), -
+    ".rex?view=foo returns 404")

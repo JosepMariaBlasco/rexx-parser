@@ -70,6 +70,7 @@
   opts["docclass"]        = .Nil
   opts["language"]        = .Nil
   opts["outline"]         = .Nil
+  opts["chapter"]         = .Nil
 
   -- Listing sub-option defaults
   opts["listing-caption-position"] = "above"
@@ -131,6 +132,7 @@ ReadRexxPubBlock: -- Read rexxpub: block
   Call ConditionalCopyFrom rp, "docclass"       , lowerCase
   Call ConditionalCopyFrom rp, "language"
   Call ConditionalCopyFrom rp, "outline"
+  Call ConditionalCopyFrom rp, "chapter"
 
   -- Sanitize values
 
@@ -322,9 +324,10 @@ Return
 ::Routine DefaultSectionNumbers Public
   Use Strict Arg docclass
   Select Case docclass
-    When "article" Then Return 3
-    When "letter"  Then Return 0
-    When "book"    Then Return 2
-    When "slides"  Then Return 0
-    Otherwise           Return 3
+    When "article"          Then Return 3
+    When "letter"           Then Return 0
+    When "book"             Then Return 2
+    When "slides"           Then Return 0
+    When "rexxdoc-chapter"  Then Return 4
+    Otherwise                    Return 3
   End

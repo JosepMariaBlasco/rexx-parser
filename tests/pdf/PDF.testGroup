@@ -1,0 +1,156 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* PDF.testGroup - Integration tests for md2pdf.rex                           */
+/* =================================================                          */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* These tests require Pandoc, pagedjs-cli, and poppler-utils.                */
+/* Run via: rexx tests/pdf/RunPDFTests.rex                                    */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260323    0.5  First version                                             */
+/* 20260323         Fix: use ~entry() instead of [] for Directory access      */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.PDF.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "PDFTestCase.cls"
+
+::Class PDF.testGroup Subclass PDFTestCase Public
+
+/******************************************************************************/
+/* basic.md — no docclass                                                     */
+/******************************************************************************/
+
+::Method test_basic_generates_pdf
+  res = self~runMd2pdf("basic.md")
+  self~assertEquals(0, res~entry("rc"), "basic.md: md2pdf exits with RC 0")
+
+::Method test_basic_is_valid_pdf
+  res = self~runMd2pdf("basic.md")
+  self~assertPDF(res~entry("pdfFile"), "basic.md")
+
+::Method test_basic_has_one_page
+  res = self~runMd2pdf("basic.md")
+  info = self~pdfInfo(res~entry("pdfFile"))
+  self~assertEquals("1", info~entry("pages"), "basic.md: 1 page")
+
+::Method test_basic_has_title
+  res = self~runMd2pdf("basic.md")
+  info = self~pdfInfo(res~entry("pdfFile"))
+  self~assertEquals("basic", info~entry("title"), -
+    "basic.md: title is 'basic'")
+
+::Method test_basic_contains_text
+  res = self~runMd2pdf("basic.md")
+  text = self~pdfText(res~entry("pdfFile"))
+  self~assertContains(text, "basic test document", -
+    "basic.md: text contains 'basic test document'")
+
+/******************************************************************************/
+/* article.md — docclass article                                              */
+/******************************************************************************/
+
+::Method test_article_generates_pdf
+  res = self~runMd2pdf("article.md")
+  self~assertEquals(0, res~entry("rc"), -
+    "article.md: md2pdf exits with RC 0")
+
+::Method test_article_is_valid_pdf
+  res = self~runMd2pdf("article.md")
+  self~assertPDF(res~entry("pdfFile"), "article.md")
+
+::Method test_article_contains_content
+  res = self~runMd2pdf("article.md")
+  text = self~pdfText(res~entry("pdfFile"))
+  self~assertContains(text, "methods section", -
+    "article.md: text contains 'methods section'")
+
+/******************************************************************************/
+/* chapter.md — docclass chapter                                              */
+/******************************************************************************/
+
+::Method test_chapter_generates_pdf
+  res = self~runMd2pdf("chapter.md")
+  self~assertEquals(0, res~entry("rc"), -
+    "chapter.md: md2pdf exits with RC 0")
+
+::Method test_chapter_is_valid_pdf
+  res = self~runMd2pdf("chapter.md")
+  self~assertPDF(res~entry("pdfFile"), "chapter.md")
+
+/******************************************************************************/
+/* fenced-code.md — highlighted Rexx code                                     */
+/******************************************************************************/
+
+::Method test_fenced_code_generates_pdf
+  res = self~runMd2pdf("fenced-code.md")
+  self~assertEquals(0, res~entry("rc"), -
+    "fenced-code.md: md2pdf exits with RC 0")
+
+::Method test_fenced_code_is_valid_pdf
+  res = self~runMd2pdf("fenced-code.md")
+  self~assertPDF(res~entry("pdfFile"), "fenced-code.md")
+
+::Method test_fenced_code_contains_code
+  res = self~runMd2pdf("fenced-code.md")
+  text = self~pdfText(res~entry("pdfFile"))
+  self~assertContains(text, "Hello, world!", -
+    "fenced-code.md: text contains 'Hello, world!'")
+
+/******************************************************************************/
+/* section-numbers.md — section-numbers: true                                 */
+/******************************************************************************/
+
+::Method test_section_numbers_generates_pdf
+  res = self~runMd2pdf("section-numbers.md")
+  self~assertEquals(0, res~entry("rc"), -
+    "section-numbers.md: md2pdf exits with RC 0")
+
+::Method test_section_numbers_is_valid_pdf
+  res = self~runMd2pdf("section-numbers.md")
+  self~assertPDF(res~entry("pdfFile"), "section-numbers.md")
+
+::Method test_section_numbers_contains_content
+  res = self~runMd2pdf("section-numbers.md")
+  text = self~pdfText(res~entry("pdfFile"))
+  self~assertContains(text, "Second section", -
+    "section-numbers.md: text contains 'Second section'")
+
+/******************************************************************************/
+/* Error cases                                                                */
+/******************************************************************************/
+
+::Method test_nonexistent_file_fails
+  res = self~runMd2pdf("nonexistent.md")
+  self~assertTrue(res~entry("rc") \== 0, -
+    "nonexistent.md: md2pdf exits with non-zero RC")
+
+::Method test_pdf_page_size_is_a4
+  res = self~runMd2pdf("basic.md")
+  info = self~pdfInfo(res~entry("pdfFile"))
+  -- A4 is 594.96 x 841.92 pts
+  pageSize = info~entry("page size")
+  self~assertTrue(pageSize \== .Nil, -
+    "basic.md: pdfinfo reports page size")
+  If pageSize \== .Nil Then
+    self~assertContains(pageSize, "A4", -
+      "basic.md: page size is A4")

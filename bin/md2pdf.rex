@@ -515,6 +515,13 @@ AllWentWell:
   listingsAttrs = captionResult["listingsAttrs"]
   figuresAttrs  = captionResult["figuresAttrs"]
 
+  /* Build chapter attributes for rexxdoc-chapter class                     */
+  chapterNum = opts["chapter"]
+  If chapterNum \== .Nil
+    Then chapterAttrs = ' data-chapter="'chapterNum'"' -
+                        ' style="--chapter-number:' "'"chapterNum"'" '"'
+    Else chapterAttrs = ""
+
   If overrideCSS \== ""
     Then listingsStyle = "<style>" || "0a"x || overrideCSS || "</style>"
     Else listingsStyle = ""
@@ -561,6 +568,7 @@ AllWentWell:
     ~caselessChangeStr("%NumberFigures%",  numberFiguresClass ) -
     ~caselessChangeStr("%ListingsAttrs%",  listingsAttrs      ) -
     ~caselessChangeStr("%FiguresAttrs%",   figuresAttrs       ) -
+    ~caselessChangeStr("%ChapterAttrs%",   chapterAttrs       ) -
     ~caselessChangeStr("%ListingsStyle%",  listingsStyle      ) -
     ~caselessChangeStr("%SectionNumbersHandler%", sectionNumbersHandler)
 
@@ -724,7 +732,7 @@ See myhelp for details.
   <body>
     <div class='container bg-white' lang='en'>
       <div class="row">
-         <div class="content %SectionNumbers% %NumberFigures%"%ListingsAttrs%%FiguresAttrs%>
+         <div class="content %SectionNumbers% %NumberFigures%"%ListingsAttrs%%FiguresAttrs%%ChapterAttrs%>
             %Content%
          </div>
       </div>

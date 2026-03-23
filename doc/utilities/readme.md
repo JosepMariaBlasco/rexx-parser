@@ -22,6 +22,8 @@ and accept `-h` or `--help` to display the same help.
 - [**Identtest**](identtest/) - A self-consistency tool that
   recursively runs the [elident](elident/) and [trident](trident/) tests
   against all Rexx files in a directory tree.
+- [**md2epub**](md2epub/) - A utility program
+  that converts Markdown to EPUB ebooks.
 - [**md2html**](md2html/) - A batch utility program
   to transform a set of Markdown files to HTML.
 - [**md2pdf**](md2pdf/) - A utility program

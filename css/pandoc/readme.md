@@ -53,8 +53,8 @@ rexxpub:
 ---
 ```
 
-The default is `pygments`.  The `md2pdf` pipeline also accepts
-a `--pandoc-highlighting-style` command-line option.
+The default is `pygments`.  The `md2pdf` and `md2epub` pipelines also
+accept a `--pandoc-highlighting-style` command-line option.
 
 See the [YAML front matter documentation](../../doc/rexxpub/yaml/)
 for details.

@@ -274,7 +274,7 @@ TemplateFound:
     Say Time("Long") "Processing" file"..."
     Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, -
       itrace, attributes, continue, sectionNumbers, singleFileMode, -
-      numberFigures
+      numberFigures, highlightStyle
     processed += 1
   End
 
@@ -301,7 +301,7 @@ DoSingleFile:
   Call Directory fileObj~parentFile~absolutePath
   Call ProcessFile fileObj, destDir, fileObj~absolutePath, template, -
     cssbase, jsbase, itrace, attributes, continue, sectionNumbers, -
-    singleFileMode, numberFigures
+    singleFileMode, numberFigures, highlightStyle
 
   Say Copies("-",80)
   Say Time("Long") "Processed 1 file, took" Time("E") "seconds."
@@ -359,7 +359,7 @@ Help:
 ::Routine ProcessFile
   Use Strict Arg file, directory, sourceFn, template, -
     cssbase, jsbase, itrace, attributes, continue, sectionNumbers, -
-    singleFileMode, numberFigures
+    singleFileMode, numberFigures, highlightStyle
 
   filename = file~absolutePath
   name     = FileSpec("Name",filename)
@@ -508,11 +508,20 @@ AllWentWell: Nop
   listingsAttrs = captionResult["listingsAttrs"]
   figuresAttrs  = captionResult["figuresAttrs"]
 
+  /* Build chapter attributes for rexxdoc-chapter class                     */
+  chapterNum = opts["chapter"]
+  If chapterNum \== .Nil Then Do
+    chapterLabel = "'Chapter" chapterNum".'"
+    chapterAttrs = ' data-chapter="'chapterNum'"' -
+                   ' style="--chapter-label:' chapterLabel'"'
+  End
+  Else chapterAttrs = ""
+
   Do line Over template
     Select Case Strip(Lower(line))
       When "%title%"         Then res~append( title )
       When "%header%"        Then Call OptionalCall Header,  res, title
-      When "%contentheader%" Then Call OptionalCall ContentHeader, filename
+      When "%contentheader%" Then Call OptionalCall ContentHeader, filename, filenameSpecificStyle
       When "%contents%"      Then
         Do line Over contents
           res~append( line )
@@ -524,11 +533,21 @@ AllWentWell: Nop
           res~append(                                                       -
             "    <link rel='stylesheet' media='print' href='"printStyle"'>" -
           )
+      When "%markdownstyle%"      Then
+        If \filenameSpecificStyle~caselessStartsWith("print/") Then
+          res~append(                                                       -
+            "    <link rel='stylesheet' href='"cssbase"/markdown.css'>"     -
+          )
       When "%filenamespecificstyle%"      Then
-        If filenameSpecificStyle \== ""   Then
+        If filenameSpecificStyle \== ""   Then Do
+          If filenameSpecificStyle~caselessStartsWith("print/") Then
+            res~append(                                                       -
+              "    <link rel='stylesheet' href='"cssbase"/print/rexxpub-base.css'>" -
+            )
           res~append(                                                       -
             "    <link rel='stylesheet' href='"cssbase"/"filenameSpecificStyle".css'>"   -
           )
+        End
       When "%highlightstyle%"            Then
         If cssbase \== "" Then
           res~append(                                                       -
@@ -542,11 +561,17 @@ AllWentWell: Nop
           res~append(                                                       -
             "    <script src='"jsbase"/numberFigures.js'></script>"         -
           )
+      When "%printsections%"  Then
+        If sectionNumbers > 0, jsbase \== "" Then
+          res~append(                                                       -
+            "    <script src='"jsbase"/numberSections.js'></script>"        -
+          )
       Otherwise res~append( line                                            -
         ~changeStr("%SectionNumbers%", sectionNumbersClass)                 -
         ~changeStr("%NumberFigures%",  numberFiguresClass)                  -
         ~changeStr("%ListingsAttrs%",  listingsAttrs)                       -
         ~changeStr("%FiguresAttrs%",   figuresAttrs)                        -
+        ~changeStr("%ChapterAttrs%",   chapterAttrs)                        -
         ~changeStr("%Language%",       language)                            -
       )
     End

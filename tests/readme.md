@@ -14,10 +14,21 @@ From the `tests/` directory:
 rexx RunTests.rex
 ```
 
-This first runs [`CheckMessages.rex`](CheckMessages.rex), which
-verifies that the error messages in the parser source code are
-consistent with `rexxmsg.xml`. If this check fails, the run aborts
-before executing any suite.
+This performs two sanity checks before running any suite:
+
+1. [`CheckMessages.rex`](CheckMessages.rex) verifies that the error
+   messages in the parser source code are consistent with `rexxmsg.xml`.
+2. [`CheckErrorText.rex`](CheckErrorText.rex) verifies that
+   `bin/ANSI.ErrorText.cls` is up to date with `rexxmsg.xml`.
+
+If either check fails, the run aborts. [`GenErrorText.rex`](GenErrorText.rex)
+is the generator that produces `ANSI.ErrorText.cls` from `rexxmsg.xml`;
+it is called automatically by `CheckErrorText.rex --fix`.
+To auto-regenerate `ANSI.ErrorText.cls` when it is out of date:
+
+```
+rexx RunTests.rex --fix
+```
 
 Then it discovers all `.testGroup` files in `suites/` and runs them.
 
@@ -69,6 +80,36 @@ Documented as comments in `SyntaxErrors.testGroup`:
 - **47.004**: parser raises 47.004, interpreter raises 18.002
   (same mechanism as 47.003).
 - **99.913**: second-pass error, not detectable with earlyCheck options.
+
+Other files
+-----------
+
+- [`test.rex`](test.rex), [`test.md`](test.md) — minimal examples
+  referenced in documentation.
+- [`experimental/`](experimental/) — experimental feature examples
+  (class extensions, WIP Lua-like tables). See
+  [`doc/experimental/`](../doc/experimental/) for documentation.
+
+CGI integration tests
+---------------------
+
+[`cgi/`](cgi/) contains integration tests for `CGI.markdown.rex`.
+These are **not** run by `RunTests.rex` — they require a running
+Apache instance. See [`cgi/readme.md`](cgi/readme.md) for setup
+instructions and test details (39 tests covering response structure,
+YAML options, docclass handling, fenced code, URL parameters,
+print=pdf, and view=highlight).
+
+PDF integration tests
+---------------------
+
+[`pdf/`](pdf/) contains integration tests for `md2pdf.rex`.
+These are **not** run by `RunTests.rex` — they require Pandoc,
+pagedjs-cli, and poppler-utils. See [`pdf/readme.md`](pdf/readme.md)
+for setup instructions and test details (18 tests covering PDF
+generation, validation, content extraction, docclass handling,
+fenced code, section numbers, error handling, and page size).
+
 
 See also
 --------

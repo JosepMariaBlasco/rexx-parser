@@ -46,7 +46,9 @@ Utilities and samples
   - [ERexx](utilities/erexx/)
   - [Highlight](utilities/highlight/)
   - [IdentTest](utilities/identtest/)
+  - [md2epub](utilities/md2epub/)
   - [md2html](utilities/md2html/)
+  - [md2pdf](utilities/md2pdf/)
   - [RxCheck](utilities/rxcheck/)
   - [TrIdent](utilities/trident/)
 - [Sample programs](samples/)
@@ -80,5 +82,3 @@ Related ooRexx bugs
 -------------------
 
 - [Related ooRexx bugs](oorexx-bugs/).
-
-

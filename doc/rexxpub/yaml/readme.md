@@ -5,8 +5,9 @@ RexxPub can read configuration options from the YAML front matter
 block of a Markdown document, in addition to (or instead of) command-line
 options, URL parameters, or program defaults.
 
-This feature is available in all three RexxPub pipelines: the CGI
-(Serve and Print), `md2html` (Build), and `md2pdf` (Render).
+This feature is available in all four RexxPub pipelines: the CGI
+(Serve and Print), `md2html` (Build), `md2pdf` (Render), and
+`md2epub` (EPUB generation).
 
 Syntax
 ------

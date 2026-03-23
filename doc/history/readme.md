@@ -55,6 +55,10 @@ Version history
   <li> Add support for per-file CSS in <code>md2pdf</code> (20260314).
   <li> md2pdf: allow specifying path in --csl (20260315).
   <li> Refactor test suite to use ooRexxUnit, add new tests (20260315-17).
+  <li> Add a new rexxdoc-chapter documentclass (20260323).
+  <li> New [md2epub](../utilities/md2epub/) utility for EPUB generation (20260323).
+  <li> CGI integration tests: 39 tests for CGI.markdown.rex with interactive runner (20260323).
+  <li> PDF integration tests: 18 tests for md2pdf.rex with interactive runner (20260323).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

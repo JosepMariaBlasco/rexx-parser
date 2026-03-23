@@ -18,8 +18,8 @@
 /*                                                                            */
 /******************************************************************************/
 
-::Requires "Http.Request.cls"
-::Requires "Http.Response.cls"
+::Requires "HTTP.Request.cls"
+::Requires "HTTP.Response.cls"
 ::Requires "Array.OutputStream.cls"
 
 /******************************************************************************/

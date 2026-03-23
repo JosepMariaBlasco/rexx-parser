@@ -193,6 +193,7 @@ Exit
   Else If URI~endsWith(  "slides.md" ) Then URI = Left(URI, Length(URI) -  9)
   Else If URI~endsWith(  "letter.md" ) Then URI = Left(URI, Length(URI) -  9)
   Else If URI~endsWith( "article.md" ) Then URI = Left(URI, Length(URI) - 10)
+  Else If URI~endsWith( "rexxdoc-chapter.md" ) Then URI = Left(URI, Length(URI) - 18)
 
   fileLocation = FileSpec("Location",file)
   fileName     = FileSpec("Name",    file)
@@ -207,11 +208,12 @@ Exit
   ------------------------------------------------------------------------------
 
   Select Case FileSpec("Name",file)
-    When "book.md"    Then filenameSpecificStyle = "print/book"
-    When "slides.md"  Then filenameSpecificStyle = "print/slides"
-    When "article.md" Then filenameSpecificStyle = "print/article"
-    When "letter.md"  Then filenameSpecificStyle = "print/letter"
-    Otherwise              filenameSpecificStyle = "markdown"
+    When "book.md"             Then filenameSpecificStyle = "print/book"
+    When "slides.md"           Then filenameSpecificStyle = "print/slides"
+    When "article.md"          Then filenameSpecificStyle = "print/article"
+    When "letter.md"           Then filenameSpecificStyle = "print/letter"
+    When "rexxdoc-chapter.md"  Then filenameSpecificStyle = "print/rexxdoc-chapter"
+    Otherwise                       filenameSpecificStyle = "markdown"
   End
 
   printStyle = Stream(file".css","c","Q exists")
@@ -247,7 +249,7 @@ Exit
   -- docclass: YAML overrides filename inference
   If opts["docclass"] \== .Nil Then Do
     yamlDocClass = opts["docclass"]
-    validClasses = "article book letter slides"
+    validClasses = "article book letter slides rexxdoc-chapter"
     If validClasses~caselessWordPos(yamlDocClass) > 0 Then
       filenameSpecificStyle = "print/"yamlDocClass
   End
@@ -358,12 +360,21 @@ Exit
   listingsAttrs = captionResult["listingsAttrs"]
   figuresAttrs  = captionResult["figuresAttrs"]
 
+  /* Build chapter attributes for rexxdoc-chapter class                     */
+  chapterNum = opts["chapter"]
+  If chapterNum \== .Nil Then Do
+    chapterLabel = "'Chapter" chapterNum".'"
+    chapterAttrs = ' data-chapter="'chapterNum'"' -
+                   ' style="--chapter-label:' chapterLabel'"'
+  End
+  Else chapterAttrs = ""
+
   template = .Resources~HTML
 
   Do line Over template
     Select Case Strip(Lower(line))
       When "%title%"         Then Say title
-      When "%contentheader%" Then Call OptionalCall ContentHeader, uri, file
+      When "%contentheader%" Then Call OptionalCall ContentHeader, uri, file, filenameSpecificStyle
       When "%header%"        Then Call OptionalCall PageHeader, HTMLTitle
       When "%contents%"      Then Do line Over contents; Say line; End
       When "%footer%"        Then Call OptionalCall PageFooter
@@ -411,6 +422,7 @@ Exit
                         ~changeStr("%NumberFigures%",  numberFiguresClass)  -
                         ~changeStr("%ListingsAttrs%",  listingsAttrs)       -
                         ~changeStr("%FiguresAttrs%",   figuresAttrs)        -
+                        ~changeStr("%ChapterAttrs%",   chapterAttrs)        -
                         ~changeStr("%Language%",       language)
     End
   End
@@ -458,7 +470,7 @@ Hack:
 OptionalCall: Procedure
   Signal On Syntax Name OptionalRoutineMissing
   routineName = Markdown"."Arg(1)
-  Call (routineName) Arg(2), Arg(3)
+  Call (routineName) Arg(2), Arg(3), Arg(4)
   Return
 OptionalRoutineMissing:
   code = Condition("O")~code
@@ -583,7 +595,7 @@ View:
       <div class='row'>
         <div class='col-md-9'>
           %contentheader%
-          <div class='content %SectionNumbers% %NumberFigures%'%ListingsAttrs%%FiguresAttrs%>
+          <div class='content %SectionNumbers% %NumberFigures%'%ListingsAttrs%%FiguresAttrs%%ChapterAttrs%>
             %contents%
           </div>
         </div>

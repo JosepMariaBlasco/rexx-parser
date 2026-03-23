@@ -443,19 +443,27 @@ YAML front matter {.newpage}
 RexxPub options can be specified directly in the Markdown source,
 inside the YAML front matter block at the beginning of the file.
 This allows the author to fix structural options --- such as section
-numbering depth, font size, or figure numbering --- as part of the
-document itself, rather than relying on command-line options or URL
-parameters.
+numbering depth, font size, document class, or figure numbering ---
+as part of the document itself, rather than relying on command-line
+options or URL parameters.
 
 ```
 ---
 bibliography: references.bib
 rexxpub:
+  docclass: article
   section-numbers: 3
   number-figures: true
   size: 12
 ---
 ```
+
+The `docclass` option specifies the document class independently of
+the filename.  This allows a file with any name --- for example,
+`my-paper.md` --- to be rendered as an article without needing the
+`--docclass` command-line flag.  When `docclass` is not specified,
+the class is inferred from the filename as usual (`article.md` uses
+`article`, `book.md` uses `book`, etc.).
 
 Options specified in the YAML front matter take precedence over
 command-line and URL parameters for structural settings, ensuring

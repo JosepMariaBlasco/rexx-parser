@@ -78,7 +78,7 @@
 
 ::Routine MarkDown.ContentHeader Public
 
-  Parse Arg before"/"after, file
+  Parse Arg before"/"after, file, filenameSpecificStyle
 
   pad = "          "
 
@@ -121,7 +121,7 @@
   Say array
   Say pad'    </select>'
   Say pad'  </div>'
-If Words(name) == 1, WordPos(name, "article.md book.md letter.md slides.md") > 0 Then Do
+If filenameSpecificStyle~caselessStartsWith("print/") Then Do
   Say pad'  <div class="form-group" style="margin-left: 20px;">'
   Say pad'    <button type="button" class="btn btn-default" id="print-button">'
   Say pad'      <span class="glyphicon glyphicon-print" aria-hidden="true"></span> Print'
@@ -269,6 +269,7 @@ Crumb:
     When doc"/utilities/highlight" Then Return "Highlight"
     When doc"/utilities/elements"  Then Return "Elements"
     When doc"/utilities/elident"   Then Return "Elident"
+    When doc"/utilities/md2epub"   Then Return "Md2epub"
     When doc"/utilities/md2html"   Then Return "Md2html"
     When doc"/utilities/md2pdf"    Then Return "Md2pdf"
     When doc"/utilities/trident"   Then Return "Trident"
@@ -291,6 +292,7 @@ Crumb:
     When docrexxpub"/letter"       Then Return "Letter to the Rexx Community"
     When docrexxpub"/slides"       Then Return "The slides Document Class"
     When docrexxpub"/book"         Then Return "The RexxPub book"
+    When docrexxpub"/rexxdoc-chapter" Then Return "The rexxdoc-chapter Document class"
     When docrexxpub"/yaml"         Then Return "YAML Front Matter"
     When docrexxpub"/bibliography" Then Return "The RexxPub Bibliography Style"
 

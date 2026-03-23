@@ -101,14 +101,15 @@ Usage with RexxPub
 ------------------
 
 RexxPub uses Pandoc internally for bibliography processing.  The
-`md2pdf` utility passes `--csl` to Pandoc automatically; the default
-style is `rexxpub`.  To use a different style, pass the `--csl`
-option on the command line with a style name (looked up in the `csl/`
-directory) or a full path to a `.csl` file:
+`md2pdf` and `md2epub` utilities pass `--csl` to Pandoc automatically;
+the default style is `rexxpub`.  To use a different style, pass the
+`--csl` option on the command line with a style name (looked up in the
+`csl/` directory) or a full path to a `.csl` file:
 
 <pre>
 [rexx] md2pdf --csl ieee article
 [rexx] md2pdf --csl /path/to/mystyle.csl article
+[rexx] md2epub --csl ieee article
 </pre>
 
 For the CGI and md2html pipelines, reference the CSL file from the

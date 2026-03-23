@@ -1,5 +1,7 @@
 pack.rex
 doc/print/
 doc/publications/37
+*.war
 *.deb
 *.zip
+*.gz
