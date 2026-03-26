@@ -368,6 +368,14 @@ If .rxcheck.debug = 1 Then Trace ?a
           If Pos(Upper(letter), type) == 0 Then Signal 24.001
         End
       End
+      When "F" Then Do
+        letter = Strip(Left(value, 1))
+        If Pos(Upper(letter), type) == 0 Then Do
+          letter = value
+          type = '"force", "Force", "f", "F"'
+          Signal 40.904
+        End
+      End
       When "AENO", "ACDEIORS", "BDEFILMNOSTUW", "BDEFINOSTU", "CEFHLMNORST", "CFHLMNOST", "CN", "CDEGOS", "DELNP", "SDC" Then Do
         letter = Left(value, 1)
         If Pos(Upper(letter), type) == 0 Then Signal 40.904

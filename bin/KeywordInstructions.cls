@@ -82,6 +82,7 @@
 
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Expressions.cls"
+::Requires "Globals.cls"
 
 /******************************************************************************/
 /* ADDRESS instruction                                                        */
@@ -170,7 +171,7 @@ With:
         next = TheElementAfter( element )
         If next < .EL.END_OF_CLAUSE Then Signal 35.935
         element = next
-        If element < .ALL.SYMBOLS_AND_STRINGS Then
+        If element < .ALL.CONSTANT_SYMBOLS_AND_STRINGS Then
           options.[tValue"_"eValue] = element
         Else Do
           If element \< .EL.LEFT_PARENTHESIS Then Signal 35.001
@@ -666,12 +667,6 @@ ProcessArguments:
     If element < .EL.END_OF_CLAUSE Then Signal (missing.tValue)
 
     Select Case tValue
-      When "ARGUMENTS", "NAMEDARGUMENTS" Then Do
-        Call PrepareExpression package, element, keywords
-        expression = Expression.List( package, element )
-        element = expression~end
-        options.tValue = expression
-      End
       When "ARRAY" Then Do
         If element \< .EL.LEFT_PARENTHESIS Then Signal 35.924
         next = TheElementAfter( element )
@@ -680,7 +675,7 @@ ProcessArguments:
         element = TheElementAfter(expression~end)
         options.tValue = expression
       End
-      Otherwise Do
+      Otherwise Do -- Includes ARGUMENTS and NAMEDARGUMENTS
         If element < .ALL.CONSTANT_SYMBOLS_AND_STRINGS Then Do
           options.tValue = element
           element = TheElementAfter( element, ignoreBlanks )
@@ -1581,7 +1576,7 @@ NextElement:
   Return
 
 Expression:
-  If element < .ALL.SYMBOLS_AND_STRINGS Then Do
+  If element < .ALL.CONSTANT_SYMBOLS_AND_STRINGS Then Do
     value = element
     Call NextElement -- Consume element
     Return value
@@ -1988,8 +1983,18 @@ Expression:
     Signal Processed
   End
 
+  If element < (.EL.OP.MINUS || .EL.OP.PLUS), elements~size == 3 Then Do
+    theSign              = element
+    element              = TheElementAfter( element )
+    theNumber            = element
+    options.signedNumber = theSign, theNumber
+    numberToCheck        = theSign~value theNumber~value
+    If \DataType(numberToCheck,"W") Then Signal 26.007
+  End
+
   If element < .ALL.NUMBERS Then Do
     options.number = element
+    If \DataType(element~value,"W") Then Signal 24.001
     element = TheElementAfter( element, ignoreBlanks )
     Signal Processed
   End
@@ -2032,6 +2037,9 @@ Done:
 
 -- TRACE request letter must be one of "ACEFILNOR"; found "&1".
 24.001: Syntax( 24.001, TRACE, value[1] )
+
+-- Number used in TRACE setting must be a whole number; found "&1".
+26.007: Syntax( 26.007, TRACE, theNumber )
 
 -- Missing expression following VALUE keyword of a TRACE instruction.
 35.916: Syntax( 35.916, TRACE )
@@ -2605,6 +2613,25 @@ GetASymbol:
       End
       When element < .ALL.STRINGS Then
         template~append(element)
+      When element < .EL.ENVIRONMENT_SYMBOL Then Do
+        -- An environment symbol can be the start of a message term target
+        -- (e.g., .local~myvar). Check for a following message send operator.
+        next = element~next
+        If next \== .Nil, next < .ALL.OPS.MESSAGE_SEND Then Do
+          term = Symbol.Term( package, element )
+          term = Simple.Message.Term( package, term )
+          element = term~end
+          If element < .ALL.WHITESPACE_LIKE Then Do
+            element~ignorable = 1
+            ignoreBlanks = .True
+            element = TheElementAfter( element, ignoreBlanks )
+          End
+          template~append(term)    -- target (message term)
+          Iterate
+        End
+        -- Env symbol without message send: not a valid template element
+        Signal 38.001
+      End
       When element < .ALL.SYMBOLS Then Do
         If \DataType(element~value,"I") Then Signal 26.004
         template~append(element)

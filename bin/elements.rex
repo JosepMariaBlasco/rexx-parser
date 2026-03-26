@@ -241,6 +241,7 @@ Syntax:
 --------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"
+::Requires "Globals.cls"
 ::Requires "ErrorHandler.cls"
 ::Requires "CLISupport.cls"
 ::Requires "BaseClassesAndRoutines.cls"

@@ -1,0 +1,372 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* GrammarCrossCheck.testGroup - Regression tests for grammar cross-check     */
+/* ====================================================================       */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260323    0.5  First version. Regression tests for two bugs found        */
+/*                  during grammar cross-check (session 16):                  */
+/*                  1. ADDRESS WITH STREAM/USING accepted var_symbols         */
+/*                     (should only accept taken_constant or (expression))    */
+/*                  2. PARSE template did not accept env_symbol~message       */
+/*                     as a target (e.g., .local~foo)                         */
+/* 20260324    0.5  Bug 3: RAISE expression contexts accepted var_symbols     */
+/*                  (should only accept string_const_or_env or (expression)). */
+/*                  Fix: ALL.SYMBOLS_AND_STRINGS → ALL.CONSTANT_SYMBOLS_AND_  */
+/*                  STRINGS in Raise.Instruction local Expression routine.    */
+/*                  Bug 4: FORWARD ARGUMENTS/NAMEDARGUMENTS accepted          */
+/*                  var_symbols and used Expression.List instead of the       */
+/*                  string_const_or_env | (expression) pattern used by        */
+/*                  MESSAGE/CLASS/TO. Fix: replaced Expression.List with      */
+/*                  ALL.CONSTANT_SYMBOLS_AND_STRINGS + SubExpression.         */
+/*                  Bug 5: GC option argument ("oF" type) not validated.      */
+/*                  Fix: BIFs.cls, CheckBIFArgs, added When "F" clause.       */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.GrammarCrossCheck.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "ParserTestCase.cls"
+
+::Class GrammarCrossCheck.testGroup Subclass ParserTestCase Public
+
+/******************************************************************************/
+/* Bug 1: ADDRESS WITH STREAM/USING value type                                */
+/*                                                                            */
+/* STREAM and USING accept: taken_constant (string, const_symbol, env_symbol) */
+/* or (expression). They must NOT accept var_symbols.                         */
+/* STEM continues to require a stem variable.                                 */
+/******************************************************************************/
+
+-- ADDRESS WITH ... STREAM: valid forms
+-- Uses parserOnly because the commands are platform-dependent
+::Method test_address_stream_ok
+  -- String literal
+  self~parserOnly("address '' 'echo hi' with output stream '/dev/null'",     -
+    "STREAM string literal")
+  -- Const symbol (number)
+  self~parserOnly("address '' 'echo hi' with output stream 123",             -
+    "STREAM const_symbol")
+  -- Environment symbol
+  self~parserOnly("address '' 'echo hi' with output stream .stdout",         -
+    "STREAM env_symbol")
+  -- Parenthesized expression
+  self~parserOnly("address '' 'echo hi' with output stream (fn)",            -
+    "STREAM (expression)")
+
+-- ADDRESS WITH ... STREAM: invalid forms (var_symbol must be rejected)
+::Method test_address_stream_error
+  self~parserError(35.001,                                                   -
+    "address '' 'echo hi' with output stream fn")
+  self~parserError(35.001,                                                   -
+    "address '' 'echo hi' with input stream fn")
+  self~parserError(35.001,                                                   -
+    "address '' 'echo hi' with error stream fn")
+
+-- ADDRESS WITH ... USING: valid forms
+::Method test_address_using_ok
+  -- String literal
+  self~parserOnly("address '' 'echo hi' with output using 'obj'",            -
+    "USING string literal")
+  -- Const symbol
+  self~parserOnly("address '' 'echo hi' with output using 123",              -
+    "USING const_symbol")
+  -- Environment symbol
+  self~parserOnly("address '' 'echo hi' with output using .stdout",          -
+    "USING env_symbol")
+  -- Parenthesized expression
+  self~parserOnly("address '' 'echo hi' with output using (a)",              -
+    "USING (expression)")
+
+-- ADDRESS WITH ... USING: invalid forms (var_symbol must be rejected)
+::Method test_address_using_error
+  self~parserError(35.001,                                                   -
+    "address '' 'echo hi' with output using b")
+  self~parserError(35.001,                                                   -
+    "address '' 'echo hi' with input using b")
+  self~parserError(35.001,                                                   -
+    "address '' 'echo hi' with error using b")
+
+-- ADDRESS WITH STEM: must be a stem variable (unchanged, sanity check)
+::Method test_address_stem
+  self~parserOnly("v. = ''; address '' 'echo hi' with output stem v.",       -
+    "STEM stem_var")
+  self~parserError(20.932,                                                   -
+    "address '' 'echo hi' with output stem x")
+
+/******************************************************************************/
+/* Bug 2: PARSE template env_symbol~message targets                           */
+/*                                                                            */
+/* Template targets can be:                                                   */
+/*   - var_symbol (optionally followed by message sends)                      */
+/*   - env_symbol followed by one or more message sends                       */
+/*   - '.' (placeholder)                                                      */
+/* An env_symbol WITHOUT a message send is NOT a valid target.                */
+/*                                                                            */
+/* Note: parserOnly is used for OK cases because runtime may fail             */
+/* (object may not support the assignment message, e.g., "LENGTH=").          */
+/******************************************************************************/
+
+-- PARSE template: basic targets (sanity checks)
+::Method test_parse_target_basic
+  self~parserOK("parse value 'hello world' with x rest",                     -
+    "var_symbol target")
+  self~parserOK("parse value 'hello world' with . rest",                     -
+    "placeholder target")
+  self~parserOK("parse value 'hello:world' with x ':' rest",                 -
+    "string pattern")
+  self~parserOK("parse value 'hello world' with 1 x 6 rest",                -
+    "numeric positional")
+
+-- PARSE template: var_symbol with message sends
+::Method test_parse_target_var_message
+  self~parserOnly("parse value 'hello' with x~strip",                        -
+    "var~method target")
+  self~parserOnly("parse value 'hello' with x~strip~left(3)",                -
+    "var~method~method(args) target")
+  self~parserOnly("parse value 'hello' with a[1]",                           -
+    "var[n] target")
+  self~parserOnly("parse value 'hello' with a[1][2]",                        -
+    "var[n][n] target")
+  self~parserOnly("parse value 'hello' with a[1]~strip",                     -
+    "var[n]~method target")
+
+-- PARSE template: env_symbol with message sends (the bug fix)
+::Method test_parse_target_env_message
+  self~parserOnly(                                                           -
+    ".local~foo = 'x'; parse value 'hello' with .local~foo",                 -
+    ".local~foo target")
+  self~parserOnly(                                                           -
+    ".local~foo = 'x'; parse value 'hello' with .environment~foo",           -
+    ".environment~foo target")
+  self~parserOnly(                                                           -
+    ".local~foo = 'x'; parse value 'hello world' with .local~foo rest",      -
+    ".local~foo with rest target")
+  self~parserOnly(                                                           -
+    ".local~foo = 'x'; parse value 'hello' with .local~~foo",                -
+    ".local~~foo target")
+
+-- PARSE template: env_symbol WITHOUT message send must be rejected
+-- Note: ooRexx gives 31.003, parser gives 38.001. This is a known
+-- divergence (the parser catches it at the template level, the
+-- interpreter catches it at the variable validation level).
+::Method test_parse_target_env_no_message
+  -- Can't use parserError here due to error code divergence (31.003 vs 38.001)
+  -- Instead, verify the parser rejects it
+  Signal On Syntax Name Caught
+  .Rexx.Parser~new("",                                                       -
+    "parse value 'hello' with .local",                                       -
+    .Array~of( (earlyCheck, (BIFs, SIGNAL, GUARD, LEAVE, ITERATE)) )         -
+  )~package
+  self~assertTrue(.False, "env_symbol alone — expected error from parser")
+  Return
+Caught:
+  self~assertTrue(.True, "env_symbol alone — correctly rejected by parser")
+
+-- PARSE template: const_symbol~message must be rejected (number has
+-- precedence as positional pattern, ~ is not valid after a positional)
+::Method test_parse_target_const_message
+  self~parserError(38.001, "parse value '3' with 123~length")
+
+-- PARSE template: length positional patterns (> and <)
+::Method test_parse_length_positional
+  self~parserOnly("parse value 'helloworld' with >5 x",                      -
+    ">n length forward")
+  self~parserOnly("parse value 'helloworld' with <3 x",                      -
+    "<n length backward")
+  self~parserOnly("n = 5; parse value 'helloworld' with >(n) x",             -
+    ">(expr) length positional")
+
+-- PARSE template: full expressions in parenthesized patterns/positions
+::Method test_parse_expression_in_parens
+  self~parserOnly(                                                           -
+    "parse value 'hello:world' with x (':'||'') rest",                       -
+    "(expression) as pattern")
+  self~parserOnly(                                                           -
+    "parse value 'helloworld' with =(length('hello')) rest",                 -
+    "=(function call) as positional")
+
+/******************************************************************************/
+/* Bug 3: RAISE expression contexts accepted var_symbols                      */
+/*                                                                            */
+/* All RAISE expression contexts (errorcode, ADDITIONAL, DESCRIPTION,         */
+/* EXIT, RETURN) accept: string, const_symbol, env_symbol, or (expression).   */
+/* They must NOT accept var_symbols — a var_symbol must be parenthesized.     */
+/*                                                                            */
+/* Ref: rexxref §2.24; confirmed by ooRexx 5.2.0 interpreter (Error 35.1).    */
+/* Fix: KeywordInstructions.cls, Raise.Instruction local Expression routine,  */
+/*      ALL.SYMBOLS_AND_STRINGS → ALL.CONSTANT_SYMBOLS_AND_STRINGS.           */
+/******************************************************************************/
+
+-- RAISE errorcode: valid forms
+::Method test_raise_errorcode_ok
+  self~parserOnly("raise syntax 40.1",                                       -
+    "RAISE SYNTAX const_symbol")
+  self~parserOnly('raise syntax "40.1"',                                     -
+    "RAISE SYNTAX string")
+  self~parserOnly("raise error .myerr",                                      -
+    "RAISE ERROR env_symbol")
+  self~parserOnly("x = 40.1; raise syntax (x)",                              -
+    "RAISE SYNTAX (expression)")
+  self~parserOnly("raise failure 0",                                         -
+    "RAISE FAILURE const_symbol")
+
+-- RAISE errorcode: var_symbol must be rejected
+::Method test_raise_errorcode_error
+  self~parserError(35.001, "x = 40; raise syntax x")
+  self~parserError(35.001, "x = 0; raise error x")
+  self~parserError(35.001, "x = 0; raise failure x")
+
+-- RAISE ADDITIONAL: valid forms
+::Method test_raise_additional_ok
+  self~parserOnly("raise syntax 40.1 additional 'info'",                     -
+    "ADDITIONAL string")
+  self~parserOnly("raise syntax 40.1 additional .nil",                       -
+    "ADDITIONAL env_symbol")
+  self~parserOnly("x = 'info'; raise syntax 40.1 additional (x)",            -
+    "ADDITIONAL (expression)")
+
+-- RAISE ADDITIONAL: var_symbol must be rejected
+::Method test_raise_additional_error
+  self~parserError(35.001, "x = 'info'; raise syntax 40.1 additional x")
+
+-- RAISE DESCRIPTION: valid forms
+::Method test_raise_description_ok
+  self~parserOnly("raise syntax 40.1 description 'oops'",                    -
+    "DESCRIPTION string")
+  self~parserOnly("raise syntax 40.1 description .nil",                      -
+    "DESCRIPTION env_symbol")
+  self~parserOnly("x = 'oops'; raise syntax 40.1 description (x)",           -
+    "DESCRIPTION (expression)")
+
+-- RAISE DESCRIPTION: var_symbol must be rejected
+::Method test_raise_description_error
+  self~parserError(35.001, "x = 'oops'; raise syntax 40.1 description x")
+
+-- RAISE EXIT/RETURN: valid forms
+::Method test_raise_exit_return_ok
+  self~parserOnly("raise syntax 40.1 exit 0",                                -
+    "EXIT const_symbol")
+  self~parserOnly("raise syntax 40.1 exit 'done'",                           -
+    "EXIT string")
+  self~parserOnly("x = 0; raise syntax 40.1 exit (x)",                       -
+    "EXIT (expression)")
+  self~parserOnly("raise syntax 40.1 return 0",                              -
+    "RETURN const_symbol")
+  self~parserOnly("raise syntax 40.1 return 'done'",                         -
+    "RETURN string")
+  self~parserOnly("x = 0; raise syntax 40.1 return (x)",                     -
+    "RETURN (expression)")
+
+-- RAISE EXIT/RETURN: var_symbol must be rejected
+::Method test_raise_exit_return_error
+  self~parserError(35.001, "x = 0; raise syntax 40.1 exit x")
+  self~parserError(35.001, "x = 0; raise syntax 40.1 return x")
+
+/******************************************************************************/
+/* Bug 4: FORWARD ARGUMENTS/NAMEDARGUMENTS accepted var_symbols               */
+/*                                                                            */
+/* FORWARD options (MESSAGE, CLASS, TO, ARGUMENTS, NAMEDARGUMENTS) all accept */
+/* string_const_or_env or (expression). They must NOT accept var_symbols.     */
+/* MESSAGE/CLASS/TO were already correct; ARGUMENTS and NAMEDARGUMENTS used   */
+/* Expression.List, which accepts any expression including var_symbols.       */
+/*                                                                            */
+/* Ref: rexxref §2.8; confirmed by ooRexx 5.2.0 interpreter (Error 35.1).     */
+/* Fix: KeywordInstructions.cls, Forward.Instruction, replaced                */
+/*      Expression.List with CONSTANT_SYMBOLS_AND_STRINGS + SubExpression.    */
+/******************************************************************************/
+
+-- FORWARD ARGUMENTS: valid forms
+::Method test_forward_arguments_ok
+  self~parserOnly("::class T; ::method m; forward arguments .nil",           -
+    "ARGUMENTS env_symbol")
+  self~parserOnly("::class T; ::method m; forward arguments 'hello'",        -
+    "ARGUMENTS string")
+  self~parserOnly("::class T; ::method m; forward arguments (args)",         -
+    "ARGUMENTS (expression)")
+
+-- FORWARD ARGUMENTS: var_symbol must be rejected
+::Method test_forward_arguments_error
+  self~parserError(35.001,                                                   -
+    "::class T; ::method m; forward arguments args")
+
+-- FORWARD MESSAGE/CLASS/TO: valid forms (sanity checks — these were
+-- already correct before the fix, but verify for completeness)
+::Method test_forward_message_class_to_ok
+  self~parserOnly("::class T; ::method m; forward message 'run'",            -
+    "MESSAGE string")
+  self~parserOnly("::class T; ::method m; forward message (msg)",            -
+    "MESSAGE (expression)")
+  self~parserOnly("::class T; ::method m; forward class .string",            -
+    "CLASS env_symbol")
+  self~parserOnly("::class T; ::method m; forward class (cls)",              -
+    "CLASS (expression)")
+  self~parserOnly("::class T; ::method m; forward to .stdout",               -
+    "TO env_symbol")
+  self~parserOnly("::class T; ::method m; forward to (target)",              -
+    "TO (expression)")
+
+-- FORWARD MESSAGE/CLASS/TO: var_symbol must be rejected
+::Method test_forward_message_class_to_error
+  self~parserError(35.001,                                                   -
+    "::class T; ::method m; forward message msg")
+  self~parserError(35.001,                                                   -
+    "::class T; ::method m; forward class cls")
+  self~parserError(35.001,                                                   -
+    "::class T; ::method m; forward to target")
+
+/******************************************************************************/
+/* Bug 5: GC option argument not validated                                    */
+/*                                                                            */
+/* GC accepts an optional argument that must start with 'F' or 'f' (the       */
+/* abbreviation convention for 'Force'). BIFs.cls defined the type as "oF",   */
+/* but CheckBIFArgs did not handle the "F" type, so invalid options like      */
+/* GC("X") or GC("") were not caught by early checking.                       */
+/*                                                                            */
+/* Ref: rexxref §7.4.35; confirmed by ooRexx 5.2.0 interpreter (Error         */
+/* 40.904: GC argument 1 must be one of "force", "Force", "f", "F").          */
+/* Fix: BIFs.cls, CheckBIFArgs, added When "F" clause.                        */
+/******************************************************************************/
+
+-- GC: valid forms
+::Method test_gc_ok
+  self~parserOnly("say GC()",                                                -
+    "GC no args")
+  self~parserOnly("say GC('F')",                                             -
+    "GC 'F'")
+  self~parserOnly("say GC('f')",                                             -
+    "GC 'f'")
+  self~parserOnly("say GC('Force')",                                         -
+    "GC 'Force'")
+  self~parserOnly("say GC('force')",                                         -
+    "GC 'force'")
+  self~parserOnly("say GC('Foobar')",                                        -
+    "GC 'Foobar' (only first char checked)")
+
+-- GC: invalid option must be rejected
+::Method test_gc_error
+  self~parserError(40.904, "say GC('X')")
+  self~parserError(40.904, "say GC('')")
+  self~parserError(40.904, "say GC('G')")
+
+-- GC: too many arguments
+::Method test_gc_too_many_args
+  self~parserError(40.004, "say GC('F', 'extra')")
