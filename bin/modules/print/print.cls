@@ -23,7 +23,7 @@
 loader =                                                ,
   .File~new(.context~package~name)~parentFile~parent || ,
   .File~separator"Load.Parser.Module.rex"
-Call (loader) "BaseClassesAndRoutines"
+Call (loader) "BaseClassesAndRoutines", 1
 
 /******************************************************************************/
 /* MAKEARRAY Methods                                                          */
