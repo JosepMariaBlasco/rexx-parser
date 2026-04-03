@@ -49,6 +49,12 @@ Else
   options.style = "dark"
   Return options.
 
+::Method docbookOptions Private
+  options. = 0
+  options.mode = "DOCBOOK"
+  options.style = "print"
+  Return options.
+
 ::Method highlight Private
   Use Arg source, options., patch = .nil
   hl = .Highlighter~new("test", source, options.)
@@ -761,6 +767,227 @@ Else
   patched = self~highlight(.Array~of('Say "Hello"'), options., patch)
   self~assertTrue(patched~pos('38;2;255;0;0;') > 0, -
     "ANSI patch: red color appears as SGR 38;2;255;0;0")
+
+/******************************************************************************/
+/* DocBook: basic highlighting                                                */
+/******************************************************************************/
+
+::Method test_docbook_basic_returns_array
+  options. = self~docbookOptions
+  source = .Array~of('Say "Hello"')
+  hl = .Highlighter~new("test", source, options.)
+  res = hl~parse
+  self~assertTrue(res~isA(.Array), -
+    "DocBook basic: returns an array")
+
+::Method test_docbook_basic_has_rexx_kw
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("<rexx_kw>") > 0, -
+    "DocBook basic: contains <rexx_kw> element")
+
+::Method test_docbook_basic_has_closing_tag
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("</rexx_kw>") > 0, -
+    "DocBook basic: contains </rexx_kw> closing tag")
+
+::Method test_docbook_basic_kw_content
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("<rexx_kw>Say</rexx_kw>") > 0, -
+    "DocBook basic: keyword Say wrapped correctly")
+
+::Method test_docbook_basic_no_html_div
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('<div') == 0, -
+    "DocBook basic: no HTML div tags")
+
+::Method test_docbook_basic_no_html_span
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~caselessPos('<span') == 0, -
+    "DocBook basic: no HTML span tags")
+
+::Method test_docbook_basic_no_esc
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("1B"x) == 0, -
+    "DocBook basic: no ANSI escape sequences")
+
+/******************************************************************************/
+/* DocBook: element naming                                                    */
+/******************************************************************************/
+
+::Method test_docbook_element_comment
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('/* comment */'), options.)
+  self~assertTrue(flat~pos("<rexx_cm>") > 0, -
+    "DocBook naming: comment uses <rexx_cm>")
+
+::Method test_docbook_element_variable
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('x = 1'), options.)
+  self~assertTrue(flat~pos("<rexx_var>x</rexx_var>") > 0, -
+    "DocBook naming: variable uses <rexx_var>")
+
+::Method test_docbook_element_assignment
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('x = 1'), options.)
+  self~assertTrue(flat~pos("<rexx_asg>=</rexx_asg>") > 0, -
+    "DocBook naming: assignment uses <rexx_asg>")
+
+::Method test_docbook_element_operator
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
+  self~assertTrue(flat~pos("<rexx_op>+</rexx_op>") > 0, -
+    "DocBook naming: operator uses <rexx_op>")
+
+::Method test_docbook_element_string
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hi"'), options.)
+  self~assertTrue(flat~pos("<rexx_str>Hi</rexx_str>") > 0, -
+    "DocBook naming: string content uses <rexx_str>")
+
+::Method test_docbook_element_string_oquo
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hi"'), options.)
+  self~assertTrue(flat~pos("<rexx_str_oquo>") > 0, -
+    "DocBook naming: opening quote uses <rexx_str_oquo>")
+
+::Method test_docbook_element_string_cquo
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hi"'), options.)
+  self~assertTrue(flat~pos("<rexx_str_cquo>") > 0, -
+    "DocBook naming: closing quote uses <rexx_str_cquo>")
+
+::Method test_docbook_element_line_comment
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Nop -- comment'), options.)
+  self~assertTrue(flat~pos("<rexx_lncm>") > 0, -
+    "DocBook naming: line comment uses <rexx_lncm>")
+
+::Method test_docbook_element_directive
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('::Method test'), options.)
+  self~assertTrue(flat~pos("<rexx_dir>") > 0, -
+    "DocBook naming: directive marker uses <rexx_dir>")
+
+::Method test_docbook_element_directive_keyword
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('::Method test'), options.)
+  self~assertTrue(flat~pos("<rexx_dkw>Method</rexx_dkw>") > 0, -
+    "DocBook naming: directive keyword uses <rexx_dkw>")
+
+::Method test_docbook_element_multi_class
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
+  self~assertTrue(flat~pos("<rexx_int_ipart>") > 0, -
+    "DocBook naming: multi-class integer part uses <rexx_int_ipart>")
+
+/******************************************************************************/
+/* DocBook: whitespace handling                                               */
+/******************************************************************************/
+
+::Method test_docbook_ws_no_element
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hi"'), options.)
+  self~assertTrue(flat~pos("<rexx_ws>") == 0, -
+    "DocBook whitespace: no <rexx_ws> elements")
+
+::Method test_docbook_ws_preserved
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hi"'), options.)
+  self~assertTrue(flat~pos("</rexx_kw> <rexx_str_oquo>") > 0, -
+    "DocBook whitespace: space preserved between elements")
+
+/******************************************************************************/
+/* DocBook: continuation handling                                             */
+/******************************************************************************/
+
+::Method test_docbook_continuation_has_element
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say 1 + -', '  2'), options.)
+  self~assertTrue(flat~pos("<rexx_cont>") > 0, -
+    "DocBook continuation: wrapped in <rexx_cont> element")
+
+::Method test_docbook_continuation_content
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say 1 + -', '  2'), options.)
+  self~assertTrue(flat~pos("<rexx_cont>-</rexx_cont>") > 0, -
+    "DocBook continuation: contains dash")
+
+/******************************************************************************/
+/* DocBook: XML escaping                                                      */
+/******************************************************************************/
+
+::Method test_docbook_escape_ampersand
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('If x > 3 & y < 5 Then Nop'), options.)
+  self~assertTrue(flat~pos("&amp;") > 0, -
+    "DocBook escaping: & escaped to &amp;")
+
+::Method test_docbook_escape_gt
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('If x > 3 Then Nop'), options.)
+  self~assertTrue(flat~pos("&gt;") > 0, -
+    "DocBook escaping: > escaped to &gt;")
+
+::Method test_docbook_escape_lt
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('If x < 3 Then Nop'), options.)
+  self~assertTrue(flat~pos("&lt;") > 0, -
+    "DocBook escaping: < escaped to &lt;")
+
+::Method test_docbook_escape_quote
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("&quot;") > 0, -
+    "DocBook escaping: double quote escaped to &quot;")
+
+::Method test_docbook_escape_no_raw_ampersand
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('If x > 3 & y < 5 Then Nop'), options.)
+  -- Check there's no raw & that isn't part of an entity
+  cleaned = flat~changeStr("&amp;", "")~changeStr("&gt;", "")  -
+               ~changeStr("&lt;", "")~changeStr("&quot;", "")  -
+               ~changeStr("&apos;", "")
+  self~assertTrue(cleaned~pos("&") == 0, -
+    "DocBook escaping: no raw & characters in output")
+
+/******************************************************************************/
+/* DocBook: XML validity                                                      */
+/******************************************************************************/
+
+::Method test_docbook_xml_all_tags_closed
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hello"', 'x = 1 + 2'), options.)
+  -- Count opening and closing rexx_ tags
+  opens  = 0
+  closes = 0
+  work = flat
+  Do While work~pos("<rexx_") > 0
+    p = work~pos("<rexx_")
+    work = work~substr(p + 1)
+    opens += 1
+  End
+  work = flat
+  Do While work~pos("</rexx_") > 0
+    p = work~pos("</rexx_")
+    work = work~substr(p + 1)
+    closes += 1
+  End
+  self~assertEquals(opens, closes, -
+    "DocBook XML: all opening tags have matching closing tags")
+
+::Method test_docbook_multiline
+  options. = self~docbookOptions
+  source = .Array~of('/* comment */', 'Say "Hello"', 'x = 1')
+  hl = .Highlighter~new("test", source, options.)
+  res = hl~parse
+  self~assertTrue(res~items > 1, -
+    "DocBook multiline: produces multiple output lines")
 
 /******************************************************************************/
 /* StylePatch: from string                                                    */

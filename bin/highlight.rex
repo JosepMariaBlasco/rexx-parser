@@ -116,6 +116,7 @@
       When "-it", "--itrace"     Then options.itrace       =  1
       When "-h", "--html"        Then options.mode         =  HTML
       When "-l", "--latex"       Then options.mode         =  LaTeX
+      When "-d", "--docbook"     Then options.mode         =  DOCBOOK
       When "-n", "--numberlines" Then options.numberlines  = .True
       When "-a", "--ansi"        Then options.mode         =  ANSI
       When "-xtr", "--executor"  Then options.executor     = 1
@@ -282,6 +283,7 @@ Options:
   -a,  --ansi               Select ANSI mode
        --continue           Continue when a fenced code block is in error
        --css                Include links to css files (HTML only)
+  -d,  --docbook            Select DocBook mode
        --default=attributes Select default attributes for code blocks
        --doccomments=detailed|block Select highlighting level for doc-comments
   -xtr,--executor           Enable support for Executor

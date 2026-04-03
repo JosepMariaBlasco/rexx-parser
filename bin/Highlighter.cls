@@ -143,6 +143,8 @@ Return
       Options.!Driver =  .ANSI.Highlighter~new( Options., output )
     When "LATEX" Then
       Options.!Driver = .LaTeX.Highlighter~new( Options., output )
+    When "DOCBOOK" Then
+      Options.!Driver = .DocBook.Highlighter~new( Options., output )
     Otherwise Nop
   End
 

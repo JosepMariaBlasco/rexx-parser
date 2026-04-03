@@ -58,7 +58,7 @@ HTMLColors.cls          Color definitions
 StyleSheet.cls          CSS style sheet generation
 StylePatch.cls          Style patching support
 FencedCode.cls          Fenced code block processor (Markdown integration)
-HLDrivers/              Output drivers (ANSI, HTML, LaTeX)
+HLDrivers/              Output drivers (ANSI, HTML, LaTeX, DocBook)
 ```
 
 ### RexxPub pipelines (the three main deliverables)
@@ -98,6 +98,7 @@ which have a different origin).
 
 ### Utilities
 ```
+css2xsl.rex             Generate XSL templates for DocBook highlighting
 highlight.rex           Standalone Rexx syntax highlighter
 rxcheck.rex             Rexx syntax checker
 rxcomp.rex              Rexx compiler/analysis tool
@@ -257,7 +258,7 @@ tests/
     ParserTestCase.cls       ooTestCase subclass with parserError/parserOK/parserOnly
   suites/                    Test suites (all ooRexxUnit .testGroup files)
     FencedCode.testGroup     FencedCode.cls tests (26 tests)
-    Highlighter.testGroup    Highlighter.cls, ANSI driver, StylePatch tests (108 tests)
+    Highlighter.testGroup    Highlighter.cls, ANSI driver, DocBook driver, StylePatch tests (137 tests)
     RexxPubOptions.testGroup RexxPubOptions.cls tests (62 tests)
     YAMLFrontMatter.testGroup YAMLFrontMatter.cls tests (43 tests)
     KeywordInstructions.testGroup Parser checks: LEAVE, ITERATE, GUARD, SIGNAL (3 tests, 12 assertions)
@@ -288,7 +289,7 @@ before running any suite:
    using `GenErrorText.rex`.
 
 If either check fails, the run aborts. Then it discovers all `.testGroup`
-files in `suites/` and runs them via ooRexxUnit (351 unit tests total).
+files in `suites/` and runs them via ooRexxUnit (407 unit tests total).
 Integration tests live in separate directories: `cgi/` (39 tests,
 require Apache) and `pdf/` (18 tests, require Pandoc + pagedjs-cli +
 poppler-utils). These are NOT run by `RunTests.rex` — each has its
