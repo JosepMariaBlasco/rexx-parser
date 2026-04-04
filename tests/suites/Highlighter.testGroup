@@ -29,6 +29,7 @@ Else
 
 ::Requires "ooTest.frm"
 ::Requires "Highlighter.cls"
+::Requires "Parser.DocBook.cls"
 ::Requires "StylePatch.cls"
 
 ::Class Highlighter.testGroup Subclass ooTestCase Public
@@ -783,19 +784,19 @@ Else
 ::Method test_docbook_basic_has_rexx_kw
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hello"'), options.)
-  self~assertTrue(flat~pos("<rexx_kw>") > 0, -
-    "DocBook basic: contains <rexx_kw> element")
+  self~assertTrue(flat~pos("<rexx_print_kw>") > 0, -
+    "DocBook basic: contains <rexx_print_kw> element")
 
 ::Method test_docbook_basic_has_closing_tag
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hello"'), options.)
-  self~assertTrue(flat~pos("</rexx_kw>") > 0, -
-    "DocBook basic: contains </rexx_kw> closing tag")
+  self~assertTrue(flat~pos("</rexx_print_kw>") > 0, -
+    "DocBook basic: contains </rexx_print_kw> closing tag")
 
 ::Method test_docbook_basic_kw_content
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hello"'), options.)
-  self~assertTrue(flat~pos("<rexx_kw>Say</rexx_kw>") > 0, -
+  self~assertTrue(flat~pos("<rexx_print_kw>Say</rexx_print_kw>") > 0, -
     "DocBook basic: keyword Say wrapped correctly")
 
 ::Method test_docbook_basic_no_html_div
@@ -823,68 +824,68 @@ Else
 ::Method test_docbook_element_comment
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('/* comment */'), options.)
-  self~assertTrue(flat~pos("<rexx_cm>") > 0, -
-    "DocBook naming: comment uses <rexx_cm>")
+  self~assertTrue(flat~pos("<rexx_print_cm>") > 0, -
+    "DocBook naming: comment uses <rexx_print_cm>")
 
 ::Method test_docbook_element_variable
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('x = 1'), options.)
-  self~assertTrue(flat~pos("<rexx_var>x</rexx_var>") > 0, -
-    "DocBook naming: variable uses <rexx_var>")
+  self~assertTrue(flat~pos("<rexx_print_var>x</rexx_print_var>") > 0, -
+    "DocBook naming: variable uses <rexx_print_var>")
 
 ::Method test_docbook_element_assignment
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('x = 1'), options.)
-  self~assertTrue(flat~pos("<rexx_asg>=</rexx_asg>") > 0, -
-    "DocBook naming: assignment uses <rexx_asg>")
+  self~assertTrue(flat~pos("<rexx_print_asg>=</rexx_print_asg>") > 0, -
+    "DocBook naming: assignment uses <rexx_print_asg>")
 
 ::Method test_docbook_element_operator
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('x = 1 + 2'), options.)
-  self~assertTrue(flat~pos("<rexx_op>+</rexx_op>") > 0, -
-    "DocBook naming: operator uses <rexx_op>")
+  self~assertTrue(flat~pos("<rexx_print_op>+</rexx_print_op>") > 0, -
+    "DocBook naming: operator uses <rexx_print_op>")
 
 ::Method test_docbook_element_string
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("<rexx_str>Hi</rexx_str>") > 0, -
-    "DocBook naming: string content uses <rexx_str>")
+  self~assertTrue(flat~pos("<rexx_print_str>Hi</rexx_print_str>") > 0, -
+    "DocBook naming: string content uses <rexx_print_str>")
 
 ::Method test_docbook_element_string_oquo
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("<rexx_str_oquo>") > 0, -
-    "DocBook naming: opening quote uses <rexx_str_oquo>")
+  self~assertTrue(flat~pos("<rexx_print_str_oquo>") > 0, -
+    "DocBook naming: opening quote uses <rexx_print_str_oquo>")
 
 ::Method test_docbook_element_string_cquo
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("<rexx_str_cquo>") > 0, -
-    "DocBook naming: closing quote uses <rexx_str_cquo>")
+  self~assertTrue(flat~pos("<rexx_print_str_cquo>") > 0, -
+    "DocBook naming: closing quote uses <rexx_print_str_cquo>")
 
 ::Method test_docbook_element_line_comment
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Nop -- comment'), options.)
-  self~assertTrue(flat~pos("<rexx_lncm>") > 0, -
-    "DocBook naming: line comment uses <rexx_lncm>")
+  self~assertTrue(flat~pos("<rexx_print_lncm>") > 0, -
+    "DocBook naming: line comment uses <rexx_print_lncm>")
 
 ::Method test_docbook_element_directive
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('::Method test'), options.)
-  self~assertTrue(flat~pos("<rexx_dir>") > 0, -
-    "DocBook naming: directive marker uses <rexx_dir>")
+  self~assertTrue(flat~pos("<rexx_print_dir>") > 0, -
+    "DocBook naming: directive marker uses <rexx_print_dir>")
 
 ::Method test_docbook_element_directive_keyword
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('::Method test'), options.)
-  self~assertTrue(flat~pos("<rexx_dkw>Method</rexx_dkw>") > 0, -
-    "DocBook naming: directive keyword uses <rexx_dkw>")
+  self~assertTrue(flat~pos("<rexx_print_dkw>Method</rexx_print_dkw>") > 0, -
+    "DocBook naming: directive keyword uses <rexx_print_dkw>")
 
 ::Method test_docbook_element_multi_class
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('x = 1 + 2'), options.)
-  self~assertTrue(flat~pos("<rexx_int_ipart>") > 0, -
-    "DocBook naming: multi-class integer part uses <rexx_int_ipart>")
+  self~assertTrue(flat~pos("<rexx_print_int_ipart>") > 0, -
+    "DocBook naming: multi-class integer part uses <rexx_print_int_ipart>")
 
 /******************************************************************************/
 /* DocBook: whitespace handling                                               */
@@ -893,13 +894,13 @@ Else
 ::Method test_docbook_ws_no_element
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("<rexx_ws>") == 0, -
-    "DocBook whitespace: no <rexx_ws> elements")
+  self~assertTrue(flat~pos("<rexx_print_ws>") == 0, -
+    "DocBook whitespace: no <rexx_print_ws> elements")
 
 ::Method test_docbook_ws_preserved
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("</rexx_kw> <rexx_str_oquo>") > 0, -
+  self~assertTrue(flat~pos("</rexx_print_kw> <rexx_print_str_oquo>") > 0, -
     "DocBook whitespace: space preserved between elements")
 
 /******************************************************************************/
@@ -909,13 +910,13 @@ Else
 ::Method test_docbook_continuation_has_element
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say 1 + -', '  2'), options.)
-  self~assertTrue(flat~pos("<rexx_cont>") > 0, -
-    "DocBook continuation: wrapped in <rexx_cont> element")
+  self~assertTrue(flat~pos("<rexx_print_cont>") > 0, -
+    "DocBook continuation: wrapped in <rexx_print_cont> element")
 
 ::Method test_docbook_continuation_content
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say 1 + -', '  2'), options.)
-  self~assertTrue(flat~pos("<rexx_cont>-</rexx_cont>") > 0, -
+  self~assertTrue(flat~pos("<rexx_print_cont>-</rexx_print_cont>") > 0, -
     "DocBook continuation: contains dash")
 
 /******************************************************************************/
@@ -988,6 +989,157 @@ Else
   res = hl~parse
   self~assertTrue(res~items > 1, -
     "DocBook multiline: produces multiple output lines")
+
+/******************************************************************************/
+/* DocBook: multi-style support                                               */
+/******************************************************************************/
+
+::Method docbookOptionsWithStyle Private
+  Use Strict Arg styleName
+  options. = 0
+  options.mode = "DOCBOOK"
+  options.style = styleName
+  Return options.
+
+::Method test_docbook_style_dark_kw
+  options. = self~docbookOptionsWithStyle("dark")
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("<rexx_dark_kw>Say</rexx_dark_kw>") > 0, -
+    "DocBook dark style: keyword uses <rexx_dark_kw>")
+
+::Method test_docbook_style_dark_no_print
+  options. = self~docbookOptionsWithStyle("dark")
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("<rexx_print_") == 0, -
+    "DocBook dark style: no rexx_print_ elements")
+
+::Method test_docbook_style_dark_var
+  options. = self~docbookOptionsWithStyle("dark")
+  flat = self~highlight(.Array~of('x = 1'), options.)
+  self~assertTrue(flat~pos("<rexx_dark_var>x</rexx_dark_var>") > 0, -
+    "DocBook dark style: variable uses <rexx_dark_var>")
+
+::Method test_docbook_style_dark_str
+  options. = self~docbookOptionsWithStyle("dark")
+  flat = self~highlight(.Array~of('Say "Hi"'), options.)
+  self~assertTrue(flat~pos("<rexx_dark_str>Hi</rexx_dark_str>") > 0, -
+    "DocBook dark style: string uses <rexx_dark_str>")
+
+::Method test_docbook_style_dark_comment
+  options. = self~docbookOptionsWithStyle("dark")
+  flat = self~highlight(.Array~of('/* comment */'), options.)
+  self~assertTrue(flat~pos("<rexx_dark_cm>") > 0, -
+    "DocBook dark style: comment uses <rexx_dark_cm>")
+
+::Method test_docbook_style_dark_op
+  options. = self~docbookOptionsWithStyle("dark")
+  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
+  self~assertTrue(flat~pos("<rexx_dark_op>+</rexx_dark_op>") > 0, -
+    "DocBook dark style: operator uses <rexx_dark_op>")
+
+::Method test_docbook_style_dark_multi_class
+  options. = self~docbookOptionsWithStyle("dark")
+  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
+  self~assertTrue(flat~pos("<rexx_dark_int_ipart>") > 0, -
+    "DocBook dark style: multi-class uses <rexx_dark_int_ipart>")
+
+::Method test_docbook_style_dark_tags_closed
+  options. = self~docbookOptionsWithStyle("dark")
+  flat = self~highlight(.Array~of('Say "Hello"', 'x = 1 + 2'), options.)
+  opens  = 0
+  closes = 0
+  work = flat
+  Do While work~pos("<rexx_dark_") > 0
+    p = work~pos("<rexx_dark_")
+    work = work~substr(p + 1)
+    opens += 1
+  End
+  work = flat
+  Do While work~pos("</rexx_dark_") > 0
+    p = work~pos("</rexx_dark_")
+    work = work~substr(p + 1)
+    closes += 1
+  End
+  self~assertEquals(opens, closes, -
+    "DocBook dark style: all opening tags have matching closing tags")
+
+::Method test_docbook_style_custom_name
+  options. = self~docbookOptionsWithStyle("tokio-night")
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("<rexx_tokio_night_kw>Say</rexx_tokio_night_kw>") > 0, -
+    "DocBook custom style: hyphenated style name converted to underscores")
+
+/******************************************************************************/
+/* ProcessProgramListings: wrapper element                                    */
+/******************************************************************************/
+
+::Method processXML Private
+  -- Helper: wraps XML lines in an array, calls ProcessProgramListings,
+  -- and returns the modified array.
+  Use Strict Arg lines, defaultStyle = "print"
+  Call ProcessProgramListings "test.xml", lines, defaultStyle
+  Return lines
+
+::Method test_ppl_wrapper_present
+  lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~pos("<rexx_style_print>") > 0, -
+    "PPL wrapper: rexx_style_print present")
+
+::Method test_ppl_wrapper_closing
+  lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~pos("</rexx_style_print>") > 0, -
+    "PPL wrapper: closing rexx_style_print present")
+
+::Method test_ppl_wrapper_wraps_content
+  lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  flat = lines[1]
+  openPos  = flat~pos("<rexx_style_print>")
+  closePos = flat~pos("</rexx_style_print>")
+  tokenPos = flat~pos("<rexx_print_kw>")
+  self~assertTrue(openPos > 0 & tokenPos > openPos & closePos > tokenPos, -
+    "PPL wrapper: tokens are inside wrapper element")
+
+::Method test_ppl_wrapper_dark_style
+  lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
+  self~processXML(lines, "dark")
+  self~assertTrue(lines[1]~pos("<rexx_style_dark>") > 0, -
+    "PPL wrapper: rexx_style_dark when default style is dark")
+
+::Method test_ppl_wrapper_hl_style_override
+  lines = .Array~of('<programlisting language="rexx" hl-style="dark">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~pos("<rexx_style_dark>") > 0, -
+    "PPL wrapper: hl-style overrides default style")
+
+::Method test_ppl_wrapper_hyphenated_style
+  lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
+  self~processXML(lines, "tokio-night")
+  self~assertTrue(lines[1]~pos("<rexx_style_tokio_night>") > 0, -
+    "PPL wrapper: hyphens converted to underscores")
+
+::Method test_ppl_wrapper_no_leading_newline
+  lines = .Array~of( -
+    '<programlisting language="rexx">', -
+    'Say "Hi"', -
+    '</programlisting>')
+  self~processXML(lines)
+  flat = lines[1]
+  wrapperPos = flat~pos("<rexx_style_print>")
+  charAfter = flat~substr(wrapperPos + 18, 1)
+  self~assertTrue(charAfter \== "0a"x, -
+    "PPL wrapper: no leading newline after opening wrapper tag")
+
+::Method test_ppl_wrapper_multiline_collapsed
+  lines = .Array~of( -
+    '<programlisting language="rexx">', -
+    'Say "Hi"', -
+    '</programlisting>')
+  self~processXML(lines)
+  self~assertEquals(1, lines~items, -
+    "PPL wrapper: multiline block collapsed to single line")
 
 /******************************************************************************/
 /* StylePatch: from string                                                    */

@@ -59,7 +59,8 @@ Version history
   <li> New [md2epub](../utilities/md2epub/) utility for EPUB generation (20260323).
   <li> CGI integration tests: 39 tests for CGI.markdown.rex with interactive runner (20260323).
   <li> PDF integration tests: 18 tests for md2pdf.rex with interactive runner (20260323).
-  <li> New DocBook driver and new css2xsl utility (20260323).
+  <li> New DocBook driver and new css2xsl utility (20260403).
+  <li> New utilities to highlight the official ooRexx docs (20260404).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

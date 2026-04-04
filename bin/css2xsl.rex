@@ -198,7 +198,58 @@
     classSet~put(tags)
 
     -- Derive the DocBook element name from the CSS classes
-    elementName = Tags2Element(tags)
+    elementName = Tags2Element(tags, style)
+
+    entry       = .Directory~new
+    entry~name  = elementName
+    entry~tags  = tags
+    elements~append(entry)
+  End
+
+/******************************************************************************/
+/* Add compound number elements                                               */
+/******************************************************************************/
+
+  -- The Highlighter emits compound tags for number sub-parts by
+  -- concatenating the parent tag (e.g. "rx-int") with the child tag
+  -- (e.g. "rx-ipart"), producing "rx-int rx-ipart".  These compound
+  -- tags are converted to element names like "rexx_int_ipart" by the
+  -- DocBook driver, but the loop above only sees them as individual
+  -- entries.  We generate all valid parent+child combinations here.
+  --
+  -- The parent is one of: int, deci, exp.
+  -- The children depend on the number type:
+  --   int:  nsign, ipart
+  --   deci: nsign, ipart, dpoint, fpart
+  --   exp:  nsign, ipart, dpoint, fpart, emark, esign, expon
+
+  prefix = hlOptions.classprefix
+
+  numberCombinations = .Array~of( -
+    "int  nsign",                  -
+    "int  ipart",                  -
+    "deci nsign",                  -
+    "deci ipart",                  -
+    "deci dpoint",                 -
+    "deci fpart",                  -
+    "exp  nsign",                  -
+    "exp  ipart",                  -
+    "exp  dpoint",                 -
+    "exp  fpart",                  -
+    "exp  emark",                  -
+    "exp  esign",                  -
+    "exp  expon"                   -
+  )
+
+  Do combo Over numberCombinations
+    Parse Var combo parent child
+    child = child~strip
+    tags = prefix || parent" "prefix || child
+
+    If classSet~hasIndex(tags) Then Iterate
+    classSet~put(tags)
+
+    elementName = Tags2Element(tags, style)
 
     entry       = .Directory~new
     entry~name  = elementName
@@ -233,9 +284,16 @@
     templates~append( BuildTemplate(elementName, foAttrs) )
   End
 
+  -- Get the block-level background and default text color from the
+  -- "rexx" class.  This will be used to generate an XSL template for
+  -- programlisting[@style='STYLE'] that sets the fo:block background.
+  Parse Value GetHighlight(style, "rexx") -
+    With . . . blockColor":"blockBackground
+
   -- Generate the complete XSL file
   xslContent = BuildXSL(templates, style, -
-    opOperator, opSpecial, opConstant, opAssignment)
+    opOperator, opSpecial, opConstant, opAssignment, -
+    blockColor, blockBackground)
 
 /******************************************************************************/
 /* Write the output file                                                      */
@@ -259,20 +317,21 @@
 /*                                                                            */
 /* Converts a CSS class string to a DocBook element name by stripping the    */
 /* "rx-" prefix from each class, replacing "-" with "_", and joining them    */
-/* with "_" under the "rexx_" prefix.                                        */
+/* with "_" under the "rexx_STYLE" prefix.                                   */
 /*                                                                            */
-/* Examples:                                                                  */
-/*   "rx-kw"                          -> "rexx_kw"                           */
-/*   "rx-op rx-add"                   -> "rexx_op_add"                       */
-/*   "rx-const rx-method rx-oquo"     -> "rexx_const_method_oquo"            */
+/* The style name is always included in the element name for symmetry:       */
+/*   Tags2Element("rx-kw", "print")  -> "rexx_print_kw"                     */
+/*   Tags2Element("rx-op rx-add", "dark") -> "rexx_dark_op_add"             */
+/*   Tags2Element("rx-const rx-method rx-oquo", "print")                    */
+/*                                       -> "rexx_print_const_method_oquo"  */
 /*                                                                            */
 /******************************************************************************/
 
 Tags2Element:
-  Use Strict Arg cssTags
+  Use Strict Arg cssTags, xslStyle
 
   words = cssTags~makeArray(" ")
-  name  = "rexx"
+  name  = "rexx_" || xslStyle~changeStr("-", "_")
   Do w Over words
     name ||= "_" || StripPrefix(w)~changeStr("-", "_")
   End
@@ -333,9 +392,11 @@ BuildTemplate: Procedure
 
 BuildXSL: Procedure
   Use Strict Arg templates, style, -
-    opOperator, opSpecial, opConstant, opAssignment
+    opOperator, opSpecial, opConstant, opAssignment, -
+    blockColor, blockBackground
 
   nl = "0A"x
+  styleSafe = style~changeStr("-", "_")
 
   xsl = '<?xml version="1.0" encoding="UTF-8"?>'                    || nl
   xsl ||= "<!--"                                                    || nl
@@ -354,6 +415,34 @@ BuildXSL: Procedure
   xsl ||= '  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"'    || nl
   xsl ||= '  xmlns:fo="http://www.w3.org/1999/XSL/Format">'       || nl
   xsl ||= ""                                                        || nl
+
+  -- Block-level template: matches the rexx_style_STYLE wrapper element
+  -- emitted by ProcessProgramListings, and sets background-color and
+  -- default text color on an fo:block.  This fo:block sits inside the
+  -- standard DocBook programlisting fo:block (which provides monospace
+  -- font, padding, borders, etc.), overriding its background and color.
+  bgHex = Left(blockBackground, 6)
+  fgHex = Left(blockColor, 6)
+  If bgHex~length == 6, bgHex~dataType("X") Then Do
+    foAttrs = ' background-color="#'bgHex'"'
+    If fgHex~length == 6, fgHex~dataType("X") Then
+      foAttrs ||= ' color="#'fgHex'"'
+    wrapperName = "rexx_style_"styleSafe
+
+    xsl ||= '  <!-- Block background for style "'style'" -->'        || nl
+    xsl ||= '  <!-- Negative margins expand the inner fo:block to cover -->' || nl
+    xsl ||= '  <!-- the padding of the outer shade.verbatim.style block. -->' || nl
+    xsl ||= '  <xsl:template match="'wrapperName'">'                 || nl
+    xsl ||= '    <fo:block'foAttrs                                       -
+                 ' margin-top="-6pt" margin-bottom="-6pt"'               -
+                 ' margin-left="-6pt"'                                   -
+                 ' padding-top="6pt" padding-bottom="6pt"'               -
+                 ' padding-left="6pt">'                               || nl
+    xsl ||= '      <xsl:apply-templates/>'                           || nl
+    xsl ||= '    </fo:block>'                                        || nl
+    xsl ||= '  </xsl:template>'                                      || nl
+    xsl ||= ""                                                        || nl
+  End
 
   Do t Over templates
     xsl ||= t || nl

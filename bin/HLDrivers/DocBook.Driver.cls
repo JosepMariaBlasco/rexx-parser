@@ -3,13 +3,14 @@
 /* DocBook.Driver.cls - DocBook highlighter driver                            */
 /* ===============================================                            */
 /*                                                                            */
-/* Emits XML elements with rexx_* names for use in DocBook programlisting     */
-/* blocks. The element names are derived from CSS class strings using the     */
-/* same convention as css2xsl.rex (Tags2Element):                             */
+/* Emits XML elements with rexx_STYLE_* names for use in DocBook             */
+/* programlisting blocks. The style name is always included in the element   */
+/* name for symmetry:                                                        */
 /*                                                                            */
-/*   "rx-kw"                      -> <rexx_kw>...</rexx_kw>                   */
-/*   "rx-op rx-add"               -> <rexx_op_add>...</rexx_op_add>           */
-/*   "rx-const rx-method rx-oquo" -> <rexx_const_method_oquo>                 */
+/*   "rx-kw" (style "print")        -> <rexx_print_kw>                       */
+/*   "rx-op rx-add" (style "dark")  -> <rexx_dark_op_add>                    */
+/*   "rx-const rx-method rx-oquo" (style "print")                            */
+/*                                  -> <rexx_print_const_method_oquo>        */
 /*                                                                            */
 /* The content is XML-escaped. No prolog or epilog is emitted.                */
 /*                                                                            */
@@ -48,6 +49,7 @@ End
   self~say("")
 
 ::Method Highlight
+  Expose Options.
   Use Strict Arg category, subCategory, variant, tags, string
 
   -- Whitespace: emit as-is (XML-escaped, no element wrapper)
@@ -56,8 +58,8 @@ End
     Return
   End
 
-  -- Derive the element name from CSS classes
-  elementName = Tags2Element(tags)
+  -- Derive the element name from CSS classes, including the style
+  elementName = Tags2Element(tags, Options.style)
 
   -- Emit <rexx_XX>escaped content</rexx_XX>
   self~emit( "<"elementName">"XMLEscape(string)"</"elementName">" )
@@ -71,20 +73,21 @@ End
 /*                                                                            */
 /* Converts a CSS class string to a DocBook element name by stripping the     */
 /* "rx-" prefix from each class, replacing "-" with "_", and joining them     */
-/* with "_" under the "rexx_" prefix.                                         */
+/* with "_" under the "rexx_STYLE" prefix.                                    */
 /*                                                                            */
-/* Examples:                                                                  */
-/*   "rx-kw"                          -> "rexx_kw"                            */
-/*   "rx-op rx-add"                   -> "rexx_op_add"                        */
-/*   "rx-const rx-method rx-oquo"     -> "rexx_const_method_oquo"             */
+/* The style name is always included in the element name for symmetry:        */
+/*   Tags2Element("rx-kw", "print")  -> "rexx_print_kw"                      */
+/*   Tags2Element("rx-op rx-add", "dark") -> "rexx_dark_op_add"              */
+/*   Tags2Element("rx-const rx-method rx-oquo", "print")                     */
+/*                                       -> "rexx_print_const_method_oquo"   */
 /*                                                                            */
 /******************************************************************************/
 
-::Routine Tags2Element
-  Use Strict Arg cssTags
+::Routine Tags2Element Public
+  Use Strict Arg cssTags, style
 
   words = cssTags~makeArray(" ")
-  name  = "rexx"
+  name  = "rexx_" || style~changeStr("-", "_")
   Do w Over words
     name ||= "_" || StripPrefix(w)~changeStr("-", "_")
   End

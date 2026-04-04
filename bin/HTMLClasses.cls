@@ -157,12 +157,21 @@ SkipOverAssign:
 --
 -- That is, constant symbols that are not environment symbols or numbers
 --
--- .EL.PERIOD is used when parsing PARSE templates. By default, its
--- highlighting is the same as other symbol literals.
---
 
   Call Assign   .EL.SYMBOL_LITERAL,              "lit"
   Call Assign   .EL.PERIOD,                      "lit"
+
+--------------------------------------------------------------------------------
+-- Parse placeholders and explicit end-of-clause                              --
+--------------------------------------------------------------------------------
+--
+-- .EL.PARSE_PERIOD is the "." placeholder in PARSE templates.
+-- .EL.END_OF_CLAUSE is the explicit ";" clause terminator.
+-- Both are treated as special characters for highlighting purposes.
+--
+
+  Call Assign   .EL.PARSE_PERIOD,                "spe"
+  Call Assign   .EL.END_OF_CLAUSE,               "spe"
 
 /******************************************************************************/
 /* COMMENTS AND DOC-COMMENTS                                                  */
