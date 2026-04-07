@@ -150,6 +150,8 @@
   <xsl:attribute name="white-space-treatment">preserve</xsl:attribute>
   <xsl:attribute name="linefeed-treatment">preserve</xsl:attribute>
   <xsl:attribute name="text-align">start</xsl:attribute>
+  <xsl:attribute name="widows">3</xsl:attribute>
+  <xsl:attribute name="orphans">3</xsl:attribute>
 </xsl:attribute-set>
 
 <xsl:attribute-set name="toc.line.properties">

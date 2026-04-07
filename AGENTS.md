@@ -152,6 +152,12 @@ HLDrivers/
 - `hldocprep.rex` uses `findProgram` + `loadPackage` (not `::Requires`)
   to load `Parser.DocBook.cls`, allowing a clear error message if the
   Rexx Parser is not installed.
+- `css2xsl.rex` generates number sub-part combinations for all parent
+  types: `int`, `deci`, `exp`, and all string types (`str`, `bstr`,
+  `xstr`, `ystr`, `pstr`, `gstr`, `tstr`, `ustr`).  Numbers inside
+  strings can have all sub-parts (nsign, ipart, dpoint, fpart, emark,
+  esign, expon).  Total: ~152 templates per style (was 96 before
+  string types were added).
 
 
 ### Railroad diagram tools
@@ -319,7 +325,7 @@ tests/
     BIFs.testGroup           Parser checks: all BIF argument validation (70 tests, 549 assertions)
     FencedCode.testGroup     FencedCode.cls tests (26 tests)
     GrammarCrossCheck.testGroup  Grammar cross-check regression tests (27 tests)
-    Highlighter.testGroup    Highlighter.cls, ANSI driver, DocBook driver, ProcessProgramListings, StylePatch tests (145 tests)
+    Highlighter.testGroup    Highlighter.cls, ANSI driver, DocBook driver, ProcessProgramListings, StylePatch tests (151 tests)
     KeywordInstructions.testGroup Parser checks: LEAVE, ITERATE, GUARD, SIGNAL (3 tests, 12 assertions)
     Regressions.testGroup    Regression tests from shouldwork.rex (8 tests, 10 assertions)
     RexxPubOptions.testGroup RexxPubOptions.cls tests (62 tests)
@@ -349,7 +355,7 @@ before running any suite:
    using `GenErrorText.rex`.
 
 If either check fails, the run aborts. Then it discovers all `.testGroup`
-files in `suites/` and runs them via ooRexxUnit (424 unit tests total).
+files in `suites/` and runs them via ooRexxUnit (434 unit tests total).
 Integration tests live in separate directories: `cgi/` (39 tests,
 require Apache) and `pdf/` (18 tests, require Pandoc + pagedjs-cli +
 poppler-utils). These are NOT run by `RunTests.rex` — each has its

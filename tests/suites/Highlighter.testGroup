@@ -1141,6 +1141,97 @@ Else
   self~assertEquals(1, lines~items, -
     "PPL wrapper: multiline block collapsed to single line")
 
+::Method test_ppl_tail_preserved_single_line
+  lines = .Array~of( -
+    '<programlisting language="rexx">Say "Hi"</programlisting></example></para>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~endsWith("</example></para>"), -
+    "PPL tail: tags after </programlisting> preserved (single line)")
+
+::Method test_ppl_tail_preserved_multiline
+  lines = .Array~of( -
+    '<programlisting language="rexx">', -
+    'Say "Hi"', -
+    '</programlisting></example></para>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~endsWith("</example></para>"), -
+    "PPL tail: tags after </programlisting> preserved (multiline)")
+
+::Method test_ppl_tail_empty_when_no_tail
+  lines = .Array~of( -
+    '<programlisting language="rexx">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~endsWith("</programlisting>"), -
+    "PPL tail: no extra content when nothing after </programlisting>")
+
+::Method test_ppl_shebang_inline_ok
+  -- Shebang on line 1 (content right after >) works
+  lines = .Array~of( -
+    '<programlisting language="rexx">#!/usr/bin/env rexx</programlisting>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~pos("<rexx_style_print>") > 0, -
+    "PPL shebang: inline shebang highlights successfully")
+
+::Method test_ppl_shebang_newline_fails
+  -- Shebang on line 2 (after leading newline) fails: error 13.1
+  lines = .Array~of( -
+    '<programlisting language="rexx">', -
+    '#!/usr/bin/env rexx', -
+    '</programlisting>')
+  self~processXML(lines)
+  -- Block should be left unchanged (no wrapper element)
+  self~assertTrue(lines~items > 1, -
+    "PPL shebang: multiline shebang left unchanged on failure")
+
+::Method test_ppl_shebang_newline_content_unchanged
+  -- When shebang fails, the original content must be preserved exactly
+  line1 = '<programlisting language="rexx">'
+  line2 = '#!/usr/bin/env rexx'
+  line3 = '</programlisting>'
+  lines = .Array~of(line1, line2, line3)
+  self~processXML(lines)
+  self~assertEquals(line1, lines[1], -
+    "PPL shebang: opening tag preserved on failure")
+  self~assertEquals(line2, lines[2], -
+    "PPL shebang: shebang line preserved on failure")
+  self~assertEquals(line3, lines[3], -
+    "PPL shebang: closing tag preserved on failure")
+
+/******************************************************************************/
+/* ProcessProgramListings: head preservation                                  */
+/******************************************************************************/
+
+::Method test_ppl_head_preserved_single_line
+  lines = .Array~of( -
+    '<para><programlisting language="rexx">Say "Hi"</programlisting></para>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~startsWith("<para><programlisting"), -
+    "PPL head: tags before <programlisting> preserved (single line)")
+
+::Method test_ppl_head_preserved_multiline
+  lines = .Array~of( -
+    '<para><programlisting language="rexx">', -
+    'Say "Hi"', -
+    '</programlisting></para>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~startsWith("<para><programlisting"), -
+    "PPL head: tags before <programlisting> preserved (multiline)")
+
+::Method test_ppl_head_empty_when_no_head
+  lines = .Array~of( -
+    '<programlisting language="rexx">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~startsWith("<programlisting"), -
+    "PPL head: no extra content when nothing before <programlisting>")
+
+::Method test_ppl_head_and_tail_preserved
+  lines = .Array~of( -
+    '<para><programlisting language="rexx">Say "Hi"</programlisting></para>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~startsWith("<para><programlisting") -
+    & lines[1]~endsWith("</programlisting></para>"), -
+    "PPL head+tail: both preserved simultaneously")
+
 /******************************************************************************/
 /* StylePatch: from string                                                    */
 /******************************************************************************/

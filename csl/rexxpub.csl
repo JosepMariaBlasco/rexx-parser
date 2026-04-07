@@ -363,6 +363,7 @@
             <text macro="page"/>
             <text macro="status"/>
           </group>
+          <text variable="note" prefix=" " suffix="."/>
           <text macro="access"/>
         </else-if>
         <else-if type="chapter">
@@ -499,6 +500,7 @@
             <text macro="page"/>
             <text macro="issued"/>
           </group>
+          <text variable="note" prefix=" " suffix="."/>
           <text macro="access"/>
         </else>
       </choose>

@@ -4,22 +4,22 @@
 /* css2xsl.rex - Generate XSL templates for DocBook Rexx highlighting         */
 /* ==================================================================         */
 /*                                                                            */
-/* Reads a Rexx highlighting CSS theme (e.g. rexx-print.css) and generates   */
-/* an XSL stylesheet with fo:inline templates for all rexx_* elements.       */
-/* The generated .xsl is meant to be xsl:include'd from the pdf.xsl         */
-/* customization layer used by DocBook XSL + Apache FOP.                     */
+/* Reads a Rexx highlighting CSS theme (e.g. rexx-print.css) and generates    */
+/* an XSL stylesheet with fo:inline templates for all rexx_* elements.        */
+/* The generated .xsl is meant to be xsl:include'd from the pdf.xsl           */
+/* customization layer used by DocBook XSL + Apache FOP.                      */
 /*                                                                            */
 /* Usage:                                                                     */
-/*   css2xsl [options] [output.xsl]                                          */
+/*   css2xsl [options] [output.xsl]                                           */
 /*                                                                            */
 /* Options:                                                                   */
-/*   -s, --style STYLE    CSS theme name (default: print)                    */
+/*   -s, --style STYLE    CSS theme name (default: print)                     */
 /*       --css FILE       CSS file path (overrides --style)                   */
 /*       --operator MODE  Operator granularity: group|full|detail             */
 /*       --special MODE   Special char granularity: group|full|detail         */
 /*       --constant MODE  Constant granularity: group|full|detail             */
 /*       --assignment MODE Assignment granularity: group|full|detail          */
-/*   -h, --help           Show this help                                     */
+/*   -h, --help           Show this help                                      */
 /*                                                                            */
 /* Granularity modes:                                                         */
 /*   group  - All elements in a category share the generic class color.       */
@@ -27,7 +27,7 @@
 /*   full   - Elements get both generic and specific classes (CSS cascade).   */
 /*                                                                            */
 /* Default granularity is "group" for all categories, meaning operators       */
-/* share one color, specials share one color, etc.                           */
+/* share one color, specials share one color, etc.                            */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -174,8 +174,8 @@
   --     (e.g. "rx-const rx-method rx-oquo"): rexx_method_oquo
   --     (specific class + variant)
   --
-  -- We skip whitespace ("rx-ws") and continuation ("rx-cont") since
-  -- they are structural, not highlighted in DocBook.
+  -- We skip whitespace ("rx-ws") since the DocBook driver emits it
+  -- as plain text without a wrapper element.
 
   classSet    = .Set~new      -- Tracks unique CSS class strings
   elements    = .Array~new    -- Array of directories: name, tags
@@ -189,9 +189,8 @@
     If tags == "rexx" Then Iterate
     If tags == ""     Then Iterate
 
-    -- Skip whitespace and continuation (structural, not visual)
+    -- Skip whitespace (emitted as plain text by the driver)
     If tags == "rx-ws"   Then Iterate
-    If tags == "rx-cont" Then Iterate
 
     -- Skip duplicates
     If classSet~hasIndex(tags) Then Iterate
@@ -217,11 +216,17 @@
   -- DocBook driver, but the loop above only sees them as individual
   -- entries.  We generate all valid parent+child combinations here.
   --
-  -- The parent is one of: int, deci, exp.
+  -- The parent is one of: int, deci, exp, or any string type.
   -- The children depend on the number type:
   --   int:  nsign, ipart
   --   deci: nsign, ipart, dpoint, fpart
   --   exp:  nsign, ipart, dpoint, fpart, emark, esign, expon
+  --
+  -- When a number appears inside a string (e.g. "3.14"), the
+  -- Highlighter uses the string type as the parent (str, bstr,
+  -- xstr, etc.).  A number inside a string can have all the same
+  -- sub-parts as an exponential number, so each string type gets
+  -- the full set of children.
 
   prefix = hlOptions.classprefix
 
@@ -240,6 +245,22 @@
     "exp  esign",                  -
     "exp  expon"                   -
   )
+
+  -- Numbers inside strings: each string type can contain a full
+  -- number (with all sub-parts).  The string types are defined
+  -- in HTMLClasses.cls.
+  stringTypes = .Array~of( -
+    "str", "bstr", "xstr", "ystr", "pstr", "gstr", "tstr", "ustr" -
+  )
+  numberChildren = .Array~of( -
+    "nsign", "ipart", "dpoint", "fpart", -
+    "emark", "esign", "expon"            -
+  )
+  Do strType Over stringTypes
+    Do child Over numberChildren
+      numberCombinations~append(strType "  " child)
+    End
+  End
 
   Do combo Over numberCombinations
     Parse Var combo parent child

@@ -68,11 +68,19 @@
       Iterate
     End
 
+    -- Preserve any content before <programlisting on the same line
+    -- (e.g. <para><programlisting ...>)
+    head = line~left(tagPos - 1)
+
     -- Extract the full opening tag (may span multiple lines)
     openTag = ""
     tagLine = i
     Loop
-      openTag = openTag || lines[tagLine]
+      If openTag == "" Then
+        -- First line: start from <programlisting, skip the head
+        openTag = lines[tagLine]~substr(tagPos)
+      Else
+        openTag = openTag || lines[tagLine]
       If openTag~pos(">") > 0 Then Leave
       tagLine += 1
       If tagLine > lines~items Then Do
@@ -102,6 +110,7 @@
     -- and ends just before "</programlisting>" on some line
     content = .Array~new
     closingTag = "</programlisting>"
+    tail = ""
 
     -- Case 1: opening tag and content start on the same line
     -- contentAfterTag has the text after ">" on the tag line
@@ -110,6 +119,8 @@
       -- Everything on one line (or at least the close is on the same line)
       codeText = contentAfterTag~left(closePos - 1)
       content~append(codeText)
+      -- Preserve any tags after </programlisting> (e.g. </example></para>)
+      tail = contentAfterTag~substr(closePos + closingTag~length)
       endLine = tagLine
     End
     Else Do
@@ -120,6 +131,8 @@
         closePos = lines[j]~caselessPos(closingTag)
         If closePos > 0 Then Do
           content~append(lines[j]~left(closePos - 1))
+          -- Preserve any tags after </programlisting>
+          tail = lines[j]~substr(closePos + closingTag~length)
           endLine = j
           Leave
         End
@@ -144,10 +157,11 @@
     -- Highlight the code
     highlightedArr = HighlightBlock(filename, sourceLines, options.)
 
-    If highlightedArr == .Nil Then Do
+    If \highlightedArr~isA(.Array) Then Do
       -- Highlighting failed; leave the block unchanged
       Say "  Warning: highlighting failed for block at line" -
         i + linesRemoved "in" filename
+      Say "    " highlightedArr
       i = endLine + 1
       Iterate
     End
@@ -170,11 +184,11 @@
     highlighted = "<"styleTag">" || highlighted || "</"styleTag">"
 
     -- Reconstruct the block as a single line:
-    --   <programlisting attrs>HIGHLIGHTED</programlisting>
-    -- This is the correct format for DocBook: the content sits directly
-    -- between the tags with no extra whitespace around it.
+    --   HEAD<programlisting attrs>HIGHLIGHTED</programlisting>TAIL
+    -- HEAD preserves any content before <programlisting (e.g. <para>)
+    -- TAIL preserves any content after </programlisting> (e.g. </para>)
     newOpenTag = "<programlisting" attrStr ">"
-    newLine = newOpenTag || highlighted || closingTag
+    newLine = head || newOpenTag || highlighted || closingTag || tail
 
     -- Replace lines[i..endLine] with the single new line
     lines[i] = newLine
@@ -200,7 +214,8 @@
 ::Routine HighlightBlock Private
 
   -- Highlight a block of Rexx source code using the DocBook driver.
-  -- Returns the highlighted string, or .Nil if highlighting fails.
+  -- Returns the highlighted Array, or a String with the error message
+  -- if highlighting fails.
 
   Use Strict Arg filename, sourceLines, options.
 
@@ -210,7 +225,8 @@
   Return hl~parse()
 
 Syntax:
-  Return .Nil
+  co = condition("O")
+  Return co~code":" co~message
 
 /******************************************************************************/
 /* ParseXMLAttributes                                                         */

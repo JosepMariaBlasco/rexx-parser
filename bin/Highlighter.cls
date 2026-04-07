@@ -387,7 +387,7 @@ Numbers:
   End
 
   -- Integer part
-  p2 = Verify( eSource, "012345789",, p )
+  p2 = Verify( eSource, "0123456789",, p )
   If p2 == 0 | p2 > p Then Do
     If p2 == 0 Then len = Length( eSource ) - p + 1
     Else            len = p2 - p
