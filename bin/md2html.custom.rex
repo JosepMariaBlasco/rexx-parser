@@ -38,7 +38,6 @@
  .FilenameSpecificStyle["book.md"]    = "print/book"
  .FilenameSpecificStyle["letter.md"]  = "print/letter"
  .FilenameSpecificStyle["slides.md" ] = "print/slides"
- .FilenameSpecificStyle["rexxdoc-chapter.md"] = "print/rexxdoc-chapter"
 
   -- Output files will have this extension. See md2html.Extension
   pkgLocal~Extension = "html"

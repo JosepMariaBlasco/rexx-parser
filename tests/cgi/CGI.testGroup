@@ -135,35 +135,6 @@ Else
     "docclass: article does not load markdown.css")
 
 /******************************************************************************/
-/* Docclass: rexxdoc-chapter                                                  */
-/******************************************************************************/
-
-::Method test_docclass_chapter_rexxpub_base
-  r = self~httpGet(self~fixtureURL("docclass-chapter.md"))
-  self~assertContains(r~entry("body"), "rexxpub-base.css", -
-    "docclass: rexxdoc-chapter loads rexxpub-base.css")
-
-::Method test_docclass_chapter_css
-  r = self~httpGet(self~fixtureURL("docclass-chapter.md"))
-  self~assertContains(r~entry("body"), "print/rexxdoc-chapter.css", -
-    "docclass: rexxdoc-chapter loads rexxdoc-chapter.css")
-
-::Method test_docclass_chapter_data_attribute
-  r = self~httpGet(self~fixtureURL("docclass-chapter.md"))
-  self~assertContains(r~entry("body"), 'data-chapter="5"', -
-    "docclass: rexxdoc-chapter sets data-chapter attribute")
-
-::Method test_docclass_chapter_label
-  r = self~httpGet(self~fixtureURL("docclass-chapter.md"))
-  self~assertContains(r~entry("body"), "Chapter 5.", -
-    "docclass: rexxdoc-chapter sets chapter label")
-
-::Method test_docclass_chapter_section_numbers
-  r = self~httpGet(self~fixtureURL("docclass-chapter.md"))
-  self~assertContains(r~entry("body"), "section-numbers-4", -
-    "docclass: rexxdoc-chapter defaults to section-numbers-4")
-
-/******************************************************************************/
 /* Rexx fenced code blocks                                                    */
 /******************************************************************************/
 
@@ -228,25 +199,6 @@ Else
   r = self~httpGet(self~fixtureURL("docclass-article.md?print=pdf"))
   self~assertContains(r~entry("body"), "print/article.css", -
     "print=pdf article loads print/article.css")
-
-/******************************************************************************/
-/* URL parameter: print=pdf (docclass: rexxdoc-chapter)                       */
-/******************************************************************************/
-
-::Method test_print_chapter_paged_js
-  r = self~httpGet(self~fixtureURL("docclass-chapter.md?print=pdf"))
-  self~assertContains(r~entry("body"), "paged.polyfill.js", -
-    "print=pdf chapter loads paged.polyfill.js")
-
-::Method test_print_chapter_rexxpub_base
-  r = self~httpGet(self~fixtureURL("docclass-chapter.md?print=pdf"))
-  self~assertContains(r~entry("body"), "rexxpub-base.css", -
-    "print=pdf chapter loads rexxpub-base.css")
-
-::Method test_print_chapter_css
-  r = self~httpGet(self~fixtureURL("docclass-chapter.md?print=pdf"))
-  self~assertContains(r~entry("body"), "print/rexxdoc-chapter.css", -
-    "print=pdf chapter loads print/rexxdoc-chapter.css")
 
 /******************************************************************************/
 /* URL parameter: invalid                                                     */

@@ -42,6 +42,50 @@
 /* 20260306    0.5  First version — extracted from article/book/letter/slides */
 /* 20260308         Add support for optional numbered headers                 */
 /* 20260309         Fix: use descendant selectors for section numbering so    */
+/*                  that paged.js /******************************************************************************/
+/*                                                                            */
+/* rexxpub-base.css - Shared base styles for all RexxPub document classes     */
+/* ======================================================================     */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* This stylesheet contains styles common to all four document classes        */
+/* (article, book, letter, slides).  It is loaded AFTER Bootstrap and         */
+/* BEFORE the class-specific stylesheet:                                      */
+/*                                                                            */
+/*   bootstrap.css -> rexxpub-base.css -> {class}.css -> {size}.css           */
+/*                                                                            */
+/* It replaces the former markdown.css.                                       */
+/*                                                                            */
+/* Contents:                                                                  */
+/*   1. CSS custom properties (12pt defaults)                                 */
+/*   2. EPBCN site chrome (body, navbar, sidebar, print hide)                 */
+/*   3. Heading defaults (font-family, break-after)                           */
+/*   4. Inline code                                                           */
+/*   5. Links and URIs                                                        */
+/*   6. Small capitals                                                        */
+/*   7. Pre blocks (base)                                                     */
+/*   8. Horizontal image scrollbar (JLF contribution)                         */
+/*   9. Page break (.newpage)                                                 */
+/*  10. Tables (booktabs style, defaults)                                     */
+/*  11. Lists (base)                                                          */
+/*  12. paged.js split-element fixes                                          */
+/*  13. Footnotes (base)                                                      */
+/*  14. Bibliographies (Pandoc CSL)                                           */
+/*  15. Section numbering (opt-in via class on div.content)                   */
+/*  16. Figures and listings (captions, numberFigures.js)                     */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260306    0.5  First version — extracted from article/book/letter/slides */
+/* 20260308         Add support for optional numbered headers                 */
+/* 20260309         Fix: use descendant selectors for section numbering so    */
 /*                  that paged.js fragment wrappers do not break counters;    */
 /*                  explicitly exclude .title-page, .toc-exclude, .abstract   */
 /* 20260310         Implement figure and code captions                        */
@@ -193,7 +237,8 @@ div.content a {
   text-decoration: none;
 }
 
-a.uri {
+a.uri,
+div.csl-entry a {
   font-family:
     Consolas,
     "Andale Mono WT",
@@ -300,9 +345,18 @@ Don't use % widths, because % is relative to the container.
 
 /******************************************************************************/
 /* 9. Page break                                                              */
+/*                                                                            */
+/* .newpage — explicit page break (all document classes).                     */
+/* .slide  — new slide (slides class).  Semantically a slide boundary,       */
+/*           mechanically a page break.                                       */
+/* .part   — section divider (slides, book).  Carries its own page break     */
+/*           so that {.part} alone is sufficient — no need for               */
+/*           {.part .newpage} or {.part .slide}.                              */
 /******************************************************************************/
 
-.newpage {
+.newpage,
+.slide,
+.part {
   break-before: page;
   page-break-before: always;
 }
@@ -391,6 +445,10 @@ p:has(> [data-align-last-split-element='justify']) {
 /* Shared structure.  The .footnote rule sets the default for article/book    */
 /* (justified, serif, auto-hyphenation).  letter.css and slides.css           */
 /* override text-align, font-family, and hyphens as needed.                   */
+/*                                                                            */
+/* Continuous footnote numbering: paged.js handles footnote counters         */
+/* internally.  Do NOT add counter-reset for footnote or footnote-marker     */
+/* here — paged.js would detect it and replicate the reset on every page.    */
 /******************************************************************************/
 
 .footnotes ol {
@@ -615,7 +673,7 @@ div.content.sections-numbered[class*="section-numbers-"] h4::before {
 
 figure {
   margin: 1em 0;
-  text-align: center;
+  text-align: left;
   break-inside: avoid;
 }
 
@@ -660,8 +718,8 @@ figcaption {
   font-size: 0.9em;
   color: #444;
   margin-top: 0.5em;
-  text-align: center;
-  text-align-last: center;
+  text-align: left;
+  text-align-last: left;
 }
 
 figure.listing figcaption {
@@ -674,6 +732,7 @@ figure.listing figcaption {
 
 figure:not(.listing) figcaption {
   break-before: avoid;
+  font-style: italic;
 }
 
 .figure-number {

@@ -176,10 +176,10 @@
   <macro name="title">
     <choose>
       <if type="bill book graphic legal_case legislation motion_picture song standard software" match="any">
-        <text variable="title" font-style="italic"/>
+        <text variable="title" text-case="title" font-style="italic"/>
       </if>
       <else>
-        <text variable="title" quotes="true"/>
+        <text variable="title" text-case="title" quotes="true"/>
       </else>
     </choose>
   </macro>
@@ -207,7 +207,7 @@
           <if variable="container-title" match="any">
             <group delimiter=" ">
               <text term="in"/>
-              <text variable="container-title" font-style="italic"/>
+              <text variable="container-title" text-case="title" font-style="italic"/>
             </group>
           </if>
           <!-- Unpublished Conference Paper -->
@@ -334,7 +334,7 @@
         <if type="article-journal">
           <group delimiter=", ">
             <text macro="title"/>
-            <text variable="container-title" font-style="italic" form="short"/>
+            <text variable="container-title" text-case="title" font-style="italic" form="short"/>
             <text macro="locators"/>
             <text macro="page"/>
             <text macro="issued"/>
@@ -371,7 +371,7 @@
             <text macro="title"/>
             <group delimiter=" ">
               <text term="in" suffix=" "/>
-              <text variable="container-title" font-style="italic"/>
+              <text variable="container-title" text-case="title" font-style="italic"/>
             </group>
             <text macro="locators"/>
             <text macro="editor"/>
@@ -430,7 +430,7 @@
         <else-if type="webpage post-weblog post" match="any">
           <group delimiter=", " suffix=".">
             <text macro="title"/>
-            <text variable="container-title"/>
+            <text variable="container-title" text-case="title"/>
           </group>
           <text macro="access"/>
         </else-if>
@@ -480,7 +480,7 @@
         <else-if type="article-magazine article-newspaper broadcast interview manuscript map patent personal_communication song speech thesis webpage" match="any">
           <group delimiter=", " suffix=".">
             <text macro="title"/>
-            <text variable="container-title" font-style="italic"/>
+            <text variable="container-title" text-case="title" font-style="italic"/>
             <text macro="locators"/>
             <text macro="publisher"/>
             <text macro="page"/>
@@ -491,7 +491,7 @@
         <else>
           <group delimiter=", " suffix=". ">
             <text macro="title"/>
-            <text variable="container-title" font-style="italic"/>
+            <text variable="container-title" text-case="title" font-style="italic"/>
             <text macro="locators"/>
           </group>
           <text macro="collection"/>

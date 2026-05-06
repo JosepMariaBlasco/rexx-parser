@@ -53,7 +53,7 @@
   - Headings with .unnumbered, or inside .title-page, .toc-exclude,
     or .abstract containers, are skipped entirely.
 
-  Chapter mode (rexxdoc-chapter):
+  Chapter mode:
 
   When div.content has a data-chapter="N" attribute, the script enters
   chapter mode:
@@ -135,7 +135,7 @@
     if (match) maxDepth = parseInt(match[1], 10);
     if (maxDepth < 1 || maxDepth > 4) return;
 
-    /* Chapter prefix for rexxdoc-chapter: data-chapter="N" on div.content  */
+    /* Chapter prefix: data-chapter="N" on div.content                     */
     /* When present, all section numbers are prefixed with "N." so that    */
     /* h1 numbers become "N.1.", "N.2.", h2 becomes "N.1.1.", etc.         */
     var chapterPrefix = "";

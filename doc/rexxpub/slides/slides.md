@@ -21,7 +21,7 @@ Barcelona, May 3--6, 2026
 
 :::::
 
-About this presentation {.newpage}
+About this presentation {.slide}
 =======================
 
 This slide deck documents the `slides` document class for RexxPub.
@@ -30,10 +30,10 @@ It is itself a `slides.md` file, rendered by the class it describes
 --- so every slide you see is a live example of the features being
 documented.
 
-Structure of a slide deck {.part .newpage}
+Structure of a slide deck {.part}
 =========================
 
-The title slide {.newpage}
+The title slide {.slide}
 ================
 
 The title slide uses the same `::::: title-page` fenced div as the
@@ -55,14 +55,14 @@ Presentation Title <small>Subtitle</small>
 Two new elements are available for slides: `event` and `venue`,
 useful for conference presentations.
 
-Content slides {.newpage}
+Content slides {.slide}
 ===============
 
-Each `<h1>` with `{.newpage}` starts a new slide.  The heading
+Each `<h1>` with `{.slide}` starts a new slide.  The heading
 becomes the slide title, rendered in blue with an underline.
 
 ```
-Slide Title {.newpage}
+Slide Title {.slide}
 ======================
 
 Content goes here.
@@ -72,20 +72,24 @@ The body text is set in Helvetica/Arial at 20pt, left-aligned,
 without justification or hyphenation --- optimised for projection
 readability.
 
-Section dividers {.newpage}
+`{.newpage}` also works and is equivalent to `{.slide}`, but
+`{.slide}` is preferred for clarity.
+
+Section dividers {.slide}
 =================
 
-A section divider is an `<h1>` with both `.part` and `.newpage`:
+A section divider is an `<h1>` with `{.part}`:
 
 ```
-Section Name {.part .newpage}
+Section Name {.part}
 =============================
 ```
 
 This produces a centred title without the underline bar, useful for
-separating major parts of the presentation.
+separating major parts of the presentation.  The page break is
+implicit --- no need to add `{.newpage}` or `{.slide}`.
 
-Lists on slides {.newpage}
+Lists on slides {.slide}
 ================
 
 Lists are the bread and butter of conference slides:
@@ -102,7 +106,7 @@ Lists are the bread and butter of conference slides:
 2. With consistent spacing
 3. And compact margins
 
-Code on slides {.newpage}
+Code on slides {.slide}
 ===============
 
 Slides support both generic code blocks and Rexx-highlighted blocks.
@@ -124,7 +128,7 @@ Say "Hello," name"!"
 The code font is 14pt --- smaller than the body text, but large
 enough for projection.
 
-Tables and blockquotes {.newpage}
+Tables and blockquotes {.slide}
 =======================
 
 Tables use the `booktabs` convention, with the accent colour:
@@ -141,7 +145,7 @@ Blockquotes keep a coloured left bar (useful on projection):
 > This is a blockquote.  The left bar helps it stand out at a
 > distance --- unlike `article`, where it is removed.
 
-Page layout {.newpage}
+Page layout {.slide}
 ============
 
 - **Page size:** 254mm x 142.875mm (exact 16:9, FHD-compatible)
@@ -153,7 +157,7 @@ Page layout {.newpage}
 [^fn]: This is a footnote on a slide.  Useful for references or
 attributions without cluttering the slide body.
 
-YAML front matter {.newpage}
+YAML front matter {.slide}
 ==================
 
 Slides support [YAML front matter](../yaml/) for setting RexxPub
@@ -174,7 +178,7 @@ the author's intent is always respected.
 The highlighting `style` is an exception: it can always be
 overridden by the reader via the style chooser.
 
-The closing slide {.newpage}
+The closing slide {.slide}
 ==================
 
 Use `::::: closing-page` for a centred closing slide:
@@ -182,7 +186,7 @@ Use `::::: closing-page` for a centred closing slide:
 ```
 ::::: closing-page
 
-Thank You! {.newpage}
+Thank You! {.slide}
 =====================
 
 Questions?

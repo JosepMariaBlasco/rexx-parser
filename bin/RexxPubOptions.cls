@@ -328,6 +328,5 @@ Return
     When "letter"           Then Return 0
     When "book"             Then Return 2
     When "slides"           Then Return 0
-    When "rexxdoc-chapter"  Then Return 4
     Otherwise                    Return 3
   End

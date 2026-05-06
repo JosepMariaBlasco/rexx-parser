@@ -193,7 +193,6 @@ Exit
   Else If URI~endsWith(  "slides.md" ) Then URI = Left(URI, Length(URI) -  9)
   Else If URI~endsWith(  "letter.md" ) Then URI = Left(URI, Length(URI) -  9)
   Else If URI~endsWith( "article.md" ) Then URI = Left(URI, Length(URI) - 10)
-  Else If URI~endsWith( "rexxdoc-chapter.md" ) Then URI = Left(URI, Length(URI) - 18)
 
   fileLocation = FileSpec("Location",file)
   fileName     = FileSpec("Name",    file)
@@ -212,7 +211,6 @@ Exit
     When "slides.md"           Then filenameSpecificStyle = "print/slides"
     When "article.md"          Then filenameSpecificStyle = "print/article"
     When "letter.md"           Then filenameSpecificStyle = "print/letter"
-    When "rexxdoc-chapter.md"  Then filenameSpecificStyle = "print/rexxdoc-chapter"
     Otherwise                       filenameSpecificStyle = "markdown"
   End
 
@@ -249,7 +247,7 @@ Exit
   -- docclass: YAML overrides filename inference
   If opts["docclass"] \== .Nil Then Do
     yamlDocClass = opts["docclass"]
-    validClasses = "article book letter slides rexxdoc-chapter"
+    validClasses = "article book letter slides"
     If validClasses~caselessWordPos(yamlDocClass) > 0 Then
       filenameSpecificStyle = "print/"yamlDocClass
   End
@@ -360,7 +358,7 @@ Exit
   listingsAttrs = captionResult["listingsAttrs"]
   figuresAttrs  = captionResult["figuresAttrs"]
 
-  /* Build chapter attributes for rexxdoc-chapter class                     */
+  /* Build chapter attributes                                                */
   chapterNum = opts["chapter"]
   If chapterNum \== .Nil Then Do
     chapterLabel = "'Chapter" chapterNum".'"
@@ -379,8 +377,10 @@ Exit
       When "%contents%"      Then Do line Over contents; Say line; End
       When "%footer%"        Then Call OptionalCall PageFooter
       When "%sidebar%"       Then Call OptionalCall Sidebar, uri
-      When "%printjs%"       Then If print Then
+      When "%printjs%"       Then If print Then Do
         Say "<script src='/js/paged.polyfill.js'></script>"
+        Say "<script src='/rexx-parser/js/fixFootnoteNumbers.js'></script>"
+      End
       When "%printtoc%"      Then
         Say "<script src='/rexx-parser/js/createToc.js'></script>"
       When "%printsections%"  Then

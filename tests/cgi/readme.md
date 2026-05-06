@@ -102,7 +102,6 @@ All fixtures are in `fixtures/`:
 | `basic.md` | Simple Markdown, no YAML front matter |
 | `with-yaml.md` | YAML: language, highlight-style, section-numbers |
 | `docclass-article.md` | `docclass: article` in YAML |
-| `docclass-chapter.md` | `docclass: rexxdoc-chapter`, `chapter: 5` |
 | `rexx-code.md` | Fenced code block with Rexx source |
 | `hello.rex` | Rexx source file for `view=highlight` tests |
 
@@ -115,14 +114,10 @@ What is tested (39 tests)
 - **YAML options** (3): language, highlight-style, section-numbers.
 - **Docclass article** (3): rexxpub-base.css, article.css, no
   markdown.css.
-- **Docclass rexxdoc-chapter** (5): rexxpub-base.css,
-  rexxdoc-chapter.css, data-chapter attribute, chapter label,
-  default section-numbers.
 - **Fenced code** (3): highlight div, keyword classes, theme CSS.
 - **URL param style** (2): style=light changes highlight class and CSS.
 - **URL param print=pdf** (8): paged.polyfill.js inclusion,
-  print-specific CSS loading for basic (no docclass), article,
-  and rexxdoc-chapter.
+  print-specific CSS loading for basic (no docclass), article.
 - **Invalid parameters** (1): unknown param returns 404.
 - **Nonexistent file** (1): returns 404.
 - **view=highlight** (5): .rex with highlight, without highlight,

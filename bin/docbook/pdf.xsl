@@ -1631,12 +1631,18 @@ Version:1.72
 From: fo/index.xsl
 Reason: remove white space for indexterm anchors
 Version:1.72
+Updated: add $fop1.extensions to use inline.or.block (align with
+         index.xsl 1.79.2).  When an indexterm is a direct child of
+         a section, inline.or.block returns fo:block instead of
+         fo:wrapper.  This lets the keep-with-next in hidden.properties
+         take effect in FOP, so section titles followed by indexterms
+         are kept with the first visible content.
 -->
 <xsl:template match="indexterm" name="indexterm">
   <!-- Temporal workaround for bug in AXF -->
   <xsl:variable name="wrapper.name">
     <xsl:choose>
-      <xsl:when test="$axf.extensions != 0">
+      <xsl:when test="$axf.extensions != 0 or $fop1.extensions != 0">
         <xsl:call-template name="inline.or.block"/>
       </xsl:when>
       <xsl:otherwise>fo:wrapper</xsl:otherwise>

@@ -18,8 +18,8 @@
 /* Markdown structure:                                                        */
 /*                                                                            */
 /*   ::::: title-page        Title slide                                      */
-/*   h1 {.newpage}           Content slide — h1 is the slide title            */
-/*   h1 {.part .newpage}     Section divider — centred, large                 */
+/*   h1 {.slide}             Content slide — h1 is the slide title            */
+/*   h1 {.part}              Section divider — centred, large                 */
 /*   ::::: closing-page      Optional closing slide                           */
 /*                                                                            */
 /* Version history:                                                           */
@@ -28,6 +28,20 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20260303    0.5  First version                                             */
 /* 20260306         Refactored: common styles moved to rexxpub-base.css       */
+/* 20260411         Title bar with coloured background (print only);          */
+/*                  reduced page margins; vertically centred section           */
+/*                  dividers; web view unchanged                              */
+/* 20260414         New {.slide} class for content slides; {.part} no         */
+/*                  longer requires {.newpage} — page break is now in        */
+/*                  rexxpub-base.css.  {.newpage} still works.               */
+/*                  Fix: closing-page selectors used div.closing-page        */
+/*                  but Pandoc generates <section>; changed to               */
+/*                  .closing-page (class-only selector)                      */
+/* 20260417         Tighter vertical rhythm: line-height 1.4 → 1.3,          */
+/*                  paragraph margin-bottom 0.6em → 0.45em.                  */
+/*                  Fix: Pandoc-highlighted blocks (div.sourceCode) now      */
+/*                  have the same vertical margin as plain pre blocks;       */
+/*                  adjacent code blocks (command + output) are tightened.   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -40,15 +54,16 @@
 div.content {
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 20pt;
-  line-height: 1.4;
+  line-height: 1.3;                     /* Tighter than base — slides are     */
+                                        /* read in glances, not paragraphs    */
   text-align: left;
   text-align-last: left;
   hyphens: manual;                      /* No auto-hyphenation in slides      */
 }
 
 /******************************************************************************/
-/* Slide title (h1)                                                           */
-/* Each h1 with {.newpage} starts a new slide.                                */
+/* Slide title (h1) — web view                                               */
+/* Blue text with underline — the original POC style.                        */
 /******************************************************************************/
 
 h1 {
@@ -62,8 +77,8 @@ h1 {
 }
 
 /******************************************************************************/
-/* Section divider slides                                                     */
-/* Use {.part .newpage} on an h1 for a full-page centred section title.       */
+/* Section divider slides — web view                                         */
+/* Use {.part} on an h1 for a full-page centred section title.               */
 /******************************************************************************/
 
 h1.part {
@@ -102,7 +117,9 @@ h3 {
 
 div.content p {
   margin: 0;
-  margin-bottom: 0.6em;
+  margin-bottom: 0.45em;                /* Tighter than base (0.6em) —        */
+                                        /* less vertical gap between          */
+                                        /* paragraphs on slides               */
   text-indent: 0;
 }
 
@@ -119,7 +136,7 @@ div.content ol {
 }
 
 div.content li {
-  margin-bottom: 0.4em;                 /* More generous than base            */
+  margin-bottom: 0.2em;                 /* Compact but readable               */
 }
 
 div.content li:last-child {
@@ -155,6 +172,7 @@ div.content ol ul {
   padding-bottom: 0;
   text-align: center;
   text-align-last: center;
+  string-set: presentation-title content();
 }
 
 .title-page h1 small {
@@ -227,12 +245,12 @@ div.content ol ul {
 /* Closing slide (thank you, Q&A, contact info)                               */
 /******************************************************************************/
 
-div.content div.closing-page {
+div.content .closing-page {
   text-align: center;
   text-align-last: center;
 }
 
-div.content div.closing-page h1 {
+div.content .closing-page h1 {
   font-size: 2em;
   border-bottom: none;
   margin-top: 1em;
@@ -241,7 +259,7 @@ div.content div.closing-page h1 {
   text-align-last: center;
 }
 
-div.content div.closing-page p {
+div.content .closing-page p {
   text-align: center;
   text-align-last: center;
 }
@@ -271,6 +289,35 @@ div.content > pre {
   border-left: none;
   border-radius: 4px;                   /* Slightly rounded for slides        */
   padding: 0.5em 0.8em;
+}
+
+/******************************************************************************/
+/* Pandoc-highlighted code blocks (div.sourceCode)                            */
+/* Without these overrides, highlighted blocks (```bash, ```python, etc.)     */
+/* get the base's 1em vertical margin plus div.sourceCode's 0.5em padding —   */
+/* noticeably more vertical space than plain fenced blocks.                   */
+/******************************************************************************/
+
+div.content div.sourceCode {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  padding: 0.5em 0.8em;
+}
+
+div.content div.sourceCode pre {
+  margin: 0;                            /* div.sourceCode already has padding */
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Tighten the gap between adjacent code blocks (e.g. command + output)       */
+div.content pre + pre,
+div.content div.sourceCode + pre,
+div.content pre + div.sourceCode,
+div.content div.sourceCode + div.sourceCode {
+  margin-top: 0.2em;
 }
 
 /******************************************************************************/
@@ -321,24 +368,97 @@ div.content table tbody {
 }
 
 /******************************************************************************/
-/* Page break                                                                 */
+/******************************************************************************/
+/* Print-only styles                                                          */
+/* Everything below applies only in paged.js / print mode.                    */
+/******************************************************************************/
 /******************************************************************************/
 
 @media print {
-  h1.newpage {
+
+  /**************************************************************************/
+  /* Slide boundary                                                         */
+  /**************************************************************************/
+
+  h1.newpage,
+  h1.slide {
     margin-top: 0;
   }
+
+  /**************************************************************************/
+  /* Slide title (h1) — print view                                         */
+  /* Coloured title bar stretching to page edges.  The generous negative    */
+  /* margins overshoot any inherited padding; the page box clips them.     */
+  /**************************************************************************/
+
+  h1 {
+    font-size: 1.4em;
+    color: #fff;
+    background-color: #00529B;
+    margin: 0 -5cm;
+    padding: 0.4em 5cm;
+    margin-bottom: 0.5em;
+    border-bottom: none;
+  }
+
+  /**************************************************************************/
+  /* Section divider slides — print view                                   */
+  /* Vertically centred on the page.                                       */
+  /**************************************************************************/
+
+  h1.part {
+    background-color: transparent;
+    color: #00529B;
+    margin: 0;
+    margin-top: 45mm;
+    padding: 0;
+  }
+
+  /**************************************************************************/
+  /* Title slide — print view                                              */
+  /* No title bar — centred layout as in web view.                         */
+  /**************************************************************************/
+
+  .title-page h1 {
+    color: #00529B;
+    background-color: transparent;
+    margin: 1em 0 0.3em 0;
+    padding: 0;
+  }
+
+  /**************************************************************************/
+  /* Closing slide — print view                                            */
+  /* No title bar — centred layout.                                        */
+  /**************************************************************************/
+
+  div.content .closing-page h1 {
+    background-color: transparent;
+    color: #00529B;
+    margin: 1em 0 0 0;
+    padding: 0;
+  }
+
 }
 
 /******************************************************************************/
 /* Pagination                                                                 */
 /* FHD-compatible 16:9 slide: 254mm x 142.875mm                               */
+/* @page rules are always print-only by definition.                          */
 /******************************************************************************/
 
 @page {
 
-  margin: 1.5cm 1.8cm;                  /* Compact margins for slides         */
+  margin: 0 1cm 0.8cm 1cm;              /* Top: 0 (title bar covers it)       */
+                                         /* Sides: 1cm (tighter for slides)    */
+                                         /* Bottom: 0.8cm (compact)            */
   size: 254mm 142.875mm;                /* Exact 16:9, FHD-compatible         */
+
+  @bottom-left {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    content: string(presentation-title);
+    font-size: 10pt;
+    color: #999;
+  }
 
   @bottom-right {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -349,15 +469,21 @@ div.content table tbody {
 
 }
 
-/* No slide number on the title slide                                         */
+/* No footer on the title slide                                              */
 
 @page:first {
+  @bottom-left {
+    content: none;
+  }
   @bottom-right {
     content: none;
   }
 }
 
 @page :blank {
+  @bottom-left {
+    content: none;
+  }
   @bottom-right {
     content: none;
   }
@@ -395,4 +521,25 @@ div.content table tbody {
     margin-top: 8pt;
     padding-top: 6pt;
   }
+}
+
+/******************************************************************************/
+/* Figures — overrides for slides                                             */
+/* Captions a little smaller; center the figure itself (base only centers     */
+/* its inline contents, which doesn't help when the image is narrower than    */
+/* the slide width).                                                          */
+/******************************************************************************/
+
+div.content figure {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+div.content figure img {
+  display: block;
+  margin: 0 auto;
+}
+
+div.content figcaption {
+  font-size: 0.75em;
 }

@@ -508,7 +508,7 @@ AllWentWell: Nop
   listingsAttrs = captionResult["listingsAttrs"]
   figuresAttrs  = captionResult["figuresAttrs"]
 
-  /* Build chapter attributes for rexxdoc-chapter class                     */
+  /* Build chapter attributes                                                */
   chapterNum = opts["chapter"]
   If chapterNum \== .Nil Then Do
     chapterLabel = "'Chapter" chapterNum".'"

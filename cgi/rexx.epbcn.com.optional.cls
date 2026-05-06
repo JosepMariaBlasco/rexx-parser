@@ -157,6 +157,10 @@ Crumb:
 
   Select Case Arg(1)
 
+    -- Metaproject
+
+    When "/metaproject"            Then Return "Metaproject"
+
     -- Tools
 
     When "/tools"                  Then Return "Tools and utilities"
@@ -292,7 +296,6 @@ Crumb:
     When docrexxpub"/letter"       Then Return "Letter to the Rexx Community"
     When docrexxpub"/slides"       Then Return "The slides Document Class"
     When docrexxpub"/book"         Then Return "The RexxPub book"
-    When docrexxpub"/rexxdoc-chapter" Then Return "The rexxdoc-chapter Document class"
     When docrexxpub"/yaml"         Then Return "YAML Front Matter"
     When docrexxpub"/bibliography" Then Return "The RexxPub Bibliography Style"
 
@@ -334,9 +337,11 @@ Crumb:
     When docpub                    Then Return "Publications"
     When docpub"/36"               Then Return "36<sup>th</sup> Symposium"
     When docpub"/37"               Then Return "37<sup>th</sup> Symposium"
-    When docpub"/37/2026-05-04-The-Rexx-Parser-Revisited"
+    When docpub"/37/2026-05-04-Artifacts-of-the-Ephemeral"
+                                   Then Return "Artifacts of the Ephemeral"
+    When docpub"/37/2026-05-06-The-Rexx-Parser-Revisited"
                                    Then Return "The Rexx Parser Revisited"
-    When docpub"/37/2026-05-05-RexxPub-A-Rexx-Publishing-Framework"
+    When docpub"/37/2026-05-06-RexxPub-A-Rexx-Publishing-Framework"
                                    Then Return "RexxPub: A Rexx Publishing Framework"
     When docpub"/36/2025-05-05-The-Rexx-Parser"
                                    Then Return "The Rexx Parser"
