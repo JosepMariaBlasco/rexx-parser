@@ -1428,6 +1428,36 @@ class `img-scroll` wrapping an `<img>` element will show a
 horizontal scrollbar when the image exceeds the content width, rather
 than shrinking the image to fit.
 
+Epigraph
+--------
+
+An epigraph is a short quotation placed at the start of a document
+or a section, following the convention of the LaTeX `epigraph`
+package.  All classes support it through three nested Pandoc fenced
+divs: an outer `epigraph` div containing an optional `cite` div for
+the quotation and an optional `attribution` div for the credit:
+
+```
+::::: epigraph
+
+::: cite
+*The quotation goes here, typically in italic.*
+:::
+
+::: attribution
+--- Author, *Source*.
+:::
+
+:::::
+```
+
+Either inner div may be omitted.  An epigraph with only `cite`
+renders the quotation alone; one with only `attribution` renders
+just the credit.
+
+The quotation is set in a slightly smaller font, indented from the
+left margin, and the attribution is aligned to the right.
+
 
 The `article` Class {.chapter}
 ===================

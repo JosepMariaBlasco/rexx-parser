@@ -145,6 +145,16 @@ Blockquotes keep a coloured left bar (useful on projection):
 > This is a blockquote.  The left bar helps it stand out at a
 > distance --- unlike `article`, where it is removed.
 
+Epigraphs {.slide}
+=========
+
+The `epigraph` convention shared by all RexxPub document classes
+also works on slides --- handy for opening a presentation or a
+section with a quotation.  Use the outer `::::: epigraph` fenced div
+with optional `:::cite` and `:::attribution` inner divs.  See
+[Epigraph](../book/#epigraph) in the *Common Core* chapter of the
+`book` documentation for the full description.
+
 Page layout {.slide}
 ============
 

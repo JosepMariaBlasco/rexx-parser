@@ -85,6 +85,11 @@ links.  This makes the `letter` class suitable not only for
 conventional correspondence, but also for technical communications that
 need to include code samples or references.
 
+The `epigraph` convention shared by all RexxPub document classes is
+also available in letters --- useful for opening a letter with a
+quotation.  See [Epigraph](../book/#epigraph) in the *Common Core*
+chapter of the `book` documentation for the full description.
+
 For example, this is a Rexx fenced code block inside a letter:
 
 ~~~rexx

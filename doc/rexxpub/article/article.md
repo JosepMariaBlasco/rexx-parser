@@ -282,6 +282,16 @@ default left blue bar and larger font size are both removed.
 > same font size as the body text --- exactly like LaTeX's `quote`
 > environment.
 
+Epigraphs
+---------
+
+For short quotations placed at the start of a document or section,
+the `article` class supports the `epigraph` convention shared by all
+RexxPub document classes: an outer `::::: epigraph` fenced div
+containing optional `:::cite` and `:::attribution` inner divs.  See
+[Epigraph](../book/#epigraph) in the *Common Core* chapter of the
+`book` documentation for the full description.
+
 Tables
 ------
 

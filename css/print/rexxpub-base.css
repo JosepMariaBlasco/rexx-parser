@@ -42,50 +42,6 @@
 /* 20260306    0.5  First version — extracted from article/book/letter/slides */
 /* 20260308         Add support for optional numbered headers                 */
 /* 20260309         Fix: use descendant selectors for section numbering so    */
-/*                  that paged.js /******************************************************************************/
-/*                                                                            */
-/* rexxpub-base.css - Shared base styles for all RexxPub document classes     */
-/* ======================================================================     */
-/* This program is part of the Rexx Parser package                            */
-/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
-/*                                                                            */
-/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
-/*                                                                            */
-/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
-/*                                                                            */
-/* This stylesheet contains styles common to all four document classes        */
-/* (article, book, letter, slides).  It is loaded AFTER Bootstrap and         */
-/* BEFORE the class-specific stylesheet:                                      */
-/*                                                                            */
-/*   bootstrap.css -> rexxpub-base.css -> {class}.css -> {size}.css           */
-/*                                                                            */
-/* It replaces the former markdown.css.                                       */
-/*                                                                            */
-/* Contents:                                                                  */
-/*   1. CSS custom properties (12pt defaults)                                 */
-/*   2. EPBCN site chrome (body, navbar, sidebar, print hide)                 */
-/*   3. Heading defaults (font-family, break-after)                           */
-/*   4. Inline code                                                           */
-/*   5. Links and URIs                                                        */
-/*   6. Small capitals                                                        */
-/*   7. Pre blocks (base)                                                     */
-/*   8. Horizontal image scrollbar (JLF contribution)                         */
-/*   9. Page break (.newpage)                                                 */
-/*  10. Tables (booktabs style, defaults)                                     */
-/*  11. Lists (base)                                                          */
-/*  12. paged.js split-element fixes                                          */
-/*  13. Footnotes (base)                                                      */
-/*  14. Bibliographies (Pandoc CSL)                                           */
-/*  15. Section numbering (opt-in via class on div.content)                   */
-/*  16. Figures and listings (captions, numberFigures.js)                     */
-/*                                                                            */
-/* Version history:                                                           */
-/*                                                                            */
-/* Date     Version Details                                                   */
-/* -------- ------- --------------------------------------------------------- */
-/* 20260306    0.5  First version — extracted from article/book/letter/slides */
-/* 20260308         Add support for optional numbered headers                 */
-/* 20260309         Fix: use descendant selectors for section numbering so    */
 /*                  that paged.js fragment wrappers do not break counters;    */
 /*                  explicitly exclude .title-page, .toc-exclude, .abstract   */
 /* 20260310         Implement figure and code captions                        */
@@ -737,4 +693,70 @@ figure:not(.listing) figcaption {
 
 .figure-number {
   font-weight: bold;
+}
+
+/******************************************************************************/
+/* 17. Utility classes (.text-center, .text-left, .text-right)                */
+/******************************************************************************/
+
+/* Bootstrap defines .text-{center,left,right,justify} as text-align utilities */
+/* but does not touch text-indent, so a paragraph indented by the document's   */
+/* default rule (e.g. text-indent: 1.5em in article.css) appears off-balance.  */
+/* These rules cancel that indent for the alignment utilities.  The selector   */
+/* must reach the inner <p> elements: a rule on the div alone is overridden    */
+/* by 'div.content p { text-indent: 1.5em }', which matches each <p> directly. */
+
+div.content .text-center,
+div.content .text-left,
+div.content .text-right,
+div.content .text-center p,
+div.content .text-left p,
+div.content .text-right p {
+  text-indent: 0;
+}
+
+/******************************************************************************/
+/* 18. Epigraph                                                               */
+/******************************************************************************/
+
+/* An epigraph is a short quotation placed at the start of a document or       */
+/* section.  Following the LaTeX 'epigraph' package convention, it has two     */
+/* parts: the quotation itself and the attribution.  The Markdown convention   */
+/* uses two nested fenced divs:                                                */
+/*                                                                             */
+/*   ::: epigraph                                                              */
+/*   ::: cite                                                                  */
+/*   *The quotation.*                                                          */
+/*   :::                                                                       */
+/*                                                                             */
+/*   ::: attribution                                                           */
+/*   --- Author, *Source*.                                                     */
+/*   :::                                                                       */
+/*   :::                                                                       */
+/*                                                                             */
+/* Either part may be omitted: an epigraph with only 'cite' renders the        */
+/* quotation; an epigraph with only 'attribution' renders just the credit.     */
+
+div.content .epigraph {
+  margin: 1.5em 0 2em 0;
+  margin-left: 6em;
+  margin-right: 1em;
+  font-size: 0.9em;
+}
+
+div.content .epigraph .cite p {
+  text-indent: 0;
+  margin-bottom: 0.4em;
+}
+
+div.content .epigraph .attribution {
+  margin-top: 0.3em;
+  font-size: 0.95em;
+}
+
+div.content .epigraph .attribution p {
+  text-indent: 0;
+  text-align: right;
+  text-align-last: right;
+  margin: 0;
 }
