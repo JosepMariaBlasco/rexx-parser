@@ -68,19 +68,19 @@ from Pandoc's standard metadata:
 ```
 ---
 bibliography: references.bib
+lang: en
 rexxpub:
   section-numbers: 3
   number-figures: true
-  language: en
   style: light
 ---
 ```
 
 The supported options under `rexxpub:` include `style`, `section-numbers`,
-`number-figures` (which accepts `0`, `1`, `true`, or `false`,
-case-insensitive), and `language`, as well as `listings:` and `figures:`
-sub-tables for caption and frame customization, and the Pandoc top-level
-`highlight-style`.
+and `number-figures` (which accepts `0`, `1`, `true`, or `false`,
+case-insensitive), as well as `listings:` and `figures:` sub-tables for
+caption and frame customization.  The Pandoc top-level metadata fields
+`lang` (HTML language) and `highlight-style` are also recognized.
 
 All options are set exclusively in the YAML front matter.  Since md2html
 has no `--style` command-line option, the YAML `style` value is always

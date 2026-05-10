@@ -100,10 +100,10 @@ Else
 /* YAML front matter options                                                  */
 /******************************************************************************/
 
-::Method test_yaml_language
+::Method test_yaml_lang
   r = self~httpGet(self~fixtureURL("with-yaml.md"))
   self~assertContains(r~entry("body"), "lang='es'", -
-    "YAML language: es sets lang attribute")
+    "YAML top-level lang: es sets lang attribute")
 
 ::Method test_yaml_highlight_style
   r = self~httpGet(self~fixtureURL("with-yaml.md"))

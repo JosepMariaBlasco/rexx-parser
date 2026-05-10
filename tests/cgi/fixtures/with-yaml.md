@@ -1,8 +1,8 @@
 ---
 highlight-style: tango
+lang: es
 rexxpub:
   style: light
-  language: es
   section-numbers: 2
 ---
 

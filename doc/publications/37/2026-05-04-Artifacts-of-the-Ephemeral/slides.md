@@ -1,8 +1,8 @@
 ---
+lang: en
 rexxpub:
   docclass: slides
   style: print
-  language: en
 ---
 
 ::::: title-page

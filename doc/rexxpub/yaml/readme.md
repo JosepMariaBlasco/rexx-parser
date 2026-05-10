@@ -88,7 +88,6 @@ currently supported options are:
 | `section-numbers`  | `0`--`4`                       | Per class | All three        | Section numbering depth            |
 | `number-figures`   | `0`, `1`, `true`, or `false`   | `true`    | All three        | Automatic figure/listing numbering |
 | `docclass`         | `article`, `book`, `letter`, `slides` | Per filename | md2pdf, CGI | Document class              |
-| `language`         | Language code (e.g. `en`, `es`)| `en`      | All three        | Document language (`<html lang>`)  |
 | `outline`          | `0`--`6`                       | `3`       | md2pdf only      | PDF outline depth (H1..Hn)         |
 
 The `number-figures` option accepts `0`, `1`, `true`, or `false`
@@ -109,10 +108,6 @@ class.  In the CGI, this also selects the corresponding CSS
 (`print/article.css`) and determines the default section-numbering
 depth.  Invalid class names are silently ignored (with a warning
 in `md2pdf`).
-
-The `language` option sets the `lang` attribute on the `<html>`
-element.  This affects hyphenation, spell-checking, and
-accessibility in the browser or PDF viewer.
 
 The `outline` option controls how many heading levels are
 included in the PDF document outline (bookmarks).  It is only
@@ -144,6 +139,26 @@ name (looked up in the `csl/` directory of the distribution) or a
 full path to a `.csl` file.  When a `csl` field is present in the
 YAML front matter, Pandoc uses it regardless of the `--csl`
 command-line option.
+
+### Document language (`lang`)
+
+The `lang` field is a standard Pandoc metadata field and should be
+placed at the top level of the YAML front matter, not under
+`rexxpub:`:
+
+```
+---
+lang: es
+rexxpub:
+  style: dark
+---
+```
+
+This sets the `lang` attribute on the `<html>` element (or the
+equivalent in EPUB and PDF), which affects hyphenation,
+spell-checking, and accessibility in the browser or PDF viewer.
+The value should be a BCP 47 language code (e.g. `en`, `en-GB`,
+`es`).  When omitted, the default is `en`.
 
 ### Syntax highlighting style (`highlight-style`)
 
@@ -324,7 +339,6 @@ built-in default applies.
 | `section-numbers`  | YAML        | URL/CLI        | Per class      |
 | `number-figures`   | YAML        | URL/CLI        | `true`         |
 | `docclass`         | YAML        | CLI / filename | Per filename   |
-| `language`         | YAML        | CLI            | `en`           |
 | `outline`          | YAML        | CLI            | `3`            |
 
 Example
@@ -336,9 +350,9 @@ A typical article with RexxPub options in the YAML front matter:
 ---
 bibliography: references.bib
 csl: ../../../../csl/rexxpub.csl
+lang: en
 rexxpub:
   docclass: article
-  language: en
   section-numbers: 3
   number-figures: true
   outline: 4
@@ -366,8 +380,8 @@ automatic figure numbering, using the `article` document class
 (regardless of the filename).  The highlighting style will default
 to `dark`, but the reader can override it with `?style=light` or
 the style chooser dropdown.  The section numbering, figure
-numbering, document class, and language cannot be overridden from
-the URL --- they are fixed by the author.
+numbering, and document class cannot be overridden from the URL ---
+they are fixed by the author.
 
 When rendered with `md2pdf`, the PDF will include an outline
 (bookmarks) for headings H1 through H4, and the `<html lang>`

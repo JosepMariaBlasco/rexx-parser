@@ -60,6 +60,7 @@ Version history
   <li> PDF integration tests: 18 tests for md2pdf.rex with interactive runner (20260323).
   <li> New DocBook driver and new css2xsl utility (20260403).
   <li> New utilities to highlight the official ooRexx docs (20260404).
+  <li> Change rexxpub: language: to lang: in RexxPub YAML block (20260510).
 <tr><td>20251215<td>0.4a<td>
 <ul>
   <li> Jump release level to mark full Executor support (20251215).

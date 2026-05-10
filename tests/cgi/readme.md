@@ -100,7 +100,7 @@ All fixtures are in `fixtures/`:
 | File | Purpose |
 |---|---|
 | `basic.md` | Simple Markdown, no YAML front matter |
-| `with-yaml.md` | YAML: language, highlight-style, section-numbers |
+| `with-yaml.md` | YAML: lang, highlight-style, section-numbers |
 | `docclass-article.md` | `docclass: article` in YAML |
 | `rexx-code.md` | Fenced code block with Rexx source |
 | `hello.rex` | Rexx source file for `view=highlight` tests |
@@ -111,7 +111,7 @@ What is tested (39 tests)
 
 - **Basic response** (8): status 200, HTML structure, title extraction,
   default language, default stylesheets.
-- **YAML options** (3): language, highlight-style, section-numbers.
+- **YAML options** (3): lang, highlight-style, section-numbers.
 - **Docclass article** (3): rexxpub-base.css, article.css, no
   markdown.css.
 - **Fenced code** (3): highlight div, keyword classes, theme CSS.

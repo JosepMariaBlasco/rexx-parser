@@ -659,7 +659,6 @@ Options
   looked up in the `csl/` directory; a path is used as-is.
 - `--continue` — in batch mode, continues processing when a file
   fails, rather than aborting.
-- `--language` *code* — sets the document language (default: `en`).
 - `--default` *"options"* — sets default attributes for all Rexx
   fenced code blocks.
 - `--check-deps` — verifies that all external dependencies (Pandoc,
@@ -1024,10 +1023,10 @@ Pandoc's metadata:
 ---
 bibliography: references.bib
 csl: ../../../../csl/rexxpub.csl
+lang: en
 highlight-style: pygments
 rexxpub:
   docclass: article
-  language: en
   section-numbers: 3
   number-figures: true
   size: 12
@@ -1055,8 +1054,7 @@ highlighting style), `size` (the base font size), `section-numbers`
 (automatic figure and listing numbering, accepting `0`, `1`, `true`, or
 `false`), `docclass` (overrides the document class inferred from the
 filename or the CLI), `chapter` (sets the chapter number for the
-`book` class), `language` (sets the `<html lang>` attribute),
-and `outline` (the PDF bookmark depth, md2pdf only).
+`book` class), and `outline` (the PDF bookmark depth, md2pdf only).
 
 Two nested groups provide fine-grained control over captions.  The
 `listings:` group configures code listing captions, with keys for
@@ -1070,13 +1068,15 @@ blocks; the default is `none`).  The `figures:` group offers the
 same four caption keys for image captions, with a default `caption-position`
 of `below`.
 
-Two additional fields are standard Pandoc metadata and are placed at
+Three additional fields are standard Pandoc metadata and are placed at
 the top level of the YAML front matter, not under `rexxpub:`.  The
 `csl` field selects the citation style for Pandoc's `--citeproc`
-processing.  The `highlight-style` field selects the CSS theme for
-syntax highlighting of non-Rexx fenced code blocks (Python, Java,
-SQL, etc.); the available styles are `pygments` (the default), `kate`,
-`tango`, `espresso`, `zenburn`, `monochrome`, `breezeDark`, and
+processing.  The `lang` field sets the document language using a
+BCP 47 code (e.g. `en`, `es`, `en-GB`); RexxPub uses it to set the
+`<html lang>` attribute.  The `highlight-style` field selects the CSS
+theme for syntax highlighting of non-Rexx fenced code blocks (Python,
+Java, SQL, etc.); the available styles are `pygments` (the default),
+`kate`, `tango`, `espresso`, `zenburn`, `monochrome`, `breezeDark`, and
 `haddock`.  This does not affect Rexx code blocks, which use the
 Rexx Highlighter and the `style` option under `rexxpub:`.
 

@@ -110,9 +110,9 @@ from Pandoc's standard metadata:
 ```
 ---
 bibliography: references.bib
+lang: es
 rexxpub:
   docclass: article
-  language: es
   section-numbers: 3
   number-figures: true
   size: 12
@@ -123,9 +123,10 @@ rexxpub:
 
 The supported options under `rexxpub:` include `style`, `size`,
 `section-numbers`, `number-figures` (which accepts `0`, `1`, `true`,
-or `false`, case-insensitive), `docclass`, `language`, `outline`,
-as well as `listings:` and `figures:` sub-tables for caption and
-frame customization, and the Pandoc top-level `highlight-style`.
+or `false`, case-insensitive), `docclass`, `outline`, as well as
+`listings:` and `figures:` sub-tables for caption and frame
+customization.  The Pandoc top-level metadata fields `lang` (HTML
+language) and `highlight-style` are also recognized.
 
 All options except `style` are author options and can only be set in the
 YAML front matter.  The highlighting `style` follows a **reader-wins**

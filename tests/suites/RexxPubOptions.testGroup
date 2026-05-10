@@ -109,7 +109,6 @@ Else
   rp["size"]            = "11pt"
   rp["section-numbers"] = 4
   rp["docclass"]        = "Article"
-  rp["language"]        = "es"
   rp["outline"]         = 3
   yaml["rexxpub"] = rp
   opts = ParseRexxPubYAML(yaml)
@@ -143,14 +142,24 @@ Else
   self~assertEquals("article", opts["docclass"], -
     "Top-level: docclass is lowercased")
 
-::Method test_toplevel_language
+::Method test_toplevel_lang
+  -- 'lang' is standard Pandoc metadata (top-level YAML),
+  -- stored internally as 'language'.
+  yaml = .StringTable~new
+  yaml["lang"] = "es"
+  opts = ParseRexxPubYAML(yaml)
+  self~assertEquals("es", opts["language"], -
+    "Top-level: lang is copied to language")
+
+::Method test_toplevel_lang_not_read_from_rexxpub_block
+  -- 'language' inside rexxpub: must be ignored (only top-level 'lang' counts).
   yaml = .StringTable~new
   rp   = .StringTable~new
   rp["language"] = "es"
   yaml["rexxpub"] = rp
   opts = ParseRexxPubYAML(yaml)
-  self~assertEquals("es", opts["language"], -
-    "Top-level: language is copied")
+  self~assertEquals(.Nil, opts["language"], -
+    "rexxpub: language is ignored; only top-level 'lang' is read")
 
 ::Method test_toplevel_outline
   yaml = .StringTable~new

@@ -111,8 +111,8 @@ from Pandoc's standard metadata:
 ```
 ---
 bibliography: references.bib
+lang: en
 rexxpub:
-  language: en
   section-numbers: 3
   number-figures: true
   style: dark
@@ -123,9 +123,9 @@ rexxpub:
 
 The supported options under `rexxpub:` include `style`,
 `section-numbers`, `number-figures` (which accepts `0`, `1`, `true`,
-or `false`, case-insensitive), `language`, `cover` (path to a cover
-image), `chapter-level`, as well as the Pandoc top-level
-`highlight-style`.
+or `false`, case-insensitive), `cover` (path to a cover image), and
+`chapter-level`.  The Pandoc top-level metadata fields `lang` (HTML
+language) and `highlight-style` are also recognized.
 
 All options except `style` are author options and can only be set in the
 YAML front matter.  The highlighting `style` follows a **reader-wins**

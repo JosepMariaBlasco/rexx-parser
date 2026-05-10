@@ -34,7 +34,6 @@
 /*     section-numbers    - numbering depth (or .Nil if not set)              */
 /*     number-figures     - 0 or 1 (or .Nil if not set)                       */
 /*     docclass           - document class name (or .Nil if not set)          */
-/*     language           - HTML lang attribute (or .Nil if not set)          */
 /*     outline            - PDF bookmark depth (or .Nil if not set)           */
 /*                                                                            */
 /*   Listing sub-options (from rexxpub: listings:):                           */
@@ -52,6 +51,8 @@
 /*     figure-label              - custom label text (default: "")            */
 /*                                                                            */
 /*   Pandoc metadata (from top-level YAML):                                   */
+/*     language                  - HTML lang attribute (Pandoc variable      */
+/*                                 'lang'; or .Nil if not set)               */
 /*     highlight-style           - Pandoc highlighting theme                  */
 /*                                 (or .Nil if not set)                       */
 /*                                                                            */
@@ -96,6 +97,11 @@
   If yaml~hasIndex("highlight-style")
     Then opts["highlight-style"] = Lower(yaml["highlight-style"])
 
+  -- Read lang from top-level YAML (standard Pandoc metadata).
+  -- Stored internally as "language" for historical reasons.
+  If yaml~hasIndex("lang")
+    Then opts["language"] = yaml["lang"]
+
   -- Process second- and third-level entries
 
   If yaml~hasIndex("rexxpub") Then Call ReadRexxPubBlock
@@ -130,7 +136,6 @@ ReadRexxPubBlock: -- Read rexxpub: block
   Call ConditionalCopyFrom rp, "section-numbers"
   Call ConditionalCopyFrom rp, "number-figures" , lowerCase
   Call ConditionalCopyFrom rp, "docclass"       , lowerCase
-  Call ConditionalCopyFrom rp, "language"
   Call ConditionalCopyFrom rp, "outline"
   Call ConditionalCopyFrom rp, "chapter"
 
