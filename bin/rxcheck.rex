@@ -120,7 +120,7 @@
   If fullPath == .Nil Then
     Call Error "File '"file"' does not exist."
 
-  source = File2Array(fullPath)
+  source = LoadProgramSource(fullPath)
 
 Code:
 

@@ -147,7 +147,7 @@
   Else Do
     fullPath = .context~package~findProgram(file)
     If fullPath == .Nil Then Call Error "File '"file"' does not exist."
-    source = File2Array(fullPath)
+    source = LoadProgramSource(fullPath)
   End
 
   If Options.css == 0 Then Do

@@ -224,7 +224,7 @@ Exit
   -- Ok, now we have a file to process. Read it into an array                 --
   ------------------------------------------------------------------------------
 
-  source = File2Array( file )
+  source = LoadProgramSource( file )
 
   ------------------------------------------------------------------------------
   -- Parse YAML front matter for RexxPub options                              --

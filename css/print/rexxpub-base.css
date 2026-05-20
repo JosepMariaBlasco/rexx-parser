@@ -34,6 +34,10 @@
 /*  14. Bibliographies (Pandoc CSL)                                           */
 /*  15. Section numbering (opt-in via class on div.content)                   */
 /*  16. Figures and listings (captions, numberFigures.js)                     */
+/*  17. Utility classes (.text-center, .text-left, .text-right)               */
+/*  18. Epigraph                                                              */
+/*  19. Quotations (blockquote, .quote, .quotation)                           */
+/*  20. Nested emphasis (em em flips back to upright)                         */
 /*                                                                            */
 /* Version history:                                                           */
 /*                                                                            */
@@ -759,4 +763,83 @@ div.content .epigraph .attribution p {
   text-align: right;
   text-align-last: right;
   margin: 0;
+}
+
+/******************************************************************************/
+/* 19. Quotations (blockquote, .quote, .quotation)                            */
+/******************************************************************************/
+
+/* Block-level quotations follow LaTeX's two environments:                     */
+/*                                                                             */
+/*   quote     - block style: no first-line indent, paragraphs separated by    */
+/*               vertical space.  For short quotations or single paragraphs.   */
+/*   quotation - first-line indent on every paragraph except the first         */
+/*               (RexxPub convention: no indent at the start of a context),    */
+/*               no vertical space between paragraphs.  For long quotations    */
+/*               of multiple paragraphs.                                       */
+/*                                                                             */
+/* Markdown blockquotes ('> ...') and ::: quote fenced divs render as 'quote'. */
+/* ::: quotation fenced divs render as 'quotation'.                            */
+/*                                                                             */
+/* All three share LaTeX 'quote' geometry: symmetric 1.5em margins, no border, */
+/* no padding, body font-size, upright body style.                             */
+
+div.content blockquote,
+div.content .quote,
+div.content .quotation {
+  margin: 0.8em 1.5em;
+  padding: 0;
+  font-style: normal;
+  font-size: inherit;
+  border-left: none;
+}
+
+/* 'quote' style: no first-line indent, paragraphs separated by vertical space */
+
+div.content blockquote p,
+div.content .quote p {
+  text-indent: 0;
+  margin-bottom: 0.4em;
+}
+
+div.content blockquote p:last-child,
+div.content .quote p:last-child {
+  margin-bottom: 0;
+}
+
+/* 'quotation' style: first-line indent on every paragraph except the first   */
+/* (following the RexxPub convention that the first paragraph after a context */
+/* shift does not indent), no vertical space between paragraphs.              */
+
+div.content .quotation p {
+  text-indent: 1.5em;
+  margin-bottom: 0;
+}
+
+div.content .quotation > p:first-child {
+  text-indent: 0;
+}
+
+/******************************************************************************/
+/* 20. Nested emphasis (em em flips back to upright)                          */
+/******************************************************************************/
+
+/* Standard typographic convention: emphasis nested inside emphasis returns   */
+/* to upright, so a word emphasised inside an italic context stands out       */
+/* against its surroundings rather than blending in.  LaTeX achieves this     */
+/* automatically with \emph{}; in HTML+CSS we have to declare it.             */
+/*                                                                            */
+/* The rule is binary alternation by depth: 'em' is italic, 'em em' is        */
+/* upright, 'em em em' is italic again (inherited from the level-1 rule),     */
+/* and so on.  A single rule on 'em em' is sufficient: deeper levels alternate*/
+/* by themselves, because each odd-depth element matches the base 'em'        */
+/* rule and each even-depth element matches 'em em' (relative to its nearest  */
+/* italic ancestor).                                                          */
+/*                                                                            */
+/* Scope is intentionally limited to <em> (not <i>): <i> is reserved by HTML  */
+/* convention for non-emphatic italic such as foreign words, vessel names,    */
+/* or scientific names, where doubling-back is not appropriate.               */
+
+div.content em em {
+  font-style: normal;
 }

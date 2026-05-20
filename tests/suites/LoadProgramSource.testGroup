@@ -1,0 +1,139 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* LoadProgramSource.testGroup - Tests for the 1A'X end-of-source convention  */
+/* =========================================================================  */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260519    0.5  First version                                             */
+/* 20260520         Use unique tmp-file names per test                        */
+/*                                                                            */
+/* These tests verify that LoadProgramSource() treats "1A"X (Ctrl-Z / SUB)    */
+/* as a logical end-of-file marker, mimicking the behaviour of the ooRexx    */
+/* and Regina interpreters. Anything from the first "1A"X to the end of the  */
+/* file is silently discarded; the byte itself is not included in the        */
+/* returned array.                                                            */
+/*                                                                            */
+/* Note on Windows: when several tests in the same testGroup share the same  */
+/* TemporaryTestFile name, the uninit handler of an outgoing object may run  */
+/* after the create() of the incoming one, deleting the freshly-written     */
+/* file. To avoid that, each test uses a unique suffix.                      */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.LoadProgramSource.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "ParserTestCase.cls"
+::Requires "BaseClassesAndRoutines.cls"
+
+::Class LoadProgramSource.testGroup Subclass ParserTestCase Public
+
+/******************************************************************************/
+/* Helper: write content to a TemporaryTestFile with a unique name.           */
+/*   The caller must Expose the returned object so it lives until the test    */
+/*   ends; uninit then deletes the file.                                     */
+/******************************************************************************/
+
+::Method writeFile
+  Use Strict Arg suffix, content
+  tmp = .TemporaryTestFile~new(self, "lps-test-"||suffix||".rex")
+  tmp~create(content)
+  Return tmp
+
+/******************************************************************************/
+/* Unit tests for LoadProgramSource itself                                    */
+/******************************************************************************/
+
+-- No 1A'X: file is returned verbatim.
+::Method test_no_sentinel
+  Expose tmp
+  tmp = self~writeFile("nosent", "Say 1"||"0a"x||"Say 2"||"0a"x)
+  array = LoadProgramSource(tmp~fullName)
+  self~assertEquals(2, array~items, "Two lines expected")
+  self~assertEquals("Say 1", array[1])
+  self~assertEquals("Say 2", array[2])
+
+-- 1A'X at the very beginning: source is empty.
+::Method test_sentinel_at_start
+  Expose tmp
+  tmp = self~writeFile("start", "1a"x || "Say 1"||"0a"x||"Say 2"||"0a"x)
+  array = LoadProgramSource(tmp~fullName)
+  self~assertEquals(0, array~items, "Source should be empty")
+
+-- 1A'X after a complete line: only that line survives.
+::Method test_sentinel_after_line
+  Expose tmp
+  tmp = self~writeFile("after", "Say 1"||"0a"x||"1a"x||"Say 2"||"0a"x)
+  array = LoadProgramSource(tmp~fullName)
+  self~assertEquals(1, array~items, "Only the first line should survive")
+  self~assertEquals("Say 1", array[1])
+
+-- 1A'X mid-line: the partial line before the sentinel is preserved.
+::Method test_sentinel_mid_line
+  Expose tmp
+  tmp = self~writeFile("mid", "Say 1"||"0a"x||"Say 2"||"1a"x||" garbage"||"0a"x)
+  array = LoadProgramSource(tmp~fullName)
+  self~assertEquals(2, array~items, "Two lines expected")
+  self~assertEquals("Say 1", array[1])
+  self~assertEquals("Say 2", array[2])
+
+-- Multiple 1A'X: only the first one matters.
+::Method test_multiple_sentinels
+  Expose tmp
+  tmp = self~writeFile("multi", "Say 1"||"0a"x||"1a"x||"X"||"1a"x||"Y"||"0a"x)
+  array = LoadProgramSource(tmp~fullName)
+  self~assertEquals(1, array~items, "Only the first line should survive")
+  self~assertEquals("Say 1", array[1])
+
+/******************************************************************************/
+/* Integration tests: parser must accept files where invalid syntax follows   */
+/* a 1A'X sentinel.                                                           */
+/******************************************************************************/
+
+-- Valid Rexx + 1A'X + invalid bytes: parser accepts the file.
+::Method test_parser_ignores_after_sentinel
+  Expose tmp
+  -- Without the sentinel, "14"X would trigger Error 13.
+  tmp = self~writeFile("parseok", "Say 1"||"0a"x||"1a"x||"14"x||"more"||"0a"x)
+  Signal On Syntax Name Failed
+ .Rexx.Parser~new(tmp~fullName)~package
+  self~assertTrue(.True, "Parser accepted file with garbage after 1A'X")
+  Return
+Failed:
+  co = Condition("O")
+  self~assertTrue(.False, "Parser raised unexpected SYNTAX" co~code":" co~message)
+
+-- Sanity check: without the sentinel, the same garbage does trigger Error 13.
+::Method test_parser_rejects_without_sentinel
+  Expose tmp
+  tmp = self~writeFile("parsefail", "Say 1"||"0a"x||"14"x||"more"||"0a"x)
+  Signal On Syntax Name Trapped
+ .Rexx.Parser~new(tmp~fullName)~package
+  self~assertTrue(.False, "Parser should have raised SYNTAX 13 (no sentinel)")
+  Return
+Trapped:
+  co = Condition("O")
+  -- 98.900 wraps the real error code; the inner code is in additional~lastItem
+  If co~code == 98.900 Then
+    actualCode = co~additional~lastItem~code
+  Else
+    actualCode = co~code
+  Parse Var actualCode major"."minor
+  self~assertEquals("13", major~strip, "Expected SYNTAX 13, got" actualCode)

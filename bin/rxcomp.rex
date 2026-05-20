@@ -78,12 +78,12 @@ ProcessOptions:
   If experimental Then Options~append(("EXPERIMENTAL", 1))
   If executor     Then Options~append(("EXECUTOR", 1))
 
-  source   = File2Array(file1)
+  source   = LoadProgramSource(file1)
   fullpath = file1
   parser1  = .Rexx.Parser~new(file1, source, Options)
   element1 = parser1~firstElement
 
-  source   = File2Array(file2)
+  source   = LoadProgramSource(file2)
   fullpath = file2
   parser2  = .Rexx.Parser~new(file2, source, Options)
   element2 = parser2~firstElement

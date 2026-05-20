@@ -66,7 +66,7 @@ ProcessOptions:
     Exit 1
   End
 
-  source = File2Array(fullPath)
+  source = LoadProgramSource(fullPath)
 
   -- Parse our program, and get the first element
   Options = .Array~new

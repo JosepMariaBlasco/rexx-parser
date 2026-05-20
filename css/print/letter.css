@@ -218,15 +218,13 @@ div.content ol {
 }
 
 /******************************************************************************/
-/* Blockquotes — italic in letters (differs from article/book)                */
+/* Quotations — italic in letters (overrides base)                            */
 /******************************************************************************/
 
-div.content blockquote {
-  margin: 0.8em 1.5em;
-  padding: 0;
+div.content blockquote,
+div.content .quote,
+div.content .quotation {
   font-style: italic;
-  font-size: inherit;
-  border-left: none;
 }
 
 /******************************************************************************/

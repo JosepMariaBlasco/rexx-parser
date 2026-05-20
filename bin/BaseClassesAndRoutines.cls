@@ -26,6 +26,7 @@
 /* 20251226         Add support for "=" and "==" at end of expression         */
 /* 20251227         Add ArgArray routine                                      */
 /* 20260314         Add File2Array routine                                    */
+/* 20260519    0.5  Add LoadProgramSource routine                             */
 /*                                                                            */
 /******************************************************************************/
 
@@ -804,4 +805,17 @@ End.Clause:
   Use Strict Arg file
   array = CharIn(file, 1, Chars(file))~makeArray
   Call Stream file, "c", "close"
+  Return array
+
+--------------------------------------------------------------------------------
+-- LoadProgramSource -- Read a program file into an array and close it        --
+--------------------------------------------------------------------------------
+
+::Routine LoadProgramSource Public
+  Use Strict Arg file
+  chunk = CharIn(file, 1, Chars(file))
+  Call Stream file, "c", "close"
+  p = pos("1A"X,chunk)
+  If p == 0 Then array = chunk~makeArray
+  Else           array = Left(chunk,p-1)~makeArray
   Return array

@@ -332,7 +332,7 @@ ProcessFile: Procedure Expose rootDir cssDir commonCSS HTMLtemplate check fail -
     Return 1
   End
 
-  source       =  File2Array(file)
+  source       =  LoadProgramSource(file)
 
   ------------------------------------------------------------------------------
   -- Parse YAML front matter for RexxPub options                              --

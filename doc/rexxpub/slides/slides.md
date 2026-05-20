@@ -140,10 +140,16 @@ Tables use the `booktabs` convention, with the accent colour:
 | Indent     |  1.5em  |  None  |  None  |
 | Hyphenation|  Auto   | Manual | Manual |
 
-Blockquotes keep a coloured left bar (useful on projection):
+Blockquotes keep a coloured left bar (useful on projection) and are
+set in italic:
 
 > This is a blockquote.  The left bar helps it stand out at a
 > distance --- unlike `article`, where it is removed.
+
+The same styling applies to `::: quote` and `::: quotation` fenced
+divs.  See [Quotations](../book/#quotations) in the *Common Core*
+chapter of the `book` documentation for the full description of
+both styles.
 
 Epigraphs {.slide}
 =========

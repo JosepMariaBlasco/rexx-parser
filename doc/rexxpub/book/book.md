@@ -1428,6 +1428,53 @@ class `img-scroll` wrapping an `<img>` element will show a
 horizontal scrollbar when the image exceeds the content width, rather
 than shrinking the image to fit.
 
+Quotations
+----------
+
+Block-level quotations follow LaTeX's two environments, `quote` and
+`quotation`, which differ in how they handle the first-line indent
+of each paragraph:
+
+- The **`quote`** style uses block formatting: no first-line indent,
+  with paragraphs separated by a small vertical space.  It is meant
+  for short quotations or single paragraphs.
+- The **`quotation`** style indents the first line of every paragraph
+  except the first (following the RexxPub convention that the first
+  paragraph after a context shift does not indent), with no vertical
+  space between paragraphs.  It is meant for long, multi-paragraph
+  quotations where the start of each new paragraph should be visible.
+
+Both share the same geometry: symmetric 1.5em margins, no border, no
+padding, body font-size.  They are exposed in Markdown three ways:
+
+- A standard Markdown blockquote (`> ...`) renders as `quote`.
+- A `::: quote` fenced div renders as `quote`.
+- A `::: quotation` fenced div renders as `quotation`.
+
+The first two are equivalent and produce identical output; choose
+whichever reads better in the source.
+
+```
+> A short quotation, in block style.
+
+::: quote
+Equivalent to the blockquote above.
+:::
+
+::: quotation
+The first paragraph of a long quotation.
+
+The second paragraph, with its first line indented.
+
+The third paragraph, also indented.
+:::
+```
+
+Some document classes apply additional styling to quotations on top
+of this shared geometry (the `letter` class sets them in italic; the
+`slides` class adds a coloured left bar for visual contrast).  These
+overrides are documented in the corresponding chapters.
+
 Epigraph
 --------
 

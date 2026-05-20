@@ -88,7 +88,7 @@ ProcessOptions:
   If fullPath == .Nil Then Call Error "File '"file"' does not exist."
 
   -- We need to compute the source separately to properly handle syntax errors
-  source = File2Array(fullPath)
+  source = LoadProgramSource(fullPath)
 
   -- Adjust "opTo" if necessary
 

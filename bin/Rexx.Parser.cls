@@ -96,7 +96,7 @@
     .Parser.Options[ earlyCheck ] = Set()
 
   If Arg(2,'O') | Arg(2) == .Nil Then Do
-    source = File2Array(name)
+    source = LoadProgramSource(name)
   End
   Else If source~isA( .String ) Then source = Array( source )
 

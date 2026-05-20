@@ -265,7 +265,7 @@ ProcessFile: Procedure Expose rootDir cssDir cssFile check fail -
   If fileName~endsWith(".md") Then
     fileName = Left(fileName,Length(fileName)-3)
 
-  source = File2Array(file)
+  source = LoadProgramSource(file)
 
   ------------------------------------------------------------------------------
   -- Parse YAML front matter for RexxPub options                              --

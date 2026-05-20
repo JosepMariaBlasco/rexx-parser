@@ -90,6 +90,13 @@ also available in letters --- useful for opening a letter with a
 quotation.  See [Epigraph](../book/#epigraph) in the *Common Core*
 chapter of the `book` documentation for the full description.
 
+Block-level quotations are also supported, both via Markdown
+blockquotes (`> ...`) and via `::: quote` and `::: quotation` fenced
+divs --- see [Quotations](../book/#quotations) in the same chapter.
+The `letter` class sets all three in *italic*, departing from the
+upright body style used in `article` and `book`, to match the more
+informal register of correspondence.
+
 For example, this is a Rexx fenced code block inside a letter:
 
 ~~~rexx

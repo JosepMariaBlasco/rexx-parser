@@ -271,16 +271,24 @@ Links inside the content area use a darker, more academic blue
 with `colorlinks=true`.  This replaces Bootstrap's lighter blue
 (`#337ab7`).
 
-Blockquotes
------------
+Quotations
+----------
 
-Blockquotes follow the LaTeX `quote` environment: equal left and
-right margins of 1.5em, no style change, no border.  Bootstrap's
-default left blue bar and larger font size are both removed.
+Block-level quotations use the `quote` style by default: symmetric
+1.5em margins, no border, no first-line indent, and the same font
+size as the body text.  Bootstrap's default left blue bar and
+enlarged font size are both removed.
 
 > This is a blockquote.  It has symmetric margins, no border, and the
 > same font size as the body text --- exactly like LaTeX's `quote`
 > environment.
+
+For long, multi-paragraph quotations the `quotation` style is
+available via a `::: quotation` fenced div, which indents the first
+line of every paragraph except the first.  Both styles, together
+with the equivalence between Markdown blockquotes and `::: quote`
+divs, are described in [Quotations](../book/#quotations) in the
+*Common Core* chapter of the `book` documentation.
 
 Epigraphs
 ---------

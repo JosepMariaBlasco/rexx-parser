@@ -330,17 +330,17 @@ a.uri {
 }
 
 /******************************************************************************/
-/* Blockquotes                                                                */
+/* Quotations — italic with left bar in slides (overrides base)               */
 /******************************************************************************/
 
-div.content blockquote {
+div.content blockquote,
+div.content .quote,
+div.content .quotation {
   margin: 0.5em 1.5em;
-  padding: 0;
   padding-left: 0.8em;
   border-left: 3pt solid #00529B;       /* Keep a left bar for slides —       */
                                         /* useful visual anchor on projection */
   font-style: italic;
-  font-size: inherit;
   color: #444;
 }
 
