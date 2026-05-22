@@ -40,6 +40,13 @@
 /* 20251203         Rename to Scanner.cls                                     */
 /* 20251214         Allow "AA"X as "¬", like ooRexx does                      */
 /* 20251215         Ensure that (,) and [,] are paired _inside_ a clause      */
+/* 20260521    0.5  CMS: Add support for #, @, $ and ¢ in identifiers         */
+/* 20260521         CMS: Error 30 when string or symbol > 250 chars           */
+/* 20260521         CMS: Don't allow ::Directives (35.1)                      */
+/* 20260521         CMS: Don't allow -- line commments                        */
+/* 20260521         CMS: Don't allow "-" continuations                        */
+/* 20260521         CMS: Don't recognize ~, [ and ]                           */
+/* 20260521         CMS: Don't recognize extended assignments                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -175,7 +182,8 @@
   -- We will use the literal "01" instead
   -- binary_digit   = "01"                           -- ANSI 6.2.2.42
   special           = ",;:()"                        -- ANSI 6.2.2.2
-  special         ||= "[]"                           -- Rexxref 5.1.0, 1.10.4.7.
+  If \.Options.CMS Then
+    special       ||= "[]"                           -- Rexxref 5.1.0, 1.10.4.7.
   If .Options.Executor Then
     special       ||= "{}"
   -- Special Characters; "~" moved to operator
@@ -183,12 +191,17 @@
   not             ||= "AAAC"X                        -- See rexxref 1.10.4.6
   If .Options.Executor Then
     not           ||= "^¬"
+  Else If .Options.CMS Then
+    not           ||= "¬"
   operator_only     = "+-%|&=><\"                    -- ANSI 6.2.2.4
   operator_only   ||= "AAAC"X                        -- See rexxref 1.10.4.6
   If .Options.Executor Then
     operator_only ||= "^¬"
+  Else If .Options.CMS Then
+    operator_only ||= "¬"
   -- See Rexxref 5.10, 1.11.3. Parentheses and Operator Precedence
-  operator_only   ||= "~"
+  If \.Options.CMS Then
+    operator_only   ||= "~"
   operator_or_other = "/*"                           -- ANSI 6.2.2.5
   operator_char     = operator_only ||,              -- ANSI 6.2.2.6
                       operator_or_other              -- ANSI 6.2.2.6
@@ -197,7 +210,7 @@
     extra_letter    = .Parser.Options~extraletters   -- ANSI 5.3.2
     general_letter||= extra_letter
   End
-  If .Options.Executor Then -- "A2"X is Latin-1 for "¢"
+  If .Options.Executor | .Options.CMS Then -- "A2"X is Latin-1 for "¢"
     general_letter||= "#@$¢" || "A2"X
   blank             = "2009"X                        -- ANSI 6.2.2.8
   -- "whitespace" is a better name, and more coherent with ooRexx
@@ -227,7 +240,10 @@
   Call Assign whitespace     , Whitespace.Sequence
   Call Assign "'"""          , String.Element
   ElementStartedBy["/"]      = Standard.Comment?
-  ElementStartedBy["-"]      = Line.Comment?
+
+  -- CMS does not implement line comments
+  If \.Options.CMS Then
+    ElementStartedBy["-"]    = Line.Comment?
 
   Return
 
@@ -305,9 +321,10 @@ Return
     ("AA"X, .EL.OP.NEGATION         )      - -- ooRexx ¬ too
   )
 
-  If .Options.Executor Then Do
-    ClassOfOperatorChar["^"  ] = .EL.OP.NEGATION
-    ClassOfOperatorChar["¬"  ] = .EL.OP.NEGATION
+  If .Options.Executor | .Options.CMS Then Do
+    If \.Options.CMS Then
+      ClassOfOperatorChar["^"  ] = .EL.OP.NEGATION
+    ClassOfOperatorChar["¬"  ]   = .EL.OP.NEGATION
   End
 
 --------------------------------------------------------------------------------
@@ -367,17 +384,19 @@ Return
   compoundOperator["AC"X"<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
   compoundOperator["AC"X">>"] = .EL.OP.STRICT.NOT_GREATER_THAN
 
-  If .Options.Executor Then Do
-    -- TSO/E negations
-    compoundOperator["/=="]     = .EL.OP.STRICT.NOT_EQUAL
-    compoundOperator["/=" ]     = .EL.OP.NOT_EQUAL
-    -- "^" as a negator
-    compoundOperator["^=="]     = .EL.OP.STRICT.NOT_EQUAL
-    compoundOperator["^=" ]     = .EL.OP.NOT_EQUAL
-    compoundOperator["^>" ]     = .EL.OP.NOT_GREATER_THAN
-    compoundOperator["^<" ]     = .EL.OP.NOT_LOWER_THAN
-    compoundOperator["^<<"]     = .EL.OP.STRICT.NOT_LOWER_THAN
-    compoundOperator["^>>"]     = .EL.OP.STRICT.NOT_GREATER_THAN
+  If .Options.Executor | .Options.CMS Then Do
+    If \.Options.CMS Then Do
+      -- TSO/E negations
+      compoundOperator["/=="]     = .EL.OP.STRICT.NOT_EQUAL
+      compoundOperator["/=" ]     = .EL.OP.NOT_EQUAL
+      -- "^" as a negator
+      compoundOperator["^=="]     = .EL.OP.STRICT.NOT_EQUAL
+      compoundOperator["^=" ]     = .EL.OP.NOT_EQUAL
+      compoundOperator["^>" ]     = .EL.OP.NOT_GREATER_THAN
+      compoundOperator["^<" ]     = .EL.OP.NOT_LOWER_THAN
+      compoundOperator["^<<"]     = .EL.OP.STRICT.NOT_LOWER_THAN
+      compoundOperator["^>>"]     = .EL.OP.STRICT.NOT_GREATER_THAN
+    End
     -- "¬" as a negator
     compoundOperator["¬=="]     = .EL.OP.STRICT.NOT_EQUAL
     compoundOperator["¬=" ]     = .EL.OP.NOT_EQUAL
@@ -404,25 +423,33 @@ Return
 -- List of extended assignment character sequences                            --
 --------------------------------------------------------------------------------
 
-  assignmentSequence = .Set~of(                -
-    "=", "+=", "-=", "*=", "/=", "%=", "//=",  -
-    "||=", "&=", "|=", "&&=", "**="            -
-  )
+  If .Options.CMS Then
+    assignmentSequence = .Set~of("=")
+  Else
+    assignmentSequence = .Set~of(                -
+      "=", "+=", "-=", "*=", "/=", "%=", "//=",  -
+      "||=", "&=", "|=", "&&=", "**="            -
+    )
 
-  assignmentClass = .StringTable~of(     -
-    (   "=", .EL.ASG.EQUAL            ), -
-    (  "+=", .EL.ASG.PLUS             ), -
-    (  "-=", .EL.ASG.MINUS            ), -
-    (  "*=", .EL.ASG.MULTIPLY         ), -
-    (  "/=", .EL.ASG.DIVIDE           ), -
-    (  "%=", .EL.ASG.INTEGER_DIVISION ), -
-    ( "//=", .EL.ASG.REMAINDER        ), -
-    ( "||=", .EL.ASG.CONCATENATION    ), -
-    (  "&=", .EL.ASG.AND              ), -
-    (  "|=", .EL.ASG.OR               ), -
-    ( "&&=", .EL.ASG.XOR              ), -
-    ( "**=", .EL.ASG.POWER            )  -
-  )
+  If .Options.CMS Then
+    assignmentClass = .StringTable~of(     -
+      (   "=", .EL.ASG.EQUAL            ), -
+    )
+  Else
+    assignmentClass = .StringTable~of(     -
+      (   "=", .EL.ASG.EQUAL            ), -
+      (  "+=", .EL.ASG.PLUS             ), -
+      (  "-=", .EL.ASG.MINUS            ), -
+      (  "*=", .EL.ASG.MULTIPLY         ), -
+      (  "/=", .EL.ASG.DIVIDE           ), -
+      (  "%=", .EL.ASG.INTEGER_DIVISION ), -
+      ( "//=", .EL.ASG.REMAINDER        ), -
+      ( "||=", .EL.ASG.CONCATENATION    ), -
+      (  "&=", .EL.ASG.AND              ), -
+      (  "|=", .EL.ASG.OR               ), -
+      ( "&&=", .EL.ASG.XOR              ), -
+      ( "**=", .EL.ASG.POWER            )  -
+    )
 
 
 /******************************************************************************/
@@ -566,7 +593,9 @@ Return 0                                -- 0: Error encountered
   -- ooRexx. We produce an implied semicolon when we find a
   -- continuation just before EOS.
 
-  If line < lines, previous < .ALL.CONTINUATION_CHARACTERS Then Do
+  -- CMS Rexx does not allow "-" as continuation
+  If line < lines, previous < .ALL.CONTINUATION_CHARACTERS, -
+    (\.Options.CMS | previous < .EL.COMMA) Then Do
     previous~category = .EL.CONTINUATION
     If TheElementBefore( previous ) < .IGNORE_WHITESPACE_AFTER Then
       previous~ignorable = 1
@@ -1361,8 +1390,8 @@ Return
     Otherwise Nop
   End
 
-  -- Handle "::"
-  If ch == ":", predecessor < .EL.COLON Then Do
+  -- Handle "::". CMS Rexx does not recognize directives
+  If ch == ":", predecessor < .EL.COLON, \.Options.CMS Then Do
     element~category = .EL.DIRECTIVE_START
     -- In the most common case, the two colons will be adjacent.
     -- We generate a new "::" element and remove the predecessor element.
@@ -1429,8 +1458,10 @@ Return
 
 ::Method Symbol.Element
 
-  Expose source line col len var_symbol_char latin1_var_symbol_char -
+  Expose tail source line col len var_symbol_char latin1_var_symbol_char -
     extra_letter general_letter ElementStartedBy
+
+  anchor = tail                         -- For error messages
 
   currentLine = source[line]
   p = col
@@ -1459,11 +1490,22 @@ Return
   End
   symbol = currentLine[col, p - col]
 
-  self~append(                                                            -
-    .StringOrSymbol.Element~new(SymbolKind(), line, col, p, source[line]) -
-  )
+  element = .StringOrSymbol.Element~new(SymbolKind(), line, col, p, source[line])
+
+  -- CMS symbols and strings cannot exceed 250 characters
+  If .Options.CMS Then Do
+    value = element~value
+    If Length(value) > 250 Then Signal 30.900
+  End
+
+  self~append( element )
 
   Return
+
+-- CMS error 30 (should be "Name or string > 250 characters")
+-- &1.
+30.900: Syntax( 30.900, anchor, "Name or string > 250 characters" )
+
 
 -- Determine the kind of symbol we are dealing with
 -- This gets complex for exponential numbers with a signed exponent
@@ -1737,11 +1779,23 @@ CheckUnicode:
 Element:
   sourceString = source[line][col, Arg(2)-col]
 
-  self~append(                                                             -
-    .StringOrSymbol.Element~new( Arg(1), line, col, Arg(2), source[line] ) -
-  )
+  element = .StringOrSymbol.Element~new( Arg(1), line, col, Arg(2), source[line] )
+
+  -- CMS symbols and strings cannot exceed 250 characters
+  If .Options.CMS Then Do
+    value = element~value
+    If Length(value) > 250 Then Signal 30.900
+  End
+
+  self~append( element )
 
   Exit
+
+-- CMS error 30 (should be "Name or string > 250 characters")
+-- &1.
+30.900: Syntax( 30.900, anchor, "Name or string > 250 characters" )
+
+
 
 UString:
   sourceString = source[line][col, Arg(2)-col]

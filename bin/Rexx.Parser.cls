@@ -22,6 +22,7 @@
 /* 20250419    0.2a Fix bug no. 4                                             */
 /* 20251128    0.3a (Executor) Add support for ::EXTENSION directive          */
 /* 20251201         (Executor) Add support for source literals                */
+/* 20260521    0.5  Add support for CMS                                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -69,6 +70,7 @@
  .environment~Parser.Options       = .Directory~new
  .environment~Options.Experimental = 0
  .environment~Options.Executor     = 0
+ .environment~Options.CMS          = 0
  .environment~Options.Unicode      = 0
   If Arg(3,'E') Then Do
     .Validate~classType("options",options,.Array)
@@ -82,6 +84,9 @@
         .environment~Options.Experimental = 1
       If .Parser.Options~hasIndex("EXECUTOR") Then
         .environment~Options.Executor     = 1
+      If .Parser.Options~hasIndex("CMS") | -
+         .Parser.Options~hasIndex("REXXVM") Then
+        .environment~Options.CMS          = 1
       If .Parser.Options~hasIndex("UNICODE") Then
         .environment~Options.Unicode      = 1
     End

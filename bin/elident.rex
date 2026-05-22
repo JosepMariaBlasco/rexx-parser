@@ -41,6 +41,7 @@
   experimental = 0
   unicode      = 0
   itrace       = 0
+  cms          = 0
 
 ProcessOptions:
   If args~items == 0 Then Signal Help
@@ -52,6 +53,8 @@ ProcessOptions:
     Select Case Lower(option)
       When "-h", "--help"                 Then Signal Help
       When "--executor", "-xtr"           Then executor     = 1
+      When "--cms", "-cms",               -
+           "--rexxvm", "-rexxvm"          Then cms          = 1
       When "-e", "-exp", "--experimental" Then experimental = 1
       When "-it", "--itrace"              Then itrace       = 1
       When "-u", "--tutor", "--unicode"   Then unicode      = 1
@@ -78,6 +81,7 @@ ProcessOptions:
 
   options = .Array~new
   If executor     Then options~append(("EXECUTOR",     1))
+  If cms          Then options~append(("CMS",          1))
   If unicode      Then options~append(("UNICODE",      1))
   If experimental Then options~append(("EXPERIMENTAL", 1))
 
@@ -183,6 +187,7 @@ Options:
 -u, --tutor, --unicode    Enable TUTOR-flavored Unicode
 -e, -exp, --experimental  Enable Experimental features
 -xtr, --executor          Activate support for Executor language extensions
+-cms, --cms               Activate support for CMS (Classic Rexx) syntax (also -rexxvm, --rexxvm)
 
 The 'myname' program is part of the Rexx Parser package,
 see https://rexx.epbcn.com/rexx-parser/. It is distributed under

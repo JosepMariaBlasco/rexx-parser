@@ -18,6 +18,7 @@
 /* 20250421    0.2b Major rewrite, add BIF early checking                     */
 /* 20251116    0.3a Add support for the new GC BIF                            */
 /* 20251226    0.4a Send error messages to .error, not .output                */
+/* 20260521    0.5  CMS: Fix BIF list                                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -194,6 +195,32 @@
   BIFARGS.WORDPOS      = "rANY rANY oPOS"
   BIFARGS.X2D          = "rHEX oLENGTH"      -- TODO
   BIFARGS.XRANGE       = "oRANGE"            -- Special
+
+  If .Options.CMS Then Do
+    -- CMS-specific additions
+    BIFARGS.EXTERNALS  = ""
+    BIFARGS.FIND       = "rANY rANY"
+    BIFARGS.INDEX      = "rANY rANY oPOS"
+    BIFARGS.JUSTIFY    = "rANY rLENGTH oPAD"
+    BIFARGS.LINESIZE   = ""
+
+    -- CMS signature overrides (differ from ooRexx)
+    BIFARGS.DATE       = "oBCDJEMNOSUW oANY oBCDJEMNOSUW oSEP oSEP"
+    BIFARGS.DELSTR     = "rANY rPOS oLENGTH"           -- n is required in CMS
+    BIFARGS.LASTPOS    = "rANY rANY oPOS"              -- no length arg
+    BIFARGS.LINES      = "oSTREAM"                     -- no C/N arg
+    BIFARGS.POS        = "rANY rANY oPOS"              -- no length arg
+    BIFARGS.STREAM     = "rSTREAM oSCD oANY"
+    BIFARGS.TIME       = "oCEHLMNRS"                   -- 1 arg, CMS option set
+    BIFARGS.TRANSLATE  = "rANY oANY oANY oPAD"         -- no start/length
+    BIFARGS.VERIFY     = "rANY rANY oMN oPOS"          -- no length arg
+
+    -- ooRexx BIFs not in CMS
+    Do name Over BEEP,    CHANGESTR, COUNTSTR,   DIRECTORY,   ENDLOCAL, FILESPEC, GC,     LOWER, -
+                 QUALIFY, RXFUNCADD, RXFUNCDROP, RXFUNCQUERY, RXQUEUE,  SETLOCAL, UPPER,  VAR
+      Drop BIFARGS.name
+    End
+  End
 
   -- TUTOR additions. Types "UNI" and "UTF8" added
 
@@ -376,7 +403,7 @@ If .rxcheck.debug = 1 Then Trace ?a
           Signal 40.904
         End
       End
-      When "AENO", "ACDEIORS", "BDEFILMNOSTUW", "BDEFINOSTU", "CEFHLMNORST", "CFHLMNOST", "CN", "CDEGOS", "DELNP", "SDC" Then Do
+      When "AENO", "ACDEIORS", "BCDJEMNOSUW", "BDEFILMNOSTUW", "BDEFINOSTU", "CEHLMNRS", "CEFHLMNORST", "CFHLMNOST", "CN", "CDEGOS", "DELNP", "SDC" Then Do
         letter = Left(value, 1)
         If Pos(Upper(letter), type) == 0 Then Signal 40.904
         -- TODO RXQUEUE and STREAM special casess

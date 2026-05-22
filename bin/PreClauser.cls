@@ -26,6 +26,8 @@
 /* 20251206         Use the new scanner                                       */
 /* 20251218         Support message instructions starting with a keyword      */
 /* 20251226    0.4a Add support for "=" and "==" at end of expression         */
+/* 20260521    0.5  CMS: Ignore ooRexx-specific keyword instructions          */
+/* 20260521         CMS: Allow UPPER instruction                              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -298,13 +300,15 @@ Error:
   End
 
   -- The following are ooRexx-only
-  Do keyword Over (expose, forward, guard, loop, raise, reply, use)
-    instructions[] = keyword
+  If \.Options.CMS Then Do
+    Do keyword Over (expose, forward, guard, loop, raise, reply, use)
+      instructions[] = keyword
+    End
   End
 
-  -- Executor-only
+  -- Executor and CMS-only
 
-  If .Options.Executor Then instructions[] = upper
+  If .Options.Executor | .Options.CMS Then instructions[] = upper
 
   -- Directives
 

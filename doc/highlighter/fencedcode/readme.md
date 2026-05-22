@@ -93,6 +93,11 @@ Say "Hello, world!"
 
 Define the class prefix used for HTML classes. Default is "rx-".
 
+#### `cms` (or `rexxvm`) {#cms}
+
+Enables [CMS (Classic Rexx) syntax](/rexx-parser/doc/rexxvm/), as parsed
+by the Rexx/VM interpreter. The names `cms` and `rexxvm` are equivalent.
+
 #### `constant= "group" | "full" | "detail"`
 
 Determines how taken constants (strings or symbols taken as a

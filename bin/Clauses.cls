@@ -23,6 +23,7 @@
 /* 20251017    0.3a Add support for Executor "V=;"                            */
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251226    0.4a Send error messages to .error, not .output                */
+/* 20260522    0.5  CMS: Implement DO and SELECT clauses                      */
 /*                                                                            */
 /******************************************************************************/
 
@@ -961,14 +962,22 @@ Continue:
   If element < .ALL.SYMBOLS Then Do
     tValue = element~value
     If next < .EL.OP.EQUAL           Then Signal "Classic Do/Loop"
-    If \label,   tValue == "LABEL"   Then Signal "Label option"
-    If \counter, tValue == "COUNTER" Then Signal "Counter option"
-    If next < .ALL.SYMBOLS Then Do
-      Select Case next~value
-        When "OVER"                  Then Signal "Do/Loop ... Over"
-        When "ITEM", "INDEX"         Then
-          If tValue == "WITH"        Then Signal "Do/Loop With ...  Over"
-        Otherwise Nop
+    -- LABEL, COUNTER, OVER and WITH ITEM/INDEX are ooRexx extensions.
+    -- CMS Rexx has none of them: there the offending token is read as part
+    -- of the repetitor expression (exprr), so we must NOT recognize these
+    -- subkeywords under CMS and let the cascade fall through to the simple
+    -- repetitive branch. (Any resulting non-integer repetition count is a
+    -- run-time Error 26, not a parse-time error.)
+    If \.Options.CMS Then Do
+      If \label,   tValue == "LABEL"   Then Signal "Label option"
+      If \counter, tValue == "COUNTER" Then Signal "Counter option"
+      If next < .ALL.SYMBOLS Then Do
+        Select Case next~value
+          When "OVER"                  Then Signal "Do/Loop ... Over"
+          When "ITEM", "INDEX"         Then
+            If tValue == "WITH"        Then Signal "Do/Loop With ...  Over"
+          Otherwise Nop
+        End
       End
     End
     Select Case tValue
@@ -1511,6 +1520,8 @@ Message.Instruction:
 
   If element  < .EL.END_OF_CLAUSE   Then Signal Done
 
+  If .Options.CMS                   Then Call 21.902 element
+
   If element \< .ALL.VAR_SYMBOLS    Then Signal 25.923
 
   kValue = element~value
@@ -1548,6 +1559,9 @@ Done:
 
 -- Symbol expected after LABEL keyword.
 20.918: Syntax( 20.918, SELECT )
+
+-- Data must not follow the SELECT keyword; found "&1".
+21.902: Syntax( 21.902, SELECT, Arg(1) )
 
 -- SELECT must be followed by the keyword LABEL or CASE; found "&1".
 25.923: Syntax( 25.923, SELECT, element )

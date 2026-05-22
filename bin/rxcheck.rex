@@ -30,6 +30,7 @@
 /* 20251227         Use .SysCArgs when available                              */
 /* 20260102         Standardize help options to -h and --help                 */
 /* 20260314    0.5  Use InitCLI() from CLISupport.cls                         */
+/* 20260521         Add support for CMS                                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -49,6 +50,7 @@
   itrace           = 0
   experimental     = 0
   executor         = 0
+  cms              = 0
   extraletters     = ""
   emptyassignments = 0
 
@@ -85,6 +87,8 @@
       When "+debug"        Then debug    = 1
       When "-itrace"       Then itrace   = 0
       When "+itrace"       Then itrace   = 1
+      When "+cms", "-cms",       -
+           "+rexxvm", "-rexxvm" Then cms      = 1
       When "-xtr", "+xtr",-
            "-executor",  -
            "+executor"     Then executor = 1
@@ -136,6 +140,7 @@ Code:
   If emptyassignments    Then Options~append(("EMPTYASSIGNMENTS", emptyassignments))
   If experimental        Then Options~append(("EXPERIMENTAL", 1))
   If executor            Then Options~append(("EXECUTOR", 1))
+  If cms                 Then Options~append(("CMS", 1))
 
   Signal On Syntax
 
@@ -205,6 +210,7 @@ Toggles:
 
 Other options (all can be prefixed with "+" or "-"):
 
+  -cms          Check CMS (Classic Rexx) syntax (also -rexxvm)
   -executor     Enable support for Executor
   -xtr          Enable support for Executor
   -experimental Enable experimental features

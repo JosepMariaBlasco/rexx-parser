@@ -44,6 +44,7 @@ Toggles:
 Other options (all can be prefixed with "+" or "-"):
 &nbsp;
 `-experimental`                     Enable Experimental features (also `-exp`)
+`-cms`                              Enable support for CMS (Classic Rexx) (also `-rexxvm`)
 `-executor`                         Enable support for Executor (also `-xtr`)
 `-emptyassignments`                 Allow assignments like "var =".
 `-extraletters "extra"`             Allow all the characters in "extra" to function as letters.

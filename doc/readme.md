@@ -34,6 +34,7 @@ User Guide
 Variants
 --------
 
+- [Rexx/VM support](rexxvm/)
 - [Executor support](executor/)
 - [Experimental features](experimental/)
 

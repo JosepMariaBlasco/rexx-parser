@@ -50,6 +50,7 @@
   unicode        = 0
   experimental   = 0
   executor       = 0
+  cms            = 0
   opFrom         = 1
   itrace         = 0
   opTo           = "*"
@@ -69,6 +70,8 @@ ProcessOptions:
       When "-e", "-exp", -
         "--experimental"         Then experimental = 1
       When "-xtr", "--executor"  Then executor = 1
+      When "-cms", "--cms",       -
+           "-rexxvm", "--rexxvm" Then cms = 1
       When "-it", "--itrace"     Then itrace = 1
       When "--from"              Then opFrom = Integer()
       When "--to"                Then opTo   = Integer()
@@ -113,6 +116,7 @@ ProcessOptions:
   If Unicode      Then Options~append(("UNICODE", 1))
   If experimental Then Options~append(("EXPERIMENTAL", 1))
   If executor     Then Options~append(("EXECUTOR", 1))
+  If cms          Then Options~append(("CMS", 1))
   parser = .Rexx.Parser~new(file, source, Options)
 
   element  = parser~firstElement
@@ -254,6 +258,7 @@ Usage: myName [options] FILE
 
 Options:
 -xtr,--executor     Enable support for Executor
+-cms,--cms          Enable support for CMS (Classic Rexx) syntax (also -rexxvm, --rexxvm)
 -e,  --experimental Enable Experimental features (also -exp)
      --from [LINE]  Show elements starting at line LINE
      --help         Display this information

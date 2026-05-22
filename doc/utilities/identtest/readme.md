@@ -20,7 +20,8 @@ enabled.
 A number of known exceptions are hardcoded in the program and
 automatically skipped.
 
-Options allow to activate support for [Executor](../../executor/),
+Options allow to activate support for [Executor](../../executor/)
+or [Rexx/VM](../../rexxvm/),
 and to selectively deactivate either of the two identity tests.
 
 Usage
@@ -44,6 +45,7 @@ Options
 `-it`, `--itrace`                        Print internal traceback on error
 `-ne`, `--noelements`                    Don't run the elident test
 `-nt`, `--notree`                        Don't run the trident test
+`-cms`, `--cms`                          Enable CMS support (also `-rexxvm`, `--rexxvm`)
 `-xtr`, `--executor`                     Enable Executor support
 ---------------------------------------- --------------------------------
 

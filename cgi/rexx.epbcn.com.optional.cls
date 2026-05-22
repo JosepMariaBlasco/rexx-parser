@@ -146,6 +146,7 @@ Crumb:
   doc          = "/rexx-parser/doc"
   exp          = "/rexx-parser/doc/experimental"
   exe          = "/rexx-parser/doc/executor"
+  rexxvm       = "/rexx-parser/doc/rexxvm"
   bin          = "/rexx-parser/bin"
   guide        = doc"/guide"
   ref          = doc"/ref"
@@ -289,6 +290,10 @@ Crumb:
 
     When exe                       Then Return "Executor"
 
+    -- "/rexx-parser/doc/rexxvm"
+
+    When rexxvm                    Then Return "Rexx/VM"
+
     -- "/rexx-parser/doc/rexxpub"
 
     When docrexxpub                Then Return "RexxPub"
@@ -384,6 +389,7 @@ Crumb:
               <br><a href="/rexx-parser/tests/">Tests</a>
               <br><a href="/rexx-parser/doc/todo/">To-do</a>
               <br><a href="/rexx-parser/doc/utilities/">Utilities</a>
+              <br><a href="/rexx-parser/doc/rexxvm/">Rexx/VM support</a>
               <br><a href="/rexx-parser/doc/executor/">Executor support</a>
               <br><a href="/rexx-parser/doc/experimental/">Experimental</a>
             </div>

@@ -184,6 +184,8 @@ Return
     parserOptions~append( (experimental, 1) )
   If options.executor == 1 Then
     parserOptions~append( (executor, 1) )
+  If options.cms == 1 Then
+    parserOptions~append( (cms, 1) )
 
   -- Instantiate a parser, parse the program, and get the first element
   parser  = .Rexx.Parser~new(file, source, parserOptions)

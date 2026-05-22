@@ -33,6 +33,7 @@
  .environment ~          WhiteSpace.Element =          .WhiteSpace.Element
 
 ::Requires "Globals.cls"
+::Requires "BaseClassesAndRoutines.cls"
 
 /******************************************************************************/
 /******************************************************************************/

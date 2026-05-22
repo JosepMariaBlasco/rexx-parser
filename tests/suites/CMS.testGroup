@@ -1,0 +1,1430 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* CMS.testGroup - Tests for CMS features                                     */
+/* ======================================                                     */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260521    0.5  First version                                             */
+/* 20260521         Add tests for the 250-character limit and ::directives    */
+/* 20260521         Add tests for -- line comments under CMS                  */
+/* 20260521         Add tests for "-" continuation under CMS                  */
+/* 20260521         Add tests for ~, [, ] not recognized and ¬ as negator     */
+/* 20260521         Add tests for extended assignments not recognized         */
+/* 20260521         Add tests for { and } not recognized under CMS            */
+/* 20260521         Add tests for BIF signature differences and CMS-only BIFs */
+/* 20260522         Add tests for "REXXVM" as an alias of the "CMS" option     */
+/*                                                                            */
+/* These tests verify the CMS-mode restrictions implemented by the scanner:   */
+/*                                                                            */
+/*   1. The CMS option enables #, @, $ and ¢ as legal characters inside       */
+/*      identifiers. Without CMS those characters are rejected with           */
+/*      SYNTAX 13. The ¢ sign is tested both as UTF-8 ("C2A2"X) and as        */
+/*      Latin-1 ("A2"X); both encodings must be accepted under CMS.           */
+/*                                                                            */
+/*   2. CMS Rexx has a 250-character limit on strings and symbols. The        */
+/*      limit applies to the *interpreted* value, not to the source-code      */
+/*      length: a hex literal whose source is 500 chars but whose value is    */
+/*      125 bytes is fine. Strings exceeding the limit raise SYNTAX 30.       */
+/*                                                                            */
+/*   3. CMS Rexx does not recognize ::directives. Under CMS the scanner       */
+/*      treats "::" as two separate colons, so a clause that starts with      */
+/*      "::ROUTINE", "::CLASS", etc. raises SYNTAX 35 (invalid clause).       */
+/*                                                                            */
+/*   4. CMS Rexx does not recognize "--" line comments. Under CMS the         */
+/*      scanner treats "--" as two consecutive minus operators. Some "--"    */
+/*      uses still parse (because "-- text" can be a valid expression), but   */
+/*      cases that leave an operator dangling raise SYNTAX 35.                */
+/*                                                                            */
+/*   5. CMS Rexx only accepts "," as continuation character. Under CMS the    */
+/*      trailing "-" before a line-end is not a continuation; it stays a      */
+/*      minus operator and the clause ends at the line, so a "-" with no     */
+/*      operand to its right raises SYNTAX 35.                                */
+/*                                                                            */
+/*   6. CMS Rexx does not recognize "~" (message send) nor "[" / "]" (array   */
+/*      reference). Those characters raise SYNTAX 13 under CMS. CMS does      */
+/*      recognize "¬" as a negator, in three encodings: UTF-8 ("C2AC"X),      */
+/*      Latin-1 ("AC"X), and the ooRexx-compatible "AA"X. The "^" caret       */
+/*      remains an Executor-only negator and is not recognized under CMS.     */
+/*                                                                            */
+/*   7. CMS Rexx does not recognize extended assignment operators ("+=",      */
+/*      "-=", "*=", "/=", "%=", "//=", "||=", "&=", "|=", "&&=", "**=").      */
+/*      Under CMS, a clause like "x += 1" raises SYNTAX 35 (invalid clause).  */
+/*      The plain "=" assignment is still recognized.                         */
+/*                                                                            */
+/*   8. CMS Rexx does not recognize "{" and "}" (Executor-only specials).     */
+/*      Under CMS, those characters raise SYNTAX 13. This is the same         */
+/*      behavior as plain ooRexx without Executor.                            */
+/*                                                                            */
+/*   9. The set of built-in functions and their signatures differ between     */
+/*      CMS and ooRexx. CMS adds 5 VM-specific BIFs (EXTERNALS, FIND, INDEX,  */
+/*      JUSTIFY, LINESIZE) and drops 16 ooRexx extensions (BEEP, CHANGESTR,   */
+/*      LOWER, UPPER, etc.). Eight common BIFs have different signatures      */
+/*      under CMS: DELSTR (2nd arg required), LASTPOS, LINES, POS, STREAM,    */
+/*      TIME, TRANSLATE, VERIFY (all have fewer args in CMS). DATE and TIME   */
+/*      also accept different option-letter sets. These tests use the BIFS    */
+/*      early check to verify the Parser correctly validates BIF calls under  */
+/*      the CMS option.                                                       */
+/*                                                                            */
+/* The tests do not go through the ooRexx interpreter (which does not know    */
+/* about CMS restrictions), so they call .Rexx.Parser directly instead of     */
+/* using parserOK / parserError.                                              */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.CMS.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "ParserTestCase.cls"
+
+::Class CMS.testGroup Subclass ParserTestCase Public
+
+/******************************************************************************/
+/* Helpers                                                                    */
+/******************************************************************************/
+
+-- Parse "src" with or without the CMS option. "src" can be either a single
+-- string (one line of source) or an Array of strings (multiple lines).
+-- Returns "" on success, or the raised SYNTAX code (e.g., "13.001") on failure.
+::Method parseCMS
+  Use Strict Arg src, useCMS
+  If src~isA(.Array) Then source = src
+  Else                    source = .Array~of(src)
+  If useCMS Then
+    options = .Array~of((earlyCheck, .Set~new), ("CMS", 1))
+  Else
+    options = .Array~of((earlyCheck, .Set~new))
+  Signal On Syntax Name SyntaxTrap
+  package = .Rexx.Parser~new("cms-test", source, options)~package
+  Return ""
+SyntaxTrap:
+  co = Condition("O")
+  -- 98.900 wraps the real error code in additional~lastItem
+  If co~code == 98.900 Then
+    Return co~additional~lastItem~code
+  Return co~code
+
+-- Walk the element chain looking for a token whose value equals "expected"
+-- (case-sensitive). Returns .True if found, .False otherwise.
+::Method hasSymbol
+  Use Strict Arg src, expected
+  source = .Array~of(src)
+  options = .Array~of((earlyCheck, .Set~new), ("CMS", 1))
+  package = .Rexx.Parser~new("cms-test", source, options)~package
+  el = package~prolog~body~begin
+  Loop While el \== .Nil
+    If el~value == expected Then Return .True
+    el = el~next
+  End
+  Return .False
+
+-- Walk the FULL element chain (package~firstElement ... ~next) looking for the
+-- first token whose value equals "token" (case-sensitive), and report whether
+-- that token was recognized as a subkeyword. Used to prove that an ooRexx
+-- subkeyword (OVER, LABEL, COUNTER, ...) is NOT recognized as such under CMS,
+-- i.e. it falls through as a plain symbol into the repetitor expression.
+-- Returns .True if the token is a subkeyword, .False if it is a plain symbol
+-- (or not found). "src" is an Array of source lines.
+::Method tokenIsSubkeyword
+  Use Strict Arg src, token, useCMS
+  If useCMS Then
+    options = .Array~of((earlyCheck, .Set~new), ("CMS", 1))
+  Else
+    options = .Array~of((earlyCheck, .Set~new))
+  el = .Rexx.Parser~new("cms-test", src, options)~package~firstElement
+  Loop While el \== .Nil
+    If el~value == token Then Return ( el < .EL.SUBKEYWORD )
+    el = el~next
+  End
+  Return .False
+
+-- Parse "src" with or without CMS, but with the BIFS early check active.
+-- Same return convention as parseCMS.
+::Method parseCMSCheckingBIFs
+  Use Strict Arg src, useCMS
+  If src~isA(.Array) Then source = src
+  Else                    source = .Array~of(src)
+  checks = .Array~of("BIFS")
+  If useCMS Then
+    options = .Array~of((earlyCheck, checks), ("CMS", 1))
+  Else
+    options = .Array~of((earlyCheck, checks))
+  Signal On Syntax Name SyntaxTrap2
+  package = .Rexx.Parser~new("cms-test", source, options)~package
+  Return ""
+SyntaxTrap2:
+  co = Condition("O")
+  If co~code == 98.900 Then
+    Return co~additional~lastItem~code
+  Return co~code
+
+-- Twin of parseCMS, but activates the mode through the "REXXVM" option
+-- index instead of "CMS". Used to prove that "REXXVM" is an exact alias
+-- for "CMS" at the parser-engine level. Same return convention as parseCMS.
+::Method parseRexxVM
+  Use Strict Arg src, useCMS
+  If src~isA(.Array) Then source = src
+  Else                    source = .Array~of(src)
+  If useCMS Then
+    options = .Array~of((earlyCheck, .Set~new), ("REXXVM", 1))
+  Else
+    options = .Array~of((earlyCheck, .Set~new))
+  Signal On Syntax Name SyntaxTrap3
+  package = .Rexx.Parser~new("cms-test", source, options)~package
+  Return ""
+SyntaxTrap3:
+  co = Condition("O")
+  If co~code == 98.900 Then
+    Return co~additional~lastItem~code
+  Return co~code
+
+/******************************************************************************/
+/* Tests: CMS option enables the four characters                              */
+/******************************************************************************/
+
+::Method test_sharp_with_cms
+  self~assertEquals("", self~parseCMS("#sharp = 1", .True), -
+    "'#sharp = 1' should parse under CMS")
+  self~assertTrue(self~hasSymbol("#sharp = 1", "#SHARP"), -
+    "Symbol '#SHARP' should appear in the element chain")
+
+::Method test_at_with_cms
+  self~assertEquals("", self~parseCMS("@at = 1", .True), -
+    "'@at = 1' should parse under CMS")
+  self~assertTrue(self~hasSymbol("@at = 1", "@AT"), -
+    "Symbol '@AT' should appear in the element chain")
+
+::Method test_dollar_with_cms
+  self~assertEquals("", self~parseCMS("$dollar = 1", .True), -
+    "'$dollar = 1' should parse under CMS")
+  self~assertTrue(self~hasSymbol("$dollar = 1", "$DOLLAR"), -
+    "Symbol '$DOLLAR' should appear in the element chain")
+
+::Method test_cent_utf8_with_cms
+  self~assertEquals("", self~parseCMS("¢cent = 1", .True), -
+    "'¢cent = 1' (UTF-8) should parse under CMS")
+  self~assertTrue(self~hasSymbol("¢cent = 1", "¢CENT"), -
+    "Symbol '¢CENT' (UTF-8) should appear in the element chain")
+
+::Method test_cent_latin1_with_cms
+  src = "A2"x || "cent = 1"
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "'¢cent = 1' (Latin-1) should parse under CMS")
+  self~assertTrue(self~hasSymbol(src, "A2"x || "CENT"), -
+    "Symbol with Latin-1 ¢ should appear in the element chain")
+
+/******************************************************************************/
+/* Tests: without CMS, the same characters are rejected with SYNTAX 13        */
+/******************************************************************************/
+
+::Method test_sharp_without_cms
+  code = self~parseCMS("#sharp = 1", .False)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for '#' without CMS, got" code)
+
+::Method test_at_without_cms
+  code = self~parseCMS("@at = 1", .False)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for '@' without CMS, got" code)
+
+::Method test_dollar_without_cms
+  code = self~parseCMS("$dollar = 1", .False)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for '$' without CMS, got" code)
+
+::Method test_cent_utf8_without_cms
+  code = self~parseCMS("¢cent = 1", .False)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for ¢ (UTF-8) without CMS, got" code)
+
+::Method test_cent_latin1_without_cms
+  src = "A2"x || "cent = 1"
+  code = self~parseCMS(src, .False)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for ¢ (Latin-1) without CMS, got" code)
+
+/******************************************************************************/
+/* Sanity: a plain program still parses with CMS active                       */
+/******************************************************************************/
+
+::Method test_plain_program_under_cms
+  self~assertEquals("", self~parseCMS("Say 'hello'", .True), -
+    "Plain program should still parse with CMS active")
+
+/******************************************************************************/
+/* 250-character limit on strings (interpreted length)                        */
+/******************************************************************************/
+
+-- Literal string of exactly 250 chars is allowed under CMS.
+::Method test_string_at_limit
+  src = "'" || Copies("A", 250) || "'"
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "250-char literal should be accepted under CMS")
+
+-- Literal string of 251 chars raises SYNTAX 30 under CMS.
+::Method test_string_over_limit
+  src = "'" || Copies("A", 251) || "'"
+  code = self~parseCMS(src, .True)
+  Parse Var code major"."minor
+  self~assertEquals("30", major~strip, -
+    "Expected SYNTAX 30 for 251-char literal, got" code)
+
+-- Hex literal whose interpreted value is 251 bytes raises SYNTAX 30, even
+-- though the source representation is 505 characters long. This is the
+-- distinction between source length and interpreted length.
+::Method test_hex_over_limit_by_value
+  src = "'" || Copies("AB", 251) || "'x"
+  code = self~parseCMS(src, .True)
+  Parse Var code major"."minor
+  self~assertEquals("30", major~strip, -
+    "Expected SYNTAX 30 for 251-byte hex value, got" code)
+
+-- Hex literal whose interpreted value is 250 bytes is accepted under CMS,
+-- even though the source representation is 503 characters long. This proves
+-- the limit applies to the interpreted value, not to source length.
+::Method test_hex_at_limit_by_value
+  src = "'" || Copies("AB", 250) || "'x"
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "250-byte hex value should be accepted (source is 503 chars)")
+
+-- Binary literal whose interpreted value is 251 bytes raises SYNTAX 30.
+::Method test_binary_over_limit_by_value
+  src = "'" || Copies("11110000", 251) || "'b"
+  code = self~parseCMS(src, .True)
+  Parse Var code major"."minor
+  self~assertEquals("30", major~strip, -
+    "Expected SYNTAX 30 for 251-byte binary value, got" code)
+
+-- Sanity: without CMS, a 1000-char string parses fine. The 250 limit
+-- is a CMS-only restriction.
+::Method test_long_string_without_cms
+  src = "'" || Copies("A", 1000) || "'"
+  self~assertEquals("", self~parseCMS(src, .False), -
+    "1000-char literal should parse without CMS")
+
+/******************************************************************************/
+/* 250-character limit on symbols                                             */
+/******************************************************************************/
+
+-- Symbol of exactly 250 chars is allowed under CMS.
+::Method test_symbol_at_limit
+  src = Copies("A", 250) || " = 1"
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "250-char symbol should be accepted under CMS")
+
+-- Symbol of 251 chars raises SYNTAX 30 under CMS.
+::Method test_symbol_over_limit
+  src = Copies("A", 251) || " = 1"
+  code = self~parseCMS(src, .True)
+  Parse Var code major"."minor
+  self~assertEquals("30", major~strip, -
+    "Expected SYNTAX 30 for 251-char symbol, got" code)
+
+-- Sanity: without CMS, a 1000-char symbol parses fine.
+::Method test_long_symbol_without_cms
+  src = Copies("A", 1000) || " = 1"
+  self~assertEquals("", self~parseCMS(src, .False), -
+    "1000-char symbol should parse without CMS")
+
+/******************************************************************************/
+/* ::directives are rejected under CMS                                        */
+/******************************************************************************/
+
+-- ::ROUTINE under CMS: "::" is no longer marked as a directive start, so
+-- the clause becomes an invalid clause (SYNTAX 35).
+::Method test_routine_directive_under_cms
+  code = self~parseCMS("::Routine foo", .True)
+  Parse Var code major"."minor
+  self~assertEquals("35", major~strip, -
+    "Expected SYNTAX 35 for ::Routine under CMS, got" code)
+
+-- ::CLASS under CMS: same as above.
+::Method test_class_directive_under_cms
+  code = self~parseCMS("Say 1" || ";" || "::Class Foo", .True)
+  Parse Var code major"."minor
+  self~assertEquals("35", major~strip, -
+    "Expected SYNTAX 35 for ::Class under CMS, got" code)
+
+-- Sanity: without CMS, ::ROUTINE is a recognized directive and parses fine.
+::Method test_routine_directive_without_cms
+  src = "Say 1" || ";" || "::Routine foo" || ";" || "Say 'hi'"
+  self~assertEquals("", self~parseCMS(src, .False), -
+    "::Routine should be a valid directive without CMS")
+
+/******************************************************************************/
+/* "--" is not a line comment under CMS                                       */
+/******************************************************************************/
+
+-- Under CMS, "--" is not a line-comment marker; it is two minus operators.
+-- The canonical case 'Say "hi" --*' leaves a "*" dangling and raises 35.
+::Method test_dashdash_dangling_under_cms
+  code = self~parseCMS('Say "hi" --*', .True)
+  Parse Var code major"."minor
+  self~assertEquals("35", major~strip, -
+    "Expected SYNTAX 35 for 'Say --*' under CMS, got" code)
+
+-- Same source parses cleanly without CMS because "--*" is a line comment.
+::Method test_dashdash_dangling_without_cms
+  self~assertEquals("", self~parseCMS('Say "hi" --*', .False), -
+    "'Say --*' should parse without CMS (-- starts a line comment)")
+
+-- A "--" alone at end of clause means the second "-" has no operand.
+::Method test_dashdash_at_end_under_cms
+  code = self~parseCMS("x = 1 --", .True)
+  Parse Var code major"."minor
+  self~assertEquals("35", major~strip, -
+    "Expected SYNTAX 35 for 'x = 1 --' under CMS, got" code)
+
+-- Sanity: without CMS, the same source is a clean line comment.
+::Method test_dashdash_at_end_without_cms
+  self~assertEquals("", self~parseCMS("x = 1 --", .False), -
+    "'x = 1 --' should parse without CMS (-- starts a line comment)")
+
+/******************************************************************************/
+/* "-" is not a continuation character under CMS                              */
+/******************************************************************************/
+
+-- Comma continuation works in both modes.
+::Method test_comma_continuation_under_cms
+  src = .Array~of("Say 'a',", "    'b'")
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "Comma should still be a continuation under CMS")
+
+::Method test_comma_continuation_without_cms
+  src = .Array~of("Say 'a',", "    'b'")
+  self~assertEquals("", self~parseCMS(src, .False), -
+    "Comma should be a continuation without CMS")
+
+-- Trailing "-" before line-end: ooRexx treats it as a continuation
+-- (the two source lines join as one clause). CMS Rexx does not: the
+-- "-" stays a minus operator with no operand on the right, raising 35.
+::Method test_dash_continuation_under_cms
+  src = .Array~of("Say 'a' -", "    'b'")
+  code = self~parseCMS(src, .True)
+  Parse Var code major"."minor
+  self~assertEquals("35", major~strip, -
+    "Expected SYNTAX 35 for trailing '-' under CMS, got" code)
+
+-- Sanity: without CMS, "-" is a recognized continuation.
+::Method test_dash_continuation_without_cms
+  src = .Array~of("Say 'a' -", "    'b'")
+  self~assertEquals("", self~parseCMS(src, .False), -
+    "Trailing '-' should be a continuation without CMS")
+
+/******************************************************************************/
+/* "~" and "~~" are not recognized under CMS                                  */
+/******************************************************************************/
+
+-- Under CMS, "~" is not an operator: a~b raises SYNTAX 13.
+::Method test_tilde_under_cms
+  code = self~parseCMS("a~b", .True)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for '~' under CMS, got" code)
+
+-- Sanity: without CMS, "~" is the message-send operator.
+::Method test_tilde_without_cms
+  self~assertEquals("", self~parseCMS("a~b", .False), -
+    "'a~b' should parse without CMS")
+
+-- Under CMS, "~~" is also not recognized.
+::Method test_tildetilde_under_cms
+  code = self~parseCMS("a~~b", .True)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for '~~' under CMS, got" code)
+
+-- Sanity: without CMS, "~~" is the cascading-message operator.
+::Method test_tildetilde_without_cms
+  self~assertEquals("", self~parseCMS("a~~b", .False), -
+    "'a~~b' should parse without CMS")
+
+/******************************************************************************/
+/* "[" and "]" are not recognized under CMS                                   */
+/******************************************************************************/
+
+-- Under CMS, "[" is not a special character: "a[1]" raises SYNTAX 13.
+::Method test_lbracket_under_cms
+  code = self~parseCMS("a[1]", .True)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for '[' under CMS, got" code)
+
+-- Sanity: without CMS, "a[1]=2" is a valid assignment.
+::Method test_lbracket_without_cms
+  self~assertEquals("", self~parseCMS("a[1]=2", .False), -
+    "'a[1]=2' should parse without CMS")
+
+-- Under CMS, "]" alone also raises SYNTAX 13 (not 37.901).
+::Method test_rbracket_under_cms
+  code = self~parseCMS("a]=2", .True)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for ']' under CMS, got" code)
+
+/******************************************************************************/
+/* "¬" is a valid negator under CMS, in three encodings                       */
+/******************************************************************************/
+
+-- UTF-8 "¬" ("C2AC"X) as a negator.
+::Method test_neg_utf8_under_cms
+  self~assertEquals("", self~parseCMS("Say ¬1", .True), -
+    "UTF-8 '¬' should be a valid negator under CMS")
+
+-- Latin-1 "¬" ("AC"X) as a negator.
+::Method test_neg_latin1_AC_under_cms
+  src = "Say " || "AC"X || "1"
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "Latin-1 'AC'X should be a valid negator under CMS")
+
+-- ooRexx-compatible "AA"X as a negator under CMS.
+::Method test_neg_AA_under_cms
+  src = "Say " || "AA"X || "1"
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "'AA'X should be a valid negator under CMS")
+
+-- Compound: "¬=" as not-equal (UTF-8).
+::Method test_neg_equal_under_cms
+  self~assertEquals("", self~parseCMS("If 1¬=2 Then Nop", .True), -
+    "'¬=' should be a valid compound operator under CMS")
+
+-- Compound: "¬==" as strict not-equal.
+::Method test_neg_strict_equal_under_cms
+  self~assertEquals("", self~parseCMS("If 1¬==2 Then Nop", .True), -
+    "'¬==' should be a valid compound operator under CMS")
+
+-- Compound: "¬>" as not-greater-than.
+::Method test_neg_greater_under_cms
+  self~assertEquals("", self~parseCMS("If 1¬>2 Then Nop", .True), -
+    "'¬>' should be a valid compound operator under CMS")
+
+-- Compound: "¬<" as not-lower-than.
+::Method test_neg_lower_under_cms
+  self~assertEquals("", self~parseCMS("If 1¬<2 Then Nop", .True), -
+    "'¬<' should be a valid compound operator under CMS")
+
+/******************************************************************************/
+/* "^" remains Executor-only and is not recognized under CMS                  */
+/******************************************************************************/
+
+-- Under CMS, "^" is not a negator: it raises SYNTAX 13.
+::Method test_caret_under_cms
+  code = self~parseCMS("Say ^1", .True)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for '^' under CMS, got" code)
+
+-- Sanity: under Executor, "^" parses as a negator.
+::Method test_caret_under_executor
+  options = .Array~of((earlyCheck, .Set~new), ("Executor", 1))
+  source  = .Array~of("Say ^1")
+  Signal On Syntax Name SyntaxTrap
+  package = .Rexx.Parser~new("cms-test", source, options)~package
+  self~assertEquals(.True, .True, "'^' should parse under Executor")
+  Return
+SyntaxTrap:
+  co = Condition("O")
+  If co~code == 98.900 Then code = co~additional~lastItem~code
+  Else code = co~code
+  self~fail("'^' under Executor should parse, got" code)
+
+/******************************************************************************/
+/* Extended assignments are not recognized under CMS                          */
+/******************************************************************************/
+
+-- Under CMS, every extended assignment raises SYNTAX 35.
+::Method test_extended_assignments_under_cms
+  sequences = .Array~of("+=", "-=", "*=", "/=", "%=", "//=", -
+                        "||=", "&=", "|=", "&&=", "**=")
+  Do op Over sequences
+    src  = "x" op "1"
+    code = self~parseCMS(src, .True)
+    Parse Var code major"."minor
+    self~assertEquals("35", major~strip, -
+      "Expected SYNTAX 35 for '"src"' under CMS, got" code)
+  End
+
+-- Sanity: without CMS, every extended assignment parses cleanly.
+::Method test_extended_assignments_without_cms
+  sequences = .Array~of("+=", "-=", "*=", "/=", "%=", "//=", -
+                        "||=", "&=", "|=", "&&=", "**=")
+  Do op Over sequences
+    src = "x" op "1"
+    self~assertEquals("", self~parseCMS(src, .False), -
+      "'"src"' should parse without CMS")
+  End
+
+-- Sanity: plain "=" assignment still works under CMS.
+::Method test_plain_assignment_under_cms
+  self~assertEquals("", self~parseCMS("x = 1", .True), -
+    "Plain '=' assignment should parse under CMS")
+
+/******************************************************************************/
+/* "{" and "}" are not recognized under CMS                                   */
+/******************************************************************************/
+
+-- Under CMS, "{" raises SYNTAX 13.
+::Method test_lcurly_under_cms
+  code = self~parseCMS("Say {", .True)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for '{' under CMS, got" code)
+
+-- Under CMS, "}" raises SYNTAX 13.
+::Method test_rcurly_under_cms
+  code = self~parseCMS("Say }", .True)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for '}' under CMS, got" code)
+
+-- Sanity: without CMS (and without Executor), curlies also raise SYNTAX 13.
+::Method test_lcurly_without_cms
+  code = self~parseCMS("Say {", .False)
+  Parse Var code major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 for '{' without CMS, got" code)
+
+-- Sanity: under Executor, "{1}" parses as a source literal.
+::Method test_curly_under_executor
+  options = .Array~of((earlyCheck, .Set~new), ("Executor", 1))
+  source  = .Array~of("{1}")
+  Signal On Syntax Name SyntaxTrap
+  package = .Rexx.Parser~new("cms-test", source, options)~package
+  self~assertEquals(.True, .True, "'{1}' should parse under Executor")
+  Return
+SyntaxTrap:
+  co = Condition("O")
+  If co~code == 98.900 Then code = co~additional~lastItem~code
+  Else code = co~code
+  self~fail("'{1}' under Executor should parse, got" code)
+
+/******************************************************************************/
+/* Signature differences: arity                                               */
+/******************************************************************************/
+
+-- DELSTR: the 2nd argument is required in CMS, optional in ooRexx.
+::Method test_delstr_arity_cms
+  code = self~parseCMSCheckingBIFs("Say DELSTR('abc')", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for DELSTR('abc') under CMS, got" code)
+
+::Method test_delstr_arity_oorexx
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say DELSTR('abc')", .False), -
+    "DELSTR('abc') should parse under ooRexx (n is optional)")
+
+::Method test_delstr_with_n_cms
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say DELSTR('abc',2)", .True), -
+    "DELSTR('abc',2) should parse under CMS")
+
+-- LASTPOS: ooRexx accepts an optional 4th arg (length); CMS does not.
+::Method test_lastpos_arity_cms
+  code = self~parseCMSCheckingBIFs("Say LASTPOS('a','abc',1,2)", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for LASTPOS with 4 args under CMS, got" code)
+
+::Method test_lastpos_arity_oorexx
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say LASTPOS('a','abc',1,2)", .False), -
+    "LASTPOS with 4 args should parse under ooRexx")
+
+-- LINES: ooRexx accepts an optional 2nd arg (C/N); CMS does not.
+::Method test_lines_arity_cms
+  code = self~parseCMSCheckingBIFs("Say LINES(name,'C')", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for LINES with 2 args under CMS, got" code)
+
+::Method test_lines_arity_oorexx
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say LINES(name,'C')", .False), -
+    "LINES with 2 args should parse under ooRexx")
+
+-- POS: ooRexx accepts an optional 4th arg (length); CMS does not.
+::Method test_pos_arity_cms
+  code = self~parseCMSCheckingBIFs("Say POS('a','abc',1,2)", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for POS with 4 args under CMS, got" code)
+
+::Method test_pos_arity_oorexx
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say POS('a','abc',1,2)", .False), -
+    "POS with 4 args should parse under ooRexx")
+
+-- TIME: ooRexx accepts 3 args; CMS only 1.
+::Method test_time_arity_cms
+  code = self~parseCMSCheckingBIFs("Say TIME('N','12:00:00')", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for TIME with 2 args under CMS, got" code)
+
+::Method test_time_arity_oorexx
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say TIME('N','12:00:00')", .False), -
+    "TIME with 2 args should parse under ooRexx")
+
+-- TRANSLATE: ooRexx accepts up to 6 args; CMS only 4.
+::Method test_translate_arity_cms
+  code = self~parseCMSCheckingBIFs("Say TRANSLATE('a','b','c','x',1)", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for TRANSLATE with 5 args under CMS, got" code)
+
+::Method test_translate_arity_oorexx
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say TRANSLATE('a','b','c','x',1)", .False), -
+    "TRANSLATE with 5 args should parse under ooRexx")
+
+-- VERIFY: ooRexx accepts up to 5 args; CMS only 4.
+::Method test_verify_arity_cms
+  code = self~parseCMSCheckingBIFs("Say VERIFY('a','b','M',1,2)", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for VERIFY with 5 args under CMS, got" code)
+
+::Method test_verify_arity_oorexx
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say VERIFY('a','b','M',1,2)", .False), -
+    "VERIFY with 5 args should parse under ooRexx")
+
+/******************************************************************************/
+/* Signature differences: option letters                                     */
+/******************************************************************************/
+
+-- DATE: 'F' (Full) is ooRexx-only.
+::Method test_date_F_cms
+  code = self~parseCMSCheckingBIFs("Say DATE('F')", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for DATE('F') under CMS, got" code)
+
+::Method test_date_F_oorexx
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say DATE('F')", .False), -
+    "DATE('F') should parse under ooRexx")
+
+-- DATE: 'J' (Julian) is CMS-only.
+::Method test_date_J_cms
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say DATE('J')", .True), -
+    "DATE('J') should parse under CMS")
+
+::Method test_date_J_oorexx
+  code = self~parseCMSCheckingBIFs("Say DATE('J')", .False)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for DATE('J') under ooRexx, got" code)
+
+-- DATE: 'B' (Base) is in both dialects.
+::Method test_date_B_both
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say DATE('B')", .True), -
+    "DATE('B') should parse under CMS")
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say DATE('B')", .False), -
+    "DATE('B') should parse under ooRexx")
+
+-- TIME: 'F' (Full microseconds) is ooRexx-only.
+::Method test_time_F_cms
+  code = self~parseCMSCheckingBIFs("Say TIME('F')", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for TIME('F') under CMS, got" code)
+
+::Method test_time_F_oorexx
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say TIME('F')", .False), -
+    "TIME('F') should parse under ooRexx")
+
+/******************************************************************************/
+/* CMS-only BIFs                                                              */
+/******************************************************************************/
+
+-- The CMS-only BIFs should be recognized under CMS and pass the early
+-- check with a valid argument count. We verify the check is active by
+-- supplying too many arguments and expecting SYNTAX 40.
+
+-- EXTERNALS takes 0 args.
+::Method test_externals_cms
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say EXTERNALS()", .True), -
+    "EXTERNALS() should parse under CMS")
+
+::Method test_externals_too_many_args_cms
+  code = self~parseCMSCheckingBIFs("Say EXTERNALS(1)", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for EXTERNALS(1) under CMS, got" code)
+
+-- FIND takes 2 required args.
+::Method test_find_cms
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say FIND('a b','b')", .True), -
+    "FIND('a b','b') should parse under CMS")
+
+::Method test_find_too_few_args_cms
+  code = self~parseCMSCheckingBIFs("Say FIND('a b')", .True)
+  Parse Var code major"."minor
+  self~assertEquals("40", major~strip, -
+    "Expected SYNTAX 40 for FIND with 1 arg under CMS, got" code)
+
+-- INDEX takes 2 required, 1 optional.
+::Method test_index_cms
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say INDEX('ab','b')", .True), -
+    "INDEX('ab','b') should parse under CMS")
+
+-- JUSTIFY takes 2 required, 1 optional.
+::Method test_justify_cms
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say JUSTIFY('a b',5)", .True), -
+    "JUSTIFY('a b',5) should parse under CMS")
+
+-- LINESIZE takes 0 args.
+::Method test_linesize_cms
+  self~assertEquals("", self~parseCMSCheckingBIFs("Say LINESIZE()", .True), -
+    "LINESIZE() should parse under CMS")
+
+/******************************************************************************/
+/* Tests: UPPER keyword instruction under CMS                                 */
+/******************************************************************************/
+
+-- UPPER exists in ooRexx but only under .Options.Executor. Under CMS it
+-- must also be recognized. The only purely syntactic way to tell whether
+-- UPPER was parsed as a keyword instruction is to write it with no
+-- arguments: as a keyword it requires at least one variable and must
+-- complain; as a command it is just the value of identifier UPPER and
+-- parses fine.
+
+::Method test_upper_with_cms_requires_variable
+  code = self~parseCMS("upper", .True)
+  self~assertTrue(code \== "", -
+    "Bare 'upper' under CMS should raise a SYNTAX error, got" code)
+
+::Method test_upper_without_cms_is_command
+  self~assertEquals("", self~parseCMS("upper", .False), -
+    "Bare 'upper' without CMS should parse as a command")
+
+::Method test_upper_with_cms_accepts_variables
+  self~assertEquals("", self~parseCMS("upper x y z", .True), -
+    "'upper x y z' should parse under CMS as UPPER instruction")
+
+/******************************************************************************/
+/* Tests: ooRexx-only keyword instructions are rejected under CMS             */
+/******************************************************************************/
+
+-- EXPOSE, FORWARD, GUARD, LOOP, RAISE, REPLY and USE are keywords in
+-- ooRexx but do not exist in CMS Rexx. Under +cms they must drop out of
+-- the keyword set and fall through as assignments or commands.
+
+::Method test_expose_under_cms_is_command
+  self~assertEquals("", self~parseCMS("expose a b c", .True), -
+    "'expose a b c' under CMS should parse as command, not EXPOSE")
+
+::Method test_forward_under_cms_is_command
+  self~assertEquals("", self~parseCMS("forward to a", .True), -
+    "'forward to a' under CMS should parse as command, not FORWARD")
+
+::Method test_guard_under_cms_is_command
+  self~assertEquals("", self~parseCMS("guard on", .True), -
+    "'guard on' under CMS should parse as command, not GUARD")
+
+-- "loop; end" in ooRexx opens a block that END closes (parses fine).
+-- Under CMS, LOOP is just a command, so the END is orphaned and must
+-- raise a SYNTAX error.
+::Method test_loop_under_cms_is_command
+  code = self~parseCMS(.Array~of("loop", "end"), .True)
+  self~assertTrue(code \== "", -
+    "'loop / end' under CMS should raise (orphaned END), got" code)
+
+::Method test_loop_without_cms_is_keyword
+  self~assertEquals("", self~parseCMS(.Array~of("loop", "end"), .False), -
+    "'loop / end' without CMS should parse as a LOOP block")
+
+::Method test_raise_under_cms_is_command
+  self~assertEquals("", self~parseCMS("raise syntax 40", .True), -
+    "'raise syntax 40' under CMS should parse as command, not RAISE")
+
+::Method test_reply_under_cms_is_command
+  self~assertEquals("", self~parseCMS("reply 1", .True), -
+    "'reply 1' under CMS should parse as command, not REPLY")
+
+::Method test_use_under_cms_is_command
+  self~assertEquals("", self~parseCMS("use strict arg x", .True), -
+    "'use strict arg x' under CMS should parse as command, not USE")
+
+/******************************************************************************/
+/* Tests: PARSE EXTERNAL and PARSE NUMERIC under CMS                          */
+/******************************************************************************/
+
+-- EXTERNAL and NUMERIC are PARSE subkeywords only under CMS. In plain
+-- ooRexx they must raise SYNTAX 25.012 (invalid subkeyword after PARSE).
+
+::Method test_parse_external_with_cms
+  self~assertEquals("", self~parseCMS("parse external a b c", .True), -
+    "'parse external a b c' should parse under CMS")
+
+::Method test_parse_external_without_cms
+  code = self~parseCMS("parse external a b c", .False)
+  Parse Var code major"."minor
+  self~assertEquals("25", major~strip, -
+    "Expected SYNTAX 25 for 'parse external' without CMS, got" code)
+
+::Method test_parse_numeric_with_cms
+  self~assertEquals("", self~parseCMS("parse numeric a b c", .True), -
+    "'parse numeric a b c' should parse under CMS")
+
+::Method test_parse_numeric_without_cms
+  code = self~parseCMS("parse numeric a b c", .False)
+  Parse Var code major"."minor
+  self~assertEquals("25", major~strip, -
+    "Expected SYNTAX 25 for 'parse numeric' without CMS, got" code)
+
+/******************************************************************************/
+/* Tests: array terms (commas in expressions) under CMS                       */
+/******************************************************************************/
+
+-- In ooRexx, "expr , expr , ..." inside an expression builds an anonymous
+-- array term (a nestable expression). CMS Rexx has no array terms: a comma
+-- appearing where ooRexx would start one is a SYNTAX 37.001 ("Unexpected
+-- ',''). This is enforced in a single place, Expression.List, so every
+-- instruction that parses an expression inherits the difference. Verified
+-- against real CMS 14 (SAY 1,2,3 and X = 1, both give Error 37).
+
+-- SAY: the canonical case.
+::Method test_say_array_term_under_cms_raises_37
+  code = self~parseCMS("say 1,2,3", .True)
+  Parse Var code major"."minor
+  self~assertEquals("37", major~strip, -
+    "Expected SYNTAX 37 for 'say 1,2,3' under CMS, got" code)
+
+::Method test_say_array_term_without_cms_is_array
+  self~assertEquals("", self~parseCMS("say 1,2,3", .False), -
+    "'say 1,2,3' without CMS should parse as an array term")
+
+-- A bare expression with no comma must NOT trip the comma guard under CMS
+-- (regression: an earlier draft raised 37 on every comma-less expression).
+::Method test_say_no_comma_under_cms_is_ok
+  self~assertEquals("", self~parseCMS("say 1", .True), -
+    "'say 1' under CMS must parse cleanly (no spurious 37)")
+
+-- Assignment with a trailing comma: real CMS gives Error 37 on "X = 1,".
+::Method test_assignment_trailing_comma_under_cms_raises_37
+  code = self~parseCMS("x = 1,", .True)
+  Parse Var code major"."minor
+  self~assertEquals("37", major~strip, -
+    "Expected SYNTAX 37 for 'x = 1,' under CMS, got" code)
+
+::Method test_assignment_trailing_comma_without_cms_is_ok
+  self~assertEquals("", self~parseCMS("x = 1,", .False), -
+    "'x = 1,' without CMS should parse (trailing comma is an array term)")
+
+-- A representative sample of other instructions that cross Expression.List.
+
+::Method test_exit_array_term_under_cms_raises_37
+  code = self~parseCMS("exit 1,2", .True)
+  Parse Var code major"."minor
+  self~assertEquals("37", major~strip, -
+    "Expected SYNTAX 37 for 'exit 1,2' under CMS, got" code)
+
+::Method test_exit_array_term_without_cms_is_ok
+  self~assertEquals("", self~parseCMS("exit 1,2", .False), -
+    "'exit 1,2' without CMS should parse as an array term")
+
+::Method test_return_array_term_under_cms_raises_37
+  code = self~parseCMS("return x,y", .True)
+  Parse Var code major"."minor
+  self~assertEquals("37", major~strip, -
+    "Expected SYNTAX 37 for 'return x,y' under CMS, got" code)
+
+::Method test_return_array_term_without_cms_is_ok
+  self~assertEquals("", self~parseCMS("return x,y", .False), -
+    "'return x,y' without CMS should parse as an array term")
+
+::Method test_interpret_array_term_under_cms_raises_37
+  code = self~parseCMS("interpret a,b", .True)
+  Parse Var code major"."minor
+  self~assertEquals("37", major~strip, -
+    "Expected SYNTAX 37 for 'interpret a,b' under CMS, got" code)
+
+::Method test_interpret_array_term_without_cms_is_ok
+  self~assertEquals("", self~parseCMS("interpret a,b", .False), -
+    "'interpret a,b' without CMS should parse as an array term")
+
+-- Function-call commas are a different routine (Arguments), NOT array terms.
+-- They must keep working under CMS: "say f(1,2)" is fine in both modes.
+::Method test_function_call_commas_under_cms_is_ok
+  self~assertEquals("", self~parseCMS("say foo(1,2)", .True), -
+    "'say foo(1,2)' under CMS must parse (function args, not an array term)")
+
+-- CALL arguments are separated by commas via the Arguments routine, NOT
+-- Expression.List. "call foo a, b" passes two arguments and must parse
+-- under CMS (the paren-less sibling of "foo(1,2)"). Verified on CMS 14.
+::Method test_call_comma_args_under_cms_is_ok
+  self~assertEquals("", self~parseCMS("call foo a, b", .True), -
+    "'call foo a, b' under CMS must parse (call args, not an array term)")
+
+-- PARSE VALUE takes an expression, so a comma there is an array term and
+-- must raise 37 under CMS, without the trailing WITH template confusing
+-- the error. Verified on CMS 14.
+::Method test_parse_value_array_term_under_cms_raises_37
+  code = self~parseCMS("parse value a,b with c", .True)
+  Parse Var code major"."minor
+  self~assertEquals("37", major~strip, -
+    "Expected SYNTAX 37 for 'parse value a,b with c' under CMS, got" code)
+
+/******************************************************************************/
+/* Tests: PARSE LOWER and PARSE CASELESS under CMS                            */
+/******************************************************************************/
+
+-- CMS Rexx has PARSE UPPER (old, TRL2) but not PARSE LOWER nor CASELESS,
+-- which are ooRexx extensions. Under CMS they must raise SYNTAX 25.012
+-- ("Invalid subkeyword found"). UPPER must keep working. Verified on CMS 14
+-- (parse upper -> ok; parse lower / caseless -> Error 25).
+
+::Method test_parse_upper_under_cms_is_ok
+  self~assertEquals("", self~parseCMS("parse upper pull x", .True), -
+    "'parse upper pull x' must parse under CMS (UPPER exists in CMS)")
+
+::Method test_parse_lower_under_cms_raises_25
+  code = self~parseCMS("parse lower pull x", .True)
+  Parse Var code major"."minor
+  self~assertEquals("25", major~strip, -
+    "Expected SYNTAX 25 for 'parse lower' under CMS, got" code)
+
+::Method test_parse_lower_without_cms_is_ok
+  self~assertEquals("", self~parseCMS("parse lower pull x", .False), -
+    "'parse lower pull x' without CMS should parse (ooRexx extension)")
+
+::Method test_parse_caseless_under_cms_raises_25
+  code = self~parseCMS("parse caseless pull x", .True)
+  Parse Var code major"."minor
+  self~assertEquals("25", major~strip, -
+    "Expected SYNTAX 25 for 'parse caseless' under CMS, got" code)
+
+::Method test_parse_caseless_without_cms_is_ok
+  self~assertEquals("", self~parseCMS("parse caseless pull x", .False), -
+    "'parse caseless pull x' without CMS should parse (ooRexx extension)")
+
+-- UPPER passes but a trailing CASELESS still raises under CMS.
+::Method test_parse_upper_caseless_under_cms_raises_25
+  code = self~parseCMS("parse upper caseless x", .True)
+  Parse Var code major"."minor
+  self~assertEquals("25", major~strip, -
+    "Expected SYNTAX 25 for 'parse upper caseless' under CMS, got" code)
+
+/******************************************************************************/
+/* Tests: SELECT LABEL and SELECT CASE under CMS                              */
+/******************************************************************************/
+
+-- CMS Rexx has only bare SELECT; LABEL and CASE are ooRexx extensions.
+-- Under CMS, anything after SELECT is "data on end of clause" -> SYNTAX
+-- 21.902, NOT an invalid-subkeyword error. Verified on CMS 14: both
+-- "select case" and "select label" give Error 21 (not 25).
+
+::Method test_select_bare_under_cms_is_ok
+  self~assertEquals("", -
+    self~parseCMS("select; when 1 then nop; end", .True), -
+    "bare 'select' must parse under CMS")
+
+::Method test_select_case_under_cms_raises_21
+  code = self~parseCMS("select case 1; when 1 then nop; end", .True)
+  Parse Var code major"."minor
+  self~assertEquals("21", major~strip, -
+    "Expected SYNTAX 21 for 'select case' under CMS, got" code)
+
+::Method test_select_case_without_cms_is_ok
+  self~assertEquals("", -
+    self~parseCMS("select case 1; when 1 then nop; end", .False), -
+    "'select case' without CMS should parse (ooRexx extension)")
+
+::Method test_select_label_under_cms_raises_21
+  code = self~parseCMS("select label foo; when 1 then nop; end foo", .True)
+  Parse Var code major"."minor
+  self~assertEquals("21", major~strip, -
+    "Expected SYNTAX 21 for 'select label' under CMS, got" code)
+
+::Method test_select_label_without_cms_is_ok
+  self~assertEquals("", -
+    self~parseCMS("select label foo; when 1 then nop; end foo", .False), -
+    "'select label' without CMS should parse (ooRexx extension)")
+
+/******************************************************************************/
+/* Tests: SIGNAL ON/OFF conditions under CMS                                  */
+/******************************************************************************/
+
+-- CMS Rexx supports SIGNAL ON/OFF for ERROR, FAILURE, HALT, NOTREADY,
+-- NOVALUE, SYNTAX (plus the NAME clause on ON, and SIGNAL VALUE). The
+-- ooRexx-only conditions LOSTDIGITS, NOMETHOD, NOSTRING, USER and ANY
+-- must raise SYNTAX 25 under CMS. Verified on CMS 14 and the SC24 railroad
+-- diagram. Surprises confirmed by VM: NOTREADY, the NAME clause, and
+-- SIGNAL VALUE all exist in CMS.
+
+::Method test_signal_on_classic_conditions_under_cms_ok
+  Do c Over .Array~of("error", "failure", "halt", "notready", -
+                      "novalue", "syntax")
+    self~assertEquals("", self~parseCMS("signal on" c, .True), -
+      "'signal on" c "' must parse under CMS")
+  End
+
+::Method test_signal_off_classic_conditions_under_cms_ok
+  Do c Over .Array~of("error", "failure", "halt", "notready", -
+                      "novalue", "syntax")
+    self~assertEquals("", self~parseCMS("signal off" c, .True), -
+      "'signal off" c "' must parse under CMS")
+  End
+
+::Method test_signal_on_oorexx_only_conditions_under_cms_raise_25
+  Do c Over .Array~of("lostdigits", "nomethod", "nostring", "any")
+    code = self~parseCMS("signal on" c, .True)
+    Parse Var code major"."minor
+    self~assertEquals("25", major~strip, -
+      "Expected SYNTAX 25 for 'signal on" c "' under CMS, got" code)
+  End
+
+::Method test_signal_on_user_under_cms_raises_25
+  code = self~parseCMS("signal on user foo", .True)
+  Parse Var code major"."minor
+  self~assertEquals("25", major~strip, -
+    "Expected SYNTAX 25 for 'signal on user' under CMS, got" code)
+
+::Method test_signal_oorexx_only_conditions_without_cms_ok
+  Do c Over .Array~of("lostdigits", "nomethod", "nostring", "any")
+    self~assertEquals("", self~parseCMS("signal on" c, .False), -
+      "'signal on" c "' without CMS should parse (ooRexx condition)")
+  End
+
+-- The NAME clause (ON only) and SIGNAL VALUE exist in CMS.
+::Method test_signal_on_name_under_cms_ok
+  self~assertEquals("", self~parseCMS("signal on error name foo", .True), -
+    "'signal on error name foo' must parse under CMS")
+
+::Method test_signal_value_under_cms_ok
+  self~assertEquals("", self~parseCMS("signal value 'lab'", .True), -
+    "'signal value' must parse under CMS")
+
+/******************************************************************************/
+/* Tests: ADDRESS WITH under CMS                                              */
+/******************************************************************************/
+
+-- CMS Rexx has no ADDRESS ... WITH redirection block; the SC24 railroad is
+-- just ADDRESS [environment [expression]] | ADDRESS VALUE expression. Since
+-- Rexx has no reserved words, "WITH input ..." after a command is simply
+-- part of the command expression (a concatenation), not a keyword. So under
+-- CMS, "WITH" must NOT terminate the expression nor open a redirection block.
+-- The discriminating case: "address value 'cmd' with foo" is SYNTAX 25.934
+-- in ooRexx (FOO is not INPUT/OUTPUT/ERROR) but parses fine under CMS, where
+-- "with foo" is just expression text.
+
+::Method test_address_with_under_cms_is_expression
+  self~assertEquals("", -
+    self~parseCMS("address value 'cmd' with foo", .True), -
+    "'address value ... with foo' must parse under CMS (WITH is expression)")
+
+::Method test_address_with_without_cms_raises_25
+  code = self~parseCMS("address value 'cmd' with foo", .False)
+  Parse Var code major"."minor
+  self~assertEquals("25", major~strip, -
+    "Expected SYNTAX 25 for 'address ... with foo' without CMS, got" code)
+
+::Method test_address_command_with_block_under_cms_is_ok
+  self~assertEquals("", -
+    self~parseCMS("address command 'foo' with input stem in.", .True), -
+    "'address command ... with input stem in.' must parse under CMS")
+
+::Method test_address_command_with_block_without_cms_is_ok
+  self~assertEquals("", -
+    self~parseCMS("address command 'foo' with input stem in.", .False), -
+    "ooRexx ADDRESS WITH redirection must still parse without CMS")
+
+-- Simple ADDRESS forms valid in both modes (controls).
+::Method test_address_simple_forms_under_cms_ok
+  Do src Over .Array~of("address", "address command", -
+                        "address command 'foo'", "address value 'cmd'")
+    self~assertEquals("", self~parseCMS(src, .True), -
+      "'"src"' must parse under CMS")
+  End
+
+/******************************************************************************/
+/* DO/LOOP: ooRexx subkeyword extensions under CMS                            */
+/*                                                                            */
+/* CMS Rexx has only:  DO [name=expri [TO][BY][FOR] | FOREVER | exprr]        */
+/*                         [WHILE exprw | UNTIL expru]                        */
+/* ooRexx adds LABEL, COUNTER, OVER, and WITH ITEM/INDEX OVER. Because Rexx   */
+/* has no reserved words, under CMS these are NOT errors: the offending token */
+/* is simply read as part of the repetitor expression (exprr). The clause     */
+/* parses; any resulting non-integer repetition count is a run-time Error 26, */
+/* not a parse-time error. So the cribado is "do not recognize the subkeyword */
+/* and fall through to the simple repetitive branch" -- like ADDRESS WITH.    */
+/******************************************************************************/
+
+-- DO OVER (extension 3): under CMS "over coll" is repetitor expression text,
+-- so the clause parses. ooRexx reads it as the OVER iteration form.
+::Method test_do_over_under_cms_is_expression
+  self~assertEquals("", self~parseCMS("do x over coll; nop; end", .True), -
+    "'do x over coll' must parse under CMS (OVER is expression text)")
+
+::Method test_do_over_without_cms_is_iteration
+  self~assertEquals("", self~parseCMS("do x over coll; nop; end", .False), -
+    "ooRexx 'do x over coll' must parse as the OVER iteration form")
+
+-- DO LABEL (extension 1): under CMS "label myloop" is repetitor expression
+-- text; the loop is therefore unnamed.
+::Method test_do_label_under_cms_is_expression
+  self~assertEquals("", self~parseCMS("do label myloop; nop; end", .True), -
+    "'do label myloop' must parse under CMS (LABEL is expression text)")
+
+::Method test_do_label_without_cms_is_named_loop
+  self~assertEquals("", self~parseCMS("do label myloop; nop; end", .False), -
+    "ooRexx 'do label myloop' must parse as a LABEL-named loop")
+
+-- Natural consequence of not recognizing LABEL: a named END no longer
+-- matches, since under CMS the loop has no name. "end myloop" is therefore
+-- an unmatched/unexpected END -> SYNTAX 10. No extra gate is needed.
+::Method test_do_label_named_end_under_cms_raises_10
+  code = self~parseCMS("do label foo; nop; end foo", .True)
+  Parse Var code major"."minor
+  self~assertEquals("10", major~strip, -
+    "Expected SYNTAX 10 (unmatched END) for named END under CMS, got" code)
+
+::Method test_do_label_named_end_without_cms_is_ok
+  self~assertEquals("", self~parseCMS("do label foo; nop; end foo", .False), -
+    "ooRexx 'do label foo / end foo' must parse (END names the loop label)")
+
+-- DO COUNTER (extension 2): under CMS "counter c i=1 to 3" is repetitor
+-- expression text. ooRexx reads COUNTER as the iteration-count variable.
+::Method test_do_counter_under_cms_is_expression
+  self~assertEquals("", self~parseCMS("do counter c i=1 to 3; nop; end", .True), -
+    "'do counter c ...' must parse under CMS (COUNTER is expression text)")
+
+::Method test_do_counter_without_cms_is_counter_var
+  self~assertEquals("", self~parseCMS("do counter c i=1 to 3; nop; end", .False), -
+    "ooRexx 'do counter c i=1 to 3' must parse as a COUNTER loop")
+
+-- DO WITH ITEM/INDEX OVER (extension 4): under CMS "with item ... over ..."
+-- is repetitor expression text. ooRexx reads the WITH supplier form.
+::Method test_do_with_under_cms_is_expression
+  self~assertEquals("", -
+    self~parseCMS("do with item it index ix over coll; nop; end", .True), -
+    "'do with item ... over ...' must parse under CMS (WITH is expression)")
+
+::Method test_do_with_without_cms_is_supplier_form
+  self~assertEquals("", -
+    self~parseCMS("do with item it index ix over coll; nop; end", .False), -
+    "ooRexx 'do with item ... over ...' must parse as the WITH supplier form")
+
+-- Frontier: a control variable literally NAMED over/label/counter (i.e. with
+-- "=") is the Classic Do/Loop form and is valid in both modes -- the "="
+-- check fires before any subkeyword recognition. Guards against over-gating.
+::Method test_do_keyword_named_control_var_both_modes
+  Do src Over .Array~of("do over=1 to 3; nop; end", -
+                        "do label=1 to 3; nop; end", -
+                        "do counter=1 to 3; nop; end")
+    self~assertEquals("", self~parseCMS(src, .True), -
+      "'"src"' must parse under CMS (named control variable)")
+    self~assertEquals("", self~parseCMS(src, .False), -
+      "'"src"' must parse without CMS (named control variable)")
+  End
+
+-- DO forms that ARE valid in CMS must keep parsing under CMS (controls).
+::Method test_do_valid_cms_forms_under_cms_ok
+  Do src Over .Array~of("do i=1 to 3; nop; end", -
+                        "do i=1 to 10 by 2 for 4; nop; end", -
+                        "do 5; nop; end", -
+                        "do forever; leave; end", -
+                        "do while a<3; a=a+1; end", -
+                        "do until a>3; a=a+1; end", -
+                        "do; nop; end")
+    self~assertEquals("", self~parseCMS(src, .True), -
+      "valid CMS DO form '"src"' must parse under CMS")
+  End
+
+-- The LOOP family is unaffected by the DO gating: LOOP is not a keyword
+-- under CMS (one of the ooRexx-only keywords), so any LOOP block leaves an
+-- orphaned END -> SYNTAX. The DO subkeyword cribado must not change this.
+::Method test_loop_with_subkeywords_under_cms_orphans_end
+  Do src Over .Array~of(.Array~of("loop over coll", "nop", "end"), -
+                        .Array~of("loop label x", "nop", "end"))
+    code = self~parseCMS(src, .True)
+    self~assertTrue(code \== "", -
+      "LOOP block under CMS must orphan its END (got" code")")
+  End
+
+-- Cheap category-level proof of the fall-through: under CMS the offending
+-- token must NOT be marked as a subkeyword (it stays a plain symbol that
+-- becomes part of the repetitor expression). Without CMS, OVER/etc. are
+-- subkeywords. This pins the AST shape directly, without inspecting nodes.
+::Method test_do_over_token_not_subkeyword_under_cms
+  self~assertFalse( -
+    self~tokenIsSubkeyword(.Array~of("do x over coll", "nop", "end"), "OVER", .True), -
+    "'OVER' must NOT be a subkeyword under CMS (falls through to expression)")
+
+::Method test_do_over_token_is_subkeyword_without_cms
+  self~assertTrue( -
+    self~tokenIsSubkeyword(.Array~of("do x over coll", "nop", "end"), "OVER", .False), -
+    "'OVER' must be a subkeyword without CMS (OVER iteration form)")
+
+::Method test_do_counter_token_not_subkeyword_under_cms
+  self~assertFalse( -
+    self~tokenIsSubkeyword(.Array~of("do counter c i=1 to 3", "nop", "end"), "COUNTER", .True), -
+    "'COUNTER' must NOT be a subkeyword under CMS (falls through to expression)")
+
+::Method test_do_counter_token_is_subkeyword_without_cms
+  self~assertTrue( -
+    self~tokenIsSubkeyword(.Array~of("do counter c i=1 to 3", "nop", "end"), "COUNTER", .False), -
+    "'COUNTER' must be a subkeyword without CMS (COUNTER loop)")
+
+::Method test_do_label_token_not_subkeyword_under_cms
+  self~assertFalse( -
+    self~tokenIsSubkeyword(.Array~of("do label myloop", "nop", "end"), "LABEL", .True), -
+    "'LABEL' must NOT be a subkeyword under CMS (falls through to expression)")
+
+::Method test_do_label_token_is_subkeyword_without_cms
+  self~assertTrue( -
+    self~tokenIsSubkeyword(.Array~of("do label myloop", "nop", "end"), "LABEL", .False), -
+    "'LABEL' must be a subkeyword without CMS (LABEL-named loop)")
+
+/******************************************************************************/
+/* CALL and namespace qualifiers: ooRexx extensions screened under CMS        */
+/*                                                                            */
+/* Three ooRexx-only constructs built on tokens that classic Rexx does not    */
+/* accept in these positions. Unlike DO OVER/WITH (which are valid expression */
+/* concatenations under CMS and merely fall through), these are genuine parse */
+/* errors in CMS 14 -- verified against the real VM (session v59):            */
+/*                                                                            */
+/*   call (expr)   -> Error 19 (string or symbol expected after CALL)         */
+/*   call ns:name  -> Error 35 (the ":" qualifier is an invalid expression)   */
+/*   x = ns:name   -> Error 35 (same, in any expression context)             */
+/*   x = ns:name() -> Error 35 (also for namespace-qualified function calls)  */
+/*                                                                            */
+/* For the namespace cases the fix is the faithful fall-through pattern: under */
+/* CMS we simply do not recognize the ":" qualifier, so the dangling ":" lands */
+/* on the existing Error 35 machinery -- no synthetic Signal. For call (expr)  */
+/* there is no fall-through: CMS rejects "(" right after CALL, so the existing  */
+/* 19.002 fires. All three must keep parsing in ooRexx mode (controls).        */
+/******************************************************************************/
+
+-- CALL (expr): the ooRexx computed-routine-name form. CMS rejects "(" after
+-- CALL outright -> Error 19. ooRexx accepts it.
+::Method test_call_paren_expr_under_cms_raises_19
+  Do src Over .Array~of('call ("DA"||"TE")', "call (foo)")
+    code = self~parseCMS(src, .True)
+    Parse Var code major"."minor
+    self~assertEquals("19", major~strip, -
+      "Expected SYNTAX 19 for 'call (expr)' under CMS, got" code "for '"src"'")
+  End
+
+::Method test_call_paren_expr_without_cms_is_ok
+  Do src Over .Array~of('call ("DA"||"TE")', "call (foo)")
+    self~assertEquals("", self~parseCMS(src, .False), -
+      "ooRexx '"src"' must parse as the computed-name CALL form")
+  End
+
+-- CALL ns:name: the namespace-qualified CALL. Under CMS the ":" is not a
+-- qualifier; the dangling ":" raises Error 35. ooRexx parses it.
+::Method test_call_namespace_under_cms_raises_35
+  code = self~parseCMS("call foo:bar", .True)
+  Parse Var code major"."minor
+  self~assertEquals("35", major~strip, -
+    "Expected SYNTAX 35 for 'call foo:bar' under CMS, got" code)
+
+::Method test_call_namespace_without_cms_is_ok
+  self~assertEquals("", self~parseCMS("call foo:bar", .False), -
+    "ooRexx 'call foo:bar' must parse as a namespace-qualified CALL")
+
+-- Namespace qualifier in any expression context (the general case: it also
+-- covers function calls and other qualifications). Under CMS -> Error 35.
+::Method test_namespace_in_expression_under_cms_raises_35
+  Do src Over .Array~of("x = foo:bar", "x = foo:bar()")
+    code = self~parseCMS(src, .True)
+    Parse Var code major"."minor
+    self~assertEquals("35", major~strip, -
+      "Expected SYNTAX 35 for '"src"' under CMS, got" code)
+  End
+
+::Method test_namespace_in_expression_without_cms_is_ok
+  Do src Over .Array~of("x = foo:bar", "x = foo:bar()")
+    self~assertEquals("", self~parseCMS(src, .False), -
+      "ooRexx '"src"' must parse (namespace-qualified symbol/function)")
+  End
+
+-- The malformed-qualified-CALL diagnostic (20.922) is now an ooRexx-only path:
+-- it is reached only when the ":" qualifier branch is taken, which never
+-- happens under CMS. Under CMS the same source yields the generic Error 35.
+::Method test_call_namespace_malformed_without_cms_raises_20922
+  code = self~parseCMS('call foo: "x"', .False)
+  self~assertEquals("20.922", code, -
+    "ooRexx qualified CALL with non-symbol routine name must raise 20.922")
+
+::Method test_call_namespace_malformed_under_cms_raises_35
+  code = self~parseCMS('call foo: "x"', .True)
+  Parse Var code major"."minor
+  self~assertEquals("35", major~strip, -
+    "Expected SYNTAX 35 for malformed qualified CALL under CMS, got" code)
+
+-- Frontiers: constructs that use ":" or "(" but must be unaffected by the
+-- gating, in both modes. Labels (":" as a clause terminator), plain CALL,
+-- CALL ON/OFF, plain function calls, and CALL with a literal string.
+::Method test_call_namespace_frontiers_under_cms_ok
+  Do src Over .Array~of(.Array~of("foo:", "nop"), -
+                        .Array~of("call date"), -
+                        .Array~of('call "DATE"'), -
+                        .Array~of("x = date()"), -
+                        .Array~of("call on error", "error:", "nop"))
+    self~assertEquals("", self~parseCMS(src, .True), -
+      "frontier construct must still parse under CMS")
+  End
+
+/******************************************************************************/
+/* Tests: "REXXVM" is an exact alias for the "CMS" parser option              */
+/*                                                                            */
+/* These do not re-test CMS semantics (covered above); they prove that        */
+/* activating the mode via the "REXXVM" option index yields exactly the       */
+/* same parse result as activating it via "CMS", across a representative      */
+/* OK-parse case and two error cases (SYNTAX 13 and SYNTAX 35).               */
+/******************************************************************************/
+
+-- A program that parses cleanly under CMS must parse identically under REXXVM.
+::Method test_rexxvm_alias_ok_matches_cms
+  src = "#sharp = 1"
+  self~assertEquals(self~parseCMS(src, .True), self~parseRexxVM(src, .True), -
+    "REXXVM must match CMS on a clean parse ('"src"')")
+  self~assertEquals("", self~parseRexxVM(src, .True), -
+    "'"src"' should parse under REXXVM")
+
+-- "~" raises SYNTAX 13 under CMS; REXXVM must raise the very same code.
+::Method test_rexxvm_alias_error13_matches_cms
+  src = "Say a~b"
+  cmsCode    = self~parseCMS(src, .True)
+  rexxvmCode = self~parseRexxVM(src, .True)
+  self~assertEquals(cmsCode, rexxvmCode, -
+    "REXXVM must match CMS error code on '"src"' (got CMS="cmsCode", REXXVM="rexxvmCode")")
+  Parse Var rexxvmCode major"."minor
+  self~assertEquals("13", major~strip, -
+    "Expected SYNTAX 13 under REXXVM for '"src"', got" rexxvmCode)
+
+-- A dangling namespace ":" raises SYNTAX 35 under CMS; REXXVM must agree.
+::Method test_rexxvm_alias_error35_matches_cms
+  src = "call foo:bar"
+  cmsCode    = self~parseCMS(src, .True)
+  rexxvmCode = self~parseRexxVM(src, .True)
+  self~assertEquals(cmsCode, rexxvmCode, -
+    "REXXVM must match CMS error code on '"src"' (got CMS="cmsCode", REXXVM="rexxvmCode")")
+  Parse Var rexxvmCode major"."minor
+  self~assertEquals("35", major~strip, -
+    "Expected SYNTAX 35 under REXXVM for '"src"', got" rexxvmCode)
+
+-- Negative control: with the mode OFF, the SYNTAX-13 source parses cleanly,
+-- proving the REXXVM option is what activates the screening, not something else.
+::Method test_rexxvm_alias_off_parses_as_oorexx
+  src = "Say a~b"
+  self~assertEquals("", self~parseRexxVM(src, .False), -
+    "'"src"' must parse as ooRexx when REXXVM is not active")

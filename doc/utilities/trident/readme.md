@@ -31,6 +31,7 @@ Options
 `-e`, `--experimental`&nbsp;&nbsp;       Enable Experimental features (also `-exp`)
 `-it`, `--itrace`                        Print internal traceback on error
 `-u`, `--tutor`, `--unicode`&nbsp;&nbsp; Enable TUTOR-flavored Unicode
+`-cms`, `--cms`                          Enable CMS support (also `-rexxvm`, `--rexxvm`)
 `-xtr`, `--executor`                     Enable Executor support
 ---------------------------------------- ------------------------------
 

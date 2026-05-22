@@ -50,6 +50,7 @@
   tree               = 1
   itrace             = 0
   executor           = 0
+  cms                = 0
   SysFileTreeOptions = "FSO"
 
   If args~items == 0 Then Signal Help
@@ -66,6 +67,8 @@ ProcessOptions:
       When "--help",               "-h" Then Signal Help
       When "--itrace",            "-it" Then itrace = 1
       When "--executor",         "-xtr" Then executor  = 1
+      When "--cms",              "-cms",   -
+           "--rexxvm",           "-rexxvm" Then cms       = 1
       When "--noelements",        "-ne" Then elements  = 0
       When "--notree",            "-nt" Then tree      = 0
       Otherwise Call Error "Invalid option '"option"'."
@@ -73,8 +76,10 @@ ProcessOptions:
 
   End
 
-  If Executor Then option = "-xtr"
-  Else             option = ""
+  option = ""
+  If Executor Then option = option "-xtr"
+  If cms      Then option = option "-cms"
+  option = Strip(option)
 
   cd = Directory()~changeStr("\","/")
 
@@ -199,6 +204,7 @@ then display this help and exit.
 Options:
   -h,   --help           Display this help
   -xtr, --executor       Support Executor syntax
+  -cms, --cms            Support CMS (Classic Rexx) syntax (also -rexxvm, --rexxvm)
   -it, --itrace          Print internal traceback on error
   -nc, --nocls           Don't analyze .cls files
   -ne, --noelements      Don't run the elident test

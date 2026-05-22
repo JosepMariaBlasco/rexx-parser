@@ -31,6 +31,7 @@ When called without arguments, display help information and exit.
 ------------------------------------------------------- ------------------------------
 `-a`, `--ansi`                                          Select ANSI SGR terminal highlighting
 `--continue`                                            Continue when a fenced code block is in error (HTML only)
+`-cms`, `--cms`                                         Enable support for CMS (also `-rexxvm`, `--rexxvm`)
 `--css`                                                 Include links to css files (HTML only)
 `-d`, `--docbook`                                       Select DocBook XML highlighting
 `--default` <code><em>attributes</em></code>            Select default attributes for code blocks
@@ -61,7 +62,7 @@ and no *file* is specified, help is displayed instead (since processing options
 without a file to process always displays help).
 
 **Note**: Several of the options
-(`-exp`, `-s`, `-u`, `-xtr`, `--executor`, `--experimental`,
+(`-exp`, `-s`, `-u`, `-xtr`, `--cms`, `--rexxvm`, `--executor`, `--experimental`,
 `--unicode`, `--style` or `--tutor`)
 do not make sense when highlighting files
 containing fenced code blocks, like
@@ -84,6 +85,11 @@ whichever occurs first. You can change this behaviour by specifying The
 presence of an error: blocks in error cannot be highlighted,
 but they will be substituted by a big warning box, with a red background,
 displaying the line in error.
+
+#### -cms, --cms {#cms}
+
+Enables support for [CMS (Classic Rexx) syntax](../../rexxvm/).
+The aliases `-rexxvm` and `--rexxvm` are equivalent.
 
 #### --css {#css}
 

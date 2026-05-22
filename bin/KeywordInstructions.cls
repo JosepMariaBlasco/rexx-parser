@@ -30,6 +30,11 @@
 /* 20251130         (Executor) Implement USE NAMED and USE NAMED AUTO         */
 /* 20251130         (Executor) Implement FORWARD NAMEDARGUMENTS               */
 /* 20251210         (Executor) Implement named arguments                      */
+/* 20260521    0.5  CMS: Implement PARSE EXTERNAL and PARSE NUMERIC           */
+/* 20260522         CMS: Disallow PARSE LOWER and CASELESS                    */
+/* 20260522         CMS: Implement SIGNAL                                     */
+/* 20260522         CMS: Disallow CALL (expr)                                 */
+/* 20260522         CMS: Disallow CALL namespace:name                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -108,9 +113,10 @@
 
   element = TheElementAfter( element, ignoreBlanks )
   If element < .EL.END_OF_CLAUSE Then Signal Done
-  If element < .ALL.SYMBOLS, element~value == "WITH" Then Signal With
+  If element < .ALL.SYMBOLS, element~value == "WITH", \.Options.CMS Then Signal With
 
-  Call PrepareExpression package, element, "WITH"
+  Call Prepare
+
   expression = Expression.List( package, element )
   options.["EXPRESSION"] = expression
   element = expression~end
@@ -121,11 +127,17 @@ Value:
   Call SetSubkeyword element
   element = TheElementAfter( element )
 AfterValue:
-  Call PrepareExpression package, element, "WITH"
+  Call Prepare
   options.env_expression = Expression.List( package, element )
   element = options.env_expression~end
   If element < .EL.END_OF_CLAUSE Then Signal Done
   Signal With
+
+Prepare:
+  -- "WITH" is an expression terminator... unless under CMS/Rexx
+  If .Options.CMS Then Call PrepareExpression package, element
+  Else                 Call PrepareExpression package, element, "WITH"
+Return
 
 With:
   seen. = 0
@@ -279,14 +291,14 @@ Done:
       Else Return Call.Off.Instruction( package, begin, end, elements )
   End
 
-  If element  < .EL.LEFT_PARENTHESIS     Then Signal GetExpression
+  If element < .EL.LEFT_PARENTHESIS, \.Options.CMS Then Signal GetExpression
   If element \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.002
 
   nameSpace = .Nil
   name = element
   If element < .ALL.SYMBOLS Then Do
     next = TheElementAfter( element, ignoreBlanks )
-    If next < .EL.COLON Then Do
+    If next < .EL.COLON, \.Options.CMS Then Do
       nameSpace = element
       name = TheElementAfter( next, ignoreBlanks )
       If name \< .ALL.SYMBOLS Then Signal 20.922
@@ -1253,12 +1265,20 @@ Expression:
     If keyword \< .ALL.SYMBOLS Then Signal 20.903
     kValue = keyword~value
     Select Case kValue
-      When "LOWER", "UPPER" Then Call UpperLower
-      When "CASELESS"       Then Call CaseLess
-      When "VAR"            Then Signal Var
-      When "VALUE"          Then Signal (Value)
+      When "UPPER"               Then Call UpperLower
+      When "LOWER"               Then
+        If .Options.CMS          Then Signal 25.012
+        Else                     Call UpperLower
+      When "CASELESS"            Then
+        If .Options.CMS          Then Signal 25.012
+        Else                     Call CaseLess
+      When "VAR"                 Then Signal Var
+      When "VALUE"               Then Signal (Value)
       When "ARG", "LINEIN", "PULL", "SOURCE", "VERSION"
-                            Then Signal SimpleCase
+                                 Then Signal SimpleCase
+      When "EXTERNAL", "NUMERIC" Then
+        If .Options.CMS          Then Signal SimpleCase
+        Else                     Signal 25.012
       Otherwise                  Signal 25.012
     End
   End
@@ -1804,8 +1824,11 @@ Expression:
   self~init:super( package, begin, end )
 
 /******************************************************************************/
--- Common constant for SIGNAL ON & OFF
 ::Routine SignalOnOffConditions
+  -- CMS Rexx supports only the classic conditions (plus NOTREADY).
+  -- LOSTDIGITS, NOMETHOD, NOSTRING, USER and ANY are ooRexx extensions.
+  If .Options.CMS Then
+    Return "ERROR FAILURE HALT NOTREADY NOVALUE SYNTAX "
   Return "ERROR FAILURE HALT LOSTDIGITS NOMETHOD"     -
          "NOSTRING NOTREADY NOVALUE SYNTAX USER ANY "
 

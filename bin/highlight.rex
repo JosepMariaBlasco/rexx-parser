@@ -120,6 +120,8 @@
       When "-n", "--numberlines" Then options.numberlines  = .True
       When "-a", "--ansi"        Then options.mode         =  ANSI
       When "-xtr", "--executor"  Then options.executor     = 1
+      When "-cms", "--cms",       -
+           "-rexxvm", "--rexxvm" Then options.cms          = 1
       When "--css"               Then options.css          = 1
       When "-u", "--tutor", -
            "--unicode"           Then options.unicode = 1
@@ -191,9 +193,9 @@ ProcessSource:
 Return hl~parse( patch )
 
 Fenced:
-  If styleSpecified | options.executor | options.experimental | options.unicode Then Do
+  If styleSpecified | options.executor | options.cms | options.experimental | options.unicode Then Do
    .Error~Say( Copies("-",80) )
-   .Error~Say( "None of -exp, -s, -u, -xtr, --executor, --experimental, --unicode, --style" )
+   .Error~Say( "None of -exp, -s, -u, -xtr, --executor, --cms, --rexxvm, --experimental, --unicode, --style" )
    .Error~Say( "or --tutor can be specified for files with an extension of" FileSpec("E",file)"." )
    .Error~Say( "Please use the --default option, or specific attributes in your" )
    .Error~Say( "fenced code blocks instead." )
@@ -287,6 +289,7 @@ Options:
        --default=attributes Select default attributes for code blocks
        --doccomments=detailed|block Select highlighting level for doc-comments
   -xtr,--executor           Enable support for Executor
+  -cms,--cms                Enable support for CMS (Classic Rexx) syntax (also -rexxvm, --rexxvm)
   -e, -exp, --experimental  Enable Experimental features
   -h,  --html               Select HTML mode
   -it, --itrace             Printing internal traceback on error

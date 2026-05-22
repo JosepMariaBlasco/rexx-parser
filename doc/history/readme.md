@@ -8,6 +8,9 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20260522<td>0.6<td>
+<ul>
+  <li> Jump release level to mark addition of support for Rexx/VM.
 <tr><td>20260303<td>0.5<td>
 <ul>
   <li> Jump release level to mark start of RexxPub.

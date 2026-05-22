@@ -31,6 +31,8 @@
 /* 20251228         Add support for default options                           */
 /* 20251230         Add support for --continue                                */
 /* 20260310    0.5  Add support for captions                                  */
+/* 20260521         Add support for CMS                                       */
+/* 20260522         Accept "rexxvm" as an alias for the "cms" attribute       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -93,6 +95,9 @@
 --     will convert it to a visible <figcaption> at render time.
 --   classprefix= "rx-"
 --     Define the class prefix used for HTML classes. Default is "rx-".
+--   cms (or rexxvm)
+--     Enables CMS (Classic Rexx) syntax, as parsed by the Rexx/VM
+--     interpreter. "cms" and "rexxvm" are equivalent.
 --   constant= "group" | "full" | "detail"
 --     Determines how taken constants (strings or symbols taken as a
 --     constant) will be highlighted.
@@ -163,11 +168,11 @@
   tab = "09"X
 
   -- Forms to start a code block we are interested in
-  OK.            = 0
-  OK.["rexx"   ] = 1                    -- "~~~rexx", and no attributes
-  OK.["rexx "  ] = 1                    -- "~~~rexx <attributes>"
-  OK.["rexx{"  ] = 1                    -- "~~~rexx{<attributes>}"
-  OK.["rexx"tab] = 1                    -- "~~~rexx<tab><attributes>"
+  OK.                = 0
+  OK.["rexx"       ] = 1                -- "~~~rexx", and no attributes
+  OK.["rexx "      ] = 1                -- "~~~rexx <attributes>"
+  OK.["rexx{"      ] = 1                -- "~~~rexx{<attributes>}"
+  OK.["rexx"tab    ] = 1                -- "~~~rexx<tab><attributes>"
   OK.["executor"   ] = 1                -- "~~~executor", and no attributes
   OK.["executor "  ] = 1                -- "~~~executor <attributes>"
   OK.["executor{"  ] = 1                -- "~~~executor{<attributes>}"
@@ -290,7 +295,7 @@ MissingEndMarker:
   Options.classprefix = "rx-"           -- Default HTML class prefix is "rx-"
   Options.["SOURCE"]  = ""              -- No external source by default
   Options.patch       = ""              -- No patch file by default
-  Options.["CAPTION"]  = ""              -- No caption by default
+  Options.["CAPTION"] = ""              -- No caption by default
   Options.html        = 1               -- This is HTML highlighting
   Options.startFrom   = 1               -- Start at line 1
 
@@ -365,6 +370,10 @@ MissingEndMarker:
         When "unicode", "tutor"              Then Options.unicode      = .True
         When "experimental"                  Then Options.experimental = .True
         When "executor"                      Then Options.executor     = .True
+        When "cms", "rexxvm"                 Then Do
+          Options.cms      = .True
+          Options.cmslevel = 3
+        End
         When ".numberLines", ".number-lines" Then Options.numberLines  = .True
         Otherwise Nop -- Exit BadOption()
       End

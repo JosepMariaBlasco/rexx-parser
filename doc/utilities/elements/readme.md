@@ -22,6 +22,7 @@ Options
 
 ---------------------------------- ------------------------------
 `-h`, `--help`                     Display help and exit
+`-cms`, `--cms`                    Enable CMS support (also `-rexxvm`, `--rexxvm`)
 `-e`, `--experimental`&nbsp;&nbsp; Enable Experimental features (also `-exp`, `--exp`)
 `-xtr`, `--executor`               Enable Executor support
 `--from [LINE]`                    Show elements starting at line LINE
