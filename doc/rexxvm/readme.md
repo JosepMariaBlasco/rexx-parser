@@ -6,79 +6,80 @@ Rexx/VM support
 Rexx was born on VM/CMS. The language Mike Cowlishaw designed and first
 implemented there is what we now call *Classic Rexx*, and the Rexx/VM
 interpreter remains its canonical reference. The Rexx Parser implements
-full, optional support for parsing programs as the CMS interpreter,
-Rexx/VM, would parse them.
+optional support for parsing programs as the Rexx/VM interpreter
+would parse them.
 
-This is the mirror image of the [Executor](../executor/) and
-[Experimental](../experimental/) variants. Those *add* features to
-ooRexx. Rexx/VM *removes* them: it recognizes only what Classic Rexx
-recognized, and rejects the extensions that ooRexx introduced later.
-Where ooRexx is a superset of Classic Rexx, Rexx/VM support models the
-original subset.
+The following code block uses the Rexx/VM support. You can see that
+`FIND` and `LENGTH` are highlighted as built-in functions (BIFs),
+and that `CHANGESTR` is considered to be an external function,
+as it is a ooRexx-specific BIF.
+
+```rexx {rexxvm}
+p = Find("a b c", "b")                  /* Rexx/VM-specific BIF        */
+s = ChangeStr("a", "banana", "o")       /* ooRexx-only: external here  */
+n = Length("banana")                    /* Common to both dialects     */
+```
 
 Activating Rexx/VM support
 --------------------------
 
-+ When creating a [Rexx.Parser](../ref/classes/rexx.parser) instance,
-  you can use the `CMS` or `REXXVM` options, set to any value (although `1`
-  is recommended and may be mandatory in future releases) to activate
-  Rexx/VM support.
+### Activating Rexx/VM support in a Parser instance
 
-+ [The `elements` utility](../utilities/elements/) includes support for Rexx/VM. You
-  can activate it by using the `-cms`, `--cms`, `-rexxvm` or `--rexxvm` options.
+When creating a [Rexx.Parser](../ref/classes/rexx.parser) instance,
+you can use the `CMS` or `REXXVM` options, set to any value (although `1`
+is recommended and may be mandatory in future releases) to activate
+Rexx/VM support.
 
-+ [The `elident` utility](../utilities/elident/) includes support for Rexx/VM. You
-  can activate it by using the `-cms`, `--cms`, `-rexxvm` or `--rexxvm` options.
+### Activating Rexx/VM support when using the Rexx Parser utilities
 
-+ [The `identtest` utility](../utilities/identtest/) includes support for Rexx/VM. You
-  can activate it by using the `-cms`, `--cms`, `-rexxvm` or `--rexxvm` options.
+When using any of the
+[`elements`](../utilities/elements/),
+[`elident`](../utilities/elident/),
+[`identtest`](../utilities/identtest/),
+[`highlight`](../utilities/highlight/) and
+[`trident`](../utilities/trident/)
+utilities, you
+can activate Rexx/VM support by using the `-cms`, `--cms`, `-rexxvm` or `--rexxvm` options.
 
-+ [The `highlight` utility](../utilities/highlight/) includes support for Rexx/VM. You
-  can activate it by using the `-cms`, `--cms`, `-rexxvm` or `--rexxvm` options.
+[The `rxcheck` utility](../utilities/rxcheck/) also includes support for Rexx/VM. You
+can activate it by using the `+cms`, `-cms`, `+rexxvm` or `-rexxvm` options.
 
-+ [The `trident` utility](../utilities/trident/) includes support for Rexx/VM. You
-  can activate it by using the `-cms`, `--cms`, `-rexxvm` or `--rexxvm` options.
+### Activating Rexx/VM support in Rexx Fenced code blocks
 
-+ [The `rxcheck` utility](../utilities/rxcheck/) includes support for Rexx/VM. You
-  can activate it by using the `+cms`, `-cms`, `+rexxvm` or `-rexxvm` options.
+Rexx fenced code blocks can use Rexx/VM syntax by using the `cms` (or
+`rexxvm`) attribute on the first fence of the code block, for example,
+<code>```rexx {cms}</code>.
 
-+ Rexx fenced code blocks can use Rexx/VM syntax by using the `cms` (or
-  `rexxvm`) attribute on the first fence of the code block, for example,
-  <code>```rexx {cms}</code>.
+Please note that the same Markdown or HTML file can contain
+both Rexx/VM fenced code blocks and other Rexx fenced code blocks
+using different Rexx variants. For example, you can have
+Rexx/VM, Executor, Experimental and standard ooRexx code blocks
+in the same file.
 
-A note on what "parsing like Rexx/VM" means
--------------------------------------------
+What does "parsing like Rexx/VM" mean
+-------------------------------------
 
-The Rexx Parser is a *parser*: it reproduces the **parse-time** behavior
-of the Rexx/VM interpreter, not its run-time behavior. This distinction is
-the single most important design criterion behind Rexx/VM support, and it is
-what makes the difference between a faithful screening and an overzealous
-one.
+The Rexx Parser is a *parser*: it attempts to reproduce the **parse-time** behavior
+of the Rexx/VM interpreter, not its run-time behavior.
 
-Classic Rexx has no reserved keywords. Many constructs that *look* like
-ooRexx-only syntax are, under Rexx/VM, simply valid expressions that the
-interpreter parses without complaint and only rejects (if at all) when it
-tries to run them. For those, the faithful behavior is **not** to raise a
-parse error: we let the construct parse, exactly as Rexx/VM does, even though
-it would fail at execution time.
+Please note that not all ooRexx constructs will produce errors when parser
+with Rexx/VM support enabled. For example, a `Do var Over collection`
+instruction will be properly parsed -- and fail unless `var Over collection`,
+a _concatenation_, evaluates at runtime as a valid whole number.
 
-A useful example is `DO x OVER collection`. Under ooRexx this is the
-collection-iteration form. Under Rexx/VM there is no `OVER` keyword, so
-`x OVER collection` is read as a repetitor expression; the clause parses,
-and any non-integer repetition count becomes a run-time **Error&nbsp;26**,
-never a parse error. We reproduce that: the clause parses under Rexx/VM.
+Other constructs, like `CALL (expression)`, are invalid in Rexx/VM
+and will produce the corresponding syntax error (in this case,
+an error 19, "String or symbol expected").
 
-Other constructs are genuine parse errors in Rexx/VM, because the offending
-token cannot form a valid expression in the position where it appears.
-`CALL (expr)` and the `:` namespace qualifier fall here. For those, we
-attempt to raise the same error Rexx/VM raises, at parse time.
+List of Rexx/VM parsing differences
+===================================
 
 Lexical differences
 --------------------
 
 ### Extra letters in symbols
 
-Rexx/VM allows `#`, `@`, `$` and `¢` to act as letters when forming symbols.
+Rexx/VM support enables the `#`, `@`, `$` and `¢` characters to act as letters when forming symbols.
 
 ```rexx {cms}
 #a     = 1
@@ -90,31 +91,28 @@ Both Latin-1 `¢` (`"A2"X`) and UTF-8 `¢` (`"C2A2"X`) are accepted.
 
 ### No message-send operator, no brackets
 
-Rexx/VM does not recognize `~` (message send) nor `[` `]` (collection
-indexing). These are ooRexx additions.
+Rexx/VM support does not recognize the `~`, `[` or `]` characters.
 
-### Negation: only "\" and "¬"
+### Negation operators
 
-Rexx/VM recognizes `\` and `¬` as negation characters. The `^` negator (a
-TSO/E convenience) is **not** recognized under Rexx/VM.
+Recognized negation characters are `\` and `¬`.
+
 
 ```rexx {cms}
 Say 1 \= 1     /* 0 */
 Say 1 ¬= 1     /* 0 */
 ```
 
-Both Latin-1 `¬` (`"AC"X`) and UTF-8 `¬` (`"C2AC"X`) are accepted.
+All of IBM-850 '¬' (`"AA"X`), Latin-1 `¬` (`"AC"X`) and UTF-8 `¬` (`"C2AC"X`) are accepted.
 
 ### No line comments
 
-Rexx/VM has only `/* ... */` block comments. The `--` line comment is an
-ooRexx addition.
+Rexx/VM support recognizes only `/* ... */` block comments.
+The `--` line comment is an ooRexx addition.
 
 ### No "-" continuation
 
-Rexx/VM uses the comma as its only continuation character. A trailing `-` is
-not a continuation; it is read as part of the expression, which then
-dangles.
+Rexx/VM support uses the comma as its only continuation character.
 
 ```rexx {cms}
 x = 1 ,
@@ -127,7 +125,8 @@ Rexx/VM has no directives. A `::` sequence is not recognized.
 
 ### No extended assignments
 
-Rexx/VM recognizes only `=` as an assignment. The compound assignment
+Rexx/VM recognizes only `=` as an assignment.
+Compound assignment
 operators (`+=`, `-=`, `*=`, ...) are ooRexx additions.
 
 ### Symbol and string length limit
@@ -214,3 +213,36 @@ of these is recognized; the `:` is an invalid expression.
 ### No array terms
 
 Rexx/VM does not implement array terms.
+
+Built-in function differences
+-----------------------------
+
+The set of names the Rexx Parser recognizes as built-in functions differs
+between ooRexx and Rexx/VM.
+
+### Built-in functions available only under Rexx/VM
+
+`EXTERNALS`, `FIND`, `INDEX`, `JUSTIFY` and `LINESIZE` are Rexx/VM built-in
+functions with no ooRexx counterpart.
+
+### Built-in functions available only under ooRexx
+
+`BEEP`, `CHANGESTR`, `COUNTSTR`, `DIRECTORY`, `ENDLOCAL`, `FILESPEC`, `GC`,
+`LOWER`, `QUALIFY`, `RXFUNCADD`, `RXFUNCDROP`, `RXFUNCQUERY`, `RXQUEUE`,
+`SETLOCAL`, `UPPER` and `VAR` are ooRexx built-in functions with no Rexx/VM
+counterpart.
+
+### Functions with a different signature under Rexx/VM
+
+Several functions exist in both dialects but accept different arguments. Under
+Rexx/VM support the parser enforces the Rexx/VM signature:
+
+- `DELSTR` — the start position is required under Rexx/VM, whereas in ooRexx
+  it can be omitted.
+- `LASTPOS`, `POS`, `VERIFY` — the trailing *length* argument that ooRexx
+  accepts is not part of the Rexx/VM signature.
+- `LINES` — the ooRexx `C`/`N` option argument is not accepted under Rexx/VM.
+- `TRANSLATE` — the ooRexx *start* and *length* arguments are not accepted.
+- `DATE` and `TIME` — both the set of valid option letters and the number of
+  accepted arguments differ. For example, the ooRexx `TIME` option `F` is not
+  a valid Rexx/VM option letter.
