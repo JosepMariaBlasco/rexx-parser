@@ -3,21 +3,20 @@ Rexx/VM support
 
 --------------------------
 
-Rexx was born on VM/CMS. The language Mike Cowlishaw designed and first
-implemented there is what we now call *Classic Rexx*, and the Rexx/VM
-interpreter remains its canonical reference. The Rexx Parser implements
-optional support for parsing programs as the Rexx/VM interpreter
-would parse them.
+The language Mike Cowlishaw designed and first
+implemented in VM/CMS is what we now call *Classic Rexx*.
+The Rexx Parser implements optional support for parsing programs
+as the Rexx/VM interpreter would parse them.
 
-The following code block uses the Rexx/VM support. You can see that
+In the following example, which uses Rexx/VM support, you can see that
 `FIND` and `LENGTH` are highlighted as built-in functions (BIFs),
-and that `CHANGESTR` is considered to be an external function,
-as it is a ooRexx-specific BIF.
+while `CHANGESTR` is considered to be an external function,
+since it is an ANSI addition.
 
 ```rexx {rexxvm}
-p = Find("a b c", "b")                  /* Rexx/VM-specific BIF        */
-s = ChangeStr("a", "banana", "o")       /* ooRexx-only: external here  */
-n = Length("banana")                    /* Common to both dialects     */
+p = Find("a b c", "b")                  /* Rexx/VM-specific BIF               */
+s = ChangeStr("a", "banana", "o")       /* ANSI addition: external here       */
+n = Length("banana")                    /* Common to Rexx/VM and ooRexx       */
 ```
 
 Activating Rexx/VM support
