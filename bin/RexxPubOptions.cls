@@ -333,5 +333,6 @@ Return
     When "letter"           Then Return 0
     When "book"             Then Return 2
     When "slides"           Then Return 0
+    When "markdown"         Then Return 0
     Otherwise                    Return 3
   End

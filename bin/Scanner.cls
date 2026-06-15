@@ -47,6 +47,7 @@
 /* 20260521         CMS: Don't allow "-" continuations                        */
 /* 20260521         CMS: Don't recognize ~, [ and ]                           */
 /* 20260521         CMS: Don't recognize extended assignments                 */
+/* 20260601    0.6  Implement a fine-grained feature system                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -182,25 +183,25 @@
   -- We will use the literal "01" instead
   -- binary_digit   = "01"                           -- ANSI 6.2.2.42
   special           = ",;:()"                        -- ANSI 6.2.2.2
-  If \.Options.CMS Then
+  If .Features.Special.Brackets Then
     special       ||= "[]"                           -- Rexxref 5.1.0, 1.10.4.7.
-  If .Options.Executor Then
+  If .Features.Special.Braces Then
     special       ||= "{}"
   -- Special Characters; "~" moved to operator
   not               = "\"                            -- ANSI 6.2.2.3
   not             ||= "AAAC"X                        -- See rexxref 1.10.4.6
-  If .Options.Executor Then
-    not           ||= "^¬"
-  Else If .Options.CMS Then
-    not           ||= "¬"
   operator_only     = "+-%|&=><\"                    -- ANSI 6.2.2.4
   operator_only   ||= "AAAC"X                        -- See rexxref 1.10.4.6
-  If .Options.Executor Then
-    operator_only ||= "^¬"
-  Else If .Options.CMS Then
+  If .Features.Operator.NotSign.UTF8 Then Do
     operator_only ||= "¬"
+    not           ||= "¬"
+  End
+  If .Features.Operator.Circumflex.UTF8 Then Do
+    operator_only ||= "^"
+    not           ||= "^"
+  End
   -- See Rexxref 5.10, 1.11.3. Parentheses and Operator Precedence
-  If \.Options.CMS Then
+  If .Features.Operator.Tilde.UTF8 Then
     operator_only   ||= "~"
   operator_or_other = "/*"                           -- ANSI 6.2.2.5
   operator_char     = operator_only ||,              -- ANSI 6.2.2.6
@@ -210,8 +211,16 @@
     extra_letter    = .Parser.Options~extraletters   -- ANSI 5.3.2
     general_letter||= extra_letter
   End
-  If .Options.Executor | .Options.CMS Then -- "A2"X is Latin-1 for "¢"
-    general_letter||= "#@$¢" || "A2"X
+  If .Features.General_Letter.Dollar      Then
+    general_letter||= "$"
+  If .Features.General_Letter.At_Sign     Then
+    general_letter||= "@"
+  If .Features.General_Letter.Number_Sign Then
+    general_letter||= "#"
+  If .Features.General_Letter.Cent.UTF8   Then
+    general_letter||= "¢"
+  If .Features.General_Letter.Cent.Latin1 Then       -- "A2"X is Latin-1 for "¢"
+    general_letter||= "A2"X
   blank             = "2009"X                        -- ANSI 6.2.2.8
   -- "whitespace" is a better name, and more coherent with ooRexx
   -- nomenclature and with the text of error messages
@@ -241,8 +250,7 @@
   Call Assign "'"""          , String.Element
   ElementStartedBy["/"]      = Standard.Comment?
 
-  -- CMS does not implement line comments
-  If \.Options.CMS Then
+  If .Features.Line.Comments Then
     ElementStartedBy["-"]    = Line.Comment?
 
   Return
@@ -321,11 +329,10 @@ Return
     ("AA"X, .EL.OP.NEGATION         )      - -- ooRexx ¬ too
   )
 
-  If .Options.Executor | .Options.CMS Then Do
-    If \.Options.CMS Then
-      ClassOfOperatorChar["^"  ] = .EL.OP.NEGATION
-    ClassOfOperatorChar["¬"  ]   = .EL.OP.NEGATION
-  End
+  If .Features.Operator.NotSign.UTF8    Then
+    ClassOfOperatorChar["¬"] = .EL.OP.NEGATION
+  If .Features.Operator.Circumflex.UTF8 Then
+    ClassOfOperatorChar["^"] = .EL.OP.NEGATION
 
 --------------------------------------------------------------------------------
 -- Compound operator character sequences and their meaning.                   --
@@ -384,27 +391,28 @@ Return
   compoundOperator["AC"X"<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
   compoundOperator["AC"X">>"] = .EL.OP.STRICT.NOT_GREATER_THAN
 
-  If .Options.Executor | .Options.CMS Then Do
-    If \.Options.CMS Then Do
-      -- TSO/E negations
-      compoundOperator["/=="]     = .EL.OP.STRICT.NOT_EQUAL
-      compoundOperator["/=" ]     = .EL.OP.NOT_EQUAL
-      -- "^" as a negator
-      compoundOperator["^=="]     = .EL.OP.STRICT.NOT_EQUAL
-      compoundOperator["^=" ]     = .EL.OP.NOT_EQUAL
-      compoundOperator["^>" ]     = .EL.OP.NOT_GREATER_THAN
-      compoundOperator["^<" ]     = .EL.OP.NOT_LOWER_THAN
-      compoundOperator["^<<"]     = .EL.OP.STRICT.NOT_LOWER_THAN
-      compoundOperator["^>>"]     = .EL.OP.STRICT.NOT_GREATER_THAN
-    End
-    -- "¬" as a negator
+  If .Features.Operator.Circumflex.UTF8 Then Do
+    compoundOperator["^=="]     = .EL.OP.STRICT.NOT_EQUAL
+    compoundOperator["^=" ]     = .EL.OP.NOT_EQUAL
+    compoundOperator["^>" ]     = .EL.OP.NOT_GREATER_THAN
+    compoundOperator["^<" ]     = .EL.OP.NOT_LOWER_THAN
+    compoundOperator["^<<"]     = .EL.OP.STRICT.NOT_LOWER_THAN
+    compoundOperator["^>>"]     = .EL.OP.STRICT.NOT_GREATER_THAN
+  End
+
+  If .Features.Operator.NotSign.UTF8 Then Do
     compoundOperator["¬=="]     = .EL.OP.STRICT.NOT_EQUAL
     compoundOperator["¬=" ]     = .EL.OP.NOT_EQUAL
     compoundOperator["¬>" ]     = .EL.OP.NOT_GREATER_THAN
     compoundOperator["¬<" ]     = .EL.OP.NOT_LOWER_THAN
     compoundOperator["¬<<"]     = .EL.OP.STRICT.NOT_LOWER_THAN
     compoundOperator["¬>>"]     = .EL.OP.STRICT.NOT_GREATER_THAN
- End
+  End
+
+  If .Features.Slash_as_negator Then Do
+    compoundOperator["/=="]     = .EL.OP.STRICT.NOT_EQUAL
+    compoundOperator["/=" ]     = .EL.OP.NOT_EQUAL
+  End
 
   ClassOfSpecialChar =                        -
     .StringTable~of(                          -
@@ -423,19 +431,14 @@ Return
 -- List of extended assignment character sequences                            --
 --------------------------------------------------------------------------------
 
-  If .Options.CMS Then
-    assignmentSequence = .Set~of("=")
-  Else
+  If .Features.Extended.Assignments Then
     assignmentSequence = .Set~of(                -
       "=", "+=", "-=", "*=", "/=", "%=", "//=",  -
       "||=", "&=", "|=", "&&=", "**="            -
     )
+  Else assignmentSequence = .Set~of("=")
 
-  If .Options.CMS Then
-    assignmentClass = .StringTable~of(     -
-      (   "=", .EL.ASG.EQUAL            ), -
-    )
-  Else
+  If .Features.Extended.Assignments Then Do
     assignmentClass = .StringTable~of(     -
       (   "=", .EL.ASG.EQUAL            ), -
       (  "+=", .EL.ASG.PLUS             ), -
@@ -450,7 +453,11 @@ Return
       ( "&&=", .EL.ASG.XOR              ), -
       ( "**=", .EL.ASG.POWER            )  -
     )
-
+  End
+  Else
+    assignmentClass = .StringTable~of(     -
+      (   "=", .EL.ASG.EQUAL            ), -
+    )
 
 /******************************************************************************/
 /*                                                                            */
@@ -593,9 +600,11 @@ Return 0                                -- 0: Error encountered
   -- ooRexx. We produce an implied semicolon when we find a
   -- continuation just before EOS.
 
-  -- CMS Rexx does not allow "-" as continuation
+  -- Don't recognize "-" as a continuation when it is not supported
+  -- We cannot use the set ALL.CONTINUATION_CHARACTERS here because
+  -- it is created before recognizing the Parser options.
   If line < lines, previous < .ALL.CONTINUATION_CHARACTERS, -
-    (\.Options.CMS | previous < .EL.COMMA) Then Do
+    (.Features.Continuation.Minus | previous < .EL.COMMA) Then Do
     previous~category = .EL.CONTINUATION
     If TheElementBefore( previous ) < .IGNORE_WHITESPACE_AFTER Then
       previous~ignorable = 1
@@ -1390,8 +1399,8 @@ Return
     Otherwise Nop
   End
 
-  -- Handle "::". CMS Rexx does not recognize directives
-  If ch == ":", predecessor < .EL.COLON, \.Options.CMS Then Do
+  -- Handle "::"
+  If ch == ":", .Features.Directive.Start, predecessor < .EL.COLON Then Do
     element~category = .EL.DIRECTIVE_START
     -- In the most common case, the two colons will be adjacent.
     -- We generate a new "::" element and remove the predecessor element.

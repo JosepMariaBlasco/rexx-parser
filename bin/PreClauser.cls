@@ -28,6 +28,7 @@
 /* 20251226    0.4a Add support for "=" and "==" at end of expression         */
 /* 20260521    0.5  CMS: Ignore ooRexx-specific keyword instructions          */
 /* 20260521         CMS: Allow UPPER instruction                              */
+/* 20260601    0.6  Implement a fine-grained feature system                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -300,15 +301,18 @@ Error:
   End
 
   -- The following are ooRexx-only
-  If \.Options.CMS Then Do
-    Do keyword Over (expose, forward, guard, loop, raise, reply, use)
-      instructions[] = keyword
-    End
-  End
+
+  If .Features.Expose.Instruction  Then instructions[] = expose
+  If .Features.Forward.Instruction Then instructions[] = forward
+  If .Features.Guard.Instruction   Then instructions[] = guard
+  If .Features.Loop.Instruction    Then instructions[] = loop
+  If .Features.Raise.Instruction   Then instructions[] = raise
+  If .Features.Reply.Instruction   Then instructions[] = reply
+  If .Features.Use.Instruction     Then instructions[] = use
 
   -- Executor and CMS-only
 
-  If .Options.Executor | .Options.CMS Then instructions[] = upper
+  If .Features.Upper.Instruction Then instructions[] = upper
 
   -- Directives
 

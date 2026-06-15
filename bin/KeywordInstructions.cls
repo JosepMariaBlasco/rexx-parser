@@ -35,6 +35,7 @@
 /* 20260522         CMS: Implement SIGNAL                                     */
 /* 20260522         CMS: Disallow CALL (expr)                                 */
 /* 20260522         CMS: Disallow CALL namespace:name                         */
+/* 20260601    0.6  Implement a fine-grained feature system                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -113,7 +114,8 @@
 
   element = TheElementAfter( element, ignoreBlanks )
   If element < .EL.END_OF_CLAUSE Then Signal Done
-  If element < .ALL.SYMBOLS, element~value == "WITH", \.Options.CMS Then Signal With
+  If element < .ALL.SYMBOLS, .Features.Address.With, -
+    element~value == "WITH" Then Signal With
 
   Call Prepare
 
@@ -134,9 +136,8 @@ AfterValue:
   Signal With
 
 Prepare:
-  -- "WITH" is an expression terminator... unless under CMS/Rexx
-  If .Options.CMS Then Call PrepareExpression package, element
-  Else                 Call PrepareExpression package, element, "WITH"
+  If .Features.Address.With Then Call PrepareExpression package, element, "WITH"
+  Else                           Call PrepareExpression package, element
 Return
 
 With:
@@ -291,14 +292,14 @@ Done:
       Else Return Call.Off.Instruction( package, begin, end, elements )
   End
 
-  If element < .EL.LEFT_PARENTHESIS, \.Options.CMS Then Signal GetExpression
+  If element < .EL.LEFT_PARENTHESIS, .Features.Evaluated.Call Then Signal GetExpression
   If element \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.002
 
   nameSpace = .Nil
   name = element
   If element < .ALL.SYMBOLS Then Do
     next = TheElementAfter( element, ignoreBlanks )
-    If next < .EL.COLON, \.Options.CMS Then Do
+    If .Features.Namespace.Qualified.Symbols, next < .EL.COLON Then Do
       nameSpace = element
       name = TheElementAfter( next, ignoreBlanks )
       If name \< .ALL.SYMBOLS Then Signal 20.922
@@ -1262,24 +1263,27 @@ Expression:
   caseLess     = .False
 
   Loop
-    If keyword \< .ALL.SYMBOLS Then Signal 20.903
+    If keyword \< .ALL.SYMBOLS      Then Signal 20.903
     kValue = keyword~value
     Select Case kValue
-      When "UPPER"               Then Call UpperLower
-      When "LOWER"               Then
-        If .Options.CMS          Then Signal 25.012
-        Else                     Call UpperLower
-      When "CASELESS"            Then
-        If .Options.CMS          Then Signal 25.012
-        Else                     Call CaseLess
-      When "VAR"                 Then Signal Var
-      When "VALUE"               Then Signal (Value)
+      When "UPPER"                  Then Call UpperLower
+      When "LOWER"                  Then
+        If .Features.Parse.Lower    Then Call UpperLower
+        Else Signal 25.012
+      When "CASELESS"               Then
+        If .Features.Parse.Caseless Then Call CaseLess
+        Else Signal 25.012
+      When "VAR"                    Then Signal Var
+      When "VALUE"                  Then Signal (Value)
       When "ARG", "LINEIN", "PULL", "SOURCE", "VERSION"
-                                 Then Signal SimpleCase
-      When "EXTERNAL", "NUMERIC" Then
-        If .Options.CMS          Then Signal SimpleCase
-        Else                     Signal 25.012
-      Otherwise                  Signal 25.012
+                                    Then Signal SimpleCase
+      When "EXTERNAL"               Then
+        If .Features.Parse.External Then Signal SimpleCase
+        Else                        Signal 25.012
+      When "NUMERIC"    Then
+        If .Features.Parse.Numeric  Then Signal SimpleCase
+        Else                        Signal 25.012
+      Otherwise                     Signal 25.012
     End
   End
 
@@ -1824,15 +1828,6 @@ Expression:
   self~init:super( package, begin, end )
 
 /******************************************************************************/
-::Routine SignalOnOffConditions
-  -- CMS Rexx supports only the classic conditions (plus NOTREADY).
-  -- LOSTDIGITS, NOMETHOD, NOSTRING, USER and ANY are ooRexx extensions.
-  If .Options.CMS Then
-    Return "ERROR FAILURE HALT NOTREADY NOVALUE SYNTAX "
-  Return "ERROR FAILURE HALT LOSTDIGITS NOMETHOD"     -
-         "NOSTRING NOTREADY NOVALUE SYNTAX USER ANY "
-
-/******************************************************************************/
 /* SIGNAL OFF instruction                                                     */
 /******************************************************************************/
 
@@ -1852,7 +1847,7 @@ Expression:
 
   name = condition~value
 
-  If WordPos(name, SignalOnOffConditions() ) == 0 Then Signal 25.004
+  If WordPos(name, .Features.Signal.OnOff.Conditions ) == 0 Then Signal 25.004
 
   Call SetSubkeyword condition
 
@@ -1914,7 +1909,7 @@ Expression:
 
   name = condition~value
 
-  If WordPos(name, SignalOnOffConditions() ) == 0 Then Signal 25.003
+  If WordPos(name, .Features.Signal.OnOff.Conditions ) == 0 Then Signal 25.003
 
   Call SetSubkeyword condition
 

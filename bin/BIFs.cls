@@ -19,6 +19,7 @@
 /* 20251116    0.3a Add support for the new GC BIF                            */
 /* 20251226    0.4a Send error messages to .error, not .output                */
 /* 20260521    0.5  CMS: Fix BIF list                                         */
+/* 20260601    0.6  Implement a fine-grained feature system                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -204,7 +205,7 @@
     BIFARGS.JUSTIFY    = "rANY rLENGTH oPAD"
     BIFARGS.LINESIZE   = ""
 
-    -- CMS signature overrides (differ from ooRexx)
+    -- CMS signature overrides (different from ooRexx)
     BIFARGS.DATE       = "oBCDJEMNOSUW oANY oBCDJEMNOSUW oSEP oSEP"
     BIFARGS.DELSTR     = "rANY rPOS oLENGTH"           -- n is required in CMS
     BIFARGS.LASTPOS    = "rANY rANY oPOS"              -- no length arg

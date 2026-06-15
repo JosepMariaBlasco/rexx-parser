@@ -23,7 +23,9 @@
 /* 20260521         Add tests for extended assignments not recognized         */
 /* 20260521         Add tests for { and } not recognized under CMS            */
 /* 20260521         Add tests for BIF signature differences and CMS-only BIFs */
-/* 20260522         Add tests for "REXXVM" as an alias of the "CMS" option     */
+/* 20260522         Add tests for "REXXVM" as an alias of the "CMS" option    */
+/* 20260601    0.6  Implement a fine-grained feature system                   */
+/* 20260601         Add tests for empty assignments                           */
 /*                                                                            */
 /* These tests verify the CMS-mode restrictions implemented by the scanner:   */
 /*                                                                            */
@@ -42,13 +44,13 @@
 /*      "::ROUTINE", "::CLASS", etc. raises SYNTAX 35 (invalid clause).       */
 /*                                                                            */
 /*   4. CMS Rexx does not recognize "--" line comments. Under CMS the         */
-/*      scanner treats "--" as two consecutive minus operators. Some "--"    */
+/*      scanner treats "--" as two consecutive minus operators. Some "--"     */
 /*      uses still parse (because "-- text" can be a valid expression), but   */
 /*      cases that leave an operator dangling raise SYNTAX 35.                */
 /*                                                                            */
 /*   5. CMS Rexx only accepts "," as continuation character. Under CMS the    */
 /*      trailing "-" before a line-end is not a continuation; it stays a      */
-/*      minus operator and the clause ends at the line, so a "-" with no     */
+/*      minus operator and the clause ends at the line, so a "-" with no      */
 /*      operand to its right raises SYNTAX 35.                                */
 /*                                                                            */
 /*   6. CMS Rexx does not recognize "~" (message send) nor "[" / "]" (array   */
@@ -58,9 +60,10 @@
 /*      remains an Executor-only negator and is not recognized under CMS.     */
 /*                                                                            */
 /*   7. CMS Rexx does not recognize extended assignment operators ("+=",      */
-/*      "-=", "*=", "/=", "%=", "//=", "||=", "&=", "|=", "&&=", "**=").      */
+/*      "-=", "*=", "%=", "//=", "||=", "&=", "|=", "&&=", "**=").            */
 /*      Under CMS, a clause like "x += 1" raises SYNTAX 35 (invalid clause).  */
 /*      The plain "=" assignment is still recognized.                         */
+/*      "/=" is recognized as a not-equal variant                             */
 /*                                                                            */
 /*   8. CMS Rexx does not recognize "{" and "}" (Executor-only specials).     */
 /*      Under CMS, those characters raise SYNTAX 13. This is the same         */
@@ -555,7 +558,7 @@ SyntaxTrap:
 
 -- Under CMS, every extended assignment raises SYNTAX 35.
 ::Method test_extended_assignments_under_cms
-  sequences = .Array~of("+=", "-=", "*=", "/=", "%=", "//=", -
+  sequences = .Array~of("+=", "-=", "*=", "%=", "//=", -
                         "||=", "&=", "|=", "&&=", "**=")
   Do op Over sequences
     src  = "x" op "1"
@@ -579,6 +582,41 @@ SyntaxTrap:
 ::Method test_plain_assignment_under_cms
   self~assertEquals("", self~parseCMS("x = 1", .True), -
     "Plain '=' assignment should parse under CMS")
+
+/******************************************************************************/
+/* Empty assignments are accepted under CMS, rejected under ooRexx            */
+/*                                                                            */
+/* CMS Rexx allows an assignment with no right-hand side: "x =" sets the      */
+/* variable to the null string (SC24-5239-0 p. 11, "assignment ::= variable  */
+/* '=' expression?"). ooRexx requires an expression and raises SYNTAX 35.918 */
+/* (missing expression following assignment) when it is absent.               */
+/*                                                                            */
+/* This is a baseline difference, not a fall-through: under CMS the empty     */
+/* right-hand side is a *feature* gated by .Features.Empty.Assignments        */
+/* (Clauses.cls), so it is paired under/without like every other CMS axis.    */
+/* The empty form must work for simple, stem and compound targets, and in     */
+/* every clause position (mid-program and as a THEN body), not just at end    */
+/* of source.                                                                 */
+/******************************************************************************/
+
+-- Under CMS, an assignment with an empty right-hand side parses cleanly,
+-- for simple, stem and compound targets, and regardless of clause position.
+::Method test_empty_assignment_under_cms
+  Do src Over .Array~of(.Array~of("x ="), -
+                        .Array~of("foo.bar ="), -
+                        .Array~of("stem. ="), -
+                        .Array~of("x =", "say x"), -
+                        .Array~of("if 1 then x =", "say x"))
+    self~assertEquals("", self~parseCMS(src, .True), -
+      "Empty assignment '"src[1]"' should parse under CMS")
+  End
+
+-- Sanity: without CMS, an empty right-hand side raises SYNTAX 35.918
+-- (missing expression following an assignment). The exact subcode is
+-- asserted so a future regression that swaps it for a generic 35 is caught.
+::Method test_empty_assignment_without_cms
+  self~assertEquals("35.918", self~parseCMS("x =", .False), -
+    "Empty assignment 'x =' must raise SYNTAX 35.918 without CMS")
 
 /******************************************************************************/
 /* "{" and "}" are not recognized under CMS                                   */
@@ -797,17 +835,22 @@ SyntaxTrap:
 /* Tests: UPPER keyword instruction under CMS                                 */
 /******************************************************************************/
 
--- UPPER exists in ooRexx but only under .Options.Executor. Under CMS it
--- must also be recognized. The only purely syntactic way to tell whether
--- UPPER was parsed as a keyword instruction is to write it with no
--- arguments: as a keyword it requires at least one variable and must
--- complain; as a command it is just the value of identifier UPPER and
--- parses fine.
+-- UPPER is a keyword instruction under CMS and under Executor; under plain
+-- ooRexx (neither option) it is not a keyword at all. The purely syntactic
+-- way to tell the two readings apart is to write UPPER with no arguments:
+--   * As a keyword instruction (CMS), UPPER requires at least one variable.
+--     Bare UPPER is therefore a syntax error -- Error 20 ("Symbol expected"),
+--     verified against the real VM: DMSREX483E Error 20 ... "Symbol expected".
+--   * As a non-keyword (plain ooRexx), the clause "upper" is just a command
+--     whose expression is the value of the identifier UPPER, and it parses.
+-- Note these are two different dialects giving two different readings of the
+-- same source, not a keyword-vs-command choice within one dialect.
 
 ::Method test_upper_with_cms_requires_variable
   code = self~parseCMS("upper", .True)
-  self~assertTrue(code \== "", -
-    "Bare 'upper' under CMS should raise a SYNTAX error, got" code)
+  Parse Var code major"."minor
+  self~assertEquals("20", major~strip, -
+    "Bare 'upper' under CMS should raise SYNTAX 20 (symbol expected), got" code)
 
 ::Method test_upper_without_cms_is_command
   self~assertEquals("", self~parseCMS("upper", .False), -

@@ -23,6 +23,7 @@
 /* 20251128    0.3a (Executor) Add support for ::EXTENSION directive          */
 /* 20251201         (Executor) Add support for source literals                */
 /* 20260521    0.5  Add support for CMS                                       */
+/* 20260601    0.6  Implement a fine-grained feature system                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -104,6 +105,55 @@
     source = LoadProgramSource(name)
   End
   Else If source~isA( .String ) Then source = Array( source )
+
+  -- Features
+
+ .environment~Features.Address.With                = \.Options.CMS
+ .environment~Features.Array.Terms                 = \.Options.CMS
+ .environment~Features.Continuation.Minus          = \.Options.CMS
+ .environment~Features.Do.Counter                  = \.Options.CMS
+ .environment~Features.Do.Label                    = \.Options.CMS
+ .environment~Features.Do.Over                     = \.Options.CMS
+ .environment~Features.Do.With                     = \.Options.CMS
+ .environment~Features.Directive.Start             = \.Options.CMS
+ .environment~Features.Empty.Assignments           =  .Options.CMS | .Options.Executor -
+   | Global.Option("emptyassignments") == 1
+ .environment~Features.Evaluated.Call              = \.Options.CMS
+ .environment~Features.Extended.Assignments        = \.Options.CMS
+ .environment~Features.Expose.Instruction          = \.Options.CMS
+ .environment~Features.Forward.Instruction         = \.Options.CMS
+ .environment~Features.General_Letter.At_Sign      =  .Options.CMS | .Options.Executor
+ .environment~Features.General_Letter.Cent.Latin1  =  .Options.CMS | .Options.Executor
+ .environment~Features.General_Letter.Cent.UTF8    =  .Options.CMS | .Options.Executor
+ .environment~Features.General_Letter.Dollar       =  .Options.CMS | .Options.Executor
+ .environment~Features.General_Letter.Number_Sign  =  .Options.CMS | .Options.Executor
+ .environment~Features.Guard.Instruction           = \.Options.CMS
+ .environment~Features.Line.Comments               = \.Options.CMS
+ .environment~Features.Loop.Instruction            = \.Options.CMS
+ .environment~Features.Namespace.Qualified.Symbols = \.Options.CMS
+ .environment~Features.Operator.Circumflex.UTF8    =  .Options.Executor
+ .environment~Features.Operator.NotSign.UTF8       =  .Options.CMS | .Options.Executor
+ .environment~Features.Operator.Tilde.UTF8         = \.Options.CMS
+ .environment~Features.Parse.Caseless              = \.Options.CMS
+ .environment~Features.Parse.External              =  .Options.CMS
+ .environment~Features.Parse.Lower                 = \.Options.CMS
+ .environment~Features.Parse.Numeric               =  .Options.CMS
+ .environment~Features.Raise.Instruction           = \.Options.CMS
+ .environment~Features.Reply.Instruction           = \.Options.CMS
+ .environment~Features.Select.Case                 = \.Options.CMS
+ .environment~Features.Select.Label                = \.Options.CMS
+ .environment~Features.Slash_as_negator            =  .Options.CMS | .Options.Executor
+ .environment~Features.Special.Brackets            = \.Options.CMS
+ .environment~Features.Special.Braces              =  .Options.Executor
+ .environment~Features.Upper.Instruction           =  .Options.CMS | .Options.Executor
+ .environment~Features.Use.Instruction             = \.Options.CMS
+ If .Options.CMS Then
+   .environment~Features.Signal.OnOff.Conditions = -
+     "ERROR FAILURE HALT NOTREADY NOVALUE SYNTAX "
+ Else
+   .environment~Features.Signal.OnOff.Conditions = -
+     "ERROR FAILURE HALT LOSTDIGITS NOMETHOD"     -
+     "NOSTRING NOTREADY NOVALUE SYNTAX USER ANY "
 
   -- Create the package object
   package = .Rexx.Package~new(name, source)

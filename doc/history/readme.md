@@ -11,6 +11,7 @@ Version history
 <tr><td>20260522<td>0.6<td>
 <ul>
   <li> Jump release level to mark addition of support for Rexx/VM.
+  <li> Implement a fine-grained feature system (20260601).
 <tr><td>20260303<td>0.5<td>
 <ul>
   <li> Jump release level to mark start of RexxPub.

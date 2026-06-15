@@ -24,6 +24,8 @@
 /* 20251201         (Executor) Add support for source literals                */
 /* 20251226    0.4a Send error messages to .error, not .output                */
 /* 20260522    0.5  CMS: Implement DO and SELECT clauses                      */
+/* 20260601    0.6  Implement a fine-grained feature system                   */
+/* 20260601         Implement empty assignments                               */
 /*                                                                            */
 /******************************************************************************/
 
@@ -724,12 +726,8 @@ NoLabels:
   -- Allow empty assignments when the "emptyassignments" option
   -- has been specified with a value of "1".
   If expression~isEmpty Then Do
-    Select
-      When Global.Option("emptyassignments") == 1 Then Nop
-      When .Options.Executor Then Nop
-      Otherwise
-        Signal 35.918
-    End
+    If .Features.Empty.Assignments Then Nop
+    Else Signal 35.918
   End
 
   -- In this context, an expression list is an array term.
@@ -954,30 +952,24 @@ Done:
 
   next    = TheElementAfter( element, ignoreBlanks )
 
-  label   = 0
-  counter = 0
+  label   = \ .Features.Do.Label
+  counter = \ .Features.Do.Counter
 
 Continue:
   If element < .EL.END_OF_CLAUSE Then Signal Done
   If element < .ALL.SYMBOLS Then Do
     tValue = element~value
     If next < .EL.OP.EQUAL           Then Signal "Classic Do/Loop"
-    -- LABEL, COUNTER, OVER and WITH ITEM/INDEX are ooRexx extensions.
-    -- CMS Rexx has none of them: there the offending token is read as part
-    -- of the repetitor expression (exprr), so we must NOT recognize these
-    -- subkeywords under CMS and let the cascade fall through to the simple
-    -- repetitive branch. (Any resulting non-integer repetition count is a
-    -- run-time Error 26, not a parse-time error.)
-    If \.Options.CMS Then Do
-      If \label,   tValue == "LABEL"   Then Signal "Label option"
-      If \counter, tValue == "COUNTER" Then Signal "Counter option"
-      If next < .ALL.SYMBOLS Then Do
-        Select Case next~value
-          When "OVER"                  Then Signal "Do/Loop ... Over"
-          When "ITEM", "INDEX"         Then
-            If tValue == "WITH"        Then Signal "Do/Loop With ...  Over"
-          Otherwise Nop
-        End
+    If \label,   tValue == "LABEL"   Then Signal "Label option"
+    If \counter, tValue == "COUNTER" Then Signal "Counter option"
+    If next < .ALL.SYMBOLS Then Do
+      Select Case next~value
+        When "OVER"                  Then
+          If .Features.Do.Over       Then     Signal "Do/Loop ... Over"
+        When "ITEM", "INDEX"         Then
+          If .Features.Do.With, tValue == "WITH"
+                                     Then Signal "Do/Loop With ...  Over"
+        Otherwise Nop
       End
     End
     Select Case tValue
@@ -1520,7 +1512,8 @@ Message.Instruction:
 
   If element  < .EL.END_OF_CLAUSE   Then Signal Done
 
-  If .Options.CMS                   Then Call 21.902 element
+  If \.Features.Select.Case, \.Features.Select.Label
+                                    Then Call 21.902 element
 
   If element \< .ALL.VAR_SYMBOLS    Then Signal 25.923
 

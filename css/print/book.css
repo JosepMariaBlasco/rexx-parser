@@ -72,14 +72,6 @@ div.content {
   string-set: bookTitle content(text);
 }
 
-.title-page .book-subtitle {
-  font-size: 1em;
-  font-weight: normal;
-  font-style: italic;
-  color: #555;
-  margin-top: 0;
-}
-
 .title-page h1.book-title {
   margin-bottom: 0 !important;
 }
@@ -140,10 +132,10 @@ div.content dd p { text-indent: 0; }
 
 .title-page h1 small {
   display: block;
-  font-size: 0.5em;
+  font-size: 0.75em;
   margin-top: 0.5em;
-  color: #555;
-  font-style: italic;
+  font-weight: normal;
+  color: inherit;
 }
 
 .title-page .author       { font-size: 1.2em; margin-top: 2em; }
@@ -154,7 +146,7 @@ div.content dd p { text-indent: 0; }
 .title-page .phone        { font-size: 0.9em; font-style: italic; margin-top: 0.1em; }
 .title-page .date         { font-size: 1em;  margin-top: 2em; }
 
-.title-page p { text-indent: 0; text-align: center; text-align-last: center; }
+div.content .title-page p { text-indent: 0; text-align: center; text-align-last: center; }
 
 /******************************************************************************/
 /* Table of contents                                                          */
@@ -407,9 +399,9 @@ div.content table td {
   @top-right {
     font-family: 'Times New Roman', Times, serif;
     content: string(chapterTitle, first-except);
-    font-size: 9pt;
+    font-size: 11pt;
     font-style: italic;
-    color: #555;
+    color: black;
   }
 
   @top-left {
@@ -436,9 +428,9 @@ div.content table td {
   @top-left {
     font-family: 'Times New Roman', Times, serif;
     content: string(bookTitle);
-    font-size: 9pt;
+    font-size: 11pt;
     font-style: italic;
-    color: #555;
+    color: black;
   }
 
   @top-right {

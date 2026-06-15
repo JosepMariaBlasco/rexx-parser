@@ -28,6 +28,7 @@
 /* 20251209         (Executor) Implement named arguments                      */
 /* 20251226    0.4a Add support for "=" and "==" at end of expression         */
 /* 20260522    0.5  CMS: Add support for CMS Rexx expressions                 */
+/* 20260601    0.6  Implement a fine-grained feature system                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -315,7 +316,7 @@ EndNamed:
     trailingComma = 0
 
     Do While element < .EL.COMMA
-      If .Options.CMS Then Signal 37.001
+      If \.Features.Array.Terms Then Signal 37.001
       commasFound = 1
       If logical Then Call 35.929 element
       expressions~append( element )
@@ -337,7 +338,7 @@ EndNamed:
 
   If element \< .EL.COMMA Then Leave
 
-    If .Options.CMS Then Signal 37.001
+    If \.Features.Array.Terms Then Signal 37.001
 
     expressions~append( element )
 
@@ -905,8 +906,9 @@ EndNamed:
         -- (ooRexx extension; not recognized under CMS, where the
         -- dangling ":" falls through to an Error 35.)
         When .EL.COLON Then Do
-          If .Options.CMS Then Exit Symbol.Term( package, begin )
-          Exit Namespace.Qualified.Symbol( package, symbol, element )
+          If .Features.Namespace.Qualified.Symbols Then
+            Exit Namespace.Qualified.Symbol( package, symbol, element )
+          Exit Symbol.Term( package, begin )
         End        -- Followed by "("? This is a function call
         When .EL.LEFT_PARENTHESIS Then
           Exit Function.Call.Term( package, symbol, element, terminators )
