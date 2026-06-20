@@ -158,6 +158,11 @@ Crumb:
 
   Select Case Arg(1)
 
+    -- RexxHTPP
+
+    When "/rexxhttp"               Then Return "RexxHTTP"
+    When "/rexxhttp/manual"        Then Return "Servlet programming in Rexx"
+
     -- Metaproject
 
     When "/metaproject"            Then Return "Metaproject"

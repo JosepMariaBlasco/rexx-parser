@@ -96,13 +96,22 @@ Rexx/VM support does not recognize the `~`, `[` or `]` characters.
 
 Recognized negation characters are `\` and `¬`.
 
-
 ```rexx {cms}
 Say 1 \= 1     /* 0 */
 Say 1 ¬= 1     /* 0 */
 ```
 
 All of IBM-850 '¬' (`"AA"X`), Latin-1 `¬` (`"AC"X`) and UTF-8 `¬` (`"C2AC"X`) are accepted.
+
+### Multi-line strings
+
+Rexx/VM allows multi-line strings. The contents of all lines
+are concatenated without any intervening separator.
+
+```rexx {cms}
+Say "A multi-
+line string"        -- Prints "A multi-line string"
+```
 
 ### No line comments
 

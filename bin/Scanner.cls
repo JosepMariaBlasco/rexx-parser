@@ -48,6 +48,7 @@
 /* 20260521         CMS: Don't recognize ~, [ and ]                           */
 /* 20260521         CMS: Don't recognize extended assignments                 */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
+/* 20260620         CMS: Implement multi-line strings                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -762,7 +763,7 @@ EndDelimiterFound:
 
   -- Create a taken_constant...
   endDelimiter = .StringOrSymbol.Element~new(                           -
-   .EL.TAKEN_CONSTANT, lineNo, 1, delimiterLength+1, source[lineNo]  -
+   .EL.TAKEN_CONSTANT, source, lineNo, 1, lineNo, delimiterLength+1  -
   )
   -- ... with a .RESOURCE.DELIMITER.NAME subCategory...
   Call SetConstantName endDelimiter, .RESOURCE.DELIMITER.NAME
@@ -1499,7 +1500,7 @@ Return
   End
   symbol = currentLine[col, p - col]
 
-  element = .StringOrSymbol.Element~new(SymbolKind(), line, col, p, source[line])
+  element = .StringOrSymbol.Element~new(SymbolKind(), source, line, col, line, p)
 
   -- CMS symbols and strings cannot exceed 250 characters
   If .Options.CMS Then Do
@@ -1609,16 +1610,33 @@ Exponential:
 /******************************************************************************/
 
 ::Method String.Element
-  Expose source line col len radix var_symbol_char whitespace tail
+  Expose source line col len lines radix var_symbol_char whitespace tail
 
   anchor = tail -- Element to reference for syntax errors
-  currentLine = source[line]
 
   Use Strict Arg ch -- "ch" is the starting quote
+
+  -- Save the starting point of the string (the opening quote). The closing
+  -- quote may be on a later line when multi-line strings are enabled.
+  startLine   = line
+  startCol    = col
+  currentLine = source[line]
+
   endQ = Pos( ch, currentLine, col+1 )
   Loop
-    If endQ == 0 Then
-      If ch == "'" Then Signal 6.002; Else Signal 6.003
+    Do While endQ == 0
+      -- No closing quote on this line. If multi-line strings are not
+      -- enabled, this is an unmatched quote. Otherwise, keep searching on
+      -- the following lines, until we find the quote or run out of source.
+      If \ .Features.Multiline.Strings Then
+        If ch == "'" Then Signal 6.002; Else Signal 6.003
+      line += 1
+      If line > lines Then
+        If ch == "'" Then Signal 6.002; Else Signal 6.003
+      currentLine = source[line]
+      len  = Length( currentLine )
+      endQ = Pos( ch, currentLine, 1 )
+    End
     length = endQ - col + 1
   If currentLine[ endQ+1 ] \== ch Then Leave
     endQ = Pos(ch, currentLine, endQ + 2)
@@ -1627,11 +1645,20 @@ Exponential:
     If endQ +1 == len                                 Then Signal RADIX
     If Pos(currentLine[endQ+2], var_symbol_char) == 0 Then Signal RADIX
   End
-  Call Element .EL.STRING, col + length
+  Call Element .EL.STRING, startLine, startCol, line, endQ + 1
   Return
 
 RADIX: -- ANSI 6.2.1.1
-  string = currentLine[col+1, length-2]
+  If startLine == line Then string = currentLine[col+1, length-2]
+  Else Do
+    -- Multi-line string (CMS): the contents are the raw concatenation of
+    -- each line's characters, with no line separator whatsoever.
+    string = SubStr( source[startLine], startCol+1 )
+    Do lineNo = startLine + 1 To line - 1
+      string = string || source[lineNo]
+    End
+    string = string || Left( currentLine, endQ-1 )
+  End
   Select Case Upper( currentLine[endQ+1] )
     When "B" Then Signal BinaryString
     When "X" Then Signal HexString
@@ -1653,7 +1680,7 @@ RADIX: -- ANSI 6.2.1.1
 --------------------------------------------------------------------------------
 
 BytesString:
-  Call Element .EL.BYTES_STRING, col + length + 1
+  Call Element .EL.BYTES_STRING, startLine, startCol, line, col + length + 1
   Return
 
 --------------------------------------------------------------------------------
@@ -1662,7 +1689,7 @@ BytesString:
 
 CodePointsString:
   If CheckUTF8() Then
-    Call Element .EL.CODEPOINTS_STRING, col + length + 1
+    Call Element .EL.CODEPOINTS_STRING, startLine, startCol, line, col + length + 1
   Return
 
 --------------------------------------------------------------------------------
@@ -1671,7 +1698,7 @@ CodePointsString:
 
 GraphemesString:
   If CheckUTF8() Then
-    Call Element .EL.GRAPHEMES_STRING, col + length + 1
+    Call Element .EL.GRAPHEMES_STRING, startLine, startCol, line, col + length + 1
   Return
 
 --------------------------------------------------------------------------------
@@ -1680,7 +1707,7 @@ GraphemesString:
 
 TextString:
   If CheckUTF8() Then
-    Call Element .EL.TEXT_STRING, col + length + 1
+    Call Element .EL.TEXT_STRING, startLine, startCol, line, col + length + 1
   Return
 
 --------------------------------------------------------------------------------
@@ -1689,7 +1716,7 @@ TextString:
 
 UnicodeString:
   value = CheckUnicode()
-  Call UString .EL.UNICODE_STRING, col + length + 1, value
+  Call UString .EL.UNICODE_STRING, startLine, startCol, line, col + length + 1, value
   Return
 
 --------------------------------------------------------------------------------
@@ -1698,7 +1725,7 @@ UnicodeString:
 
 BinaryString:
   If DataType(string, "B") Then Do
-    Call Element .EL.BINARY_STRING, col + length + 1
+    Call Element .EL.BINARY_STRING, startLine, startCol, line, endQ + 2
     Return
   End
 
@@ -1721,7 +1748,7 @@ BinaryString:
 
 -- Only 0, 1, and whitespace characters
 -- are valid in a binary string; found "&1".
-15.004: Syntax( 15.004, anchor, source[line][col + bad] )
+15.004: Syntax( 15.004, anchor, string[bad] )
 
 --------------------------------------------------------------------------------
 -- HEXADECIMAL STRINGS                                                        --
@@ -1729,7 +1756,7 @@ BinaryString:
 
 HexString:
   If DataType(string, "X") Then Do
-    Call Element .EL.HEX_STRING, col + length + 1
+    Call Element .EL.HEX_STRING, startLine, startCol, line, endQ + 2
     Return
   End
 
@@ -1750,7 +1777,7 @@ HexString:
 
 -- Only 0-9, a-f, A-F, and whitespace characters are valid in
 -- a hexadecimal string; found "&1".
-15.003: Syntax( 15.003, anchor, source[line][col + bad])
+15.003: Syntax( 15.003, anchor, string[bad])
 
 -- Hexadecimal strings must be grouped in units
 -- that are multiples of two characters.
@@ -1786,9 +1813,9 @@ CheckUnicode:
 --------------------------------------------------------------------------------
 
 Element:
-  sourceString = source[line][col, Arg(2)-col]
-
-  element = .StringOrSymbol.Element~new( Arg(1), line, col, Arg(2), source[line] )
+  element = .StringOrSymbol.Element~new( -
+    Arg(1), source, Arg(2), Arg(3), Arg(4), Arg(5) -
+  )
 
   -- CMS symbols and strings cannot exceed 250 characters
   If .Options.CMS Then Do
@@ -1807,10 +1834,10 @@ Element:
 
 
 UString:
-  sourceString = source[line][col, Arg(2)-col]
-
   self~append(                                             -
-    .UString.Element~new( Arg(1), line, col, Arg(2), source[line], Arg(3) ) -
+    .UString.Element~new( -
+      Arg(1), source, Arg(2), Arg(3), Arg(4), Arg(5), Arg(6) -
+    ) -
   )
 
   Exit

@@ -35,6 +35,7 @@
 /* 20251114    0.3a Add support for Experimental features                     */
 /* 20251125         Add support for Executor                                  */
 /* 20251226    0.4a Send error messages to .error, not .output                */
+/* 20260620         CMS: Implement multi-line strings                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -260,8 +261,12 @@ Syntax:
   If element < .ALL.COMPOUND_VARIABLES   Then Signal CompoundVariable
 
   If element < .ALL.STRINGS Then Do
-    -- Strings that are numbers and are not X, B or U
-    If element \< .EL.HEX_STRING || .EL.BINARY_STRING || .EL.UNICODE_STRING, -
+    -- Strings that are numbers and are not X, B or U get detailed number
+    -- highlighting -- but only when single-line. A multi-line numeric
+    -- string falls through to plain (multi-line) string highlighting,
+    -- since digit-by-digit highlighting across a line break is moot.
+    If \ element~isMultiLine, -
+      element \< .EL.HEX_STRING || .EL.BINARY_STRING || .EL.UNICODE_STRING, -
       DataType(element~value) == "NUM"  Then Signal Numbers
     -- Detailed string highlighting
     Signal String
@@ -491,6 +496,8 @@ Return
 --------------------------------------------------------------------------------
 
 String:
+  If element~isMultiLine Then Signal MultiLineString
+
   Call ComputeSourceCatsOpenCloseAndSuffix
 
   If element < constant Then tag = HTMLClass[ constant, subCat ]
@@ -504,6 +511,52 @@ String:
   Call Highlight .EL.STRING_CLOSING_DELIMITER, "",     "", close, q
   If hasSuffix Then
     Call Highlight .EL.STRING_SUFFIX,          "",     "", string_suffix_tag, suffix
+
+Exit
+
+--------------------------------------------------------------------------------
+-- MULTI-LINE STRINGS (CMS)                                                   --
+--------------------------------------------------------------------------------
+-- A string whose opening and closing quotes are on different lines. The
+-- source layout is reproduced faithfully: opening quote at the start of
+-- the first line, closing quote (and suffix, if any) at the end of the
+-- last one, each line's contents in between, with a line break wherever
+-- the source had one. The string "value" has no line breaks, but its
+-- rendering does, mirroring the original program.
+
+MultiLineString:
+  Call ComputeSourceCatsOpenCloseAndSuffix
+
+  If element < constant Then tag = HTMLClass[ constant, subCat ]
+  Else                       tag = HTMLClass[ cat ]
+
+  lines = element~sourceLines
+  last  = lines~items
+
+  Do Counter c lineSource Over lines
+    If c > 1 Then Do
+      currentline += 1
+      Call NewLine currentLine + options.startFrom - 1
+    End
+    line = lineSource
+    -- Strip the opening quote off the first line...
+    If c == 1     Then line = SubStr( line, 2 )
+    -- ...and the closing quote (plus suffix) off the last one.
+    If c == last  Then Do
+      If hasSuffix Then line = Left( line, Length(line) - 2 )
+      Else              line = Left( line, Length(line) - 1 )
+    End
+    -- Opening delimiter (first line only)
+    If c == 1     Then Call Highlight .EL.STRING_OPENING_DELIMITER, "", "", open, q
+    -- This line's contents
+    Call Highlight cat, subcat, "", tag, line
+    -- Closing delimiter and suffix (last line only)
+    If c == last  Then Do
+      Call Highlight .EL.STRING_CLOSING_DELIMITER, "", "", close, q
+      If hasSuffix Then
+        Call Highlight .EL.STRING_SUFFIX,          "", "", string_suffix_tag, suffix
+    End
+  End
 
 Exit
 
@@ -558,4 +611,3 @@ DocComment:
   displayLine = currentLine + options.startFrom - 1
   Call NewLine displayLine
 Exit
-

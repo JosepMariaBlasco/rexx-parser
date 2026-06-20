@@ -130,6 +130,7 @@
  .environment~Features.Guard.Instruction           = \.Options.CMS
  .environment~Features.Line.Comments               = \.Options.CMS
  .environment~Features.Loop.Instruction            = \.Options.CMS
+ .environment~Features.Multiline.Strings           =  .Options.CMS
  .environment~Features.Namespace.Qualified.Symbols = \.Options.CMS
  .environment~Features.Operator.Circumflex.UTF8    =  .Options.Executor
  .environment~Features.Operator.NotSign.UTF8       =  .Options.CMS | .Options.Executor
@@ -148,11 +149,11 @@
  .environment~Features.Upper.Instruction           =  .Options.CMS | .Options.Executor
  .environment~Features.Use.Instruction             = \.Options.CMS
  If .Options.CMS Then
-   .environment~Features.Signal.OnOff.Conditions = -
+   .environment~Features.Signal.OnOff.Conditions   = -
      "ERROR FAILURE HALT NOTREADY NOVALUE SYNTAX "
  Else
-   .environment~Features.Signal.OnOff.Conditions = -
-     "ERROR FAILURE HALT LOSTDIGITS NOMETHOD"     -
+   .environment~Features.Signal.OnOff.Conditions   = -
+     "ERROR FAILURE HALT LOSTDIGITS NOMETHOD"        -
      "NOSTRING NOTREADY NOVALUE SYNTAX USER ANY "
 
   -- Create the package object

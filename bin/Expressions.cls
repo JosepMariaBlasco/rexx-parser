@@ -29,6 +29,7 @@
 /* 20251226    0.4a Add support for "=" and "==" at end of expression         */
 /* 20260522    0.5  CMS: Add support for CMS Rexx expressions                 */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
+/* 20260620         CMS: Implement multi-line strings                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -1302,7 +1303,7 @@ Return
   End
 
   Parse Value variable~from With line col
-  sourceLine    = package~source[line]
+  source        = package~source
 
   Parse Value variable~value  With stemName"."tail
   Parse Value variable~source With stemSource"."tailSource
@@ -1324,7 +1325,7 @@ Return
   Call SetCategory variable, variableClass
 
   stem = .StringOrSymbol.Element~new( -
-    stemClass, line, col, col+offset, sourceLine -
+    stemClass, source, line, col, line, col+offset -
   )
 
   parts = .Array~of(stem) -- Parts of the tail
@@ -1387,7 +1388,7 @@ AddFragment:
   End
   newCol = col+Length(fragment)
   fragment = .StringOrSymbol.Element~new(      -
-    partClass, line, col, newCol, sourceLine -
+    partClass, source, line, col, line, newCol -
   )
   col = newCol
   parts ~ append( fragment )
@@ -1800,4 +1801,3 @@ FindEnd:
 -- Left parenthesis "(" in position &1 on line &2 requires
 -- a corresponding right parenthesis ")".
 36.901: Syntax( 36.901, lParen, pos, line)
-

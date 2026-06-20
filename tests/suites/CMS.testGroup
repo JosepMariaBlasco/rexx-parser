@@ -1471,3 +1471,131 @@ SyntaxTrap:
   src = "Say a~b"
   self~assertEquals("", self~parseRexxVM(src, .False), -
     "'"src"' must parse as ooRexx when REXXVM is not active")
+
+/******************************************************************************/
+/* Multi-line strings                                                         */
+/******************************************************************************/
+/*                                                                            */
+/* CMS Rexx allows multi-line strings: a string whose opening and closing     */
+/* quotes are on different lines. The contents of all lines are concatenated  */
+/* with no intervening separator (record-oriented semantics): the "value"     */
+/* has no line breaks. Both plain and X/B (hex/binary) literals may span      */
+/* lines. Without CMS, an unterminated quote on a line is SYNTAX 6 as usual.  */
+/*                                                                            */
+/******************************************************************************/
+
+-- Return the value of the first string element found in the chain, or the
+-- marker ".Nil" if no string is present. "src" is an Array of source lines.
+::Method firstStringValue
+  Use Strict Arg src, useCMS
+  If useCMS Then options = .Array~of((earlyCheck, .Set~new), ("CMS", 1))
+  Else           options = .Array~of((earlyCheck, .Set~new))
+  el = .Rexx.Parser~new("cms-test", src, options)~package~firstElement
+  Loop While el \== .Nil
+    If el < .ALL.STRINGS Then Return el~value
+    el = el~next
+  End
+  Return .Nil
+
+-- Return the first string element itself (to inspect isMultiLine / from / to).
+::Method firstStringElement
+  Use Strict Arg src
+  options = .Array~of((earlyCheck, .Set~new), ("CMS", 1))
+  el = .Rexx.Parser~new("cms-test", src, options)~package~firstElement
+  Loop While el \== .Nil
+    If el < .ALL.STRINGS Then Return el
+    el = el~next
+  End
+  Return .Nil
+
+-- A plain two-line string parses under CMS and its value is the raw
+-- concatenation of both lines, with no separator.
+::Method test_multiline_plain_two_lines
+  src = .Array~of("x = 'ab", "cd'")
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "Two-line string should parse under CMS")
+  self~assertEquals("abcd", self~firstStringValue(src, .True), -
+    "Value of two-line string should be the raw concatenation 'abcd'")
+
+-- A three-line string exercises the whole-line middle segment.
+::Method test_multiline_plain_three_lines
+  src = .Array~of("x = 'ab", "cd", "ef'")
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "Three-line string should parse under CMS")
+  self~assertEquals("abcdef", self~firstStringValue(src, .True), -
+    "Value of three-line string should be 'abcdef'")
+
+-- isMultiLine is set, and from/to straddle different lines.
+::Method test_multiline_from_to_straddle_lines
+  src = .Array~of("x = 'ab", "cd'")
+  el  = self~firstStringElement(src)
+  self~assertTrue(el~isMultiLine, -
+    "A string spanning two lines must report isMultiLine = 1")
+  Parse Value el~from With fromLine fromCol
+  Parse Value el~to   With toLine   toCol
+  self~assertEquals(1, fromLine, "Opening quote should be on line 1")
+  self~assertEquals(2, toLine,   "Closing quote should be on line 2")
+
+-- A single-line string must NOT report isMultiLine, and from/to share a line.
+::Method test_singleline_not_multiline
+  src = .Array~of("x = 'abcd'")
+  el  = self~firstStringElement(src)
+  self~assertFalse(el~isMultiLine, -
+    "A single-line string must report isMultiLine = 0")
+  Parse Value el~from With fromLine .
+  Parse Value el~to   With toLine   .
+  self~assertEquals(fromLine, toLine, -
+    "Single-line string from/to must be on the same line")
+
+-- A doubled quote that straddles the line break collapses to one quote,
+-- and the string keeps going on the next line.
+::Method test_multiline_doubled_quote_across_break
+  src = .Array~of("x = 'a''b", "c'")
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "Multi-line string with doubled quote should parse under CMS")
+  self~assertEquals("a'bc", self~firstStringValue(src, .True), -
+    "Doubled quote across the break should yield value ""a'bc""")
+
+-- A hex literal may span lines. Contents are concatenated raw, then
+-- interpreted: "C"+"1" -> "C1" -> X2C -> a single byte.
+::Method test_multiline_hex
+  src = .Array~of("Say ""C", "1""X")
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "Multi-line hex string should parse under CMS")
+  self~assertEquals(X2C("C1"), self~firstStringValue(src, .True), -
+    "Multi-line hex 'C'/'1' should interpret to the single byte 'C1'X")
+
+-- A binary literal may also span lines.
+::Method test_multiline_binary
+  src = .Array~of("Say ""1111", "0000""B")
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "Multi-line binary string should parse under CMS")
+  self~assertEquals(X2C("F0"), self~firstStringValue(src, .True), -
+    "Multi-line binary 1111/0000 should interpret to 'F0'X")
+
+-- A multi-line string whose concatenated value is numeric still parses and
+-- concatenates correctly (regression: numeric strings used to be routed to
+-- single-line number handling).
+::Method test_multiline_numeric_value
+  src = .Array~of("Say ""1", "2""")
+  self~assertEquals("", self~parseCMS(src, .True), -
+    "Multi-line numeric string should parse under CMS")
+  self~assertEquals("12", self~firstStringValue(src, .True), -
+    "Multi-line numeric string '1'/'2' should have value '12'")
+
+-- Gate check: WITHOUT CMS, a string left open at end of line is an
+-- unmatched quote (SYNTAX 6), proving the feature is opt-in.
+::Method test_multiline_without_cms_is_syntax6
+  src = .Array~of("x = 'ab", "cd'")
+  code = self~parseCMS(src, .False)
+  Parse Var code major "." minor
+  self~assertEquals("6", major~strip, -
+    "Without CMS, an unterminated quote should raise SYNTAX 6, got" code)
+
+-- Gate check (double quote variant): same as above with ".
+::Method test_multiline_without_cms_is_syntax6_dquote
+  src = .Array~of("Say ""ab", "cd""")
+  code = self~parseCMS(src, .False)
+  Parse Var code major "." minor
+  self~assertEquals("6", major~strip, -
+    "Without CMS, an unterminated double quote should raise SYNTAX 6, got" code)

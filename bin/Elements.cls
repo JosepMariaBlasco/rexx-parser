@@ -15,6 +15,7 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20251206    0.3a Split Scanner.cls in two, move all classes here           */
+/* 20260620    0.6  CMS: Implement multi-line strings                         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -317,7 +318,6 @@
 ::Attribute labelFor                    -- For labels
 ::Attribute term
 ::Attribute parts                       -- of a compound variable
-::Attribute sourceLine Get
 ::Method value
   source = self~source
   If self~isAString Then Do -- Strings
@@ -335,23 +335,59 @@
     Return Upper( source )
   End
 ::Method init
-  Expose                        line  start  end  sourceLine
+  Expose                        source  startLine  startCol  endLine  endCol
   self~init:super
-  Use Strict Arg self~category, line, start, end, sourceLine
+  Use Strict Arg self~category, source, startLine, startCol, endLine, endCol
   self~traceOnly = 0
   self~parts = .Array~new
+::Method isMultiLine
+  Expose startLine endLine
+  Return startLine \== endLine
+-- "source" returns the full source text of the element, with the quotes
+-- included. For a multi-line string the contents of each line are
+-- concatenated with no line separator (record-oriented semantics).
 ::Method source
-  Expose sourceLine start end
-  Return sourceLine[ start, end-start ]
+  Expose source startLine startCol endLine endCol
+  If startLine == endLine Then
+    Return source[startLine][ startCol, endCol-startCol ]
+  ret = ""
+  Do lineNo = startLine To endLine
+    line = source[lineNo]
+    Select Case lineNo
+      When startLine Then ret =       SubStr( line, startCol )
+      When endLine   Then ret = ret || line[1, endCol-1]
+      Otherwise           ret = ret || line
+    End
+  End
+  Return ret
+-- "sourceLines" returns an array with the source text of the element on
+-- each of the lines it spans (quotes and suffix included, in their real
+-- positions). For a single-line element the array has just one item.
+-- This is the partition the highlighter uses to render a multi-line
+-- string keeping the original source layout.
+::Method sourceLines
+  Expose source startLine startCol endLine endCol
+  If startLine == endLine Then
+    Return .Array~of( source[startLine][ startCol, endCol-startCol ] )
+  ret = .Array~new
+  Do lineNo = startLine To endLine
+    line = source[lineNo]
+    Select Case lineNo
+      When startLine Then ret~append( SubStr( line, startCol ) )
+      When endLine   Then ret~append( line[1, endCol-1] )
+      Otherwise           ret~append( line )
+    End
+  End
+  Return ret
 ::Method isAString
-  Expose sourceLine start
-  Return Pos( sourceLine[start], "'""") > 0
+  Expose source startLine startCol
+  Return Pos( source[startLine][startCol], "'""") > 0
 ::Method from
-  Expose line start
-  Return line start
+  Expose startLine startCol
+  Return startLine startCol
 ::Method to
-  Expose line end
-  Return line end
+  Expose endLine endCol
+  Return endLine endCol
 
 --------------------------------------------------------------------------------
 
@@ -361,8 +397,8 @@
   Return value
 ::Method init
   Expose value
-  Use Strict Arg category, line, start, end, sourceLine, value
-  self~init:super(category, line, start, end, sourceLine)
+  Use Strict Arg category, source, startLine, startCol, endLine, endCol, value
+  self~init:super(category, source, startLine, startCol, endLine, endCol)
 
 --------------------------------------------------------------------------------
 
