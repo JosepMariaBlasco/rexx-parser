@@ -146,6 +146,7 @@
  .environment~Features.Slash_as_negator            =  .Options.CMS | .Options.Executor
  .environment~Features.Special.Brackets            = \.Options.CMS
  .environment~Features.Special.Braces              =  .Options.Executor
+ .environment~Features.Trace.CMS                   =  .Options.CMS
  .environment~Features.Upper.Instruction           =  .Options.CMS | .Options.Executor
  .environment~Features.Use.Instruction             = \.Options.CMS
  If .Options.CMS Then

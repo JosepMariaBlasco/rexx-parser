@@ -36,6 +36,7 @@
 /* 20260522         CMS: Disallow CALL (expr)                                 */
 /* 20260522         CMS: Disallow CALL namespace:name                         */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
+/* 20260621         CMS: Implement TRACE !                                    */
 /*                                                                            */
 /******************************************************************************/
 
@@ -2019,8 +2020,19 @@ Expression:
 
   If element < .ALL.SYMBOLS Then Do
     If element~value == "VALUE" Then Signal (Value)
-    value = Strip( element~value, "L", "?" )
-    If value \== "", Pos( value[1], "ACEFILNOR") == 0 Then Signal 24.001
+    value = element~value
+    letters = "ACEFILNOR"
+    If .Features.Trace.CMS Then Do
+      prefix = "!?"
+      letters ||= "S"
+    End
+    Else Do
+      prefix = "?"
+    End
+    Loop While value \== "", Pos(value[1],prefix) > 0
+      value = SubStr(value,2)
+    End
+    If value \== "", Pos( value[1], letters ) == 0 Then Signal 24.001
     options.symbol = element
     element = TheElementAfter( element, ignoreBlanks )
     Signal Processed

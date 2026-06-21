@@ -144,6 +144,14 @@ Rexx/VM symbols and strings cannot exceed 250 characters.
 Instruction differences
 ------------------------
 
+### TRACE ! and TRACE Scan
+
+Rexx/VM supports `TRACE Scan` and `"!"` as a prefix option.
+
+```rexx {cms}
+Trace !Scan
+```
+
 ### ooRexx-only instructions
 
 `EXPOSE`, `FORWARD`, `GUARD`, `LOOP`, `RAISE`, `REPLY` and `USE` are

@@ -26,6 +26,7 @@
 /* 20260522         Add tests for "REXXVM" as an alias of the "CMS" option    */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
 /* 20260601         Add tests for empty assignments                           */
+/* 20260621         Add tests for TRACE "!" prefix and TRACE Scan under CMS   */
 /*                                                                            */
 /* These tests verify the CMS-mode restrictions implemented by the scanner:   */
 /*                                                                            */
@@ -1599,3 +1600,81 @@ SyntaxTrap:
   Parse Var code major "." minor
   self~assertEquals("6", major~strip, -
     "Without CMS, an unterminated double quote should raise SYNTAX 6, got" code)
+
+/******************************************************************************/
+/* TRACE "!" prefix and TRACE Scan under CMS                                  */
+/******************************************************************************/
+
+-- CMS Rexx accepts the "!" trace-action prefix (in addition to the standard
+-- "?") and the "Scan" setting (request letter "S", outside the standard
+-- "ACEFILNOR" set). Both are opt-in: without CMS they raise SYNTAX 24
+-- (invalid TRACE request letter), exactly as plain ooRexx does.
+
+-- "TRACE !R": the "!" prefix is accepted under CMS.
+::Method test_trace_bang_prefix_under_cms
+  self~assertEquals("", self~parseCMS("Trace !R", .True), -
+    "'Trace !R' should parse under CMS")
+
+-- Without CMS the "!" prefix is not recognized: SYNTAX 24.
+::Method test_trace_bang_prefix_without_cms
+  code = self~parseCMS("Trace !R", .False)
+  Parse Var code major"."minor
+  self~assertEquals("24", major~strip, -
+    "Without CMS, 'Trace !R' should raise SYNTAX 24, got" code)
+
+-- "TRACE Scan": the "Scan" setting is accepted under CMS.
+::Method test_trace_scan_under_cms
+  self~assertEquals("", self~parseCMS("Trace Scan", .True), -
+    "'Trace Scan' should parse under CMS")
+
+-- Without CMS, "Scan" is not a valid request letter set: SYNTAX 24.
+::Method test_trace_scan_without_cms
+  code = self~parseCMS("Trace Scan", .False)
+  Parse Var code major"."minor
+  self~assertEquals("24", major~strip, -
+    "Without CMS, 'Trace Scan' should raise SYNTAX 24, got" code)
+
+-- "TRACE !Scan": prefix and setting combined, accepted under CMS.
+::Method test_trace_bang_scan_under_cms
+  self~assertEquals("", self~parseCMS("Trace !Scan", .True), -
+    "'Trace !Scan' should parse under CMS")
+
+-- Without CMS, "!Scan" is rejected: SYNTAX 24.
+::Method test_trace_bang_scan_without_cms
+  code = self~parseCMS("Trace !Scan", .False)
+  Parse Var code major"."minor
+  self~assertEquals("24", major~strip, -
+    "Without CMS, 'Trace !Scan' should raise SYNTAX 24, got" code)
+
+-- "TRACE !" alone: just the prefix, no request letter, is a valid setting
+-- under CMS (the prefix is consumed and the remaining value is empty).
+::Method test_trace_bang_alone_under_cms
+  self~assertEquals("", self~parseCMS("Trace !", .True), -
+    "'Trace !' (prefix only) should parse under CMS")
+
+-- Without CMS, a bare "!" is not a valid request letter: SYNTAX 24.
+::Method test_trace_bang_alone_without_cms
+  code = self~parseCMS("Trace !", .False)
+  Parse Var code major"."minor
+  self~assertEquals("24", major~strip, -
+    "Without CMS, 'Trace !' should raise SYNTAX 24, got" code)
+
+-- Control: the standard "?" prefix is accepted in BOTH modes; it is not a
+-- CMS novelty. Proves the gate above is about "!"/"Scan", not about prefixes
+-- in general.
+::Method test_trace_question_prefix_under_cms
+  self~assertEquals("", self~parseCMS("Trace ?R", .True), -
+    "'Trace ?R' should parse under CMS")
+
+::Method test_trace_question_prefix_without_cms
+  self~assertEquals("", self~parseCMS("Trace ?R", .False), -
+    "'Trace ?R' should parse without CMS (standard '?' prefix)")
+
+-- Control: even under CMS, an illegal request letter after a valid "!" prefix
+-- still raises SYNTAX 24. Proves CMS widens the accepted set to "S" only, and
+-- does not blindly accept anything following "!".
+::Method test_trace_bang_illegal_letter_under_cms
+  code = self~parseCMS("Trace !Z", .True)
+  Parse Var code major"."minor
+  self~assertEquals("24", major~strip, -
+    "Under CMS, 'Trace !Z' (illegal letter) should still raise SYNTAX 24, got" code)

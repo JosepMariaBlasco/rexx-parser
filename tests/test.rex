@@ -1,2 +1,2 @@
-Say "1
-2"
+Trace !a
+Trace s
