@@ -1,7 +1,7 @@
 #!/usr/bin/env rexx
 /*----------------------------------------------------------------------------*/
 /*                                                                            */
-/* Copyright (c) 2020 Rexx Language Association. All rights reserved.         */
+/* Copyright (c) 2020-2026, Rexx Language Association. All rights reserved.   */
 /*                                                                            */
 /* This program and the accompanying materials are made available under       */
 /* the terms of the Common Public License v1.0 which accompanies this         */
@@ -52,4 +52,4 @@
     -- then convert the xsl-fo to PDF using FOP
     call fo2pdf
 
-::requires doc_props.rex
+::requires "doc_props.rex"

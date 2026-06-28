@@ -56,6 +56,7 @@
 /* Requires the Rexx Parser to be installed (bin/ directory on REXX_PATH      */
 /* or system PATH so that Parser.DocBook.cls can be found).                   */
 /*                                                                            */
+/*----------------------------------------------------------------------------*/
 
 /******************************************************************************/
 /* Check that the Rexx Parser is available                                    */
@@ -145,10 +146,7 @@
   totalFiles  = 0
 
   wfDir = .File~new(wf_name)
-  Loop aFile Over wfDir~listFiles
-    If aFile~isDirectory Then Iterate
-    If aFile~extension~upper \== "XML" Then Iterate
-
+  Loop aFile Over CollectXmlFiles(wfDir)
     -- Read the file
     src = .Stream~new(aFile)
     theLines = src~arrayIn
@@ -194,10 +192,7 @@
   usedStyles = .Set~new
   usedStyles~put(defaultStyle)
 
-  Loop aFile Over wfDir~listFiles
-    If aFile~isDirectory Then Iterate
-    If aFile~extension~upper \== "XML" Then Iterate
-
+  Loop aFile Over CollectXmlFiles(wfDir)
     src = .Stream~new(aFile)
     chunk = src~charIn(,src~chars)
 
@@ -342,4 +337,35 @@
 
   Say time() whichdoc "source files are ready (with highlighting)."
 
-::requires doc_props.rex
+/******************************************************************************/
+/* CollectXmlFiles - Recursively collect .xml files under a work folder       */
+/* =====================================================                      */
+/*                                                                            */
+/* docprep lays the work folder out with the book components at the top       */
+/* level and the Common_Content in a subdirectory.  A flat scan with          */
+/* listFiles never descends into that subdirectory, so its listings (e.g.     */
+/* Common_Content's Conventions.xml) are never highlighted, however they      */
+/* are marked.  This routine walks the tree depth-first and returns an        */
+/* array of .File objects for every .xml file found, at any depth.            */
+/******************************************************************************/
+
+::Routine CollectXmlFiles
+  Use Strict Arg aDir
+
+  collected = .Array~new
+
+  Loop entry Over aDir~listFiles
+    If entry~isDirectory Then Do
+      -- Recurse into subdirectories and append their .xml files
+      subFiles = CollectXmlFiles(entry)
+      Loop subFile Over subFiles
+        collected~append(subFile)
+      End
+    End
+    Else If entry~extension~upper == "XML" Then
+      collected~append(entry)
+  End
+
+Return collected
+
+::requires "doc_props.rex"

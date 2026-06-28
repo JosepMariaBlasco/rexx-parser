@@ -81,7 +81,7 @@
         Parse Var args rrWar args
         If rrWar = "" Then Do
          .error~say(myName": --rr requires a path argument.")
-          Exit 1
+          Exit 2
         End
       End
       When "--help", "-h" Then Signal Help
@@ -101,7 +101,7 @@
   ebnfFile = ebnfFile~strip
   If \SysFileExists(ebnfFile) Then Do
    .error~say(myName": EBNF file '"ebnfFile"' not found.")
-    Exit 1
+    Exit 3
   End
 
   qualifiedEbnf = Qualify(ebnfFile)
@@ -118,7 +118,7 @@
     .error~say(myName": rr.war not found: '"rrWar"'.")
     .error~say(myName": Use --rr to specify" -
       "the path, or place rr.war next to" myName || ".")
-    Exit 1
+    Exit 4
   End
 
 /*-- Check that Java is available ------------------------------------------*/
@@ -129,7 +129,7 @@
   If rc \= 0 Then Do
     .error~say(myName": Java not found." -
       "Please install Java 11+ and add it to the PATH.")
-    Exit 1
+    Exit 5
   End
 
 /*-- Run rr.war to generate the XHTML with embedded SVGs -------------------*/
@@ -138,7 +138,7 @@
   xhtmlFile = SysTempFilename(ebnfDir"ebnf2svg_temp_????.xhtml")
   If xhtmlFile == "" Then Do
    .error~say(myName": Could not create temporary filename in '"ebnfDir"'.")
-    Exit 1
+    Exit 6
   End
 
   /* Fixed options:                                   */
@@ -160,13 +160,13 @@
      .error~say("  " line)
     End
     Call Cleanup
-    Exit 1
+    Exit 7
   End
 
   If \SysFileExists(xhtmlFile) Then Do
-   .error~say(myName": rr.war did not produce utput file '"xhtmlFile"'.")
+   .error~say(myName": rr.war did not produce output file '"xhtmlFile"'.")
     Call Cleanup
-    Exit 1
+    Exit 8
   End
 
   Say myName": Generated XHTML with embedded SVGs."

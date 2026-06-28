@@ -139,6 +139,8 @@ Crumb:
   tutor        = "/TUTOR"
   tutordocs    = "/TUTOR/doc"
 
+  skills       = "/skills"
+
   publications = "/publications"
 
   parser       = "/rexx-parser"
@@ -157,6 +159,18 @@ Crumb:
   docpub       = doc"/publications"
 
   Select Case Arg(1)
+
+    -- skills
+
+    When skills                    Then Return "Rexx skills"
+    When skills"/oorexx.md"        Then Return "Writing ooRexx programs"
+    When skills"/oorexx-run.md"    Then Return "Running ooRexx"
+    When skills"/regina-run.md"    Then Return "Running Regina"
+    When skills"/rexxhttp.md"      Then Return "RexxHTTP"
+    When skills"/ebnf2svg.md"      Then Return "EBNF to SVG converter"
+    When skills"/apache-cgi-oorexx.md" Then Return "Apache + CGI with ooRexx"
+    When skills"/apache-cgi-regina.md" Then Return "Apache + CGI with Regina"
+    When skills"/oorexx-docbook-build.md" Then Return "Building ooRexx official docs with highlighting"
 
     -- RexxHTPP
 

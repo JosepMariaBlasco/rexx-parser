@@ -327,6 +327,23 @@ Syntax:
     If WordPos(val, "detailed block") > 0 Then Options.doccomments = val
   End
 
+  -- Map the optional dialect= attribute to the Highlighter dialect flags.
+  -- Accepted values (case-insensitive), mapped to the parser dialects:
+  --   executor               -> Executor
+  --   cms, rexxvm            -> CMS (Classic Rexx / Rexx VM)
+  --   tutor, unicode         -> TUTOR-flavored Unicode
+  --   experimental           -> experimental features
+  -- Anything else is ignored, leaving standard ooRexx highlighting.
+  If attrs~hasIndex("DIALECT") Then Do
+    Select Case Lower(attrs~at("DIALECT"))
+      When "executor"            Then Options.executor     = 1
+      When "cms", "rexxvm"       Then Options.cms          = 1
+      When "tutor", "unicode"    Then Options.unicode      = 1
+      When "experimental"        Then Options.experimental = 1
+      Otherwise Nop
+    End
+  End
+
   Return options.
 
 /******************************************************************************/
