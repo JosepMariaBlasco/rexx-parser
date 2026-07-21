@@ -50,8 +50,10 @@
   tree               = 1
   itrace             = 0
   executor           = 0
+  cls                = 1
   cms                = 0
   SysFileTreeOptions = "FSO"
+  start              = 0
 
   If args~items == 0 Then Signal Help
 
@@ -61,20 +63,22 @@ ProcessOptions:
     option = args[1]
     args~delete(1)
 
-    If Lower(option) == "start", args~items == 0 Then Leave
-
     Select Case Lower(option)
-      When "--help",               "-h" Then Signal Help
-      When "--itrace",            "-it" Then itrace = 1
-      When "--executor",         "-xtr" Then executor  = 1
+      When "start"                         Then start     = 1
+      When "--help",               "-h"    Then Signal Help
+      When "--itrace",            "-it"    Then itrace    = 1
+      When "--executor",         "-xtr"    Then executor  = 1
+      When "--nocls",             "-nc"    Then cls       = 0
       When "--cms",              "-cms",   -
            "--rexxvm",           "-rexxvm" Then cms       = 1
-      When "--noelements",        "-ne" Then elements  = 0
-      When "--notree",            "-nt" Then tree      = 0
+      When "--noelements",        "-ne"    Then elements  = 0
+      When "--notree",            "-nt"    Then tree      = 0
       Otherwise Call Error "Invalid option '"option"'."
     End
 
   End
+
+  If \start Then Signal Help
 
   option = ""
   If Executor Then option = option "-xtr"
@@ -83,7 +87,9 @@ ProcessOptions:
 
   cd = Directory()~changeStr("\","/")
 
-  extensions = "cls rex testgroup jrexx oodTestGroup rxj rxo testUnit rxu"
+  extensions = "rex testgroup jrexx oodTestGroup rxj rxo testUnit rxu"
+
+  If cls Then extensions = "cls" extensions
 
   exception. = 0
 

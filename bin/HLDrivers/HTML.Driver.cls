@@ -19,6 +19,7 @@
 /* 20250328    0.2  Main dir is now rexx-parser instead of rexx[.]parser      */
 /* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /* 20260310    0.5  Implement captions                                        */
+/* 20260709    0.6  Mark explicit styles (for RexxHTTP)                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -48,12 +49,19 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
     captionAttr = ' data-caption="'Options.["CAPTION"]'"'
   Else captionAttr = ""
 
+  /* Mark blocks whose style the author fixed via style=, so a downstream    */
+  /* client-side style chooser can leave them alone (it only restyles        */
+  /* blocks that did not declare a style).                                   */
+  If Options.["STYLE-EXPLICIT"] = 1
+    Then lockAttr = ' data-rexx-style-locked'
+    Else lockAttr = ""
+
   -- No patch? A simple div will do.
   If patch == .Nil Then Do
-    self~Say( '<div class="highlight-rexx-'style'"'captionAttr'>' )
+    self~Say( '<div class="highlight-rexx-'style'"'captionAttr''lockAttr'>' )
   End
   Else If patch~getpatch[!Tag2Attr]~isEmpty Then Do
-    self~Say( '<div class="highlight-rexx-'style'"'captionAttr'>' )
+    self~Say( '<div class="highlight-rexx-'style'"'captionAttr''lockAttr'>' )
   End
   -- We have a patch. We will emit an inline style, indexed to our
   -- unique ID. This does not validate, but it works with all major
@@ -62,7 +70,7 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
   Else Do
 
     id = Options.!UniqueID
-    self~Say( '<div id="rx'id'" class="highlight-rexx-'style'"'captionAttr'>' )
+    self~Say( '<div id="rx'id'" class="highlight-rexx-'style'"'captionAttr''lockAttr'>' )
     patch.    = patch~getpatch
     Tag2Attr. = patch.!Tag2Attr
     constant  = .EL.TAKEN_CONSTANT

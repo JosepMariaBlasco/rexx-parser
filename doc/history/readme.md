@@ -12,6 +12,8 @@ Version history
 <ul>
   <li> Jump release level to mark addition of support for Rexx/VM.
   <li> Implement a fine-grained feature system (20260601).
+  <li> (RexxHTTP) Mark explicit styles (20260709).
+  <li> Fix some errors in the LaTeX driver (20260714).
 <tr><td>20260303<td>0.5<td>
 <ul>
   <li> Jump release level to mark start of RexxPub.

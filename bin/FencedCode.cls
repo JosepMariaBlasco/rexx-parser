@@ -33,6 +33,7 @@
 /* 20260310    0.5  Add support for captions                                  */
 /* 20260521         Add support for CMS                                       */
 /* 20260522         Accept "rexxvm" as an alias for the "cms" attribute       */
+/* 20260709    0.6  Mark explicit styles (for RexxHTTP)                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -334,7 +335,10 @@ MissingEndMarker:
         When "numberwidth"  Then Options.numberwidth  = Integer(value,2,5)
         When "patchfile"    Then Options.patchfile    = value
         When "patch"        Then Options.patch        = value
-        When "style"        Then Options.style        = value
+        When "style"        Then Do
+          Options.style              = value
+          Options.["STYLE-EXPLICIT"] = 1  -- author asked for this style
+        End
         When "size"         Then Options.size         = value
         When "caption"      Then Options.["CAPTION"]  = value
         When "doccomments"  Then

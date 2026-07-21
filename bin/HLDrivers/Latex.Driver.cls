@@ -75,13 +75,15 @@ If \.environment~hasIndex( LaTeX.Highlighter ) Then
 
   Parse Value self~CachedCSS(style, "rexx") With ":"background
 
-  If background \== "" Then
+  If background \== "" Then Do
+    If background~length == 8, background~verify("0123456789abcdefABCDEF") == 0 Then
+      background = background~left(6)
     envoptions ||= ",backgroundcolor={\color[HTML]{"background"}}"
+  End
 
   self~say(               -
     "\begin{lstlisting}[" -
       "style=rexx,"       -
-      "frame=single,"     -
       "escapechar=!,"     -
       envOptions          -
     "]")
@@ -124,17 +126,21 @@ Color2RGB: -- hhhhhh --> r,g,b
   If italic            Then string = "\textit{"string"}"
   If underline         Then string = "\underline{"string"}"
 
-  If patchColor \== "" Then
-    string = "\textcolor[HTML]{"patchColor"}{"string"}"
+  -- Patch color wins if present; otherwise fall back to the style color
+  -- already computed by tags2highlight (previously this branch discarded it).
+  If patchColor \== "" Then color = patchColor
   Else Do
-    color = ""
     Do tag Over tags~makeArray(" ")
       Parse Value Tag2Attr.tag With . . . fg":"
       If fg \== "" Then color = fg
     End
-    If color \== ""    Then
-      string = "\textcolor[HTML]{"color"}{"string"}"
   End
+  -- xcolor's [HTML] model wants 6 hex digits; the style may carry an
+  -- 8-digit RGBA value. Drop the alpha channel.
+  If color~length == 8, color~verify("0123456789abcdefABCDEF") == 0 Then
+    color = color~left(6)
+  If color \== "" Then
+    string = "\textcolor[HTML]{"color"}{"string"}"
 
   If patchBackground \== "" Then
     string = "\highLight[{[HTML]{"patchBackground"}}]{"string"}"

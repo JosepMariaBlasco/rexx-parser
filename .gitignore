@@ -1,6 +1,3 @@
 pack.rex
-doc/print/
-*.war
-*.deb
 *.zip
-*.gz
+bin/tree.rex
