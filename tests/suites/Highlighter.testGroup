@@ -781,23 +781,29 @@ Else
   self~assertTrue(res~isA(.Array), -
     "DocBook basic: returns an array")
 
-::Method test_docbook_basic_has_rexx_kw
+::Method test_docbook_basic_has_phrase
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hello"'), options.)
-  self~assertTrue(flat~pos("<rexx_print_kw>") > 0, -
-    "DocBook basic: contains <rexx_print_kw> element")
+  self~assertTrue(flat~pos('<phrase role="rx-kw">') > 0, -
+    "DocBook basic: contains <phrase role=""rx-kw"">")
 
 ::Method test_docbook_basic_has_closing_tag
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hello"'), options.)
-  self~assertTrue(flat~pos("</rexx_print_kw>") > 0, -
-    "DocBook basic: contains </rexx_print_kw> closing tag")
+  self~assertTrue(flat~pos("</phrase>") > 0, -
+    "DocBook basic: contains </phrase> closing tag")
 
 ::Method test_docbook_basic_kw_content
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hello"'), options.)
-  self~assertTrue(flat~pos("<rexx_print_kw>Say</rexx_print_kw>") > 0, -
+  self~assertTrue(flat~pos('<phrase role="rx-kw">Say</phrase>') > 0, -
     "DocBook basic: keyword Say wrapped correctly")
+
+::Method test_docbook_basic_no_custom_elements
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('Say "Hello"'), options.)
+  self~assertTrue(flat~pos("<rexx_") == 0, -
+    "DocBook basic: no custom rexx_* elements are emitted")
 
 ::Method test_docbook_basic_no_html_div
   options. = self~docbookOptions
@@ -818,74 +824,87 @@ Else
     "DocBook basic: no ANSI escape sequences")
 
 /******************************************************************************/
-/* DocBook: element naming                                                    */
+/* DocBook: role naming                                                       */
+/*                                                                            */
+/* The role carries the highlighter's CSS class string verbatim -- the same   */
+/* string the HTML driver puts in class= -- so these tests double as a check  */
+/* that the two drivers stay in step.                                         */
 /******************************************************************************/
 
-::Method test_docbook_element_comment
+::Method test_docbook_role_comment
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('/* comment */'), options.)
-  self~assertTrue(flat~pos("<rexx_print_cm>") > 0, -
-    "DocBook naming: comment uses <rexx_print_cm>")
+  self~assertTrue(flat~pos('<phrase role="rx-cm">') > 0, -
+    "DocBook naming: comment uses role rx-cm")
 
-::Method test_docbook_element_variable
+::Method test_docbook_role_variable
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('x = 1'), options.)
-  self~assertTrue(flat~pos("<rexx_print_var>x</rexx_print_var>") > 0, -
-    "DocBook naming: variable uses <rexx_print_var>")
+  self~assertTrue(flat~pos('<phrase role="rx-var">x</phrase>') > 0, -
+    "DocBook naming: variable uses role rx-var")
 
-::Method test_docbook_element_assignment
+::Method test_docbook_role_assignment
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('x = 1'), options.)
-  self~assertTrue(flat~pos("<rexx_print_asg>=</rexx_print_asg>") > 0, -
-    "DocBook naming: assignment uses <rexx_print_asg>")
+  self~assertTrue(flat~pos('<phrase role="rx-asg">=</phrase>') > 0, -
+    "DocBook naming: assignment uses role rx-asg")
 
-::Method test_docbook_element_operator
+::Method test_docbook_role_operator
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('x = 1 + 2'), options.)
-  self~assertTrue(flat~pos("<rexx_print_op>+</rexx_print_op>") > 0, -
-    "DocBook naming: operator uses <rexx_print_op>")
+  self~assertTrue(flat~pos('<phrase role="rx-op">+</phrase>') > 0, -
+    "DocBook naming: operator uses role rx-op")
 
-::Method test_docbook_element_string
+::Method test_docbook_role_string
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("<rexx_print_str>Hi</rexx_print_str>") > 0, -
-    "DocBook naming: string content uses <rexx_print_str>")
+  self~assertTrue(flat~pos('<phrase role="rx-str">Hi</phrase>') > 0, -
+    "DocBook naming: string content uses role rx-str")
 
-::Method test_docbook_element_string_oquo
+::Method test_docbook_role_string_oquo
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("<rexx_print_str_oquo>") > 0, -
-    "DocBook naming: opening quote uses <rexx_print_str_oquo>")
+  self~assertTrue(flat~pos('<phrase role="rx-str rx-oquo">') > 0, -
+    "DocBook naming: opening quote uses role rx-str rx-oquo")
 
-::Method test_docbook_element_string_cquo
+::Method test_docbook_role_string_cquo
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("<rexx_print_str_cquo>") > 0, -
-    "DocBook naming: closing quote uses <rexx_print_str_cquo>")
+  self~assertTrue(flat~pos('<phrase role="rx-str rx-cquo">') > 0, -
+    "DocBook naming: closing quote uses role rx-str rx-cquo")
 
-::Method test_docbook_element_line_comment
+::Method test_docbook_role_line_comment
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Nop -- comment'), options.)
-  self~assertTrue(flat~pos("<rexx_print_lncm>") > 0, -
-    "DocBook naming: line comment uses <rexx_print_lncm>")
+  self~assertTrue(flat~pos('<phrase role="rx-lncm">') > 0, -
+    "DocBook naming: line comment uses role rx-lncm")
 
-::Method test_docbook_element_directive
+::Method test_docbook_role_directive
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('::Method test'), options.)
-  self~assertTrue(flat~pos("<rexx_print_dir>") > 0, -
-    "DocBook naming: directive marker uses <rexx_print_dir>")
+  self~assertTrue(flat~pos('<phrase role="rx-dir">') > 0, -
+    "DocBook naming: directive marker uses role rx-dir")
 
-::Method test_docbook_element_directive_keyword
+::Method test_docbook_role_directive_keyword
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('::Method test'), options.)
-  self~assertTrue(flat~pos("<rexx_print_dkw>Method</rexx_print_dkw>") > 0, -
-    "DocBook naming: directive keyword uses <rexx_print_dkw>")
+  self~assertTrue(flat~pos('<phrase role="rx-dkw">Method</phrase>') > 0, -
+    "DocBook naming: directive keyword uses role rx-dkw")
 
-::Method test_docbook_element_multi_class
+::Method test_docbook_role_multi_class
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('x = 1 + 2'), options.)
-  self~assertTrue(flat~pos("<rexx_print_int_ipart>") > 0, -
-    "DocBook naming: multi-class integer part uses <rexx_print_int_ipart>")
+  self~assertTrue(flat~pos('<phrase role="rx-int rx-ipart">') > 0, -
+    "DocBook naming: multi-class integer part keeps both classes")
+
+::Method test_docbook_role_multi_class_is_space_separated
+  -- The multi-class role must stay a blank-separated list, because that
+  -- is what becomes class="rx-int rx-ipart" in HTML.  Joining the
+  -- classes with anything else would silently break the CSS.
+  options. = self~docbookOptions
+  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
+  self~assertTrue(flat~pos('rx-int_ipart') == 0, -
+    "DocBook naming: classes are not joined with underscores")
 
 /******************************************************************************/
 /* DocBook: whitespace handling                                               */
@@ -894,13 +913,13 @@ Else
 ::Method test_docbook_ws_no_element
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("<rexx_print_ws>") == 0, -
-    "DocBook whitespace: no <rexx_print_ws> elements")
+  self~assertTrue(flat~pos('role="rx-ws"') == 0, -
+    "DocBook whitespace: no rx-ws phrases")
 
 ::Method test_docbook_ws_preserved
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("</rexx_print_kw> <rexx_print_str_oquo>") > 0, -
+  self~assertTrue(flat~pos('</phrase> <phrase role="rx-str rx-oquo">') > 0, -
     "DocBook whitespace: space preserved between elements")
 
 /******************************************************************************/
@@ -910,13 +929,13 @@ Else
 ::Method test_docbook_continuation_has_element
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say 1 + -', '  2'), options.)
-  self~assertTrue(flat~pos("<rexx_print_cont>") > 0, -
-    "DocBook continuation: wrapped in <rexx_print_cont> element")
+  self~assertTrue(flat~pos('<phrase role="rx-cont">') > 0, -
+    "DocBook continuation: wrapped in an rx-cont phrase")
 
 ::Method test_docbook_continuation_content
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say 1 + -', '  2'), options.)
-  self~assertTrue(flat~pos("<rexx_print_cont>-</rexx_print_cont>") > 0, -
+  self~assertTrue(flat~pos('<phrase role="rx-cont">-</phrase>') > 0, -
     "DocBook continuation: contains dash")
 
 /******************************************************************************/
@@ -964,18 +983,18 @@ Else
 ::Method test_docbook_xml_all_tags_closed
   options. = self~docbookOptions
   flat = self~highlight(.Array~of('Say "Hello"', 'x = 1 + 2'), options.)
-  -- Count opening and closing rexx_ tags
+  -- Count opening and closing phrase tags
   opens  = 0
   closes = 0
   work = flat
-  Do While work~pos("<rexx_") > 0
-    p = work~pos("<rexx_")
+  Do While work~pos("<phrase ") > 0
+    p = work~pos("<phrase ")
     work = work~substr(p + 1)
     opens += 1
   End
   work = flat
-  Do While work~pos("</rexx_") > 0
-    p = work~pos("</rexx_")
+  Do While work~pos("</phrase>") > 0
+    p = work~pos("</phrase>")
     work = work~substr(p + 1)
     closes += 1
   End
@@ -991,7 +1010,14 @@ Else
     "DocBook multiline: produces multiple output lines")
 
 /******************************************************************************/
-/* DocBook: multi-style support                                               */
+/* DocBook: style independence                                                */
+/*                                                                            */
+/* The token markup must be identical whatever style is in effect: the style  */
+/* is carried by the container, never by the tokens.  This is what lets one   */
+/* highlighted document be restyled -- by CSS in HTML, by the generated       */
+/* templates in FO -- without parsing the source again, and it is what makes  */
+/* a client-side style chooser possible at all.  These tests exist to keep    */
+/* that property from being lost by accident.                                 */
 /******************************************************************************/
 
 ::Method docbookOptionsWithStyle Private
@@ -1001,76 +1027,50 @@ Else
   options.style = styleName
   Return options.
 
-::Method test_docbook_style_dark_kw
-  options. = self~docbookOptionsWithStyle("dark")
-  flat = self~highlight(.Array~of('Say "Hello"'), options.)
-  self~assertTrue(flat~pos("<rexx_dark_kw>Say</rexx_dark_kw>") > 0, -
-    "DocBook dark style: keyword uses <rexx_dark_kw>")
+::Method test_docbook_style_independent_simple
+  src = .Array~of('Say "Hello"')
+  a = self~highlight(src, self~docbookOptionsWithStyle("print"))
+  b = self~highlight(src, self~docbookOptionsWithStyle("dark"))
+  self~assertEquals(a, b, -
+    "DocBook style independence: print and dark give identical markup")
 
-::Method test_docbook_style_dark_no_print
-  options. = self~docbookOptionsWithStyle("dark")
-  flat = self~highlight(.Array~of('Say "Hello"'), options.)
-  self~assertTrue(flat~pos("<rexx_print_") == 0, -
-    "DocBook dark style: no rexx_print_ elements")
+::Method test_docbook_style_independent_rich
+  src = .Array~of('/* comment */', 'Say "Hello" -- hi', 'x = 1 + 2.5e3', -
+                  '::Method m', 'Nop')
+  a = self~highlight(src, self~docbookOptionsWithStyle("print"))
+  b = self~highlight(src, self~docbookOptionsWithStyle("tokio-night"))
+  self~assertEquals(a, b, -
+    "DocBook style independence: holds over a mix of token kinds")
 
-::Method test_docbook_style_dark_var
-  options. = self~docbookOptionsWithStyle("dark")
-  flat = self~highlight(.Array~of('x = 1'), options.)
-  self~assertTrue(flat~pos("<rexx_dark_var>x</rexx_dark_var>") > 0, -
-    "DocBook dark style: variable uses <rexx_dark_var>")
+::Method test_docbook_style_independent_three_way
+  src = .Array~of('x = 1 + 2')
+  a = self~highlight(src, self~docbookOptionsWithStyle("print"))
+  b = self~highlight(src, self~docbookOptionsWithStyle("light"))
+  c = self~highlight(src, self~docbookOptionsWithStyle("vim-dark-blue"))
+  self~assertTrue(a == b & b == c, -
+    "DocBook style independence: holds across three different styles")
 
-::Method test_docbook_style_dark_str
-  options. = self~docbookOptionsWithStyle("dark")
-  flat = self~highlight(.Array~of('Say "Hi"'), options.)
-  self~assertTrue(flat~pos("<rexx_dark_str>Hi</rexx_dark_str>") > 0, -
-    "DocBook dark style: string uses <rexx_dark_str>")
+::Method test_docbook_style_name_absent_from_tokens
+  flat = self~highlight(.Array~of('Say "Hello"'), -
+    self~docbookOptionsWithStyle("tokio-night"))
+  self~assertTrue(flat~pos("tokio") == 0, -
+    "DocBook style independence: the style name never reaches the tokens")
 
-::Method test_docbook_style_dark_comment
-  options. = self~docbookOptionsWithStyle("dark")
-  flat = self~highlight(.Array~of('/* comment */'), options.)
-  self~assertTrue(flat~pos("<rexx_dark_cm>") > 0, -
-    "DocBook dark style: comment uses <rexx_dark_cm>")
-
-::Method test_docbook_style_dark_op
-  options. = self~docbookOptionsWithStyle("dark")
-  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
-  self~assertTrue(flat~pos("<rexx_dark_op>+</rexx_dark_op>") > 0, -
-    "DocBook dark style: operator uses <rexx_dark_op>")
-
-::Method test_docbook_style_dark_multi_class
-  options. = self~docbookOptionsWithStyle("dark")
-  flat = self~highlight(.Array~of('x = 1 + 2'), options.)
-  self~assertTrue(flat~pos("<rexx_dark_int_ipart>") > 0, -
-    "DocBook dark style: multi-class uses <rexx_dark_int_ipart>")
-
-::Method test_docbook_style_dark_tags_closed
-  options. = self~docbookOptionsWithStyle("dark")
-  flat = self~highlight(.Array~of('Say "Hello"', 'x = 1 + 2'), options.)
-  opens  = 0
-  closes = 0
-  work = flat
-  Do While work~pos("<rexx_dark_") > 0
-    p = work~pos("<rexx_dark_")
-    work = work~substr(p + 1)
-    opens += 1
-  End
-  work = flat
-  Do While work~pos("</rexx_dark_") > 0
-    p = work~pos("</rexx_dark_")
-    work = work~substr(p + 1)
-    closes += 1
-  End
-  self~assertEquals(opens, closes, -
-    "DocBook dark style: all opening tags have matching closing tags")
-
-::Method test_docbook_style_custom_name
-  options. = self~docbookOptionsWithStyle("tokio-night")
-  flat = self~highlight(.Array~of('Say "Hello"'), options.)
-  self~assertTrue(flat~pos("<rexx_tokio_night_kw>Say</rexx_tokio_night_kw>") > 0, -
-    "DocBook custom style: hyphenated style name converted to underscores")
+::Method test_docbook_style_hyphens_not_mangled
+  -- A hyphenated style name used to be rewritten with underscores when it
+  -- was baked into element names.  Nothing should be rewriting it now,
+  -- because it no longer appears in the token markup at all.
+  flat = self~highlight(.Array~of('Say "Hello"'), -
+    self~docbookOptionsWithStyle("vim-dark-blue"))
+  self~assertTrue(flat~pos("vim_dark_blue") == 0, -
+    "DocBook style independence: no underscore-mangled style names")
 
 /******************************************************************************/
-/* ProcessProgramListings: wrapper element                                    */
+/* ProcessProgramListings: the container                                      */
+/*                                                                            */
+/* The style lives on the listing, as role="highlight-rexx-<style>" -- the    */
+/* same class the HTML driver puts on its wrapper div, so that one set of     */
+/* CSS files serves both paths.                                               */
 /******************************************************************************/
 
 ::Method processXML Private
@@ -1080,66 +1080,117 @@ Else
   Call ProcessProgramListings "test.xml", lines, defaultStyle
   Return lines
 
-::Method test_ppl_wrapper_present
+::Method test_ppl_container_role_present
   lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
   self~processXML(lines)
-  self~assertTrue(lines[1]~pos("<rexx_style_print>") > 0, -
-    "PPL wrapper: rexx_style_print present")
+  self~assertTrue(lines[1]~pos('role="highlight-rexx-print"') > 0, -
+    "PPL container: role highlight-rexx-print present")
 
-::Method test_ppl_wrapper_closing
+::Method test_ppl_container_no_wrapper_element
   lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
   self~processXML(lines)
-  self~assertTrue(lines[1]~pos("</rexx_style_print>") > 0, -
-    "PPL wrapper: closing rexx_style_print present")
+  self~assertTrue(lines[1]~pos("<rexx_style_") == 0, -
+    "PPL container: no rexx_style_* wrapper element")
 
-::Method test_ppl_wrapper_wraps_content
+::Method test_ppl_container_tokens_inside_listing
   lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
   self~processXML(lines)
-  flat = lines[1]
-  openPos  = flat~pos("<rexx_style_print>")
-  closePos = flat~pos("</rexx_style_print>")
-  tokenPos = flat~pos("<rexx_print_kw>")
+  flat     = lines[1]
+  openPos  = flat~pos("<programlisting")
+  closePos = flat~pos("</programlisting>")
+  tokenPos = flat~pos('<phrase role="rx-kw">')
   self~assertTrue(openPos > 0 & tokenPos > openPos & closePos > tokenPos, -
-    "PPL wrapper: tokens are inside wrapper element")
+    "PPL container: tokens sit inside the programlisting")
 
-::Method test_ppl_wrapper_dark_style
+::Method test_ppl_container_default_style
   lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
   self~processXML(lines, "dark")
-  self~assertTrue(lines[1]~pos("<rexx_style_dark>") > 0, -
-    "PPL wrapper: rexx_style_dark when default style is dark")
+  self~assertTrue(lines[1]~pos('role="highlight-rexx-dark"') > 0, -
+    "PPL container: default style reaches the container role")
 
-::Method test_ppl_wrapper_hl_style_override
+::Method test_ppl_container_hl_style_override
   lines = .Array~of('<programlisting language="rexx" hl-style="dark">Say "Hi"</programlisting>')
   self~processXML(lines)
-  self~assertTrue(lines[1]~pos("<rexx_style_dark>") > 0, -
-    "PPL wrapper: hl-style overrides default style")
+  self~assertTrue(lines[1]~pos("highlight-rexx-dark") > 0, -
+    "PPL container: hl-style overrides the default style")
 
-::Method test_ppl_wrapper_hyphenated_style
+::Method test_ppl_container_hl_style_locks
+  -- A listing that names its own style is pinned: a client-side style
+  -- chooser must leave it alone.
+  lines = .Array~of('<programlisting language="rexx" hl-style="dark">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~pos("rexx-style-locked") > 0, -
+    "PPL container: an explicit hl-style marks the listing as locked")
+
+::Method test_ppl_container_default_does_not_lock
+  lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~pos("rexx-style-locked") == 0, -
+    "PPL container: a listing using the default style is not locked")
+
+::Method test_ppl_container_hyphenated_style
   lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
   self~processXML(lines, "tokio-night")
-  self~assertTrue(lines[1]~pos("<rexx_style_tokio_night>") > 0, -
-    "PPL wrapper: hyphens converted to underscores")
+  self~assertTrue(lines[1]~pos('role="highlight-rexx-tokio-night"') > 0, -
+    "PPL container: hyphenated style names are kept verbatim")
 
-::Method test_ppl_wrapper_no_leading_newline
+::Method test_ppl_container_preserves_author_role
+  lines = .Array~of('<programlisting language="rexx" role="wide">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~pos('role="wide highlight-rexx-print"') > 0, -
+    "PPL container: an author's own role is preserved ahead of ours")
+
+::Method test_ppl_container_single_role_attribute
+  -- Adding our token must not leave two role= attributes behind, which
+  -- would not be well-formed XML.
+  lines = .Array~of('<programlisting language="rexx" role="wide">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  count = 0
+  work  = lines[1]
+  Do While work~pos("role=") > 0
+    p = work~pos("role=")
+    work = work~substr(p + 1)
+    count += 1
+  End
+  -- one on the listing, plus one per phrase; what matters is that the
+  -- listing itself did not end up with two
+  self~assertTrue(lines[1]~pos('role="wide"') == 0, -
+    "PPL container: the original role attribute is not left behind")
+
+::Method test_ppl_container_language_preserved
+  lines = .Array~of('<programlisting language="rexx">Say "Hi"</programlisting>')
+  self~processXML(lines)
+  self~assertTrue(lines[1]~pos('language="rexx"') > 0, -
+    "PPL container: the language attribute is preserved")
+
+::Method test_ppl_container_no_leading_newline
   lines = .Array~of( -
     '<programlisting language="rexx">', -
     'Say "Hi"', -
     '</programlisting>')
   self~processXML(lines)
   flat = lines[1]
-  wrapperPos = flat~pos("<rexx_style_print>")
-  charAfter = flat~substr(wrapperPos + 18, 1)
+  tagEnd = flat~pos('">') + 1
+  charAfter = flat~substr(tagEnd + 1, 1)
   self~assertTrue(charAfter \== "0a"x, -
-    "PPL wrapper: no leading newline after opening wrapper tag")
+    "PPL container: no leading newline after the opening tag")
 
-::Method test_ppl_wrapper_multiline_collapsed
+::Method test_ppl_container_multiline_collapsed
   lines = .Array~of( -
     '<programlisting language="rexx">', -
     'Say "Hi"', -
     '</programlisting>')
   self~processXML(lines)
   self~assertEquals(1, lines~items, -
-    "PPL wrapper: multiline block collapsed to single line")
+    "PPL container: multiline block collapsed to single line")
+
+::Method test_ppl_untouched_without_language
+  lines = .Array~of('<programlisting>Say "Hi"</programlisting>')
+  before = lines[1]
+  self~processXML(lines)
+  self~assertEquals(before, lines[1], -
+    "PPL container: a listing without language=rexx is left alone")
+
 
 ::Method test_ppl_tail_preserved_single_line
   lines = .Array~of( -
@@ -1169,7 +1220,7 @@ Else
   lines = .Array~of( -
     '<programlisting language="rexx">#!/usr/bin/env rexx</programlisting>')
   self~processXML(lines)
-  self~assertTrue(lines[1]~pos("<rexx_style_print>") > 0, -
+  self~assertTrue(lines[1]~pos('role="highlight-rexx-print"') > 0, -
     "PPL shebang: inline shebang highlights successfully")
 
 ::Method test_ppl_shebang_newline_fails
@@ -1179,7 +1230,7 @@ Else
     '#!/usr/bin/env rexx', -
     '</programlisting>')
   self~processXML(lines)
-  -- Block should be left unchanged (no wrapper element)
+  -- Block should be left unchanged (no container role added)
   self~assertTrue(lines~items > 1, -
     "PPL shebang: multiline shebang left unchanged on failure")
 

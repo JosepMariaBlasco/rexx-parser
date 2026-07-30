@@ -101,33 +101,47 @@
   myDir = FileSpec("Location",.context~package~name)
   Call SysFileTree myDir"../css/*.css",F.,"FO"
 
+  --------------------------------------------------------------------------
+  -- The style chooser.  Every sheet the Parser ships becomes an option.    --
+  -- "rexx-test<N>.css" are development fixtures rather than styles, and    --
+  -- are skipped here by the same rule hldocprep and hldoc2HTML use, so     --
+  -- this chooser and the DocBook one always offer the same list.          --
+  --                                                                        --
+  -- The bar ships hidden: style-chooser.js reveals it, and only on pages   --
+  -- that really do have highlighted blocks to restyle.                     --
+  --------------------------------------------------------------------------
+
+  defaultStyle = "dark"   -- Keep in step with the default in CGI.markdown.rex
+
   array = .Array~new
   Do i = 1 To F.0
     name = FileSpec("Name", F.i)
     Parse Var name "rexx-"name".css"
-    If name == "" | name == "dark" | name == "test1" Then Iterate
-    array~append('<option value="'name'">'name'</option>')
+    If name == ""                        Then Iterate
+    If name~caselessStartsWith("test")   Then Iterate   -- dev-only fixture
+    If name == defaultStyle Then selected = ' selected="selected"'
+                            Else selected = ""
+    array~append(pad'      <option value="'name'"'selected'>'name'</option>')
   End
 
-  name = FileSpec("Name",file)
-
-  Say pad'<form class="form-inline screenonly">'
+  Say pad'<form class="form-inline screenonly code-style-bar" hidden="hidden">'
   Say pad'  <div class="form-group">'
-  Say pad'    <label for="style-chooser" style="margin-right: 10px;">'
+  Say pad'    <label for="rexx-style-chooser" style="margin-right: 10px;">'
   Say pad'      <span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Style'
   Say pad'    </label>'
-  Say pad'    <select class="form-control" id="style-chooser" style="width: auto; display: inline-block;">'
-  Say pad'      <option value="dark">Default (dark)</option>'
+  Say pad'    <select class="form-control" id="rexx-style-chooser"'          -
+      'data-rexx-default-style="'defaultStyle'"'                             -
+      'style="width: auto; display: inline-block;">'
   Say array
   Say pad'    </select>'
   Say pad'  </div>'
-If filenameSpecificStyle~caselessStartsWith("print/") Then Do
-  Say pad'  <div class="form-group" style="margin-left: 20px;">'
-  Say pad'    <button type="button" class="btn btn-default" id="print-button">'
-  Say pad'      <span class="glyphicon glyphicon-print" aria-hidden="true"></span> Print'
-  Say pad'    </button>'
-  Say pad'  </div>'
-End
+  If filenameSpecificStyle~caselessStartsWith("print/") Then Do
+    Say pad'  <div class="form-group" style="margin-left: 20px;">'
+    Say pad'    <button type="button" class="btn btn-default" id="print-button">'
+    Say pad'      <span class="glyphicon glyphicon-print" aria-hidden="true"></span> Print'
+    Say pad'    </button>'
+    Say pad'  </div>'
+  End
   Say pad'</form>'
 
 

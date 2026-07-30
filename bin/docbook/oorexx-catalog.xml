@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN"
+  "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">
+<!--
+  oorexx-catalog.xml - Local resolution for the ooRexx documentation build.
+
+  bldoc_orx's html.xsl and pdf.xsl import the DocBook XSL stylesheets from
+  http://cdn.docbook.org/release/xsl-nons/current/.  Debian's stock catalog
+  rewrites that prefix to docbook-xsl (the namespaced 1.79.2 sheets), which
+  still works for DocBook 4.5 input but only by way of the automatic
+  namespace-stripping pass: slower, and noisy on stderr.
+
+  The ooRexx books are DocBook 4.5, so the no-namespace sheets are the
+  correct target.  This catalog rewrites the prefix to docbook-xsl-nons,
+  which is what upstream actually asks for.
+
+  Use with:  export XML_CATALOG_FILES="/path/to/oorexx-catalog.xml /etc/xml/catalog"
+-->
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+
+  <rewriteURI
+    uriStartString="http://cdn.docbook.org/release/xsl-nons/current/"
+    rewritePrefix="file:///usr/share/xml/docbook/stylesheet/docbook-xsl-nons/"/>
+
+  <rewriteURI
+    uriStartString="http://docbook.sourceforge.net/release/xsl/current/"
+    rewritePrefix="file:///usr/share/xml/docbook/stylesheet/docbook-xsl-nons/"/>
+
+</catalog>

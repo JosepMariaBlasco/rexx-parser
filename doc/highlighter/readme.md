@@ -4,9 +4,10 @@ The Rexx Highlighter
 The **Rexx Highlighter** is a child project of [the Rexx Parser](/rexx-parser/).
 Developed around a common code base,
 it currently includes output [drivers](#drivers) for
-three modes: [HTML](html/),
-[ANSI terminals emulators](ansi/),
-and [(Lua)LaTeX](latex/).
+four modes: [HTML](html/),
+[ANSI terminal emulators](ansi/),
+[(Lua)LaTeX](latex/),
+and [DocBook](docbook/).
 
 <div class="row">
 <div class="col-sm-6">
@@ -159,9 +160,9 @@ syntactical constructs which are specified to be
 strings or symbols that are taken as a constant), it
 also assigns a [subcategory](../ref/categories/).
 
-The [HTMLClasses](HTMLClasses/) routine creates a mapping
+The [HTMLClasses](htmlclasses/) routine creates a mapping
 between element categories and subcategories and **HTML classes**.
-The mapping provided by [HTMLClasses](HTMLClasses/) is *reductive*:
+The mapping provided by [HTMLClasses](htmlclasses/) is *reductive*:
 it assigns the same HTML class to several, different,
 element categories or subcategories.
 For example, all special and operator characters
@@ -171,7 +172,7 @@ to highlight, say, parentheses and the plus sign using
 different colors. There may be cases, though (for instance,
 some teaching contexts), where such a discrimination may be
 useful or interesting. In these cases, you can write
-your own version of [HTMLClasses](HTMLClasses/) (and
+your own version of [HTMLClasses](htmlclasses/) (and
 prepare the corresponding CSS files), or simply use
 the [style patch system](../ref/classes/stylepatch/)
 and temporarily patch the highlighting styles.
@@ -182,9 +183,22 @@ and temporarily patch the highlighting styles.
 
 Actual highlighting is taken care of by [an extensible
 system of **drivers**](../ref/classes/driver/), for [HTML](html/),
-[ANSI Terminals](ansi/), and [(Lua)LaTeX](latex/).
+[ANSI Terminals](ansi/), [(Lua)LaTeX](latex/), and
+[DocBook](docbook/).
 Each driver encapsulates the specificities of
 an output format.
+
+All four drivers share one invariant: **the markup emitted for a
+token depends on the element category, never on the style**. What
+changes from one style to another is the enclosing container, and
+the stylesheet that is either directly used or [interpreted](css/) —
+never the marked-up token itself.
+
+The consequence is that a highlighted document can be restyled
+without being highlighted again. This is what lets a single
+[DocBook](docbook/) book mix several styles, and what allows the
+DocBook HTML branch to hand the reader a style chooser that works
+over static files, in the browser, with no server involved.
 
 -------------------------------
 
@@ -196,6 +210,9 @@ Documentation
   - [The HTML Highlighter](html/).
   - [The ANSI Highlighter](ansi/).
   - [The (Lua)LaTeX Highlighter](latex/).
+  - [The DocBook Highlighter](docbook/), including the toolchain
+    that adds highlighting to the official ooRexx books, in both
+    PDF and HTML.
   - [CGI installation](cgi/).
   - [Exploiting CSS Paged Media](paged-media/).
 
@@ -228,3 +245,9 @@ Utilities
 - [Highlight](../utilities/highlight/) - A
   [sample utility program](../utilities/highlight/) that
   highlights Markdown, HTML, Rexx and LaTeX files.
+- [css2xsl](../utilities/css2xsl/) - A utility program that
+  generates, from a highlighting [CSS](#css) style, the XSL
+  templates that render highlighted [DocBook](docbook/) in PDF
+  output. The HTML branch needs no generated templates: the stock
+  DocBook stylesheets already turn the emitted markup into
+  `<span>` elements carrying the highlighter's own classes.

@@ -4,16 +4,34 @@
 /* css2xsl.rex - Generate XSL templates for DocBook Rexx highlighting         */
 /* ==================================================================         */
 /*                                                                            */
-/* Reads a Rexx highlighting CSS theme (e.g. rexx-print.css) and generates    */
-/* an XSL stylesheet with fo:inline templates for all rexx_* elements.        */
-/* The generated .xsl is meant to be xsl:include'd from the pdf.xsl           */
-/* customization layer used by DocBook XSL + Apache FOP.                      */
+/* Reads a Rexx highlighting CSS style (e.g. rexx-print.css) and generates    */
+/* an XSL stylesheet with fo:inline templates for the <phrase role="rx-...">  */
+/* elements emitted by the DocBook driver.  The generated .xsl is meant to    */
+/* be xsl:include'd from the pdf.xsl customization layer used by DocBook XSL  */
+/* + Apache FOP.                                                              */
+/*                                                                            */
+/* Each template matches a token by its role, restricted to listings that     */
+/* carry this style on their container:                                       */
+/*                                                                            */
+/*   <xsl:template match="phrase[@role='rx-kw']                               */
+/*     [ancestor::programlisting                                              */
+/*        [contains(concat(' ',@role,' '),' highlight-rexx-print ')]]">       */
+/*                                                                            */
+/* That restriction is what lets one document mix several styles: the token   */
+/* markup is identical everywhere, and the container decides which set of     */
+/* templates applies.  The concat/contains idiom is the standard way to test  */
+/* for a single whitespace-separated token inside an attribute; a bare        */
+/* contains() would also match a longer style name starting with this one.    */
+/*                                                                            */
+/* Only the token templates live here.  The block background is set by the    */
+/* caller (hldocprep) in the glue file, which redefines the DocBook           */
+/* shade.verbatim.style attribute set once for all styles at once.            */
 /*                                                                            */
 /* Usage:                                                                     */
 /*   css2xsl [options] [output.xsl]                                           */
 /*                                                                            */
 /* Options:                                                                   */
-/*   -s, --style STYLE    CSS theme name (default: print)                     */
+/*   -s, --style STYLE    CSS style name (default: print)                     */
 /*       --css FILE       CSS file path (overrides --style)                   */
 /*       --operator MODE  Operator granularity: group|full|detail             */
 /*       --special MODE   Special char granularity: group|full|detail         */
@@ -22,12 +40,12 @@
 /*   -h, --help           Show this help                                      */
 /*                                                                            */
 /* Granularity modes:                                                         */
-/*   group  - All elements in a category share the generic class color.       */
-/*   detail - Each element gets its own specific color.                       */
+/*   group  - All elements in a category share the generic class colour.      */
+/*   detail - Each element gets its own specific colour.                      */
 /*   full   - Elements get both generic and specific classes (CSS cascade).   */
 /*                                                                            */
 /* Default granularity is "group" for all categories, meaning operators       */
-/* share one color, specials share one color, etc.                            */
+/* share one colour, specials share one colour, etc.                          */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -41,6 +59,9 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260401    0.5  First version                                             */
+/* 20260729    0.6  Match phrase/@role instead of rexx_STYLE_* elements.      */
+/*                  Block background moved to the glue file's                 */
+/*                  shade.verbatim.style; Tags2Element/StripPrefix removed.   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -147,7 +168,7 @@
   End
 
 /******************************************************************************/
-/* Build HTMLClasses mapping with the requested granularity                    */
+/* Build HTMLClasses mapping with the requested granularity                   */
 /******************************************************************************/
 
   hlOptions. = ""
@@ -160,19 +181,12 @@
   HTMLClass. = HTMLClasses( hlOptions. )
 
 /******************************************************************************/
-/* Collect all unique CSS class combinations from HTMLClasses                  */
+/* Collect all unique CSS class combinations from HTMLClasses                 */
 /******************************************************************************/
 
-  -- We need to collect all unique CSS class strings and, for each one,
-  -- derive the DocBook element name and look up its visual properties.
-  --
-  -- The element name is derived from the CSS classes:
-  --   - For single-class entries (e.g. "rx-kw"): rexx_kw
-  --   - For multi-class entries (e.g. "rx-op rx-add"): rexx_add
-  --     (the most specific class, i.e. the last one)
-  --   - For TAKEN_CONSTANT compound entries with 3 classes
-  --     (e.g. "rx-const rx-method rx-oquo"): rexx_method_oquo
-  --     (specific class + variant)
+  -- We need to collect all unique CSS class strings.  Each one becomes
+  -- the @role of a <phrase> in the highlighted DocBook, so the class
+  -- string is used verbatim as the match key -- no name mangling.
   --
   -- We skip whitespace ("rx-ws") since the DocBook driver emits it
   -- as plain text without a wrapper element.
@@ -196,11 +210,8 @@
     If classSet~hasIndex(tags) Then Iterate
     classSet~put(tags)
 
-    -- Derive the DocBook element name from the CSS classes
-    elementName = Tags2Element(tags, style)
-
     entry       = .Directory~new
-    entry~name  = elementName
+    entry~name  = tags
     entry~tags  = tags
     elements~append(entry)
   End
@@ -230,7 +241,7 @@
 
   prefix = hlOptions.classprefix
 
-  numberCombinations = .Array~of( -
+  numberCombinations = .Array~of(  -
     "int  nsign",                  -
     "int  ipart",                  -
     "deci nsign",                  -
@@ -270,10 +281,8 @@
     If classSet~hasIndex(tags) Then Iterate
     classSet~put(tags)
 
-    elementName = Tags2Element(tags, style)
-
     entry       = .Directory~new
-    entry~name  = elementName
+    entry~name  = tags
     entry~tags  = tags
     elements~append(entry)
   End
@@ -289,8 +298,7 @@
   templates = .Array~new
 
   Do entry Over elements
-    elementName = entry~name
-    tags        = entry~tags
+    tags = entry~tags
 
     -- Look up visual properties via GetHighlight
     Parse Value GetHighlight(style, tags) -
@@ -302,19 +310,16 @@
     -- Skip elements with no visual differentiation
     If foAttrs == "" Then Iterate
 
-    templates~append( BuildTemplate(elementName, foAttrs) )
+    templates~append( BuildTemplate(tags, style, foAttrs) )
   End
 
-  -- Get the block-level background and default text color from the
-  -- "rexx" class.  This will be used to generate an XSL template for
-  -- programlisting[@style='STYLE'] that sets the fo:block background.
-  Parse Value GetHighlight(style, "rexx") -
-    With . . . blockColor":"blockBackground
-
-  -- Generate the complete XSL file
+  -- Generate the complete XSL file.  The block background is NOT set
+  -- here: it belongs to the glue file, which redefines DocBook's
+  -- shade.verbatim.style once for every style in use.  Doing it per
+  -- style file would mean several definitions of the same attribute
+  -- set, and only the last one would survive the merge.
   xslContent = BuildXSL(templates, style, -
-    opOperator, opSpecial, opConstant, opAssignment, -
-    blockColor, blockBackground)
+    opOperator, opSpecial, opConstant, opAssignment)
 
 /******************************************************************************/
 /* Write the output file                                                      */
@@ -331,42 +336,6 @@
     "("templates~items "templates from style '"style"')."
 
   Exit 0
-
-/******************************************************************************/
-/* TAGS2ELEMENT: Convert CSS class string to DocBook element name              */
-/******************************************************************************/
-/*                                                                            */
-/* Converts a CSS class string to a DocBook element name by stripping the    */
-/* "rx-" prefix from each class, replacing "-" with "_", and joining them    */
-/* with "_" under the "rexx_STYLE" prefix.                                   */
-/*                                                                            */
-/* The style name is always included in the element name for symmetry:       */
-/*   Tags2Element("rx-kw", "print")  -> "rexx_print_kw"                     */
-/*   Tags2Element("rx-op rx-add", "dark") -> "rexx_dark_op_add"             */
-/*   Tags2Element("rx-const rx-method rx-oquo", "print")                    */
-/*                                       -> "rexx_print_const_method_oquo"  */
-/*                                                                            */
-/******************************************************************************/
-
-Tags2Element:
-  Use Strict Arg cssTags, xslStyle
-
-  words = cssTags~makeArray(" ")
-  name  = "rexx_" || xslStyle~changeStr("-", "_")
-  Do w Over words
-    name ||= "_" || StripPrefix(w)~changeStr("-", "_")
-  End
-  Return name
-
-/******************************************************************************/
-/* STRIPPREFIX: Remove the "rx-" prefix from a CSS class name                 */
-/******************************************************************************/
-
-StripPrefix:
-  Use Strict Arg className
-  If className~caselessStartsWith("rx-") Then
-    Return className~substr(4)
-  Return className
 
 /******************************************************************************/
 /* BUILDFOSTRS: Build fo:inline attribute string from visual properties       */
@@ -395,13 +364,27 @@ BuildFOAttrs: Procedure
   Return attrs
 
 /******************************************************************************/
-/* BUILDTEMPLATE: Generate one XSL match template                              */
+/* BUILDTEMPLATE: Generate one XSL match template                             */
+/******************************************************************************/
+/*                                                                            */
+/* Matches a token by its role, restricted to listings whose container        */
+/* carries this style.  Testing for a whitespace-delimited token rather       */
+/* than a bare substring matters: "vim-dark-blue" is a prefix of              */
+/* "vim-dark-blue2", and contains() alone would match both.                   */
+/*                                                                            */
 /******************************************************************************/
 
 BuildTemplate: Procedure
-  Use Strict Arg elementName, foAttrs
+  Use Strict Arg tags, style, foAttrs
 
-  Return '  <xsl:template match="'elementName'">' ||     "0A"x || -
+  q = "'"
+
+  container = "ancestor::programlisting[contains(concat(" || -
+              q" "q",@role,"q" "q")," || -
+              q" highlight-rexx-"style" "q")]"
+
+  Return '  <xsl:template match="phrase[@role='q||tags||q']['container']">' || -
+                                                  "0A"x || -
          '    <fo:inline'foAttrs'>'               ||     "0A"x || -
          '      <xsl:apply-templates/>'           ||     "0A"x || -
          '    </fo:inline>'                       ||     "0A"x || -
@@ -413,57 +396,32 @@ BuildTemplate: Procedure
 
 BuildXSL: Procedure
   Use Strict Arg templates, style, -
-    opOperator, opSpecial, opConstant, opAssignment, -
-    blockColor, blockBackground
+    opOperator, opSpecial, opConstant, opAssignment
 
   nl = "0A"x
-  styleSafe = style~changeStr("-", "_")
 
   xsl = '<?xml version="1.0" encoding="UTF-8"?>'                    || nl
   xsl ||= "<!--"                                                    || nl
-  xsl ||= "  rexx-highlight.xsl — XSL templates for Rexx syntax"   || nl
+  xsl ||= "  rexx-highlight.xsl — XSL templates for Rexx syntax"    || nl
   xsl ||= "  highlighting in DocBook/FOP output."                   || nl
   xsl ||= ""                                                        || nl
-  xsl ||= "  Generated by css2xsl.rex from style '"style"'."       || nl
+  xsl ||= "  Generated by css2xsl.rex from style '"style"'."        || nl
   xsl ||= "  Options: operator="opOperator "special="opSpecial     -
            " constant="opConstant " assignment="opAssignment        || nl
   xsl ||= ""                                                        || nl
-  xsl ||= "  Include this file in your pdf.xsl customization:"     || nl
-  xsl ||= '    <xsl:include href="rexx-highlight.xsl"/>'           || nl
+  xsl ||= "  Token templates only.  The block background for this"  || nl
+  xsl ||= "  style is set by the glue file, which redefines the"    || nl
+  xsl ||= "  shade.verbatim.style attribute set for every style"    || nl
+  xsl ||= "  at once."                                              || nl
+  xsl ||= ""                                                        || nl
+  xsl ||= "  Include this file in your pdf.xsl customization:"      || nl
+  xsl ||= '    <xsl:include href="rexx-highlight.xsl"/>'            || nl
   xsl ||= "-->"                                                     || nl
   xsl ||= ""                                                        || nl
-  xsl ||= '<xsl:stylesheet version="1.0"'                          || nl
-  xsl ||= '  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"'    || nl
-  xsl ||= '  xmlns:fo="http://www.w3.org/1999/XSL/Format">'       || nl
+  xsl ||= '<xsl:stylesheet version="1.0"'                           || nl
+  xsl ||= '  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"'      || nl
+  xsl ||= '  xmlns:fo="http://www.w3.org/1999/XSL/Format">'         || nl
   xsl ||= ""                                                        || nl
-
-  -- Block-level template: matches the rexx_style_STYLE wrapper element
-  -- emitted by ProcessProgramListings, and sets background-color and
-  -- default text color on an fo:block.  This fo:block sits inside the
-  -- standard DocBook programlisting fo:block (which provides monospace
-  -- font, padding, borders, etc.), overriding its background and color.
-  bgHex = Left(blockBackground, 6)
-  fgHex = Left(blockColor, 6)
-  If bgHex~length == 6, bgHex~dataType("X") Then Do
-    foAttrs = ' background-color="#'bgHex'"'
-    If fgHex~length == 6, fgHex~dataType("X") Then
-      foAttrs ||= ' color="#'fgHex'"'
-    wrapperName = "rexx_style_"styleSafe
-
-    xsl ||= '  <!-- Block background for style "'style'" -->'        || nl
-    xsl ||= '  <!-- Negative margins expand the inner fo:block to cover -->' || nl
-    xsl ||= '  <!-- the padding of the outer shade.verbatim.style block. -->' || nl
-    xsl ||= '  <xsl:template match="'wrapperName'">'                 || nl
-    xsl ||= '    <fo:block'foAttrs                                       -
-                 ' margin-top="-6pt" margin-bottom="-6pt"'               -
-                 ' margin-left="-6pt"'                                   -
-                 ' padding-top="6pt" padding-bottom="6pt"'               -
-                 ' padding-left="6pt">'                               || nl
-    xsl ||= '      <xsl:apply-templates/>'                           || nl
-    xsl ||= '    </fo:block>'                                        || nl
-    xsl ||= '  </xsl:template>'                                      || nl
-    xsl ||= ""                                                        || nl
-  End
 
   Do t Over templates
     xsl ||= t || nl
@@ -487,7 +445,7 @@ Help:
   Say "Usage:" myName "[options] [output.xsl]"
   Say ""
   Say "Options:"
-  Say "  -s, --style STYLE     CSS theme (default: print)"
+  Say "  -s, --style STYLE     CSS style (default: print)"
   Say "      --css FILE        CSS file path (overrides --style)"
   Say "      --operator MODE   group|full|detail (default: group)"
   Say "      --special MODE    group|full|detail (default: group)"

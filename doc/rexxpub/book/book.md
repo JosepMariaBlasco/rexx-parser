@@ -2629,14 +2629,18 @@ The `js` directory contains the JavaScript files used by the web
 pipelines:
 
 `paged.polyfill.js` is the paged.js polyfill, loaded when
-`?print=pdf` is requested.
+`?print=pdf` is requested.  It is not part of the Parser: it is
+served from the site's own `/js/` directory.
 `createToc.js` generates the table of contents for book documents.
 `numberSections.js` numbers section headings following the LaTeX
 convention.
 `numberFigures.js` processes `data-caption` attributes on code blocks
 and numbers figures and listings.
-`chooser.js` handles the style chooser, size chooser, and print
-button in the CGI program's toolbar.
+`fixFootnoteNumbers.js` renumbers footnotes continuously across the
+whole document.
+`style-chooser.js` drives the code style chooser and the print button
+in the CGI program's toolbar.  The DocBook HTML branch ships the same
+file into a generated book's `Common_Content/js/`.
 
 The `cgi-bin` directory
 -----------------------

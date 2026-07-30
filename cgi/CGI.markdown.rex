@@ -456,9 +456,29 @@ Hack:
     If \styles~hasItem(style) Then styles~append(style)
   End
 
+  ------------------------------------------------------------------------------
+  -- Link the sheets.  The styles this page actually uses are linked eagerly, --
+  -- so no block ever paints unstyled; every other style the chooser offers   --
+  -- is linked with media="not all", which the browser does not fetch until   --
+  -- style-chooser.js flips it.  data-rexx-style is how the script finds a    --
+  -- sheet when the reader picks one.                                         --
+  ------------------------------------------------------------------------------
+
   new = "    "
   Do style Over styles
-    new ||= "<link rel='stylesheet' href='/rexx-parser/css/rexx-"style".css'>"
+    new ||= "<link rel='stylesheet' href='/rexx-parser/css/rexx-"style".css'" -
+            "data-rexx-style='"style"'>"
+  End
+
+  Call SysFileTree .MyPath"../css/rexx-*.css", sheets., "FO"
+  Do i = 1 To sheets.0
+    aStyle = FileSpec("Name", sheets.i)
+    Parse Var aStyle "rexx-"aStyle".css"
+    If aStyle == ""                      Then Iterate
+    If aStyle~caselessStartsWith("test") Then Iterate  -- dev-only fixture
+    If styles~hasItem(aStyle)            Then Iterate  -- already linked above
+    new ||= "<link rel='stylesheet' href='/rexx-parser/css/rexx-"aStyle".css'" -
+            "media='not all' data-rexx-style='"aStyle"'>"
   End
 
   out[subs] = new
@@ -610,7 +630,7 @@ View:
     %printFigures%
     %printSections%
     %printTOC%
-    <script src="/js/chooser.js"></script>
+    <script src="/rexx-parser/js/style-chooser.js"></script>
   </body>
 </html>
 ::END

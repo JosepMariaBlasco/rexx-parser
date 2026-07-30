@@ -4,27 +4,45 @@
 /* ===========================================================                */
 /*                                                                            */
 /* Scans DocBook XML files for <programlisting language="rexx"> blocks and    */
-/* replaces the plain-text content with highlighted rexx_* elements using     */
-/* the DocBook highlighting driver.                                           */
+/* replaces the plain-text content with highlighted <phrase role="rx-...">    */
+/* elements, using the DocBook highlighting driver.                           */
 /*                                                                            */
-/* The supported XML attributes on <programlisting> map to the same          */
+/* The style is carried by the container, never by the tokens.  Each          */
+/* highlighted listing gets                                                   */
+/*                                                                            */
+/*   role="highlight-rexx-<style>"                                            */
+/*                                                                            */
+/* which is the same class name the HTML driver puts on its wrapper <div>,    */
+/* so a single set of CSS files styles both the Markdown and the DocBook      */
+/* paths.  A listing that named its own style is additionally marked          */
+/*                                                                            */
+/*   role="highlight-rexx-<style> rexx-style-locked"                          */
+/*                                                                            */
+/* so that a client-side style chooser knows to leave it alone: the author    */
+/* asked for that style deliberately.  Any role= the author already put on    */
+/* the listing is preserved ahead of ours.                                    */
+/*                                                                            */
+/* The supported XML attributes on <programlisting> map to the same           */
 /* Highlighter options used by FencedCode.cls for Markdown:                   */
 /*                                                                            */
 /*   language="rexx"         Required. Only "rexx" triggers highlighting.     */
-/*   style="print"           Highlighting style (default: print)              */
+/*   hl-style="print"        Highlighting style (default: print)              */
 /*   operator="group"        Operator granularity: group|full|detail          */
 /*   special="group"         Special char granularity: group|full|detail      */
 /*   constant="full"         Constant granularity: group|full|detail          */
 /*   assignment="group"      Assignment granularity: group|full|detail        */
 /*   doccomments="detailed"  Doc-comment mode: detailed|block                 */
+/*   dialect="executor"      Dialect: executor|cms|rexxvm|tutor|unicode|      */
+/*                           experimental.  Anything else is ignored,         */
+/*                           leaving standard ooRexx highlighting.            */
 /*                                                                            */
 /* Public routines:                                                           */
 /*                                                                            */
 /*   ProcessProgramListings(filename, lines [, defaultStyle])                 */
-/*     Scans an array of XML lines in place. Returns the count of blocks     */
+/*     Scans an array of XML lines in place. Returns the count of blocks      */
 /*     that were highlighted. The lines array is modified directly.           */
-/*     defaultStyle (default "print") sets the highlighting style for        */
-/*     blocks without an explicit style= attribute.                          */
+/*     defaultStyle (default "print") sets the highlighting style for         */
+/*     blocks without an explicit hl-style= attribute.                        */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -38,6 +56,10 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260403    0.5  First version                                             */
+/* 20260729    0.6  Style moved to the container as role="highlight-rexx-     */
+/*                  <style>"; the rexx_style_* wrapper element is gone.       */
+/*                  Header corrected: the attribute is hl-style=, not         */
+/*                  style=, and dialect= was undocumented.                    */
 /*                                                                            */
 /******************************************************************************/
 
@@ -176,18 +198,27 @@
     If highlighted~left(1) == "0a"x Then
       highlighted = highlighted~substr(2)
 
-    -- Wrap the highlighted content in a rexx_style_STYLE element so that
-    -- the XSL can apply the correct background-color to the fo:block.
-    -- DocBook 4.5's DTD discards unknown attributes, but custom elements
-    -- pass through, so we use a wrapper element instead of an attribute.
-    styleTag = "rexx_style_" || options.style~changeStr("-", "_")
-    highlighted = "<"styleTag">" || highlighted || "</"styleTag">"
+    -- The style is carried by the container, never by the tokens.  The
+    -- listing gets a role naming the style, using the same
+    -- "highlight-rexx-<style>" class the HTML driver puts on its wrapper
+    -- <div>, so that one set of CSS files serves both paths.  Listings
+    -- that named a style of their own are additionally marked as locked,
+    -- so a client-side style chooser leaves them alone.
+    containerRole = "highlight-rexx-"options.style
+    If attrs~hasIndex("HL-STYLE") Then
+      containerRole ||= " rexx-style-locked"
+
+    -- Any role the author already put on the listing comes first.
+    If attrs~hasIndex("ROLE") Then
+      containerRole = attrs~at("ROLE") containerRole
+
+    newAttrStr = StripAttribute(attrStr, "role")
 
     -- Reconstruct the block as a single line:
     --   HEAD<programlisting attrs>HIGHLIGHTED</programlisting>TAIL
     -- HEAD preserves any content before <programlisting (e.g. <para>)
     -- TAIL preserves any content after </programlisting> (e.g. </para>)
-    newOpenTag = "<programlisting" attrStr ">"
+    newOpenTag = "<programlisting"newAttrStr' role="'containerRole'">'
     newLine = head || newOpenTag || highlighted || closingTag || tail
 
     -- Replace lines[i..endLine] with the single new line
@@ -235,7 +266,7 @@ Syntax:
 ::Routine ParseXMLAttributes Private
 
   -- Parse XML attributes from a string like:
-  --   language="rexx" style="print" operator="detail"
+  --   language="rexx" hl-style="print" operator="detail"
   -- Returns a Directory with attribute name -> value pairs.
 
   Use Strict Arg attrStr
@@ -270,6 +301,56 @@ Syntax:
   End
 
   Return attrs
+
+/******************************************************************************/
+/* StripAttribute                                                             */
+/******************************************************************************/
+
+::Routine StripAttribute Private
+
+  -- Return attrStr with the named attribute (matched case-insensitively)
+  -- removed, and everything else preserved verbatim.  The parsing mirrors
+  -- ParseXMLAttributes, so that both agree on what counts as an attribute;
+  -- anything that does not parse as key="value" is passed through
+  -- untouched rather than silently dropped.
+  --
+  -- The returned string always starts with a blank when non-empty, so that
+  -- it can be concatenated straight after "<programlisting".
+
+  Use Strict Arg attrStr, dropName
+
+  kept     = ""
+  rest     = Strip(attrStr)
+  dropName = Upper(dropName)
+
+  Loop While rest \== ""
+    rest = Strip(rest)
+    If rest == "" Then Leave
+
+    eqPos = rest~pos("=")
+    If eqPos == 0 Then Leave  -- No more key=value pairs
+
+    attrName = Strip(rest~left(eqPos - 1))
+    afterEq  = Strip(rest~substr(eqPos + 1))
+
+    If afterEq == "" Then Leave
+    quote = afterEq[1]
+    If quote \== '"', quote \== "'" Then Leave  -- Not a valid XML attribute
+
+    endQuote = afterEq~pos(quote, 2)
+    If endQuote == 0 Then Leave  -- Unclosed quote
+
+    attrValue = afterEq~substr(2, endQuote - 2)
+    rest      = afterEq~substr(endQuote + 1)
+
+    If Upper(attrName) \== dropName Then
+      kept ||= " "attrName"="quote || attrValue || quote
+  End
+
+  -- Whatever we could not parse is appended unchanged.
+  If Strip(rest) \== "" Then kept ||= " "Strip(rest)
+
+  Return kept
 
 /******************************************************************************/
 /* BuildOptions                                                               */
