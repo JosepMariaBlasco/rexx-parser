@@ -64,7 +64,7 @@
   patch               = .Nil
   styleSpecified      = 0
 
-  Loop While args~size > 0, args[1][1] == "-"
+  Loop While args~size > 0, args[1] \== "-", args[1][1] == "-"
     option = args[1]
     args~delete(1)
 
