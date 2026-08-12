@@ -253,6 +253,7 @@ Crumb:
 
     When bin                       Then Return "bin"
     When bin"/tools"               Then Return "Tools"
+	When bin"/docbook"             Then Return "DocBook"
 
     -- "/rexx-parser/doc/guide"
 

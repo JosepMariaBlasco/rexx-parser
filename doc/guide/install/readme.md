@@ -18,7 +18,7 @@ Installation
 + You can also install the Rexx Parser as part of the
   **net-oo-rexx** software bundle. The net-oo-rexx package
   can be downloaded at
-  <https://wi.wu.ac.at/rgf/rexx/tmp/net-oo-rexx-packages/>.
+  <https://github.com/RexxLA/net-oo-rexx/>.
 
 You can also opt for [a CGI installation](../../highlighter/cgi/), which is quite more involved.
 

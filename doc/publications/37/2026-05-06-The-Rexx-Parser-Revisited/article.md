@@ -119,7 +119,7 @@ which carries releases with version control and issue tracking.
 It is also distributed as part of
 net-oo-rexx[^netoorexx], a software bundle curated by Rony Flatscher.
 
-[^netoorexx]: <https://wi.wu.ac.at/rgf/rexx/tmp/net-oo-rexx-packages/>.
+[^netoorexx]: <https://github.com/RexxLA/net-oo-rexx/>.
 
 The Element API {#elementAPI}
 ---------------
@@ -1327,7 +1327,7 @@ Downloads
 - **Executor**: <br>
   <https://github.com/jlfaucher/executor>.
 - **net-oo-rexx**: <br>
-  <https://wi.wu.ac.at/rgf/rexx/tmp/net-oo-rexx-packages/>.
+  <https://github.com/RexxLA/net-oo-rexx/>.
 
 Bibliography
 ------------

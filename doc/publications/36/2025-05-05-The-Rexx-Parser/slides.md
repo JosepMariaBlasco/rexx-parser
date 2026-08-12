@@ -709,4 +709,4 @@ Executor can be downloaded at:
 
 The net-oo-rexx bundle can be downloaded at:
 
-- <https://wi.wu.ac.at/rgf/rexx/tmp/net-oo-rexx-packages/>
+- <https://github.com/RexxLA/net-oo-rexx/>

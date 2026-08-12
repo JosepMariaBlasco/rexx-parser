@@ -35,7 +35,7 @@
 /* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.               */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
-/* Name: HLDOC2FO.REX                                                           */
+/* Name: HLDOC2FO.REX                                                          */
 /* Type: Object REXX Script                                                   */
 /*                                                                            */
 -- Transform an ooRexx Docbook XML file to XSL-FO using a modified

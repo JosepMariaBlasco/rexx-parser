@@ -14,8 +14,10 @@ Version history
   <li> Implement a fine-grained feature system (20260601).
   <li> (RexxHTTP) Mark explicit styles (20260709).
   <li> Fix some errors in the LaTeX driver (20260714).
-  <li> Add support for htdoc2html (20260730).
+  <li> Add support for hldoc2html (20260730).
   <li> Improve style chooser (20260730).
+  <li> Upload hl\*.rex to SourceForge (20260812).
+  <li> Update URL for net-oo-rexx (20260812).
 <tr><td>20260303<td>0.5<td>
 <ul>
   <li> Jump release level to mark start of RexxPub.

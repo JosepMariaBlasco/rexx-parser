@@ -58,6 +58,9 @@
 /* a matter of relabelling the wrapper and activating another sheet.          */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
+    -- If setup.rex unpacked the Parser into .\rexx-parser, make its bin/
+    -- directory discoverable for this process before anything looks for it.
+    call AddLocalParser
     if arg(1) \= '' then    -- need to run hldocprep first
         call hldocprep arg(1)
     -- get the properties file and verify docpath is set
@@ -153,6 +156,57 @@
     end
     say time() fileCount 'HTML files were created'
 
+/*----------------------------------------------------------------------------*/
+/* ADDLOCALPARSER                                                             */
+/*                                                                            */
+/* If setup.rex has unpacked the Rexx Parser into .\rexx-parser (relative to  */
+/* the tools/bldoc_orx/ directory), prepend its bin\ directory to this        */
+/* process's REXX_PATH so that findProgram and loadPackage resolve the local  */
+/* copy without a system-wide install.  ooRexx consults REXX_PATH at each     */
+/* program lookup, so the process-local change is enough; it is not meant to  */
+/* persist between runs.                                                      */
+/*                                                                            */
+/* Does nothing when the local copy is absent, so a system-wide install still */
+/* works as before, and is idempotent, so calling it here and again inside a  */
+/* nested hldocprep run does not stack duplicate path entries.                */
+/*----------------------------------------------------------------------------*/
+
+::routine AddLocalParser
+    sep = .file~separator                        -- "\" on Windows
+    pathSep = .file~pathSeparator                -- ";" on Windows
+
+    binDir = .file~new('rexx-parser' || sep || 'bin')
+
+    -- Nothing unpacked locally: leave the search path untouched.
+    if \.file~new(binDir~absolutePath || sep || 'Rexx.Parser.cls')~exists then
+        return .false
+
+    absBin = binDir~absolutePath
+    rexxPath = value('REXX_PATH', , 'ENVIRONMENT')
+
+    if rexxPath == '' then
+        call value 'REXX_PATH', absBin, 'ENVIRONMENT'
+    else if \CaselessPathHas(rexxPath, absBin, pathSep) then
+        call value 'REXX_PATH', absBin || pathSep || rexxPath, 'ENVIRONMENT'
+
+    return .true
+
+/*----------------------------------------------------------------------------*/
+/* CASELESSPATHHAS                                                            */
+/*                                                                            */
+/* True when dir is already one of the path-separator-delimited entries in    */
+/* pathString, compared without regard to case.                               */
+/*----------------------------------------------------------------------------*/
+
+::routine CaselessPathHas
+    use strict arg pathString, dir, pathSep
+
+    loop entry over pathString~makeArray(pathSep)
+        if entry~strip~caselessEquals(dir) then return .true
+    end
+
+    return .false
+
 ::requires "doc_props.rex"
 
 /*----------------------------------------------------------------------------*/
@@ -163,8 +217,8 @@
 /* there.  The sources are found relative to Rexx.Parser.cls, wherever the    */
 /* Parser is installed, so nothing here depends on the current directory.     */
 /*                                                                            */
-/* The pages link every sheet, but all except the default carry              */
-/* media="not all", so a reader's browser only fetches the one it is asked   */
+/* The pages link every sheet, but all except the default carry               */
+/* media="not all", so a reader's browser only fetches the one it is asked    */
 /* to show.                                                                   */
 /*----------------------------------------------------------------------------*/
 
