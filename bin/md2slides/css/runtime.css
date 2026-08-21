@@ -1,0 +1,412 @@
+/******************************************************************************/
+/*                                                                            */
+/*  deck-runtime.css -- Presentation deck runtime, structural layer           */
+/*                                                                            */
+/*  This is the LAYOUT axis: where things sit. It knows nothing about fonts,   */
+/*  colours or logos -- those come from an identity (CI) stylesheet, which     */
+/*  supplies the --theme-* custom properties consumed here.                      */
+/*                                                                            */
+/*  Every visual value below is either structural (positions, proportions)     */
+/*  or a var(--theme-*) reference. Adding an institution must never require       */
+/*  editing this file.                                                        */
+/*                                                                            */
+/******************************************************************************/
+
+/* -------------------------------------------------------------------------- */
+/* Fallbacks. An identity stylesheet overrides these; the deck must still      */
+/* render if none is loaded.                                                   */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --theme-font-prose:   'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --theme-font-mono:    Consolas, 'Courier New', monospace;
+  --theme-accent:       #00529B;
+  --theme-fg:           #1a1a1a;
+  --theme-bg:           #ffffff;
+  --theme-muted:        #767676;
+  --theme-rule:         var(--theme-accent);
+  --theme-output-bg:    #e8e8e8;
+  --theme-title-weight: 700;
+
+  /* Deck geometry. 16:9, matching the slides class page size.               */
+  --deck-w: 1280;
+  --deck-h: 720;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Stage. The deck is a fixed-size canvas scaled to the viewport, so that a    */
+/* slide is laid out once at a known size and then fitted to whatever screen   */
+/* it is shown on. This is what makes build-time code fitting (see the         */
+/* architecture note, section 5) meaningful: the layout width is known.        */
+/* -------------------------------------------------------------------------- */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+#stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--deck-w) * 1px);
+  height: calc(var(--deck-h) * 1px);
+  transform: translate(-50%, -50%) scale(var(--deck-scale, 1));
+  transform-origin: center center;
+  background: var(--theme-bg);
+  overflow: hidden;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Slides. One slide occupies the whole stage; only the current one shows.     */
+/* -------------------------------------------------------------------------- */
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  padding: 42px 56px var(--theme-footer-height, 64px) 56px;
+  box-sizing: border-box;
+  font-family: var(--theme-font-prose);
+  color: var(--theme-fg);
+  font-size: 26px;
+  line-height: 1.3;
+  text-align: left;
+  hyphens: manual;                 /* never auto-hyphenate on slides         */
+}
+
+.slide.current { display: block; }
+
+/* Default page transition: a fade, applied only via the runtime's .anim-in    */
+/* marker so the animation catalogue (data-anim on a slide) can override it.    */
+.slide.current.anim-in:not([data-anim]) { animation: slide-in var(--anim-dur, 320ms) ease-out; }
+
+@keyframes slide-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide.current { animation: none; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Semantic roles.                                                            */
+/*                                                                            */
+/* Content declares WHAT IT IS; this file decides WHERE IT GOES. The set is    */
+/* deliberately small: the mechanism is general, its population is not.        */
+/* -------------------------------------------------------------------------- */
+
+/* kicker -- the small line above the title ("Basics", "History")             */
+.kicker {
+  font-size: 0.72em;
+  color: var(--theme-fg);
+  margin: 0 0 2px 0;
+  font-weight: 400;
+}
+
+/* title -- the slide heading                                                 */
+.title {
+  font-size: 1.30em;
+  font-weight: var(--theme-title-weight);
+  color: var(--theme-fg);
+  margin: 0 0 0.34em 0;
+  padding-bottom: 0.20em;
+  border-bottom: 3px solid var(--theme-rule);
+}
+
+/* body -- ordinary prose and lists                                           */
+.body { margin: 0.5em 0; }
+
+.body ul { margin: 0.3em 0; padding-left: 1.1em; }
+.body li { margin: 0.28em 0; }
+
+/* -------------------------------------------------------------------------- */
+/* Two-column master page.                                                    */
+/*                                                                            */
+/* A LAYOUT (not identity) choice: it decides where things sit, so it lives   */
+/* in the runtime. A slide tagged  class="slide two-col"  arranges its two     */
+/* .col children side by side under the title. Structural only -- fonts and    */
+/* colours still come from whatever identity is loaded.                        */
+/* -------------------------------------------------------------------------- */
+
+.two-col .columns {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+.two-col .col { flex: 1; min-width: 0; }   /* min-width:0 lets code blocks shrink */
+
+/* label -- a short caption introducing a block ("Output:")                   */
+.label {
+  font-size: 0.78em;
+  font-weight: 600;
+  margin: 0.7em 0 0.28em 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Code and output.                                                           */
+/*                                                                            */
+/* Two different registers: program text (highlighted) and program output      */
+/* (not highlighted -- it is not code). Both monospaced, both never wrapped.  */
+/* -------------------------------------------------------------------------- */
+
+/*                                                                            */
+/* Code arrives wrapped in the highlighter's own container --                  */
+/* div.highlight-rexx-<style> -- with a <pre> inside. That container is what   */
+/* the style chooser relabels, so the deck must style around it rather than    */
+/* replace it.                                                                */
+/*                                                                            */
+
+.code, .output {
+  margin: 0.25em 0;
+  box-sizing: border-box;
+  line-height: 1.35;
+  tab-size: 4;
+  width: 980px;                    /* must match BOX_WIDTH in the generator: */
+  max-width: 100%;                 /* the fitted size was computed for it    */
+}
+
+.code > pre, .output {
+  font-family: var(--theme-font-mono);
+  margin: 0;
+  padding: 14px 18px;
+  white-space: pre;                /* NEVER wrap: a broken statement may be  */
+  overflow: visible;               /* a syntax error                          */
+  border: none;
+  border-radius: 0;
+}
+
+.output { background: var(--theme-output-bg); }
+
+/*                                                                            */
+/* Build-time fitted size. The generator computes, from the longest line and   */
+/* the identity's monospaced metrics, the largest size at which that line      */
+/* fits, and emits it as --fit-size on the block. The fallback matters only    */
+/* if a block was emitted unfitted.                                            */
+/*                                                                            */
+.code > pre, .output { font-size: var(--fit-size, 20px); }
+
+/* -------------------------------------------------------------------------- */
+/* Fragments -- stepped reveal.                                               */
+/*                                                                            */
+/* Sequential semantics: a fragment appears on the next click. Order is        */
+/* document order; no explicit indices. The fragment styling and its per-       */
+/* effect transitions live in the animation catalogue stylesheet, so that the   */
+/* full set of reveal effects is defined in one place.                         */
+/* -------------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------------- */
+/* Furniture: the parts supplied by the identity rather than by the slide.     */
+/* -------------------------------------------------------------------------- */
+
+/* The footer is three positional SLOTS, not a fixed set of named fields.      */
+/* What goes in each slot is the identity's business (--theme-footer-left and     */
+/* friends); what the values ARE is the document's. That split is the whole    */
+/* point: the same Markdown builds for another institution untouched, and the  */
+/* presenter's name never has to live in a stylesheet.                         */
+/*                                                                            */
+/* The band the footer sits in has a declared height, because a footer may run */
+/* to several lines and the runtime shrinks it to fit rather than let it climb */
+/* into the content. Both this rule and the slide's bottom padding read the    */
+/* same variable, so the reserved space and the used space cannot drift apart. */
+.deck-footer {
+  position: absolute;
+  left: 56px;
+  right: 56px;
+  bottom: 44px;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  /* The controls chip is fixed in the bottom-right corner and about 30px tall.
+     The footer sits a clear band above it, so a footer of any length -- Rony's
+     runs the full institutional credit -- never slides under the chip, without
+     depending on reserving a guessed width. */
+  font-family: var(--theme-font-prose);
+  font-size: 15px;
+  line-height: 1.25;
+  color: var(--theme-muted);
+}
+
+.deck-footer .footer-left   { flex: 1 1 0; text-align: left;   }
+.deck-footer .footer-center { flex: 0 1 auto; text-align: center; white-space: nowrap; }
+.deck-footer .footer-right  { flex: 1 1 0; text-align: right;  }
+
+/* An empty slot keeps its share of the row on purpose: the centre slot is     */
+/* centred because the two flexible slots either side balance it, and a deck   */
+/* that fills only one of them must not knock the page number off centre.      */
+
+.deck-logo {
+  position: absolute;
+  top: 30px;
+  right: 56px;
+  height: 58px;
+}
+
+/* Title slides carry no rule under the heading. They carry no page number    */
+/* either, but that is no longer a CSS matter: {page} resolves to empty on a   */
+/* title slide, so the number vanishes whichever slot the identity put it in.  */
+.slide.title-slide .title { border-bottom: none; }
+
+/* -------------------------------------------------------------------------- */
+/* Progress: a thin accent bar. Cheap orientation for the audience.           */
+/* -------------------------------------------------------------------------- */
+
+#progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--theme-accent);
+  transition: width 200ms ease-out;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reader controls. Highlight style is the reader's choice and stays live;     */
+/* institutional identity is not offered here -- it is fixed at build time.    */
+/*                                                                            */
+/* The bar is furniture, and furniture takes the identity's colours like       */
+/* everything else. It used to be #ddd on #222: values picked by eye against   */
+/* one white deck. That is how Till came to report a white bar on a white      */
+/* ground -- nothing here consulted the identity, so any deck with another     */
+/* background lost its controls. Deriving them means every identity, present   */
+/* and future, gets a legible bar without having to say anything.              */
+/* -------------------------------------------------------------------------- */
+
+#controls {
+  position: absolute;
+  right: 20px;
+  bottom: 8px;
+  max-width: calc(var(--deck-w) * 1px - 40px);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #1c1e22;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+  font: 12px/1.2 var(--theme-font-prose);
+  opacity: 0.7;
+  transition: opacity 160ms;
+}
+
+#controls:hover { opacity: 1; }
+#controls label {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;                 /* let the label shrink so its select can too */
+}
+#controls select {
+  font: inherit;
+  min-width: 0;                 /* shrink below content width when space is tight */
+  flex: 0 1 auto;
+  max-width: 22ch;
+  text-overflow: ellipsis;
+  background: #ffffff;
+  color: #16181c;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+#controls .controls-help {
+  cursor: help;
+  opacity: 0.7;
+  font-size: 14px;
+  flex: 0 0 auto;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Print. The screen layout is a single scaled #stage centred in the viewport  */
+/* with only the current slide shown; that is exactly wrong on paper. Printing  */
+/* is "export the whole deck", one slide per sheet, so this block dismantles    */
+/* the screen scaffolding and lays every slide out in the normal flow instead.  */
+/* Reported by Rony (15/08): browser print came out black title/footer, body    */
+/* centred, split across two pages -- all three are symptoms of the screen      */
+/* scaffolding leaking into print, addressed below.                             */
+/* -------------------------------------------------------------------------- */
+
+@media print {
+
+  /* Every slide keeps its theme background and ink on paper. Without this the   */
+  /* browser drops backgrounds by default, so the theme ground vanishes and any  */
+  /* ink that assumed it (title, footer) reads as black on white.                */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Drop the black viewport ground and the screen clipping. The page itself is  */
+  /* the ground now; each slide paints its own theme background.                 */
+  html, body {
+    height: auto;
+    background: #fff;
+    overflow: visible;
+  }
+
+  /* Un-scale and un-centre the stage: static flow, natural height, no transform.*/
+  /* The stage stops being a fixed-size scaled box and becomes a plain container  */
+  /* whose slides stack down the page.                                           */
+  #stage {
+    position: static;
+    top: auto;
+    left: auto;
+    width: auto;
+    height: auto;
+    transform: none;
+    overflow: visible;
+    background: none;
+  }
+
+  /* Show ALL slides, not just .current, and give each its own sheet. The slide  */
+  /* fills the whole page rather than keeping its screen pixel size: the @page    */
+  /* below is sized to the deck's own 16:9 aspect, so a slide at 100%/100% covers */
+  /* the sheet edge to edge -- theme background included -- with no blank band.   */
+  /* One slide == one page via break-after; break-inside:avoid keeps it whole.   */
+  .slide {
+    display: block !important;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 100vh;             /* one full printed page */
+    margin: 0;
+    background: var(--theme-bg);
+    break-inside: avoid;
+    break-before: page;        /* each slide starts a fresh page */
+    animation: none !important;
+    overflow: hidden;
+  }
+
+  /* The first slide must not force a leading blank page before it. Anchoring the */
+  /* break BEFORE every slide (not after) is what makes the count exact -- a      */
+  /* trailing break-after on the last slide would emit a blank final page, and a  */
+  /* break-after between siblings can collapse; break-before does neither.        */
+  .slide:first-of-type { break-before: auto; }
+
+  /* Footer and logo are part of the slide and print with it; their absolute     */
+  /* positioning is now relative to the static slide box, which is what we want. */
+
+  /* Screen-only furniture never reaches paper. */
+  #controls,
+  #progress,
+  #jump-overlay { display: none !important; }
+
+  /* Size the sheet to the deck's own 16:9 geometry (13.333in x 7.5in, i.e.      */
+  /* 1280x720 at 96dpi) with zero margin, so each slide maps to exactly one page */
+  /* at the authored aspect ratio -- no letterboxing, no slide bleeding onto the */
+  /* next sheet. Derived from --deck-w/--deck-h; if the deck geometry changes,    */
+  /* this stays a plain 16:9 sheet, which is the right default for slides.        */
+  @page {
+    size: 13.333in 7.5in;
+    margin: 0;
+  }
+}
+

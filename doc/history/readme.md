@@ -18,6 +18,8 @@ Version history
   <li> Improve style chooser (20260730).
   <li> Upload hl\*.rex to SourceForge (20260812).
   <li> Update URL for net-oo-rexx (20260812).
+  <li> New md2slides utility (20260816).
+  <li> Implement nested fenced code blocks.
 <tr><td>20260303<td>0.5<td>
 <ul>
   <li> Jump release level to mark start of RexxPub.

@@ -34,6 +34,7 @@
 /* 20260521         Add support for CMS                                       */
 /* 20260522         Accept "rexxvm" as an alias for the "cms" attribute       */
 /* 20260709    0.6  Mark explicit styles (for RexxHTTP)                       */
+/* 20260821         Implement nested code blocks                              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -190,15 +191,22 @@
   Loop Label Outer lineNo = 1 By 1 While lineNo < source~items
     line = source[lineNo]
 
-    -- A fenced code block starts with "```" or "~~~"
-    If line[1,3] \== "```", line[1,3] \== "~~~" Then Iterate
+    -- A fenced code block starts with "```" or "~~~", possibly indented when it
+    -- lives inside a list item. We recognise the marker after leading blanks or
+    -- tabs, and REMEMBER that indent: the block's code has to be de-indented by
+    -- it before the Rexx parser sees it (so column 1 is real column 1), and the
+    -- highlighted HTML has to be re-indented by the same amount on the way back,
+    -- so Pandoc still attaches the block to its list item. See issue #2.
+    indent  = Length(line) - Length( Strip(line, "Leading") )
+    bare    = SubStr(line, indent + 1)
+    If bare[1,3] \== "```", bare[1,3] \== "~~~" Then Iterate
 
     -- We may have more than three characters before the language name
-    char    = line[1]
-    attributes = Strip( line, "Leading", char )
+    char    = bare[1]
+    attributes = Strip( bare, "Leading", char )
 
     -- Remember how many backticks or twiddles we found
-    chars = Length(line) - Length(attributes)
+    chars = Length(bare) - Length(attributes)
 
     -- End marker
     marker = Copies(char, chars)
@@ -220,7 +228,7 @@
           lineNo += 1
           If lineNo > source~items Then Exit MissingEndMarker()
           line = source[lineNo]
-          If Strip(line,"T") == marker Then Iterate Outer
+          If Strip( Strip(line,"T"), "Leading" ) == marker Then Iterate Outer
         End
       End
     End
@@ -241,15 +249,36 @@
     start  = lineNo
     lines  = source~items
     end    = start + 1
-    Loop While end <= lines, Strip(source[end],"T") \== marker
+    Loop While end <= lines, Strip( Strip(source[end],"T"), "Leading" ) \== marker
       end += 1
     End
 
     -- No end marker? That's an error
     If end > lines Then Exit MissingEndMarker()
 
+    -- De-indent the block in place before highlighting: the Rexx parser must
+    -- see the code at real column 1, not shifted right by the list indent.
+    -- ProcessACodeBlock reads source[start+1 .. end-1] verbatim, so we strip
+    -- exactly `indent` leading columns (blanks/tabs) from each of those lines.
+    -- Nothing is stripped when indent = 0 (a top-level block), so the classic
+    -- column-1 case is byte-for-byte unchanged.
+    If indent > 0 Then
+      Do i = start + 1 To end - 1
+        source[i] = DeIndent( source[i], indent )
+      End
+
     -- Get the highligthed version of our code block
     highlighted = ProcessACodeBlock( filename, source, start, end, accum, options. )
+
+    -- Re-indent the highlighted HTML by the same amount, so Pandoc still reads
+    -- the block as content of the enclosing list item (an un-indented block
+    -- would detach and break the outline). indent = 0 leaves it untouched.
+    If indent > 0 Then Do
+      pad = Copies(" ", indent)
+      Do i = 1 To highlighted~items
+        highlighted[i] = pad || highlighted[i]
+      End
+    End
 
     -- Up to line (start-1) there is nothing to change
     processed~appendAll( source~section( 1, start - 1 ) )
@@ -276,6 +305,26 @@
 MissingEndMarker:
   Raise Syntax 88.900 -
     Additional("Missing end marker for code block starting at line "lineNo)
+
+--------------------------------------------------------------------------------
+-- DeIndent -- Remove up to `n` leading whitespace columns from a line          --
+--------------------------------------------------------------------------------
+-- Strips at most `n` leading blank or tab characters, counting a tab as one    --
+-- column (the emitter indents fenced blocks with blanks; tabs are tolerated    --
+-- but not expected). A line with fewer than `n` leading blanks loses only what  --
+-- it has, never any non-blank content. Used to bring a list-indented code       --
+-- block back to real column 1 before the Rexx parser sees it.                  --
+
+::Routine DeIndent Private
+  Use Strict Arg line, n
+  removed = 0
+  Loop While removed < n
+    c = line[1]
+    If c \== " ", c \== "09"x Then Leave
+    line = SubStr(line, 2)
+    removed += 1
+  End
+  Return line
 
 --------------------------------------------------------------------------------
 -- ParseOptions -- Parse the options after "```rexx"                          --

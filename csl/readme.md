@@ -7,6 +7,11 @@ This directory contains
 [Citation Style Language](https://citationstyles.org/)
 styles for use with Pandoc's `--citeproc` option.
 
++ `apa.csl` --- The APA 7th edition style (author-date), downloaded from
+  the [official Github repository](https://github.com/citation-style-language/styles).
++ `chicago-author-date.csl` --- The Chicago Manual of Style 18th edition
+  (author-date) style, downloaded from the
+  [official Github repository](https://github.com/citation-style-language/styles).
 + `ieee.csl` --- The IEEE Reference Guide style, downloaded from the
   [official Github repository](https://github.com/citation-style-language/styles).
 + `rexxpub.csl` --- The RexxPub Bibliography Style, derived from the

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "blasco2024parser",
+    "type": "paper-conference",
+    "title": "The Rexx Parser: a tokeniser and syntax analyser for classic Rexx",
+    "author": [{ "family": "Blasco", "given": "Josep Maria" }],
+    "issued": { "date-parts": [[2024]] },
+    "container-title": "Proceedings of the International Rexx Symposium",
+    "publisher-place": "Vienna"
+  },
+  {
+    "id": "cowlishaw1990",
+    "type": "book",
+    "title": "The Rexx Language: A Practical Approach to Programming",
+    "author": [{ "family": "Cowlishaw", "given": "Michael" }],
+    "issued": { "date-parts": [[1990]] },
+    "edition": "2nd",
+    "publisher": "Prentice Hall"
+  }
+]

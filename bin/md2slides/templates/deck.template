@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>%title%</title>
+<style>
+%runtimeCSS%
+</style>
+<style>
+%identityCSS%
+%extraCSS%
+</style>
+<style>
+%themesCSS%
+</style>
+</head>
+<body>
+<div id="stage"%stageAttrs%>
+%stage%
+  <div id="progress"></div>
+  <div id="controls">
+  <label>section
+    <select id="section-jump"><option value="">&mdash; jump &mdash;</option></select>
+  </label>
+  &nbsp;&middot;&nbsp;
+  <label>code style
+    <select id="rexx-style">
+%rexxStyleOptions%
+    </select>
+  </label>
+  &nbsp;&middot;&nbsp;
+  <span class="controls-help" title="&#9664; &#9654; navigate  &middot;  F fullscreen">&#9432;</span>
+  </div>
+</div>
+<script>
+%runtimeJS%
+</script>
+<script>
+%chooserJS%
+</script>
+<script>
+%jumpJS%
+</script>
+</body>
+</html>

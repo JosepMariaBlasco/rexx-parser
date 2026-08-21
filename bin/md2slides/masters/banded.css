@@ -1,0 +1,49 @@
+/******************************************************************************/
+/*                                                                            */
+/*  master-banded.css -- Presentation master: "banded".                       */
+/*                                                                            */
+/*  MASTER axis: structure and geometry only. No fonts, no palette -- those   */
+/*  come from the theme, through --theme-* variables. This master gives the   */
+/*  deck a strong, institutional treatment: the title heading sits on a solid */
+/*  accent band bled to the slide edge, and a section divider reverses the    */
+/*  whole field out over the deep colour.                                     */
+/*                                                                            */
+/*  Used by:  default, wu.                                                    */
+/*  Selected at build time:  md2slides deck.md -mp banded                     */
+/*                                                                            */
+/*  Extracted from the original default.css / ci-wu.css, which were byte-for- */
+/*  byte identical below :root except for one un-variabled footer colour on   */
+/*  the reversed section field. That colour is now --theme-footer-muted, so   */
+/*  the two institutions differ only in their theme.                          */
+/*                                                                            */
+/******************************************************************************/
+
+/* Headings use the theme's title face. */
+.title, .kicker { font-family: var(--theme-font-title); }
+.kicker { color: var(--theme-accent); letter-spacing: 0.02em; }
+.title  { color: var(--theme-fg); }
+
+/* Footer: the left slot in the deep colour, quietly. */
+.deck-footer .footer-left { color: var(--theme-deep); font-weight: 700; }
+
+/* Title slide: heading on a solid accent band bled to the slide edge. */
+.slide.title-slide .title {
+  background: var(--theme-accent);
+  color: var(--theme-reversed-fg);
+  padding: 20px 26px;
+  margin-left: -56px;
+  margin-right: -56px;
+}
+.slide.title-slide .kicker { color: var(--theme-deep); }
+
+/* Section divider: a full deep field with the heading reversed out. */
+.slide.section {
+  background: var(--theme-deep);
+}
+.slide.section .title {
+  color: var(--theme-reversed-fg);
+  border-bottom: 3px solid var(--theme-accent);
+  font-size: 1.7em;
+}
+.slide.section .deck-footer,
+.slide.section .deck-footer .footer-left { color: var(--theme-footer-muted); }

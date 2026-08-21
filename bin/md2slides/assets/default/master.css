@@ -1,0 +1,43 @@
+/******************************************************************************/
+/*                                                                            */
+/*  master-neutral.css -- Presentation master: "neutral". NEW in this split.  */
+/*                                                                            */
+/*  MASTER axis: structure and geometry only. No fonts, no palette -- those   */
+/*  come from the theme, through --theme-* variables.                         */
+/*                                                                            */
+/*  This is the master a deck gets when -mp is not given. It is deliberately  */
+/*  the most uncommitted treatment possible: no colour band bled to the edge, */
+/*  no reversed-out field, no inflated headings. A section divider is marked  */
+/*  by a single thin rule and nothing else. The point is that "no -mp" should */
+/*  mean "no presentation decision has been made", not "you silently inherited */
+/*  the banded look" -- which is what the old default.css did.                */
+/*                                                                            */
+/*  Pairs by default with the neutral theme (assets/default/), but any theme  */
+/*  can select it. banded and flat remain available as explicit choices.      */
+/*                                                                            */
+/*  Selected at build time:  md2slides deck.md            (or -mp neutral)    */
+/*                                                                            */
+/******************************************************************************/
+
+/* Headings use the theme's title face. */
+.title, .kicker { font-family: var(--theme-font-title); }
+.kicker { color: var(--theme-accent); letter-spacing: 0.02em; }
+.title  { color: var(--theme-fg); }
+
+/* Footer: the left slot in the deep colour, quietly. */
+.deck-footer .footer-left { color: var(--theme-deep); font-weight: 700; }
+
+/* Title slide: no band. The heading is plain text in the foreground colour,  */
+/* at the slide's normal margins -- nothing bled, nothing reversed.           */
+.slide.title-slide .title {
+  color: var(--theme-fg);
+}
+
+/* Section divider: the page stays as it is; the break is marked by a single  */
+/* thin rule under a moderately larger heading. The least committal divider   */
+/* that still reads as a divider.                                             */
+.slide.section .title {
+  color: var(--theme-fg);
+  border-bottom: 2px solid var(--theme-rule);
+  font-size: 1.6em;
+}

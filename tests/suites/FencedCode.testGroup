@@ -256,6 +256,92 @@ Else
     "Empty block: produces highlight div even when empty")
 
 /******************************************************************************/
+/* Indented fenced blocks (issue #2)                                          */
+/*                                                                            */
+/* A ```rexx fence that lives inside a list item is indented. FencedCode must */
+/* (a) recognise the marker after the indent, (b) de-indent the code so the   */
+/* parser sees real column 1, and (c) re-indent the highlighted HTML by the   */
+/* same amount so Pandoc still reads the block as content of the list item.   */
+/* The un-indented (column-1) path must stay byte-identical.                  */
+/******************************************************************************/
+
+::Method test_indented_is_highlighted
+  result = FencedCode("test.md", .resources~Indented)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') > 0, -
+    "Indented: an indented rexx block is highlighted")
+
+::Method test_indented_keyword_highlight
+  result = FencedCode("test.md", .resources~Indented)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('class="rx-kw"') > 0, -
+    "Indented: Say inside an indented block is highlighted as keyword")
+
+::Method test_indented_no_fence_markers
+  result = FencedCode("test.md", .resources~Indented)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('```') == 0, -
+    "Indented: the indented fence markers are consumed, not left in output")
+
+::Method test_indented_html_is_reindented
+  -- The highlighted block must keep its two-space indent so Pandoc attaches it
+  -- to the enclosing list item. We look for a line that both is indented and
+  -- carries the highlight wrapper.
+  result = FencedCode("test.md", .resources~Indented)
+  reindented = 0
+  Loop line Over result
+    If line~startsWith("  "), line~caselessPos('highlight-rexx') > 0 Then reindented = 1
+  End
+  self~assertTrue(reindented, -
+    "Indented: highlighted HTML is re-indented under the list item")
+
+::Method test_indented_preserves_following_text
+  -- The closing marker is itself indented; if it were not recognised, the
+  -- trailing bullet would be swallowed into the block.
+  result = FencedCode("test.md", .resources~Indented)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos("After the block") > 0, -
+    "Indented: text after an indented block is preserved (close is recognised)")
+
+::Method test_indented_code_deindented
+  -- The keyword token must be exactly 'Say' with no list indent leaked into it.
+  result = FencedCode("test.md", .resources~Indented)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('>Say<') > 0, -
+    "Indented: the keyword token is exactly 'Say', no indent leaked in")
+
+::Method test_deep_indent
+  -- Six spaces: the real depth-3 case from the 142 deck (fences under CLI cmd).
+  result = FencedCode("test.md", .resources~DeepIndent)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') > 0, -
+    "Deep indent: a 6-space-indented block is highlighted")
+
+::Method test_indented_twiddles
+  result = FencedCode("test.md", .resources~IndentedTwiddles)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') > 0, -
+    "Indented twiddles: an indented ~~~ block is highlighted")
+
+::Method test_indented_close_with_tab
+  -- The closing marker sits after a tab; it must still be recognised so the
+  -- following text is not swallowed.
+  result = FencedCode("test.md", .resources~TabClose)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos("Tail text") > 0, -
+    "Tab close: a tab-indented closing marker is recognised")
+
+::Method test_column1_unchanged_by_indent_logic
+  -- Guardrail: the classic column-1 block still highlights, and its wrapper
+  -- div carries no leading indent (the indent branch left it alone).
+  result = FencedCode("test.md", .resources~Basic)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') > 0, -
+    "Column 1: an un-indented block is unaffected by the indent logic")
+  self~assertTrue(flat~pos("  <div") == 0, -
+    "Column 1: an un-indented block produces no leading indent on its div")
+
+/******************************************************************************/
 /* Test data                                                                  */
 /******************************************************************************/
 
@@ -356,4 +442,43 @@ Say ((
 ::Resource EmptyBlock
 ```rexx
 ```
+::END
+
+::Resource Indented
+- A bullet
+
+  ```rexx
+  Say "indented"
+  ```
+
+  - After the block
+::END
+
+::Resource DeepIndent
+- Level 1
+
+  - Level 2
+
+    - Level 3
+
+      ```rexx
+      Say "deep"
+      ```
+::END
+
+::Resource IndentedTwiddles
+- A bullet
+
+  ~~~rexx
+  Nop
+  ~~~
+::END
+::Resource TabClose
+- A bullet
+
+  ```rexx
+  Nop
+	```
+
+  Tail text
 ::END

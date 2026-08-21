@@ -311,6 +311,7 @@ Crumb:
     When doc"/utilities/md2epub"   Then Return "Md2epub"
     When doc"/utilities/md2html"   Then Return "Md2html"
     When doc"/utilities/md2pdf"    Then Return "Md2pdf"
+    When doc"/utilities/md2slides" Then Return "Md2slides"
     When doc"/utilities/trident"   Then Return "Trident"
     When doc"/utilities/identtest" Then Return "Identtest"
     When doc"/unicode"             Then Return "Unicode"

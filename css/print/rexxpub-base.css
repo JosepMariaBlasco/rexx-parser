@@ -309,13 +309,17 @@ Don't use % widths, because % is relative to the container.
 /* .newpage — explicit page break (all document classes).                     */
 /* .slide  — new slide (slides class).  Semantically a slide boundary,       */
 /*           mechanically a page break.                                       */
-/* .part   — section divider (slides, book).  Carries its own page break     */
-/*           so that {.part} alone is sufficient — no need for               */
-/*           {.part .newpage} or {.part .slide}.                              */
+/* .section — section divider (slides).  Carries its own page break so that  */
+/*           {.section} alone is sufficient — no need for                    */
+/*           {.section .newpage} or {.section .slide}.                        */
+/* .part   — the former name of the above, and still the right word in the   */
+/*           book class, where a part IS a part.  Kept so that existing      */
+/*           documents keep working; slides should prefer .section.          */
 /******************************************************************************/
 
 .newpage,
 .slide,
+.section,
 .part {
   break-before: page;
   page-break-before: always;
@@ -501,7 +505,7 @@ div.csl-indent {
 /* .title-page, .toc-exclude, and .abstract are explicitly excluded.          */
 /*                                                                            */
 /* Headings with class .unnumbered (Pandoc's {-} or {.unnumbered} syntax),    */
-/* .part, or .chapter are explicitly excluded.                                */
+/* .section, .part, or .chapter are explicitly excluded.                      */
 /*                                                                            */
 /* The em-space (\2003) separates the number from the heading text.           */
 /******************************************************************************/
@@ -561,7 +565,7 @@ div.content.section-numbers-4 h4::before {
   content: counter(h1counter) "." counter(h2counter) "." counter(h3counter) "." counter(h4counter) "\2003";
 }
 
-/* --- Exclusions: unnumbered, part, chapter, wrapper divs ----------------- */
+/* --- Exclusions: unnumbered, section, part, chapter, wrapper divs -------- */
 /*                                                                            */
 /* The wrapper selectors must carry the same div.content[...] prefix as the   */
 /* increment rules above, so that they match or exceed their specificity.     */
@@ -570,6 +574,7 @@ div.content[class*="section-numbers-"] h1.unnumbered,
 div.content[class*="section-numbers-"] h2.unnumbered,
 div.content[class*="section-numbers-"] h3.unnumbered,
 div.content[class*="section-numbers-"] h4.unnumbered,
+div.content[class*="section-numbers-"] h1.section,
 div.content[class*="section-numbers-"] h1.part,
 div.content[class*="section-numbers-"] h1.chapter,
 div.content[class*="section-numbers-"] .title-page h1,
@@ -591,6 +596,7 @@ div.content[class*="section-numbers-"] h1.unnumbered::before,
 div.content[class*="section-numbers-"] h2.unnumbered::before,
 div.content[class*="section-numbers-"] h3.unnumbered::before,
 div.content[class*="section-numbers-"] h4.unnumbered::before,
+div.content[class*="section-numbers-"] h1.section::before,
 div.content[class*="section-numbers-"] h1.part::before,
 div.content[class*="section-numbers-"] h1.chapter::before,
 div.content[class*="section-numbers-"] .title-page h1::before,

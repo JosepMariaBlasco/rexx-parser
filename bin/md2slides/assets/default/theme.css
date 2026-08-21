@@ -1,0 +1,56 @@
+/******************************************************************************/
+/*                                                                            */
+/*  theme.css -- The neutral, brand-free theme.                              */
+/*                                                                            */
+/*  THEME axis: fonts, colours, footer layout, institutional strings.         */
+/*  Structure lives in the master, not here. This file is pure --theme-*       */
+/*  declarations; it carries no rules of its own.                             */
+/*                                                                            */
+/*  Default master for this theme:  neutral                                     */
+/*                                                                            */
+/******************************************************************************/
+
+:root {
+  --theme-font-prose:   system-ui, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --theme-font-mono:    ui-monospace, Consolas, 'Courier New', monospace;
+  --theme-font-title:   system-ui, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  --theme-accent:       #3a6ea5;   /* a neutral, unbranded blue                 */
+  --theme-deep:         #2b2f36;   /* near-black slate for reversed fields      */
+  --theme-fg:           #2b2f36;   /* headings ride the slate                   */
+  --theme-bg:           #ffffff;
+  --theme-muted:        #6b7280;
+  --theme-rule:         var(--theme-accent);
+
+  --theme-othercode-bg: #f4f4f5;   /* a very soft grey for non-Rexx code        */
+  --theme-output-bg:    #e8e8e8;
+
+  --theme-title-weight: 700;
+
+  --theme-mono-advance: 0.600;     /* a safe average for common monospaces      */
+
+  /* Legibility floor and ceiling: the runtime may shrink code to fit a       */
+  /* slide, but never below the floor.                                        */
+  --theme-min-code-size: 14px;
+  --theme-max-code-size: 20px;
+
+  /* Tempo: a calm, middle-of-the-road duration.                             */
+  --theme-anim-duration: 320ms;
+
+  /* Footer layout: a sober default -- page number left, nothing forced in    */
+  /* the centre, presenter and optional credits on the right. Square brackets  */
+  /* mark an optional group, emitted only if every field inside has a value.   */
+  --theme-footer-left:   "[{page} of {total-pages}]";
+  --theme-footer-center: "";
+  --theme-footer-right:  "{presenter}[ · {credit}][ · {license}]";
+
+  --theme-footer-height:   64px;
+  --theme-min-footer-size: 11px;
+
+  /* Promoted from master rules during the theme/master split:      */
+  /* the reversed text colour on bands/fields, and the muted footer  */
+  /* colour that used to be hard-coded on the reversed section field. */
+  --theme-reversed-fg:  #ffffff;
+  --theme-footer-muted: #9aa3ad;
+}
+

@@ -51,7 +51,7 @@ ProcessOptions:
       When "-xtr", "--executor" Then executor = 1
       Otherwise Call Error "Invalid option '"option"'."
     End
-    Call ProcessOptions
+    Signal ProcessOptions
   End
 
   filename = option

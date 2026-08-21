@@ -1,0 +1,40 @@
+/* -------------------------------------------------------------------------- */
+/* business-card master page (WU "Abschlussfolie" -- the closing contact page).*/
+/* STRUCTURAL: a grid of contact cards. Any number of cards (multiple authors).*/
+/* Cards auto-flow; 1-2 per row on a 3-up grid. Colours come from the identity.*/
+/* -------------------------------------------------------------------------- */
+.business-card .cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 26px;
+  margin-top: 0.6em;
+  max-width: 900px;
+}
+.business-card .vcard {
+  border: 1px solid var(--theme-accent);
+  border-top: 6px solid var(--theme-accent);
+  padding: 18px 22px;
+  background: #fff;
+}
+.business-card .vcard .name {
+  font-family: var(--theme-font-title);
+  font-size: 1.05em;
+  font-weight: 700;
+  color: var(--theme-deep);
+  margin: 0 0 2px 0;
+}
+.business-card .vcard .role {
+  font-size: 0.82em;
+  color: var(--theme-accent);
+  margin: 0 0 10px 0;
+}
+.business-card .vcard .detail {
+  font-size: 0.82em;
+  color: var(--theme-fg);
+  margin: 3px 0;
+  line-height: 1.4;
+}
+/* The label ("Email", "Web") is separated from its value here, not by a
+   non-breaking space typed into the source: an author writing Markdown should
+   never have to type an HTML entity to get spacing right. */
+.business-card .vcard .detail b { color: var(--theme-deep); margin-right: 0.45em; }

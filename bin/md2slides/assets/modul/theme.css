@@ -1,0 +1,62 @@
+/******************************************************************************/
+/*                                                                            */
+/*  theme.css -- MODUL University Vienna -- institutional theme.             */
+/*                                                                            */
+/*  THEME axis: fonts, colours, footer layout, institutional strings.         */
+/*  Structure lives in the master, not here. This file is pure --theme-*       */
+/*  declarations; it carries no rules of its own.                             */
+/*                                                                            */
+/*  Default master for this theme:  flat                                        */
+/*                                                                            */
+/******************************************************************************/
+
+:root {
+  --theme-font-prose:   Arial, 'Helvetica Neue', Helvetica, sans-serif;
+  --theme-font-mono:    Consolas, 'DejaVu Sans Mono', 'Courier New', monospace;
+  --theme-font-title:   Arial, 'Helvetica Neue', Helvetica, sans-serif;
+
+  --theme-accent:       #c8102e;   /* MODUL crimson (logo, footer, title band)  */
+  --theme-deep:         #7d0a1d;
+  --theme-fg:           #1a1a1a;
+  --theme-bg:           #ffffff;
+  --theme-muted:        #9a9a9a;
+  --theme-rule:         var(--theme-accent);
+
+  --theme-othercode-bg: #eef1f7;   /* pale blue-grey, as in the source deck     */
+  --theme-output-bg:    #e4e4e4;   /* grey: output is a different register      */
+
+  --theme-title-weight: 700;
+
+  /* Consolas is narrower than WU's IBM Plex Mono, so the same code block is  */
+  /* fitted to a larger size here. This is the number the whole width-fitting */
+  /* mechanism turns on, and the reason three identities were worth building. */
+  --theme-mono-advance: 0.550;
+
+  --theme-min-code-size: 14px;
+  --theme-max-code-size: 20px;   /* nothing is fitted larger than this */
+  --theme-anim-duration: 260ms;
+
+  /* Footer LAYOUT. MODUL pins the page number to the left, ahead of the      */
+  /* institutional line -- the source deck does the same. Under the slot      */
+  /* model that is simply "both in the left slot", which replaces the         */
+  /* padding-left hack the PoC needed to clear an absolutely-positioned       */
+  /* number.                                                                  */
+  /*                                                                          */
+  /* The copyright line carries no field because it names the INSTITUTION,    */
+  /* not this talk: it is true of every MODUL deck and false of every other.  */
+  /* The course, the presenter and the licence are the document's, and appear */
+  /* only if the document set them.                                           */
+  --theme-footer-left:   "[{page}  ]© MODUL University Vienna ▪ Private University";
+  --theme-footer-center: "[{course}]";
+  --theme-footer-right:  "[{presenter}][ · {credit}][ · {license}]";
+
+  --theme-footer-height:   64px;
+  --theme-min-footer-size: 11px;
+
+  /* Promoted from master rules during the theme/master split:      */
+  /* the reversed text colour on bands/fields, and the muted footer  */
+  /* colour that used to be hard-coded on the reversed section field. */
+  --theme-reversed-fg:  #ffffff;
+  --theme-footer-muted: var(--theme-muted);
+}
+

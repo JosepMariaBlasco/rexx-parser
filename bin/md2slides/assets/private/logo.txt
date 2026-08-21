@@ -1,0 +1,1 @@
+data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 60'><text x='6' y='38' font-family='Georgia,serif' font-size='26' font-style='italic' fill='%230f6f74'>Fundamentals</text></svg>

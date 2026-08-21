@@ -1,0 +1,68 @@
+/******************************************************************************/
+/*                                                                            */
+/*  theme.css -- WU Wien -- institutional theme.                             */
+/*                                                                            */
+/*  THEME axis: fonts, colours, footer layout, institutional strings.         */
+/*  Structure lives in the master, not here. This file is pure --theme-*       */
+/*  declarations; it carries no rules of its own.                             */
+/*                                                                            */
+/*  Default master for this theme:  banded                                      */
+/*                                                                            */
+/******************************************************************************/
+
+:root {
+  --theme-font-prose:   Verdana, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --theme-font-mono:    'IBM Plex Mono', Consolas, 'Courier New', monospace;
+  --theme-font-title:   Georgia, 'Times New Roman', serif;
+
+  --theme-accent:       #0096D3;   /* WU cyan                                   */
+  --theme-deep:         #002350;   /* WU dark blue                             */
+  --theme-fg:           #002350;   /* headings ride the dark blue             */
+  --theme-bg:           #ffffff;
+  --theme-muted:        #6b7b8c;
+  --theme-rule:         var(--theme-accent);
+
+  --theme-othercode-bg: #fdf3d8;   /* cream, as in the source rexx sheets      */
+  --theme-output-bg:    #e4e4e4;
+
+  --theme-title-weight: 700;
+
+  --theme-mono-advance: 0.600;     /* IBM Plex Mono                             */
+
+  /* Legibility floor. The runtime may shrink code to make a slide fit, but  */
+  /* never below this: a lecture hall sets the limit, not the layout. An     */
+  /* identity owns the number because it owns the typeface it applies to.    */
+  --theme-min-code-size: 14px;
+  --theme-max-code-size: 20px;   /* nothing is fitted larger than this */
+
+  /* Tempo. WHICH effects exist is runtime behaviour and no identity may       */
+  /* change it; how BRISK they are is a matter of tone, and that is identity.  */
+  /* This is the only hook a CI has into the animation catalogue.              */
+  --theme-anim-duration: 320ms;
+
+  /* Footer LAYOUT. The identity says which fields appear, in what order and   */
+  /* in which slot; the document says what they are worth. WU follows its      */
+  /* official template: institute on the left, page number centred, presenter  */
+  /* on the right.                                                            */
+  /*                                                                          */
+  /* Square brackets mark an optional group: it is emitted only if every field */
+  /* inside it has a value. That is what lets one template serve both an       */
+  /* ordinary slide and a slide showing borrowed material, which supplies a    */
+  /* credit the others do not have -- and it is what keeps a stray separator   */
+  /* from hanging off the end of a field the document never set.               */
+  --theme-footer-left:   "{affiliation}";
+  --theme-footer-center: "{page}";
+  --theme-footer-right:  "{presenter}[ · {credit}][ · {license}]";
+
+  /* The band reserved at the foot of every slide. Content is kept clear of    */
+  /* it and a multi-line footer is shrunk into it, down to the floor below.    */
+  --theme-footer-height:   64px;
+  --theme-min-footer-size: 11px;
+
+  /* Promoted from master rules during the theme/master split:      */
+  /* the reversed text colour on bands/fields, and the muted footer  */
+  /* colour that used to be hard-coded on the reversed section field. */
+  --theme-reversed-fg:  #ffffff;
+  --theme-footer-muted: #93a7bd;
+}
+

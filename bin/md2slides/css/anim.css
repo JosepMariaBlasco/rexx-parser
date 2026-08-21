@@ -1,0 +1,96 @@
+/* -------------------------------------------------------------------------- */
+/* Animation catalogue.                                                        */
+/*                                                                            */
+/* A small, named set of CSS-only transitions -- orthogonal to the CI, exactly  */
+/* like the master pages: animation is runtime BEHAVIOUR, not identity, so the  */
+/* same slide animates the same way under any CI. The runtime only toggles      */
+/* classes and sets --anim-dur; every effect below is pure CSS.                 */
+/*                                                                            */
+/* The one thing an identity may legitimately set is the TEMPO: a sober CI and  */
+/* a lively one disagree about how long 'brisk' is. That is what               */
+/* --theme-anim-duration is for. It is the only hook an identity has here, and it  */
+/* does not let a CI change WHICH effects exist -- the catalogue stays closed.  */
+/*                                                                            */
+/* PAGE transitions: put anim="NAME" on a slide heading. Applied as the slide   */
+/*   becomes .current. Names: fade (default), slide, fade-color, cut.           */
+/* ELEMENT transitions: put anim="NAME" on a .fragment. Applied as it becomes   */
+/*   .revealed. Names: fade (default), fade-up, fade-down, fade-left,           */
+/*   fade-right, scale-in, blur-in, cut.                                        */
+/*                                                                            */
+/* anim-duration="N" (on slide or fragment) overrides the duration for that     */
+/* one element. N is in SECONDS, like every other time in a deck; an explicit   */
+/* "ms" suffix is still honoured. The runtime writes it into --anim-dur.        */
+/* -------------------------------------------------------------------------- */
+
+:root { --anim-dur: var(--theme-anim-duration, 320ms); }
+
+/* ---- PAGE transitions -------------------------------------------------- */
+/* The runtime adds .anim-in to a slide the moment it becomes current, and     */
+/* .anim-back as well when we arrived by going BACKWARDS. Only the slide       */
+/* family reads that flag: fade, fade-color and cut are symmetric effects and  */
+/* look identical whichever way the deck is travelling, so they ignore it.     */
+
+.slide[data-anim="slide"].current.anim-in     { animation: pg-slide  var(--anim-dur) ease-out; }
+.slide[data-anim="fade-color"].current.anim-in{ animation: pg-fadecol var(--anim-dur) ease-out; }
+.slide[data-anim="fade"].current.anim-in      { animation: pg-fade   var(--anim-dur) ease-out; }
+/* cut = no animation at all; declaring it simply suppresses the default fade. */
+.slide[data-anim="cut"].current               { animation: none; }
+
+/* Going back, the push comes from the other side. This is the phone-gallery   */
+/* gesture: the direction of travel is what tells the audience whether we are  */
+/* advancing or returning, and a 'back' that enters from the same side as a    */
+/* 'forward' reads as a glitch. Jumps (the overlay, a hash landing, Ctrl+Home  */
+/* /End) carry no direction and so use the forward form: they are arrivals,    */
+/* not steps, and inventing a direction for them would be a lie.               */
+.slide[data-anim="slide"].current.anim-in.anim-back { animation-name: pg-slide-back; }
+
+@keyframes pg-fade  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pg-slide { from { opacity: 0; transform: translateX(48px); }
+                      to   { opacity: 1; transform: translateX(0); } }
+@keyframes pg-slide-back { from { opacity: 0; transform: translateX(-48px); }
+                           to   { opacity: 1; transform: translateX(0); } }
+@keyframes pg-fadecol {
+  0%   { opacity: 0; }
+  40%  { opacity: 0; background: var(--theme-accent, #0096d3); }
+  100% { opacity: 1; }
+}
+
+/* ---- ELEMENT (fragment) transitions ------------------------------------ */
+/* Fragments occupy their space while hidden, so nothing reflows on reveal.   */
+
+.fragment {
+  opacity: 0;
+  transition: opacity var(--anim-dur) ease-out,
+              transform var(--anim-dur) ease-out,
+              filter var(--anim-dur) ease-out;
+}
+.fragment.revealed { opacity: 1; }
+
+/* Pre-reveal offsets per effect. On reveal, the offset returns to zero.      */
+.fragment[data-anim="fade-up"]              { transform: translateY(14px); }
+.fragment[data-anim="fade-up"].revealed     { transform: translateY(0); }
+
+.fragment[data-anim="fade-down"]            { transform: translateY(-14px); }
+.fragment[data-anim="fade-down"].revealed   { transform: translateY(0); }
+
+.fragment[data-anim="fade-left"]            { transform: translateX(-28px); }
+.fragment[data-anim="fade-left"].revealed   { transform: translateX(0); }
+
+.fragment[data-anim="fade-right"]           { transform: translateX(28px); }
+.fragment[data-anim="fade-right"].revealed  { transform: translateX(0); }
+
+.fragment[data-anim="scale-in"]             { transform: scale(0.9); }
+.fragment[data-anim="scale-in"].revealed    { transform: scale(1); }
+
+.fragment[data-anim="blur-in"]              { filter: blur(6px); }
+.fragment[data-anim="blur-in"].revealed     { filter: blur(0); }
+
+/* cut on an element mirrors cut on a page: it appears, it does not arrive.   */
+/* Without it there was no way to ask for an instant reveal -- the floor was  */
+/* always a fade -- which made the two halves of the catalogue asymmetric.    */
+.fragment[data-anim="cut"]                  { transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fragment { transition: opacity 1ms; transform: none !important; filter: none !important; }
+  .slide.current.anim-in { animation: none !important; }
+}

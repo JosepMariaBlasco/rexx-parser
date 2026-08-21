@@ -19,7 +19,8 @@
 /*                                                                            */
 /*   ::::: title-page        Title slide                                      */
 /*   h1 {.slide}             Content slide — h1 is the slide title            */
-/*   h1 {.part}              Section divider — centred, large                 */
+/*   h1 {.section}           Section divider — centred, large                 */
+/*                           ({.part} is the former name, still accepted)     */
 /*   ::::: closing-page      Optional closing slide                           */
 /*                                                                            */
 /* Version history:                                                           */
@@ -42,6 +43,9 @@
 /*                  Fix: Pandoc-highlighted blocks (div.sourceCode) now      */
 /*                  have the same vertical margin as plain pre blocks;       */
 /*                  adjacent code blocks (command + output) are tightened.   */
+/* 20260815         Section dividers are now {.section}; {.part} kept as an  */
+/*                  alias.  The book class shares .part, where "part" is    */
+/*                  the correct word, so it cannot simply be renamed.       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -78,9 +82,12 @@ h1 {
 
 /******************************************************************************/
 /* Section divider slides — web view                                         */
-/* Use {.part} on an h1 for a full-page centred section title.               */
+/* Use {.section} on an h1 for a full-page centred section title.            */
+/* {.part} is the former name and still works: the book class uses it too,   */
+/* where "part" is the right word, and existing documents must not break.    */
 /******************************************************************************/
 
+h1.section,
 h1.part {
   font-size: 2em;
   text-align: center;
@@ -406,6 +413,7 @@ div.content table tbody {
   /* Vertically centred on the page.                                       */
   /**************************************************************************/
 
+  h1.section,
   h1.part {
     background-color: transparent;
     color: #00529B;

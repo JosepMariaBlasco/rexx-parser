@@ -252,16 +252,12 @@
     color: #88f;                        /* the inner part of the string       */ /* String suffix                      */ /* Quotes                             */
   }
 
-.highlight-rexx-light .rx-str.rx-ssuf,            .highlight-rexx-light .rx-bstr.rx-ssuf,            .highlight-rexx-light .rx-xstr.rx-ssuf,            .highlight-rexx-light .rx-ystr.rx-ssuf,            .highlight-rexx-light .rx-pstr.rx-ssuf,            .highlight-rexx-light .rx-gstr.rx-ssuf,            .highlight-rexx-light .rx-tstr.rx-ssuf,            .highlight-rexx-light .rx-ustr.rx-ssuf            {color: #0ff;}
 
-.highlight-rexx-light .rx-str.rx-oquo, .highlight-rexx-light .rx-str.rx-cquo, .highlight-rexx-light .rx-bstr.rx-oquo, .highlight-rexx-light .rx-bstr.rx-cquo, .highlight-rexx-light .rx-xstr.rx-oquo, .highlight-rexx-light .rx-xstr.rx-cquo, .highlight-rexx-light .rx-ystr.rx-oquo, .highlight-rexx-light .rx-ystr.rx-cquo, .highlight-rexx-light .rx-pstr.rx-oquo, .highlight-rexx-light .rx-pstr.rx-cquo, .highlight-rexx-light .rx-gstr.rx-oquo, .highlight-rexx-light .rx-gstr.rx-cquo, .highlight-rexx-light .rx-tstr.rx-oquo, .highlight-rexx-light .rx-tstr.rx-cquo, .highlight-rexx-light .rx-ustr.rx-oquo, .highlight-rexx-light .rx-ustr.rx-cquo {color: #ff0;}
 
 .highlight-rexx-light .rx-const { /* String suffix                      */ /* Quotes                             */
   }
 
-.highlight-rexx-light .rx-const.rx-ssuf            {color: #0ff;}
 
-.highlight-rexx-light .rx-const.rx-oquo, .highlight-rexx-light .rx-const.rx-cquo {color: #fff;}
 
 .highlight-rexx-light .rx-int,                              
   .highlight-rexx-light .rx-deci,                              
@@ -341,97 +337,58 @@
       color:#36c;                       /* Color (symbols and strings)        */          /* Suffix (for strings)               */
     }
 
-.highlight-rexx-light .rx-const.rx-bif-func.rx-ssuf, .highlight-rexx-light .rx-const.rx-bif-proc.rx-ssuf {color: #0ff;}
 
-.highlight-rexx-light .rx-const.rx-bif-func.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-bif-func.rx-cquo,                        
-      .highlight-rexx-light .rx-const.rx-bif-proc.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-bif-proc.rx-cquo {color: #ff0;}
 
 .highlight-rexx-light .rx-const.rx-int-func, .highlight-rexx-light .rx-const.rx-int-proc, .highlight-rexx-light .rx-const.rx-block, .highlight-rexx-light .rx-const.rx-label {
       color:#f30;                       /* Color (symbols and strings)        */          /* Suffix (for strings)               */
     }
 
-.highlight-rexx-light .rx-const.rx-int-func.rx-ssuf, .highlight-rexx-light .rx-const.rx-int-proc.rx-ssuf, .highlight-rexx-light .rx-const.rx-block.rx-ssuf, .highlight-rexx-light .rx-const.rx-label.rx-ssuf {color: #0ff;}
 
-.highlight-rexx-light .rx-const.rx-int-func.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-int-func.rx-cquo,                        
-      .highlight-rexx-light .rx-const.rx-int-proc.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-int-proc.rx-cquo,                        
-      .highlight-rexx-light .rx-const.rx-block.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-block.rx-cquo,                        
-      .highlight-rexx-light .rx-const.rx-label.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-label.rx-cquo {color: #ff0;}
 
 .highlight-rexx-light .rx-const.rx-routine, .highlight-rexx-light .rx-const.rx-pkg-func, .highlight-rexx-light .rx-const.rx-pkg-proc, .highlight-rexx-light .rx-const.rx-ext-pkg-func, .highlight-rexx-light .rx-const.rx-ext-pkg-proc {
       color:#f0a;                       /* Color (symbols and strings)        */          /* Suffix (for strings)               */
     }
 
-.highlight-rexx-light .rx-const.rx-routine.rx-ssuf, .highlight-rexx-light .rx-const.rx-pkg-func.rx-ssuf, .highlight-rexx-light .rx-const.rx-pkg-proc.rx-ssuf, .highlight-rexx-light .rx-const.rx-ext-pkg-func.rx-ssuf, .highlight-rexx-light .rx-const.rx-ext-pkg-proc.rx-ssuf {color: #0ff;}
 
-.highlight-rexx-light .rx-const.rx-routine.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-routine.rx-cquo,                        
-      .highlight-rexx-light .rx-const.rx-pkg-func.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-pkg-func.rx-cquo,                        
-      .highlight-rexx-light .rx-const.rx-pkg-proc.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-pkg-proc.rx-cquo,                        
-      .highlight-rexx-light .rx-const.rx-ext-pkg-func.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-ext-pkg-func.rx-cquo,                        
-      .highlight-rexx-light .rx-const.rx-ext-pkg-proc.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-ext-pkg-proc.rx-cquo {color: #ff0;}
 
 .highlight-rexx-light .rx-const.rx-ext-func, .highlight-rexx-light .rx-const.rx-ext-proc {
       color:#a5f;                       /* Color (symbols and strings)        */
       font-style: italic;               /* Italic (symbols and strings)       */          /* Suffix (for strings)               */
     }
 
-.highlight-rexx-light .rx-const.rx-ext-func.rx-ssuf, .highlight-rexx-light .rx-const.rx-ext-proc.rx-ssuf {color: #0ff;}
 
-.highlight-rexx-light .rx-const.rx-ext-func.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-ext-func.rx-cquo,                        
-      .highlight-rexx-light .rx-const.rx-ext-proc.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-ext-proc.rx-cquo {color: #ff0;}
 
 .highlight-rexx-light .rx-const.rx-method {
       color:#c09;                       /* Color (symbols and strings)        */
       font-style: italic;               /* Italic (symbols and strings)       */          /* Suffix (for strings)               */
     }
 
-.highlight-rexx-light .rx-const.rx-method.rx-ssuf {color: #0ff;}
 
-.highlight-rexx-light .rx-const.rx-method.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-method.rx-cquo {color: #ff0;}
 
 .highlight-rexx-light .rx-const.rx-namespace {
       color: #cc0;                      /* Color (symbols and strings)        */          /* Suffix (for strings)               */
     }
 
-.highlight-rexx-light .rx-const.rx-namespace.rx-ssuf {color: #0ff;}
 
-.highlight-rexx-light .rx-const.rx-namespace.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-namespace.rx-cquo {color: #ff0;}
 
 .highlight-rexx-light .rx-const.rx-resource {
-    color: #fc0;                        /* Color (symbols and strings)        */          /* Suffix (for strings)               */
+    color: #960;                        /* Color (symbols and strings)        */          /* Suffix (for strings)               */
     }
 
-.highlight-rexx-light .rx-const.rx-resource.rx-ssuf {color: #0ff;}
 
-.highlight-rexx-light .rx-const.rx-resource.rx-oquo,                        
-      .highlight-rexx-light .rx-const.rx-resource.rx-cquo {color: #ff0;}
 
 .highlight-rexx-light .rx-const.rx-res-delimiter {
-      color: #fc0;
+      color: #960;
       text-decoration:underline;
     }
 
 .highlight-rexx-light.rx-res-data {
-    color: #fc0;
+    color: #960;
     font-style: italic;
   }
 
 .highlight-rexx-light.rx-res-ignore {
-    color: #ccc;
+    color: #999;
     font-style: italic;
   } /* <--- END OF highlight-rexx-light                                          */
 

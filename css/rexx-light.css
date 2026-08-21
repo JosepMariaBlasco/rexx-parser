@@ -176,16 +176,8 @@
   .rx-str , .rx-bstr, .rx-xstr,         /* Classic Rexx strings               */
   .rx-ystr, .rx-pstr, .rx-gstr, .rx-tstr, .rx-ustr { /* TUTOR Unicode strings */
     color: #88f;                        /* the inner part of the string       */
-    &.rx-ssuf            {color: #0ff;} /* String suffix                      */
-    &.rx-oquo, &.rx-cquo {color: #ff0;} /* Quotes                             */
   }
 
-  /* Taken constants that are strings                                         */
-
-  .rx-const {
-    &.rx-ssuf            {color: #0ff;} /* String suffix                      */
-    &.rx-oquo, &.rx-cquo {color: #fff;} /* Quotes                             */
-  }
 
 /******************************************************************************/
 /* Numbers                                                                    */
@@ -267,9 +259,6 @@
 
     &.rx-bif-func, &.rx-bif-proc {
       color:#36c;                       /* Color (symbols and strings)        */
-      &.rx-ssuf {color: #0ff;}          /* Suffix (for strings)               */
-      &.rx-oquo,                        /* Quotes (for strings)               */
-      &.rx-cquo {color: #ff0;}
     }
 
     /*------------------------------------------------------------------------*/
@@ -278,9 +267,6 @@
 
     &.rx-int-func, &.rx-int-proc, &.rx-block, &.rx-label {
       color:#f30;                       /* Color (symbols and strings)        */
-      &.rx-ssuf {color: #0ff;}          /* Suffix (for strings)               */
-      &.rx-oquo,                        /* Quotes (for strings)               */
-      &.rx-cquo {color: #ff0;}
     }
 
     /*------------------------------------------------------------------------*/
@@ -291,9 +277,6 @@
     &.rx-routine, &.rx-pkg-func, &.rx-pkg-proc, &.rx-ext-pkg-func,
     &.rx-ext-pkg-proc {
       color:#f0a;                       /* Color (symbols and strings)        */
-      &.rx-ssuf {color: #0ff;}          /* Suffix (for strings)               */
-      &.rx-oquo,                        /* Quotes (for strings)               */
-      &.rx-cquo {color: #ff0;}
     }
 
     /*------------------------------------------------------------------------*/
@@ -303,9 +286,6 @@
     &.rx-ext-func, &.rx-ext-proc {
       color:#a5f;                       /* Color (symbols and strings)        */
       font-style: italic;               /* Italic (symbols and strings)       */
-      &.rx-ssuf {color: #0ff;}          /* Suffix (for strings)               */
-      &.rx-oquo,                        /* Quotes (for strings)               */
-      &.rx-cquo {color: #ff0;}
     }
 
     /*------------------------------------------------------------------------*/
@@ -315,9 +295,6 @@
     &.rx-method {
       color:#c09;                       /* Color (symbols and strings)        */
       font-style: italic;               /* Italic (symbols and strings)       */
-      &.rx-ssuf {color: #0ff;}          /* Suffix (for strings)               */
-      &.rx-oquo,                        /* Quotes (for strings)               */
-      &.rx-cquo {color: #ff0;}
     }
 
     /*------------------------------------------------------------------------*/
@@ -326,9 +303,6 @@
 
     &.rx-namespace {
       color: #cc0;                      /* Color (symbols and strings)        */
-      &.rx-ssuf {color: #0ff;}          /* Suffix (for strings)               */
-      &.rx-oquo,                        /* Quotes (for strings)               */
-      &.rx-cquo {color: #ff0;}
     }
 
     /*------------------------------------------------------------------------*/
@@ -337,15 +311,12 @@
 
     /* Resource name                                                          */
     &.rx-resource {
-    color: #fc0;                        /* Color (symbols and strings)        */
-      &.rx-ssuf {color: #0ff;}          /* Suffix (for strings)               */
-      &.rx-oquo,                        /* Quotes (for strings)               */
-      &.rx-cquo {color: #ff0;}
+    color: #960;                        /* Color (symbols and strings)        */
     }
 
     /* Resource delimiter                                                     */
     &.rx-res-delimiter {
-      color: #fc0;
+      color: #960;
       text-decoration:underline;
     }
 
@@ -357,13 +328,13 @@
 
   /* Resource data                                                            */
   &.rx-res-data {
-    color: #fc0;
+    color: #960;
     font-style: italic;
   }
 
   /* Resource ignored stuff                                                   */
   &.rx-res-ignore {
-    color: #ccc;
+    color: #999;
     font-style: italic;
   }
 

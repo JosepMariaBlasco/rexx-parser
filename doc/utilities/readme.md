@@ -31,6 +31,8 @@ and accept `-h` or `--help` to display the same help.
   to transform a set of Markdown files to HTML.
 - [**md2pdf**](md2pdf/) - A utility program
   that converts Markdown to print-quality PDF.
+- [**md2slides**](md2slides/) - A utility program
+  that converts Markdown to a interactive HTML slide deck.
 - [**RxCheck**](rxcheck/) - A utility program
   that runs the parser with a selectable number of
   early check options enabled.
