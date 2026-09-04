@@ -120,7 +120,7 @@ createCssFileData: procedure
   return mb~string
 
 
-/* ========================================================================= */
+/* ========================================================================== */
 
 ::class vimColors
 
@@ -269,7 +269,7 @@ check_omitted_hl_groups: procedure expose colorTable colorNameTable  hlGroups hl
   expose colorTable replacementTable hlGroups
 
   replacementTable["%STYLENAME%"] = self~styleName
-  replacementTable["%NONE%"]      = "/* %NONE% */"    /* do not highlight */
+  replacementTable["%NONE%"]      = "/* %NONE% */"        /* do not highlight */
 
 
    -- make sure that we catch omitted highlighting groups and use the Normal highlighting group for them
@@ -326,7 +326,7 @@ highlightColor: procedure expose colorTable replacementTable
   return
 
 
-/* ========================================================================= */
+/* ========================================================================== */
 
 ::class     colorRecord
 ::attribute useHighlightColor
@@ -347,7 +347,7 @@ isNil:
   return arg(1)
 
 
-/* ========================================================================= */
+/* ========================================================================== */
 
 ::routine pp
   return "["arg(1)"]"

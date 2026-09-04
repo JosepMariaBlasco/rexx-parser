@@ -5,16 +5,55 @@
 
    The colour is opt-in per identity: a CI that wants to tint its other-code
    declares --theme-othercode-bg; one that does not simply omits it, and the
-   var() fallback (transparent) lets the block inherit the panel ground. */
+   var() fallback (transparent) lets the block inherit the panel ground.
+
+   There are THREE kinds of <code> in a slide body, and each wants a different
+   ground -- getting this apart is the whole job of this sheet:
+
+     1. Non-Rexx inline code (`plain`, a Python snippet): gets the identity's
+        --theme-othercode-bg tint. The broad rule below.
+     2. A prose MENTION -- `x`{.rexx-*} -- is <code class="rexx rx-..."> inside a
+        .highlight-rexx-<style> wrapper. It WANTS the theme's chip
+        (.highlight-rexx-X .rexx sets its background+colour), exactly like the
+        one that renders in a title. So this sheet must NOT touch it: the theme
+        owns it. It is told apart by carrying the class "rexx" on the <code>.
+     3. A fenced block's per-line <code lineNo> -- also inside a wrapper, but
+        WITHOUT the "rexx" class (the block's ground is the <pre>'s, not each
+        line's). Left alone, the broad rule paints a pale box per line over the
+        panel; sitting inside a list makes those lines <code> the broad rule
+        reaches. So THIS one, and only this one, we reset to transparent. */
 
 div.sourceCode > pre {
   background: var(--theme-othercode-bg, transparent);
 }
 
-.slide .body code {
+/* (1) Non-Rexx inline code in the body gets the identity's other-code tint.
+   :not(.rexx) keeps it OFF a prose mention, whose <code> carries the "rexx"
+   class -- a mention must keep the theme's own chip (case 2), not this tint.
+   :not(.rexx) is a simple (single-class) negation: plain CSS3, safe on any
+   engine, unlike a Level-4 :not() with a combinator inside. */
+.slide .body code:not(.rexx) {
   font-family: var(--theme-font-mono);
   font-size: 0.85em;
   background: var(--theme-othercode-bg, transparent);
   padding: 1px 5px;
   border-radius: 3px;
+}
+
+/* (2) A prose mention's <code class="rexx"> is deliberately NOT matched above,
+   so nothing here tints it: the theme's own .highlight-rexx-<style> .rexx rule
+   paints its chip (background + colour), exactly as it does for a mention that
+   renders in a title. This sheet leaves it entirely to the Highlighter. */
+
+/* (3) A fenced block's per-line <code> (no "rexx" class, sits under the block's
+   <pre>) must not carry the inline tint -- otherwise a Rexx block inside a list
+   shows a pale box per line, because each line IS a <code> the broad rule would
+   reach. It has no .rexx class, so :not(.rexx) above already spares it from the
+   tint; this explicit reset additionally clears the chip padding/radius so the
+   line sits flush on the block's own <pre> ground. */
+.slide .body [class*="highlight-rexx-"] > pre > code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
 }

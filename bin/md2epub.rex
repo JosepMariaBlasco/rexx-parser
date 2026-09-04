@@ -355,7 +355,11 @@ AllWentWell:
   loaded   = .Set~new
   rest     = contents
   Loop While rest~pos('class="highlight-rexx-') > 0
+    -- The class attribute holds more than the style name (the block also
+    -- carries the structural rx-block class), so the name ends at the first
+    -- blank OR at the closing quote, whichever comes first.
     Parse Var rest 'class="highlight-rexx-'extraStyle'"'rest
+    Parse Var extraStyle extraStyle ." "
     If extraStyle == "" Then Iterate
     If extraStyle~verify(allowed) > 0 Then Iterate
     If extraStyle == thisTheme Then Iterate
@@ -503,9 +507,9 @@ Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
 See myhelp for details.
 ::End
 
-::Requires "BaseClassesAndRoutines.cls"
-::Requires "ErrorHandler.cls"
-::Requires "CLISupport.cls"
-::Requires "FencedCode.cls"
-::Requires "YAMLFrontMatter.cls"
-::Requires "RexxPubOptions.cls"
+::Requires "parser/BaseClassesAndRoutines.cls"
+::Requires "parser/ErrorHandler.cls"
+::Requires "parser/CLISupport.cls"
+::Requires "parser/FencedCode.cls"
+::Requires "parser/YAMLFrontMatter.cls"
+::Requires "parser/RexxPubOptions.cls"

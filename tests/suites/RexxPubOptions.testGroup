@@ -28,7 +28,7 @@ Else
   Return group~suite~execute~~print
 
 ::Requires "ooTest.frm"
-::Requires "RexxPubOptions.cls"
+::Requires "parser/RexxPubOptions.cls"
 
 ::Class RexxPubOptions.testGroup Subclass ooTestCase Public
 

@@ -28,7 +28,7 @@ Else
   Return group~suite~execute~~print
 
 ::Requires "ooTest.frm"
-::Requires "YAMLFrontMatter.cls"
+::Requires "parser/YAMLFrontMatter.cls"
 
 ::Class YAMLFrontMatter.testGroup Subclass ooTestCase Public
 

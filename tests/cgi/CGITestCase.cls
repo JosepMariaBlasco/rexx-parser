@@ -24,7 +24,7 @@
 
 /******************************************************************************/
 /* httpGet: perform an HTTP GET request via curl and return a directory with  */
-/* "status" (HTTP status code) and "body" (response body).                   */
+/* "status" (HTTP status code) and "body" (response body).                    */
 /******************************************************************************/
 
 ::Method httpGet

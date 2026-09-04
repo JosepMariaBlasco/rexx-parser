@@ -35,7 +35,7 @@
 /* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.               */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
-/* Name: HLDOC2PDF.REX                                                          */
+/* Name: HLDOC2PDF.REX                                                        */
 /* Type: Object REXX Script                                                   */
 /*                                                                            */
 -- Build an ooRexx document PDF

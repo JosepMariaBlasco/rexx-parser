@@ -1,8 +1,8 @@
 #!/usr/bin/env rexx
 /******************************************************************************/
 /*                                                                            */
-/* RunTests.rex - Run all .testGroup suites and summarize results            */
-/* ==============================================================            */
+/* RunTests.rex - Run all .testGroup suites and summarize results             */
+/* ==============================================================             */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */

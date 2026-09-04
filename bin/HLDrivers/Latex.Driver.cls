@@ -34,7 +34,7 @@
 --     and the highLight command.                                             --
 --                                                                            --
 -- The resulting TeX chunk has to be processed using LuaLaTeX.                --
---                                                                            --                                                                           --
+--                                                                            --
 -- Tested with the following style definition:                                --
 --   \lstdefinestyle{rexx} {                                                  --
 --     basicstyle=\fontsize{8.1pt}{10pt}\selectfont\color{white}\ttfamily     --

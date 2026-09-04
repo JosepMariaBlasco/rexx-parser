@@ -229,4 +229,4 @@ Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
 See myhelp for details.
 ::End
 
-::Requires "CLISupport.cls"
+::Requires "parser/CLISupport.cls"

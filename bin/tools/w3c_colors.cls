@@ -148,7 +148,7 @@ NumberOrPercentage:
 Return 0
 
 
-/* ========================================================================= */
+/* ========================================================================== */
 
 ::Requires "sRGB.cls" -- requires 'rxmath' library, hence available to us
 
@@ -228,7 +228,7 @@ Return 0
     End
   End
 
-/** Class constructor that initializes class attributes. */
+/** Class constructor that initializes class attributes.                      */
 ::method init        class
   expose clrName2all hex2colorName rgb2colorName
   -- creates four StringTables to manage HTML and SVG color names
@@ -492,7 +492,7 @@ Return 0
      clrName2all["YELLOWGREEN"         ] = ("YellowGreen"         , "#9acd32", "rgb(154,205, 50)", .true )
 
 
-/** Defines the usage information for this Rexx pacakge. */
+/** Defines the usage information for this Rexx package.                      */
 ::resource usage
 w3c_colors.cls ... utility for dealing with W3C colors
 

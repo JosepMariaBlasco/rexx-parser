@@ -533,3 +533,75 @@ SkipOverConstant:
 --------------------------------------------------------------------------------
 
 Return HTMLClass
+
+/******************************************************************************/
+/* PROSE FACADE - public vocabulary for inline mentions in prose              */
+/* ============================================================               */
+/*                                                                            */
+/* A prose author does not know, and should not need to know, the internal    */
+/* rx-* class taxonomy (which is compound, and shaped by the Options. that    */
+/* were active when the fenced blocks around it were highlighted). Instead,   */
+/* the author writes `` `Bark`{.rexx-method} `` and we translate the public   */
+/* name to whatever HTMLClasses would have emitted for that element           */
+/* category under the SAME Options. - one source of truth, so a future        */
+/* change to classprefix, or to "constant" mode, or to the rx-* taxonomy      */
+/* itself, keeps prose mentions in sync without touching this table.          */
+/*                                                                            */
+/* This is a lookup into a category (or constant/subcategory pair), never     */
+/* a hardcoded string: ProseElementTags below always re-derives the tags      */
+/* from the HTMLClass stem the caller already built with HTMLClasses().       */
+/*                                                                            */
+/******************************************************************************/
+
+--
+-- ProseTable returns the public-name -> element-category table.
+--
+-- Every entry maps a public name (without the "rexx-" prefix, which is
+-- FencedCode.cls's concern, not ours) to either:
+--   * a single element category, or
+--   * the .EL.TAKEN_CONSTANT category plus a constant subcategory.
+--
+-- To publish a new name: add one line here. Nowhere else changes.
+--
+
+::Routine ProseTable Public
+
+  Table. = .Nil -- One- or two-item array: (category) or (category, subcategory)
+
+  Table.["var"]       = .Array~of( .EL.SIMPLE_VARIABLE )
+  Table.["class"]     = .Array~of( .EL.TAKEN_CONSTANT, .CLASS.NAME   )
+  Table.["method"]    = .Array~of( .EL.TAKEN_CONSTANT, .METHOD.NAME  )
+  Table.["routine"]   = .Array~of( .EL.TAKEN_CONSTANT, .ROUTINE.NAME )
+  Table.["label"]     = .Array~of( .EL.TAKEN_CONSTANT, .LABEL.NAME   )
+  Table.["directive"] = .Array~of( .EL.DIRECTIVE_KEYWORD )
+
+Return Table.
+
+--
+-- ProseElementTags - translate a public name to its HTML class string
+--
+-- ARGUMENTS
+-- ---------
+--   HTMLClass:  The stem returned by HTMLClasses(Options.), already built
+--               against the Options. in effect for the surrounding document.
+--   PublicName: A name from ProseTable's table, e.g. "method" (the "rexx-"
+--               prefix already stripped by the caller).
+--
+-- RETURNS
+-- -------
+--   The HTML class string (e.g. "rx-const rx-method"), exactly what a
+--   fenced block would emit for that category today. .Nil if PublicName is
+--   not a published name — vocabulary validation is the caller's job
+--   (FencedCode.cls), so a typo can be reported with the source position,
+--   which we don't have here.
+--
+
+::Routine ProseElementTags Public
+  Use Strict Arg HTMLClass, PublicName
+
+  Table. = ProseTable()
+  entry  = Table.[ PublicName ]
+  If entry == .Nil Then Return .Nil
+
+  If entry~items == 1 Then Return HTMLClass[ entry[1] ]
+  Return HTMLClass[ entry[1], entry[2] ]

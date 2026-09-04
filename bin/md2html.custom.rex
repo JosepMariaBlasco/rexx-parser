@@ -53,9 +53,7 @@
 
   Use Arg array, title
 
-  Do line Over .resources~Header~makeString~changeStr("%title%",title)
-    array~append( line )
-  End
+  array~append(.resources~Header~makeString~caselessChangeStr("%title%",title))
 
 ::Resource Header
       <nav class="navbar navbar-inverse x-header">
@@ -81,9 +79,30 @@
       </nav>
       <div class="row">
         <div>
-          <h1>The Rexx-Parser</h1>
+          <h1>The Rexx Parser</h1>
         </div>
       </div>
+      <div class="row screenonly">
+        <div>
+          <div style="margin: 0 0 1em 0; padding: .7em 1em;
+                      border: 1px solid #e0a800; border-left-width: 6px;
+                      background: #fff8e1; color: #5f4b00;
+                      font-size: .9em; line-height: 1.4;">
+            <b>Sample layout &mdash; customize me.</b>
+            This page was produced by the <em>sample</em> customization layer that
+            ships with the Rexx&nbsp;Parser. This very notice comes from the
+            <code>md2html.Header</code> routine in
+            <code>bin/md2html.custom.rex</code>; the CSS is loaded from
+            <code>rexx.epbcn.com</code> by default. To make this page your own
+            &mdash; your own header, your own styles, your own CSS location &mdash;
+            adapt that file to your needs. See the section
+            <em>Structure of the md2html.custom.rex file</em> at
+            <a href="https://rexx.epbcn.com/rexx-parser/doc/utilities/md2html/">the
+            md2html documentation</a>. Replace the sample layer and this banner
+            disappears.
+          </div>
+        </div>
+      </div>     
       <br>
 ::END
 
@@ -106,9 +125,7 @@
 
   Use Arg array
 
-  Loop line Over .resources~SideBar
-    array~append( line )
-  End
+  array~appendAll(.resources~SideBar)
 
 ::Resource SideBar
           <div class='panel panel-default sidebar'>
@@ -140,10 +157,8 @@
 
   year = Date("S")[1,4]
 
-  Loop line Over .resources~PageFooter~makeString~changeStr("%year%",year)
-    array~append( line )
-  End
-
+  array~append(.resources~PageFooter~makeString~caselessChangeStr("%year%",year))
+  
 ::Resource PageFooter
       <hr class="before-footer">
       <div class="panel panel-default footer">

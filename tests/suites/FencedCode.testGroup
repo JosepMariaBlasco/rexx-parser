@@ -28,7 +28,7 @@ Else
   Return group~suite~execute~~print
 
 ::Requires "ooTest.frm"
-::Requires "FencedCode.cls"
+::Requires "parser/FencedCode.cls"
 
 ::Class FencedCode.testGroup Subclass ooTestCase Public
 
@@ -44,7 +44,7 @@ Else
 ::Method test_basic_highlight_div
   result = FencedCode("test.md", .resources~Basic)
   flat   = result~makeString('L', "0A"x)
-  self~assertTrue(flat~caselessPos('<div class="highlight-rexx-dark">') > 0, -
+  self~assertTrue(flat~caselessPos('<div class="highlight-rexx-dark rx-block" id="rx') > 0, -
     "Basic: contains highlight div with default style")
 
 ::Method test_basic_pre_code_tags
@@ -176,8 +176,8 @@ Else
 ::Method test_number_lines
   result = FencedCode("test.md", .resources~NumberLines)
   flat   = result~makeString('L', "0A"x)
-  self~assertTrue(flat~caselessPos('class="number-lines') > 0, -
-    "Line numbers: .numberLines produces number-lines class on pre")
+  self~assertTrue(flat~caselessPos('class="rx-numbered') > 0, -
+    "Line numbers: .numberLines produces rx-numbered class on pre")
 
 /******************************************************************************/
 /* caption= attribute                                                         */
@@ -342,6 +342,155 @@ Else
     "Column 1: an un-indented block produces no leading indent on its div")
 
 /******************************************************************************/
+/* Prose mentions: `x`{.rexx-*} outside fences                                */
+/*                                                                            */
+/* ScanProseMentions (private to FencedCode.cls) is exercised only through   */
+/* the public FencedCode() entry point, like every other test in this file.  */
+/* HTMLClasses.cls's own facade (ProseTable/ProseElementTags) and the HTML   */
+/* driver's ProseMention are unit-covered indirectly this way: what matters  */
+/* is the shape FencedCode() actually emits into a document.                 */
+/******************************************************************************/
+
+::Method test_prose_method_mention
+  result = FencedCode("test.md", .resources~ProseMethod)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-const rx-method">Bark</code>') > 0, -
+    "Prose mention: rexx-method resolves to 'rx-const rx-method'")
+
+::Method test_prose_mention_wrapper
+  result = FencedCode("test.md", .resources~ProseMethod)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<span class="highlight-rexx-dark"><code') > 0, -
+    "Prose mention: wrapped in its own highlight-rexx-<style> micro-container")
+
+::Method test_prose_var_mention
+  result = FencedCode("test.md", .resources~ProseVar)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-var">foo</code>') > 0, -
+    "Prose mention: rexx-var resolves to 'rx-var'")
+
+::Method test_prose_directive_mention
+  result = FencedCode("test.md", .resources~ProseDirective)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-dkw">::METHOD</code>') > 0, -
+    "Prose mention: rexx-directive resolves to 'rx-dkw' (directive keyword)")
+
+::Method test_prose_around_fence_before
+  -- Prose BEFORE a fence goes through source~section(1, start-1): the
+  -- other copy point from the one after the last fence.
+  result = FencedCode("test.md", .resources~ProseAroundFence)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-const rx-method">Bark</code>') > 0, -
+    "Prose around fence: mention BEFORE the fence is scanned")
+
+::Method test_prose_around_fence_after
+  -- Prose AFTER the last fence goes through the final "Do line Over source"
+  -- copy loop: the other of the two copy points ScanProseMentions patches.
+  result = FencedCode("test.md", .resources~ProseAroundFence)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-var">foo</code>') > 0, -
+    "Prose around fence: mention AFTER the fence is scanned")
+
+::Method test_prose_fence_itself_unaffected
+  -- The fence's own tokens are highlighted by the normal Highlighter path,
+  -- not by ScanProseMentions -- confirm the fence still highlights normally
+  -- when prose mentions surround it (no interference between the two).
+  result = FencedCode("test.md", .resources~ProseAroundFence)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('highlight-rexx-dark') > 0, -
+    "Prose around fence: the fence itself still produces its own highlight div")
+
+::Method test_prose_use_definition_match
+  -- The PoC's own acceptance criterion (revision-codigo-en-prosa.md sec.
+  -- 2.5): "Bark" mentioned in prose and "Bark" defined in a fenced block
+  -- must carry the EXACT SAME class string, so they render in the same
+  -- colour side by side.
+  result = FencedCode("test.md", .resources~ProseUseDefinitionMatch)
+  flat   = result~makeString('L', "0A"x)
+  proseTag  = '<code class="rexx rx-const rx-method">Bark</code>'
+  fenceTag  = '<span class="rx-const rx-method">Bark</span>'
+  self~assertTrue(flat~pos(proseTag) > 0, -
+    "Use/definition match: prose mention carries rx-const rx-method")
+  self~assertTrue(flat~pos(fenceTag) > 0, -
+    "Use/definition match: fenced definition carries the SAME class string")
+
+::Method test_prose_doubled_backtick_with_inner_tick
+  -- Mirrors Pandoc's own code-span rule: a doubled-backtick span whose
+  -- content itself contains a single backtick is still a valid span, closed
+  -- by the matching doubled run, and the mention machinery applies to it
+  -- exactly as to a single-backtick span.
+  result = FencedCode("test.md", .resources~ProseDoubledBacktick)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-var">a`b</code>') > 0, -
+    "Doubled backtick: a``b``{.rexx-var} keeps the inner backtick as content")
+
+::Method test_prose_escaped_span_not_a_mention
+  -- A doubled-backtick span used the OTHER way -- to quote a single-backtick
+  -- span literally -- must NOT be read as a mention, matching Pandoc: the
+  -- attribute after it is never consumed.
+  result = FencedCode("test.md", .resources~ProseEscapedSpan)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('``Bark`{.rexx-method}``') > 0, -
+    "Escaped span: a doubled-backtick-quoted span is left completely verbatim")
+  self~assertTrue(flat~caselessPos('highlight-rexx') == 0, -
+    "Escaped span: no micro-container is produced for it")
+
+::Method test_prose_typo_left_verbatim
+  -- An unpublished public name (typo, or simply not yet in ProseTable) must
+  -- be left EXACTLY as written -- backticks, dot and all -- not silently
+  -- dropped or partially rewritten. This is the specific regression this
+  -- test pins: an earlier version of the scanner lost the opening backtick
+  -- and the "rexx-" prefix when reconstructing an unrecognised mention.
+  result = FencedCode("test.md", .resources~ProseTypo)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('`x`{.rexx-clas}') > 0, -
+    "Typo: an unpublished name is left byte-for-byte as written")
+  self~assertTrue(flat~caselessPos('highlight-rexx') == 0, -
+    "Typo: no micro-container is produced for an unpublished name")
+
+::Method test_prose_unclosed_span_left_verbatim
+  -- No closing backtick at all: not our business, must not be touched.
+  result = FencedCode("test.md", .resources~ProseUnclosedSpan)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('`Bark{.rexx-method}') > 0, -
+    "Unclosed span: a code span with no closing backtick is left untouched")
+
+::Method test_prose_pinned_style
+  -- The `` `x`{.rexx-var:light} `` pinning form (future syntax, already
+  -- accepted by the scanner -- see FencedCode.cls's header) overrides the
+  -- document's default style for that one mention only.
+  result = FencedCode("test.md", .resources~ProsePinnedStyle)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<span class="highlight-rexx-light"><code class="rexx rx-var">foo</code></span>') > 0, -
+    "Pinned style: :light overrides the document's default style for this mention")
+
+::Method test_prose_adjacent_mentions
+  -- Two mentions back to back, no separating whitespace: neither consumes
+  -- the other's backticks or attribute span.
+  result = FencedCode("test.md", .resources~ProseAdjacentMentions)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-const rx-method">Bark</code>') > 0, -
+    "Adjacent mentions: the first mention (rexx-method) resolves correctly")
+  self~assertTrue(flat~pos('<code class="rexx rx-var">foo</code>') > 0, -
+    "Adjacent mentions: the second mention (rexx-var) resolves correctly")
+
+::Method test_prose_plain_backtick_code_untouched
+  -- Ordinary inline code with no attribute span at all must pass through
+  -- completely unchanged -- this is the common case, and the fast path
+  -- (a line with no backtick at all) is only half the guarantee.
+  result = FencedCode("test.md", .resources~ProsePlainCode)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('`plain code`') > 0, -
+    "Plain code: inline code with no {.rexx-*} attribute is left untouched")
+
+::Method test_prose_no_backtick_untouched
+  -- The fast path: a line with no backtick at all must come back identical.
+  result = FencedCode("test.md", .resources~ProseNoBacktick)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos("Plain prose, nothing special here.") > 0, -
+    "No backtick: a line with no backtick at all is returned unchanged")
+
+/******************************************************************************/
 /* Test data                                                                  */
 /******************************************************************************/
 
@@ -482,3 +631,67 @@ Say ((
 
   Tail text
 ::END
+
+::Resource ProseMethod
+We call `Bark`{.rexx-method} here.
+::END
+
+::Resource ProseVar
+We use `foo`{.rexx-var} here.
+::END
+
+::Resource ProseDirective
+The `::METHOD`{.rexx-directive} directive creates a method.
+::END
+
+::Resource ProseAroundFence
+Before the fence: `Bark`{.rexx-method}.
+
+```rexx
+Nop
+```
+
+After the fence: `foo`{.rexx-var}.
+::END
+
+::Resource ProseUseDefinitionMatch
+In prose: `Bark`{.rexx-method}.
+
+```rexx
+::Method Bark
+  Nop
+```
+::END
+
+::Resource ProseDoubledBacktick
+A span with an inner backtick: ``a`b``{.rexx-var}.
+::END
+
+::Resource ProseEscapedSpan
+Not a mention: ``Bark`{.rexx-method}`` stays literal.
+::END
+
+::Resource ProseTypo
+An unpublished name: `x`{.rexx-clas} stays as written.
+::END
+
+::Resource ProseUnclosedSpan
+No closing backtick: `Bark{.rexx-method} here.
+::END
+
+::Resource ProsePinnedStyle
+Pinned to light: `foo`{.rexx-var:light}.
+::END
+
+::Resource ProseAdjacentMentions
+Back to back: `Bark`{.rexx-method}`foo`{.rexx-var} no space.
+::END
+
+::Resource ProsePlainCode
+Ordinary code: `plain code` with no attribute.
+::END
+
+::Resource ProseNoBacktick
+Plain prose, nothing special here.
+::END
+

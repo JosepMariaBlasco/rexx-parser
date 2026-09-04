@@ -135,9 +135,9 @@ Syntax:
 --------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"                      -- The Parser
-::Requires "BaseClassesAndRoutines.cls"           -- For ArgArray et al
-::Requires "ErrorHandler.cls"                     -- Standard error handling
-::Requires "CLISupport.cls"                       -- InitCLI()
+::Requires "parser/BaseClassesAndRoutines.cls"    -- For ArgArray et al
+::Requires "parser/ErrorHandler.cls"              -- Standard error handling
+::Requires "parser/CLISupport.cls"                -- InitCLI()
 ::Requires "modules/print/print.cls"              -- Helps in debug
 ::Requires "modules/identity/compile.cls"         -- The Identity compiler
 ::Requires "modules/identity/Clauses.cls"

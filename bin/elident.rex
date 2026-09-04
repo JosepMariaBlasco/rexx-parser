@@ -199,6 +199,6 @@ See myHelp for details.
 ::END
 
 ::Requires "Rexx.Parser.cls"
-::Requires "BaseClassesAndRoutines.cls"
-::Requires "ErrorHandler.cls"
-::Requires "CLISupport.cls"
+::Requires "parser/BaseClassesAndRoutines.cls"
+::Requires "parser/ErrorHandler.cls"
+::Requires "parser/CLISupport.cls"

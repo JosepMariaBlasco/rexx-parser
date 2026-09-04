@@ -28,8 +28,8 @@ myPath      =  FileSpec( "Location", myName )
 
 -- We will ensure that these two files exist, but we will not load them
 -- until they are really needed, because loading them is expensive.
-UnicodeData =  myPath"../bin/resources/UnicodeData-15.0.0.txt"
-NameAliases =  myPath"../bin/resources/NameAliases-15.0.0.txt"
+UnicodeData =  myPath"resources/UnicodeData-15.0.0.txt"
+NameAliases =  myPath"resources/NameAliases-15.0.0.txt"
 
 UnicodeData =  Stream(UnicodeData, "c", "query exists")
 NameAliases =  Stream(NameAliases, "c", "query exists")
@@ -37,7 +37,7 @@ NameAliases =  Stream(NameAliases, "c", "query exists")
 If UnicodeData == "" Then Do
  .Error~Say(                               -
    "File UnicodeData-15.0.0.txt not found" -
-   "in the 'bin/resources' subdirectory."  -
+   "in the 'resources' subdirectory."  -
   )
   Raise Halt
 End
@@ -45,7 +45,7 @@ End
 If NameAliases == "" Then Do
  .Error~Say(                               -
    "File NameAliases-15.0.0.txt not found" -
-   "in 'bin/resources' subdirectory."      -
+   "in 'resources' subdirectory."      -
   )
   Raise Halt
 End

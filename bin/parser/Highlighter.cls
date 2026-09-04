@@ -43,8 +43,6 @@
 
 .environment~Highlighter =  .Highlighter
 
--- Create ".."
-
 package      = .context~package
 pkgLocal     =  package~local
 myName       =  package~name
@@ -55,10 +53,10 @@ pkgLocal ~ . = .File~new( mypath"../" )~absolutePath
 /* Dependencies                                                               */
 /******************************************************************************/
 
+package~loadPackage(pkgLocal~."/HLDrivers/Drivers.cls")
+
 ::Requires "BaseClassesAndRoutines.cls"
-::Requires "Rexx.Parser.cls"
 ::Requires "StylePatch.cls"
-::Requires "HLDrivers/Drivers.cls"
 ::Requires "HTMLClasses.cls"
 
 /******************************************************************************/

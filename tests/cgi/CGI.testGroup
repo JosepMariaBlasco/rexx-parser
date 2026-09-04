@@ -140,7 +140,7 @@ Else
 
 ::Method test_fenced_code_highlight_div
   r = self~httpGet(self~fixtureURL("rexx-code.md"))
-  self~assertContains(r~entry("body"), 'class="highlight-rexx-dark"', -
+  self~assertContains(r~entry("body"), 'class="highlight-rexx-dark', -
     "Rexx fenced code produces highlight div")
 
 ::Method test_fenced_code_keyword

@@ -474,6 +474,6 @@ Syntax:
 /* Required packages                                                          */
 /******************************************************************************/
 
-::Requires "CLISupport.cls"
-::Requires "HTMLClasses.cls"
-::Requires "StyleSheet.cls"
+::Requires "parser/CLISupport.cls"
+::Requires "parser/HTMLClasses.cls"
+::Requires "parser/StyleSheet.cls"

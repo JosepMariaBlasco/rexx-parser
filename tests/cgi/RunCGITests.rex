@@ -280,7 +280,7 @@
   Return testRC
 
 /******************************************************************************/
-/* Ask: prompt the user for a yes/no answer. Returns 1 for yes, 0 for no.    */
+/* Ask: prompt the user for a yes/no answer. Returns 1 for yes, 0 for no.     */
 /******************************************************************************/
 
 Ask:

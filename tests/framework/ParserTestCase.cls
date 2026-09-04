@@ -20,7 +20,7 @@
 
 ::Requires "ooTest.frm"
 ::Requires "Rexx.Parser.cls"
-::Requires "ANSI.ErrorText.cls"
+::Requires "parser/ANSI.ErrorText.cls"
 
 ::Class ParserTestCase Subclass ooTestCase Public
 

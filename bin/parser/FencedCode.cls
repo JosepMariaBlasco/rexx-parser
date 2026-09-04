@@ -35,6 +35,7 @@
 /* 20260522         Accept "rexxvm" as an alias for the "cms" attribute       */
 /* 20260709    0.6  Mark explicit styles (for RexxHTTP)                       */
 /* 20260821         Implement nested code blocks                              */
+/* 20260831    0.7  Scan prose lines for `` `x`{.rexx-*} `` mentions          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -153,11 +154,25 @@
 -- Dependencies                                                               --
 --------------------------------------------------------------------------------
 
+package = .context~package
+myName  =  package~name
+mypath  =  FileSpec( "Location", myName )
+myDir   = .File~new( mypath"../" )~absolutePath
+
+/******************************************************************************/
+/* Dependencies                                                               */
+/******************************************************************************/
+
+-- ProseMention(), for prose mentions
+package~loadPackage(myDir"/HLDrivers/HTML.Driver.cls")
+
+
 ::Requires "BaseClassesAndRoutines.cls"
 ::Requires "Rexx.Parser.cls"
 ::Requires "Highlighter.cls"
 ::Requires "StylePatch.cls"
 ::Requires "ANSI.ErrorText.cls"
+::Requires "HTMLClasses.cls"
 
 --------------------------------------------------------------------------------
 -- Main routine                                                               --
@@ -186,6 +201,19 @@
   accum     = 0                         -- Accumulates read lines
 
   processed = .Array~new
+
+  -- Prose mentions (`` `x`{.rexx-*} ``, outside fences) are tagged against
+  -- the SAME HTMLClass a fenced block with no attributes of its own would
+  -- get: we run the document's default options through the exact same
+  -- ParseOptions/HTMLClasses path the main loop uses for each block below,
+  -- once, up front. One source of truth (see HTMLClasses.cls's prose
+  -- facade) -- a change to classprefix= or constant= in defaultOptions.
+  -- keeps prose mentions in sync automatically.
+  proseAttributes = ""
+  If defaultOptions.default \== "" Then
+    proseAttributes = "{"defaultOptions.default"}"
+  proseOptions.  = ParseOptions( filename, proseAttributes, defaultStyle )
+  proseHTMLClass = HTMLClasses( proseOptions. )
 
   -- We need a WHILE condition because the source array may change
   Loop Label Outer lineNo = 1 By 1 While lineNo < source~items
@@ -280,8 +308,11 @@
       End
     End
 
-    -- Up to line (start-1) there is nothing to change
-    processed~appendAll( source~section( 1, start - 1 ) )
+    -- Up to line (start-1), lines are prose: scan them for `` `x`{.rexx-*} ``
+    -- mentions (ScanProseMentions is a no-op on a line with none).
+    Do line Over source~section( 1, start - 1 )
+      processed~append( ScanProseMentions( line, proseHTMLClass, defaultStyle ) )
+    End
     -- We now copy the highlighted lines
     processed~appendAll( highlighted )
     processed~delete( processed~last ) -- Last line is an artifact
@@ -295,9 +326,9 @@
 
   End
 
-  -- Copy any remaining line in the source array
+  -- Copy any remaining line in the source array -- also prose, also scanned
   Do line Over source
-    processed~append(line)
+    processed~append( ScanProseMentions( line, proseHTMLClass, defaultStyle ) )
   End
 
   Return processed
@@ -307,13 +338,142 @@ MissingEndMarker:
     Additional("Missing end marker for code block starting at line "lineNo)
 
 --------------------------------------------------------------------------------
--- DeIndent -- Remove up to `n` leading whitespace columns from a line          --
+-- ScanProseMentions -- Highlight `x`{.rexx-*} mentions in a line of prose    --
 --------------------------------------------------------------------------------
--- Strips at most `n` leading blank or tab characters, counting a tab as one    --
--- column (the emitter indents fenced blocks with blanks; tabs are tolerated    --
--- but not expected). A line with fewer than `n` leading blanks loses only what  --
--- it has, never any non-blank content. Used to bring a list-indented code       --
--- block back to real column 1 before the Rexx parser sees it.                  --
+-- A prose mention is a Pandoc code span (a run of N backticks, content, the  --
+-- same run of N backticks closing it) immediately followed by an attribute   --
+-- span "{.rexx-name}" or "{.rexx-name:style}" (the ":style" pinning form is  --
+-- accepted by the scanner already -- see HTMLClasses.cls's ProseTable --     --
+-- even though nothing publishes it as a v1 feature yet).                     --
+--                                                                            --
+-- We mirror Pandoc's own code-span rule (verified empirically against        --
+-- Pandoc 3.1.3, see the design discussion): the closing run must have        --
+-- EXACTLY the same length as the opening one, so a code span that itself     --
+-- contains a shorter run of backticks (` ``x`y` `` `) is not split early,    --
+-- and a doubled backtick used to quote a literal backtick (`` `x` ``) never  --
+-- matches "{.rexx-...}" unless the author actually wrote the attribute       --
+-- right after the true closing run -- exactly Pandoc's own behaviour, which  --
+-- is what we are pre-empting here (we run before Pandoc ever sees the        --
+-- line). A span whose content does not resolve to a published name (see      --
+-- ProseElementTags) is left completely untouched, backticks and all --       --
+-- vocabulary is FencedCode's to validate, but silently, since we have no     --
+-- author-facing error channel for a line of prose (unlike a fenced block's   --
+-- Syntax 88.900). This may change once there is a natural place to warn.     --
+--                                                                            --
+-- ARGUMENTS                                                                  --
+--   line:      One line of prose (never a fence line; the caller only        --
+--              invokes this on lines already known to be outside fences).    --
+--   HTMLClass: The stem from HTMLClasses(), built once by the caller         --
+--              against the document's default options.                       --
+--   style:     The highlight style ("dark", "light", ...) for the            --
+--              micro-container -- the document's default, since a lone       --
+--              mention has no per-block style= attribute to override it.     --
+--                                                                            --
+-- RETURNS the line with every recognised mention replaced by its             --
+-- micro-container HTML (see HLDrivers/HTML.Driver.cls's ProseMention).       --
+-- A line with no backtick is returned unchanged without further scanning.    --
+
+::Routine ScanProseMentions Private
+  Use Strict Arg line, HTMLClass, style
+
+  If \line~contains("`") Then Return line
+
+  out  = ""
+  rest = line
+
+  Loop While rest \== ""
+    tick = rest~pos("`")
+    If tick == 0 Then Do  -- No more backticks: copy the remainder verbatim
+      out ||= rest
+      Leave
+    End
+
+    -- Copy everything up to the backtick run untouched
+    out ||= SubStr(rest, 1, tick - 1)
+    rest = SubStr(rest, tick)
+
+    -- Measure the opening run
+    openRun = Strip( rest, "Leading", "`" )
+    n       = Length(rest) - Length(openRun)
+    run     = Copies("`", n)
+
+    -- Find the first closing run of the SAME length (Pandoc's own rule)
+    body = openRun
+    p    = 1
+    Found = 0
+    Loop While p <= Length(body)
+      q = Pos(run, body, p)
+      If q == 0 Then Leave
+      -- A longer run of backticks at q does not count as this run's close
+      If SubStr(body, q + n, 1) == "`" Then Do
+        p = q + n
+        Iterate
+      End
+      Found = 1
+      Leave
+    End
+
+    If \Found Then Do -- Unterminated span: not our business, copy verbatim
+      out ||= run
+      rest = body
+      Iterate
+    End
+
+    content   = SubStr(body, 1, q - 1)
+    spanEnd   = SubStr(body, q + n)  -- immutable: right after the closing run
+    afterSpan = spanEnd
+
+    -- Is the span immediately followed by {.rexx-name} or {.rexx-name:style}?
+    tag = ""
+    If afterSpan~startsWith("{.rexx-") Then Do
+      Parse Value afterSpan With "{.rexx-"tag"}"rest2
+      -- Parse stops at the FIRST "}"; reject if the tag itself contains "{"
+      -- or spans past a "}" that was not really the attribute's own close
+      -- (afterSpan~pos of the matched "}" must precede any earlier "{")
+      closeBrace = Pos("}", afterSpan)
+      openBrace2 = Pos("{", afterSpan, 2)
+      If closeBrace == 0 Then tag = "" -- No closing brace: not a mention
+      Else If openBrace2 \== 0, openBrace2 < closeBrace Then tag = ""
+      Else afterSpan = SubStr(afterSpan, closeBrace + 1)
+    End
+    Else tag = ""
+
+    If tag == "" Then Do -- Not a recognised mention: copy the span verbatim
+      out ||= run || content || run
+      rest = spanEnd -- resume right after the closing run, untouched
+      Iterate
+    End
+
+    -- "name" or "name:style" -- the ":style" pinning suffix is future work
+    -- (see FencedCode.cls's header and HTMLClasses.cls's ProseTable), but we
+    -- already strip it here so an author experimenting with it does not get
+    -- a mangled public name looked up instead.
+    Parse Var tag publicName":"pinnedStyle
+
+    tags = ProseElementTags( HTMLClass, publicName )
+
+    If tags == .Nil Then Do -- Unpublished name (typo?): leave verbatim
+      out ||= run || content || run || "{.rexx-"tag"}"
+    End
+    Else Do
+      mentionStyle = style
+      If pinnedStyle \== "" Then mentionStyle = pinnedStyle
+      out ||= ProseMention( mentionStyle, tags, content )
+    End
+
+    rest = afterSpan
+  End
+
+  Return out
+
+--------------------------------------------------------------------------------
+-- DeIndent -- Remove up to `n` leading whitespace columns from a line        --
+--------------------------------------------------------------------------------
+-- Strips at most `n` leading blank or tab characters, counting a tab as one  --
+-- column (the emitter indents fenced blocks with blanks; tabs are tolerated  --
+-- but not expected). A line with fewer than `n` leading blanks loses only    --
+-- what it has, never any non-blank content. Used to bring a list-indented    --
+-- code block back to real column 1 before the Rexx parser sees it.           --
 
 ::Routine DeIndent Private
   Use Strict Arg line, n

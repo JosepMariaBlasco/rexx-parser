@@ -19,7 +19,10 @@ Version history
   <li> Upload hl\*.rex to SourceForge (20260812).
   <li> Update URL for net-oo-rexx (20260812).
   <li> New md2slides utility (20260816).
-  <li> Implement nested fenced code blocks.
+  <li> Implement indented fenced code blocks (20260816).
+  <li> Extend highlighting to code blocks in prose (20260831).
+  <li> Migrate line numbers to be more compatible with Pandoc (20260902).
+  <li> Move classes to bin/parser/ (20260903).
 <tr><td>20260303<td>0.5<td>
 <ul>
   <li> Jump release level to mark start of RexxPub.

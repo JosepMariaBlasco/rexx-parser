@@ -134,38 +134,21 @@
     var max = 0;
     for (var i = 0; i < slide.children.length; i++) {
       var c = slide.children[i];
-      if (c.classList.contains("deck-footer") ||
-          c.classList.contains("deck-logo")) continue;
+      if (c.classList.contains("deck-footer")) continue;
       var b = c.offsetTop + c.offsetHeight;
       if (b > max) max = b;
     }
     return max;
   }
 
+  /* Code is a fixed size now (the fitter is gone), so nothing is shrunk to fit:
+     a block that overflows its slide is an authoring problem to surface, not to
+     paper over by shrinking type. We only flag it. */
   function fitHeight(slide) {
     if (slide.hasAttribute("data-fitted")) return;
     slide.setAttribute("data-fitted", "1");
 
-    var blocks = slide.querySelectorAll('[style*="--fit-size"]');
-    if (!blocks.length) return;
-
-    var css = getComputedStyle(document.documentElement);
-    var floor = parseFloat(css.getPropertyValue("--theme-min-code-size")) || 14;
     var limit = slide.clientHeight - footerBand();   /* keep the band clear   */
-    var guard = 60;
-
-    while (contentBottom(slide) > limit && guard-- > 0) {
-      var changed = false;
-      for (var i = 0; i < blocks.length; i++) {
-        var size = parseFloat(blocks[i].style.getPropertyValue("--fit-size"));
-        if (size - 0.5 >= floor) {
-          blocks[i].style.setProperty("--fit-size", (size - 0.5) + "px");
-          changed = true;
-        }
-      }
-      if (!changed) break;                    /* at the floor: report, not maim */
-    }
-
     if (contentBottom(slide) > limit) slide.setAttribute("data-overflows", "1");
   }
 
@@ -183,7 +166,6 @@
     triggerPageAnim(slide, dir);
 
     setAllFragments(slide, !!enterFromEnd);
-    fitFooter(slide);                   /* before fitHeight: it owns the band */
     fitHeight(slide);                   /* only measurable once it is visible */
 
     updateProgress();
@@ -350,129 +332,15 @@
     return value;
   }
 
-  function pad2(n) { return (n < 10 ? "0" : "") + n; }
-
-  /* "today" and "now" resolve when the deck is opened, which is the moment    */
-  /* the audience is looking at it. Any other value is the author's own text   */
-  /* and is left exactly as written.                                          */
-  function resolveDate(value) {
-    if (value !== "today") return value;
-    var d = new Date();
-    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
-  }
-
-  function resolveTime(value) {
-    if (value !== "now") return value;
-    var d = new Date();
-    return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
-  }
-
-  /* Field resolution, in order of precedence: the slide's own value first,    */
-  /* then the deck's. That single rule is what "override per slide" amounts    */
-  /* to -- a slide showing borrowed material sets its own credit and licence   */
-  /* and inherits everything else.                                            */
-  function fieldValue(slide, name) {
-    if (name === "page") {
-      /* A title slide occupies a position but shows no number, exactly as in  */
-      /* a printed deck. Resolving it to empty here rather than hiding a box   */
-      /* in CSS keeps the behaviour true whichever slot the identity chose.    */
-      if (slide.classList.contains("title-slide")) return "";
-      return slide.getAttribute("data-page") || "";
-    }
-    if (name === "total-pages" || name === "totalPages") {
-      return slide.getAttribute("data-total-pages") || "";
-    }
-
-    var attr = "data-footer-" + name;
-    var value = slide.getAttribute(attr);
-    if (value === null && stage) value = stage.getAttribute(attr);
-    if (value === null) return "";
-
-    if (name === "date")    return resolveDate(value);
-    if (name === "time")    return resolveTime(value);
-    if (name === "license" || name === "licence") return expandLicence(value);
-    return value;
-  }
-
-  /* Template grammar, and there is no more of it than this:                   */
-  /*                                                                          */
-  /*   {field}   the value of that field, or nothing                          */
-  /*   [ ... ]   a group emitted only if every field inside it has a value    */
-  /*                                                                          */
-  /* The groups exist because separators belong to the format, not to the      */
-  /* values: without them a template reading "{presenter} · {license}" prints  */
-  /* a dangling middot on every deck that never set a licence.                 */
-  var FIELD = /\{([A-Za-z][\w-]*)\}/g;
-
-  function expandTemplate(tpl, slide) {
-    var filled = tpl.replace(/\[([^\[\]]*)\]/g, function (_, inner) {
-      var complete = true;
-      inner.replace(FIELD, function (_, name) {
-        if (!fieldValue(slide, name)) complete = false;
-        return "";
-      });
-      return complete ? inner : "";
-    });
-    return filled.replace(FIELD, function (_, name) {
-      return fieldValue(slide, name);
-    });
-  }
-
-  /* A custom property arrives quoted and padded; what we want is the string. */
-  function themeTemplate(css, slot) {
-    var raw = css.getPropertyValue("--theme-footer-" + slot).trim();
-    if (!raw) return "";
-    if (raw.length >= 2 && (raw[0] === '"' || raw[0] === "'")) {
-      raw = raw.slice(1, -1);
-    }
-    return raw;
-  }
-
+  /* The content must not climb into the bottom band; fitHeight subtracts this */
+  /* to know where the usable area ends. This is LAYOUT geometry (how much air */
+  /* the body gets), not a footer concept -- the band exists whether or not    */
+  /* anything is painted in it. --theme-footer-height is the theme's to set.   */
   function footerBand() {
     var css = getComputedStyle(document.documentElement);
     return parseFloat(css.getPropertyValue("--theme-footer-height")) || 64;
   }
 
-  var SLOTS = ["left", "center", "right"];
-
-  function composeFooters() {
-    var css = getComputedStyle(document.documentElement);
-    var templates = SLOTS.map(function (s) { return themeTemplate(css, s); });
-
-    slides.forEach(function (slide) {
-      var footer = slide.querySelector(".deck-footer");
-      if (!footer) return;
-      SLOTS.forEach(function (slot, i) {
-        var box = footer.querySelector(".footer-" + slot);
-        if (box) box.textContent = expandTemplate(templates[i], slide);
-      });
-    });
-  }
-
-  /* The footer earns the same treatment the code blocks get: it may run to    */
-  /* more than one line -- a licence, a credit, two presenters -- and when it  */
-  /* does it is shrunk into its band rather than allowed to climb into the     */
-  /* content. The floor is the identity's, for the same reason as the code     */
-  /* floor: whoever chose the typeface knows when it stops being readable.     */
-  function fitFooter(slide) {
-    var footer = slide.querySelector(".deck-footer");
-    if (!footer || footer.hasAttribute("data-fitted")) return;
-    footer.setAttribute("data-fitted", "1");
-
-    var css   = getComputedStyle(document.documentElement);
-    var floor = parseFloat(css.getPropertyValue("--theme-min-footer-size")) || 11;
-    var cs    = getComputedStyle(footer);
-    var room  = footerBand() - parseFloat(cs.bottom);
-    var size  = parseFloat(cs.fontSize);
-    var guard = 60;
-
-    while (footer.offsetHeight > room && size - 0.5 >= floor && guard-- > 0) {
-      size -= 0.5;
-      footer.style.fontSize = size + "px";
-    }
-
-    if (footer.offsetHeight > room) footer.setAttribute("data-overflows", "1");
-  }
 
   /* ---------------------------------------------------------------------- */
   /* Page numbering.                                                         */
@@ -490,14 +358,21 @@
   /* but it still occupies a position, so the numbers stay contiguous.        */
   /* ---------------------------------------------------------------------- */
 
-  /* Numbering no longer paints anything of its own: it establishes the two    */
-  /* fields and the footer prints them wherever its identity says. One number  */
-  /* on the slide, one mechanism to place it.                                  */
+  /* Numbering publishes the two RAW numbers the runtime alone can know -- the
+     slide's position and the deck total -- in BOTH forms the CSS may want:
+     as data-* attributes (for `content: attr(data-page)`) and as custom
+     properties (for use in calc() or wherever a variable is handier). It never
+     composes a string and never decides placement: "19", "19 / 42", hidden on
+     the title page -- all of that is the theme/master's CSS. One datum, two
+     spellings, zero opinions about the footer. */
   function numberSlides() {
     var total = slides.length;
     slides.forEach(function (s, i) {
-      s.setAttribute("data-page", String(i + 1));
-      s.setAttribute("data-total-pages", String(total));
+      var page = i + 1;
+      s.setAttribute("data-page", String(page));
+      s.setAttribute("data-total", String(total));
+      s.style.setProperty("--page", String(page));
+      s.style.setProperty("--total", String(total));
     });
   }
 
@@ -700,6 +575,9 @@
       case "f": case "F":
         toggleFullscreen(); e.preventDefault(); break;
 
+      case "F8":
+        toggleControls(); e.preventDefault(); break;
+
       case "Escape":
         setBlank(null); break;
 
@@ -752,6 +630,15 @@
     }
   }
 
+  /* F8 shows/hides the control box. It is born hidden (.controls-hidden set in  */
+  /* the template) so it never covers the slide footer during a talk; the        */
+  /* selects stay wired the whole time, so toggling visibility changes nothing   */
+  /* about how jump / code-style behave -- only whether they are on screen.      */
+  function toggleControls() {
+    var c = document.getElementById("controls");
+    if (c) c.classList.toggle("controls-hidden");
+  }
+
   /* ---------------------------------------------------------------------- */
   /* Init                                                                    */
   /* ---------------------------------------------------------------------- */
@@ -763,7 +650,6 @@
 
     slides.forEach(function (s) { setAllFragments(s, false); });
     numberSlides();
-    composeFooters();                   /* numbering first: {page} feeds it   */
 
     current = slideFromHash();
     slides.forEach(function (s, i) {
@@ -772,7 +658,6 @@
     triggerPageAnim(slides[current]);
 
     rescale();
-    fitFooter(slides[current]);   /* init opens a slide without showSlide      */
     fitHeight(slides[current]);
     updateProgress();
     scheduleTimers(slides[current]);

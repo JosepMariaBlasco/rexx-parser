@@ -137,7 +137,7 @@
   Use Strict Arg style, myClasses
 
   -- Compute the stylesheet file name, if needed: If "style" is
-  -- a simple style name, we look for "../css/rexx-"style".css";
+  -- a simple style name, we look for "../../css/rexx-"style".css";
   -- otherwise, we assume that "style" is in itself the file name.
   --
   -- In both cases, the file must exist.
@@ -151,7 +151,7 @@
   Else Do
      parse source . . thisPgm
      pgmDir = filespec(location,thisPgm)
-     file = pgmDir"../css/rexx-"style".css"
+     file = pgmDir"../../css/rexx-"style".css"
   End
 
   exists = Stream( file, "C", "Q Exists")

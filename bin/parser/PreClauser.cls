@@ -32,6 +32,7 @@
 /*                                                                            */
 /******************************************************************************/
 
+::Requires "Scanner.cls"
 ::Requires "BaseClassesAndRoutines.cls"
 
 ::Class PreClauser Public
@@ -636,5 +637,3 @@ BalanceBrackets:
 -- Square bracket "[" in position &1 on line &2
 -- requires a corresponding right square bracket "]".
 36.902: Syntax( 36.902, element, col, line)
-
-::Requires "Scanner.cls"

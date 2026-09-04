@@ -68,9 +68,10 @@
   local~mypath = mypath
   local ~ .    = .File~new( mypath"../" )~absolutePath      -- Creates ".."
 
-  Call Requires .."/bin/FencedCode.cls"
-  Call Requires .."/bin/YAMLFrontMatter.cls"
-  Call Requires .."/bin/RexxPubOptions.cls"
+  Call Requires .."/bin/Rexx.Parser.cls"
+  Call Requires .."/bin/parser/FencedCode.cls"
+  Call Requires .."/bin/parser/YAMLFrontMatter.cls"
+  Call Requires .."/bin/parser/RexxPubOptions.cls"
   Call Requires mypath"rexx.epbcn.com.optional.cls"
 
  .MyCGI~new~execute
@@ -352,13 +353,13 @@ Exit
     Then numberFiguresClass = "number-figures"
     Else numberFiguresClass = ""
 
-  /* Build listing and figure data-* attributes and CSS overrides            */
+  /* Build listing and figure data-* attributes and CSS overrides             */
   captionResult = BuildCaptionOverrides(opts)
   overrideCSS   = captionResult["overrideCSS"]
   listingsAttrs = captionResult["listingsAttrs"]
   figuresAttrs  = captionResult["figuresAttrs"]
 
-  /* Build chapter attributes                                                */
+  /* Build chapter attributes                                                 */
   chapterNum = opts["chapter"]
   If chapterNum \== .Nil Then Do
     chapterLabel = "'Chapter" chapterNum".'"

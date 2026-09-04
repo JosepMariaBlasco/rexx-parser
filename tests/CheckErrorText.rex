@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*                                                                            */
-/* CheckErrorText.rex - Verify ANSI.ErrorText.cls is up to date              */
-/* ==========================================================                */
+/* CheckErrorText.rex - Verify ANSI.ErrorText.cls is up to date               */
+/* ==========================================================                 */
 /*                                                                            */
 /* This program is part of the Rexx Parser package                            */
 /* [See https://rexx.epbcn.com/rexx-parser/]                                  */
@@ -18,11 +18,11 @@
 /*                                                                            */
 /******************************************************************************/
 
-/* Callable as: Call "CheckErrorText.rex" binDir, resourcesDir, fix          */
+/* Callable as: Call "CheckErrorText.rex" binDir, resourcesDir, fix           */
 /*                                                                            */
-/* binDir       — path to bin/ (where ANSI.ErrorText.cls lives)               */
-/* resourcesDir — path to bin/resources/ (where rexxmsg.xml lives)            */
-/* fix          — .true to regenerate if out of date, .false to just check    */
+/* binDir       - path to bin/ (where ANSI.ErrorText.cls lives)               */
+/* resourcesDir - path to bin/resources/ (where rexxmsg.xml lives)            */
+/* fix          - .true to regenerate if out of date, .false to just check    */
 /*                                                                            */
 /* Returns 1 if ANSI.ErrorText.cls is up to date (or was fixed).              */
 /* Returns 0 if out of date and fix is .false.                                */
@@ -32,7 +32,7 @@
   sl = .File~separator
 
   rexxMsg    = resourcesDir || sl"rexxmsg.xml"
-  target     = binDir || sl"ANSI.ErrorText.cls"
+  target     = binDir || sl"parser"sl"ANSI.ErrorText.cls"
   genScript  = .context~package~name
   genScript  = genScript~left(genScript~lastPos(sl))"GenErrorText.rex"
 

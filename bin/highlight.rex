@@ -264,10 +264,10 @@ Help:
 
 --------------------------------------------------------------------------------
 
-::Requires "Highlighter.cls"
-::Requires "FencedCode.cls"
-::Requires "CLISupport.cls"
-::Requires "ANSI.ErrorText.cls"
+::Requires "parser/Highlighter.cls"
+::Requires "parser/FencedCode.cls"
+::Requires "parser/CLISupport.cls"
+::Requires "parser/ANSI.ErrorText.cls"
 
 ::Resource Help
 myname - Highlight a Rexx program, or a file containing Rexx programs

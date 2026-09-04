@@ -1,0 +1,34 @@
+/******************************************************************************/
+/*                                                                            */
+/*  master.css -- "null" -- the master that adds no structure of its own.     */
+/*                                                                            */
+/*  Companion of assets/null/theme.css. The theme zeroes every institutional  */
+/*  STRING; this master removes every structural element md2slides adds ON TOP */
+/*  of the faithful ODP boxes, so the page carries only the reader's output.   */
+/*                                                                            */
+/*  What md2slides injects per flat slide, independent of the ODP:            */
+/*    - .deck-logo  : an <img> Assemble puts in every <section> (the brand     */
+/*                    logo). The only logos that may appear are the ODP         */
+/*                    master's own, composed by the reader; md2slides's         */
+/*                    belongs to a brand, not to the source, so it is hidden.  */
+/*    - .deck-footer: the synthetic institute/page/presenter line. Its strings */
+/*                    are already "" from the theme; hidden here too so it      */
+/*                    reserves no band and cannot overprint an ODP footer the   */
+/*                    master chrome will place in the same bottom zone.        */
+/*                                                                            */
+/*  What is deliberately NOT touched:                                          */
+/*    - the absolutely-positioned ODP boxes (the slide's real content);        */
+/*    - the composed ODP master chrome (title band today; fixed text / logos / */
+/*      page number as the master-page frente lands) -- that shows through;    */
+/*    - .slide .footer -- the reader's own :::footer from the source deck's     */
+/*      bottom band (isFooter), which is ODP content, not md2slides chrome.    */
+/*                                                                            */
+/*  This master paints NO band, NO divider, NO reversed field, NO heading      */
+/*  treatment: in the flat layout there are no semantic roles to style anyway, */
+/*  and a null page adds no mark of its own.                                   */
+/*                                                                            */
+/******************************************************************************/
+
+/* md2slides's own per-slide chrome: removed so only the ODP shows through.   */
+.slide.flat .deck-logo   { display: none; }
+.slide.flat .deck-footer { display: none; }

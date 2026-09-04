@@ -245,10 +245,10 @@ Syntax:
 --------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"
-::Requires "Globals.cls"
-::Requires "ErrorHandler.cls"
-::Requires "CLISupport.cls"
-::Requires "BaseClassesAndRoutines.cls"
+::Requires "parser/Globals.cls"
+::Requires "parser/ErrorHandler.cls"
+::Requires "parser/CLISupport.cls"
+::Requires "parser/BaseClassesAndRoutines.cls"
 ::Requires "modules/print/print.cls"
 
 ::Resource Help end "::End"

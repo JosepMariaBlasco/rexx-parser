@@ -34,20 +34,23 @@
 
  .environment~Stack        = .Stack
 
-::Requires "HTMLColors.cls"
-::Requires "StyleSheet.cls"
-::Requires "DebugSettings.cls"
-::Requires "BaseClassesAndRoutines.cls"
-::Requires "Globals.cls"
-::Requires "Scanner.cls"
-::Requires "Elements.cls"
-::Requires "Expressions.cls"
-::Requires "PreClauser.cls"
-::Requires "Clauses.cls"
-::Requires "KeywordInstructions.cls"
-::Requires "Directives.cls"
-::Requires "UnicodeSupport.cls"
-::Requires "SecondPass.cls"
+::Requires "parser/DebugSettings.cls"
+::Requires "parser/Globals.cls"
+::Requires "parser/BaseClassesAndRoutines.cls"
+::Requires "parser/UnicodeSupport.cls"
+::Requires "parser/Scanner.cls"
+::Requires "parser/PreClauser.cls"
+::Requires "parser/Clauses.cls"
+::Requires "parser/Elements.cls"
+::Requires "parser/Expressions.cls"
+::Requires "parser/KeywordInstructions.cls"
+::Requires "parser/Directives.cls"
+
+::Requires "parser/SecondPass.cls"
+
+::Requires "parser/HTMLColors.cls"
+::Requires "parser/StyleSheet.cls"
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -767,7 +770,7 @@ Return
 ::Attribute body      Get
 
 /******************************************************************************/
-/* EXTENSION                                                                      */
+/* EXTENSION                                                                  */
 /******************************************************************************/
 
 ::Routine Extension

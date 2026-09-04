@@ -4,7 +4,13 @@
   if (!sel) return;
   var KEY = "rexxpub.deck.rexxStyle";
   function apply(style) {
-    var blocks = document.querySelectorAll('[class*="highlight-rexx-"]');
+    /* Skip blocks whose style the author fixed with style= : the HTML driver  */
+    /* marks them with data-rexx-style-locked precisely so a client-side       */
+    /* chooser leaves them alone. Their inner tokens inherit colour by         */
+    /* descent and carry no highlight-rexx- class of their own, so excluding    */
+    /* the container is enough -- the children are never matched here anyway.  */
+    var blocks = document.querySelectorAll(
+      '[class*="highlight-rexx-"]:not([data-rexx-style-locked])');
     for (var i = 0; i < blocks.length; i++) {
       blocks[i].className = blocks[i].className.replace(
         /highlight-rexx-[A-Za-z0-9._-]+/g, "highlight-rexx-" + style);

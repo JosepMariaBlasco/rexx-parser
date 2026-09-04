@@ -382,7 +382,7 @@ ProcessArguments:
   Use Strict Arg package, begin, end, name, arguments
   self~init:super(package, begin, end)
 
--- A namespace-qualified call, i.e. call namespace:name args                                                   --
+-- A namespace-qualified call, i.e. call namespace:name args               
 
 ::Class NameSpace.Qualified.Call.Instruction Public SubClass Rexx.Instruction
 ::Attribute nameSpace
@@ -617,7 +617,7 @@ ProcessArguments:
   Return Name.List.Instruction( package, .Expose.Instruction, begin, end, elements )
 
 --------------------------------------------------------------------------------
---   exposed format: a list of valid symbols; a parenthesized symbol is      --
+--   exposed format: a list of valid symbols; a parenthesized symbol is       --
 --   stored as a 1-element array.                                             --
 --------------------------------------------------------------------------------
 
@@ -1426,7 +1426,7 @@ Templates:
 25.017: Syntax( 25.017, PROCEDURE, EXPOSE )
 
 --------------------------------------------------------------------------------
---   exposed format: a list of valid symbols; a parenthesized symbol is      --
+--   exposed format: a list of valid symbols; a parenthesized symbol is       --
 --   stored as a 1-element array.                                             --
 --------------------------------------------------------------------------------
 

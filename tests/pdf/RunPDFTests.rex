@@ -11,7 +11,7 @@
 /*                                                                            */
 /* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
 /*                                                                            */
-/* Checks prerequisites (ooRexx, Pandoc, Node.js, pagedjs-cli,               */
+/* Checks prerequisites (ooRexx, Pandoc, Node.js, pagedjs-cli,                */
 /* poppler-utils), offers to install missing ones, and runs the               */
 /* PDF test suite.                                                            */
 /* This script only works on Linux (including WSL). It uses apt-get for       */
@@ -196,7 +196,7 @@
   Return testRC
 
 /******************************************************************************/
-/* Ask: prompt the user for a yes/no answer. Returns 1 for yes, 0 for no.    */
+/* Ask: prompt the user for a yes/no answer. Returns 1 for yes, 0 for no.     */
 /******************************************************************************/
 
 Ask:

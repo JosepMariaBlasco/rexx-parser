@@ -31,7 +31,7 @@
 /* 20260314         Remove --section-numbers and --no-number-figures CLI      */
 /*                  options (now YAML-only)                                   */
 /* 20260314         Use InitCLI() from CLISupport.cls                         */
-/* 20260315         Extract FindFile internal routine for file search          */
+/* 20260315         Extract FindFile internal routine for file search         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -191,10 +191,23 @@ CommonSetup:
     If cssdir~exists, cssdir~isDirectory Then cssbase = "file:///"cssdir~absolutePath
   End
 
+  -- Stand-alone fallback: with no --path and no local "css/" directory, an
+  -- empty cssbase produces server-absolute links like href='/markdown.css',
+  -- which resolve against the local disk root and leave the output unstyled
+  -- (Rony's feedback). Point instead at the public CSS base so a bare
+  -- "md2html file.md" opens with highlighting straight away. The served use
+  -- (rexx.epbcn.com) always passes --path, so it never reaches this branch.
+  If cssbase = "" Then cssbase = "https://rexx.epbcn.com/rexx-parser/css"
+
   If jsbase = "" Then Do
     jsdir = .File~new(destination"/js")
     If jsdir~exists, jsdir~isDirectory Then jsbase = "file:///"jsdir~absolutePath
   End
+
+  -- Same stand-alone fallback as cssbase above: the style chooser's script
+  -- (style-chooser.js) has to load from somewhere when there is no local
+  -- "js/" directory, so point at the public JS base. Served use passes --path.
+  If jsbase = "" Then jsbase = "https://rexx.epbcn.com/rexx-parser/js"
 
   --
   -- Load default.md2html, a template to drive the .md to .html translation process.
@@ -310,7 +323,7 @@ DoSingleFile:
 
 --------------------------------------------------------------------------------
 -- FindFile -- Search for a file in the standard search path.                 --
--- Sets 'try' to the full path if found. Returns 1 if found, 0 if not.       --
+-- Sets 'try' to the full path if found. Returns 1 if found, 0 if not.        --
 --------------------------------------------------------------------------------
 
 FindFile:
@@ -502,13 +515,13 @@ AllWentWell: Nop
     Then numberFiguresClass = "number-figures"
     Else numberFiguresClass = ""
 
-  /* Build listing and figure data-* attributes and CSS overrides            */
+  /* Build listing and figure data-* attributes and CSS overrides             */
   captionResult = BuildCaptionOverrides(opts)
   overrideCSS   = captionResult["overrideCSS"]
   listingsAttrs = captionResult["listingsAttrs"]
   figuresAttrs  = captionResult["figuresAttrs"]
 
-  /* Build chapter attributes                                                */
+  /* Build chapter attributes                                                 */
   chapterNum = opts["chapter"]
   If chapterNum \== .Nil Then Do
     chapterLabel = "'Chapter" chapterNum".'"
@@ -566,6 +579,13 @@ AllWentWell: Nop
           res~append(                                                       -
             "    <script src='"jsbase"/numberSections.js'></script>"        -
           )
+      When "%stylechooser%"   Then
+        Call StyleChooserForm res, filenameSpecificStyle, defaultTheme
+      When "%stylechooserjs%" Then
+        If jsbase \== "" Then
+          res~append(                                                       -
+            "    <script src='"jsbase"/style-chooser.js'></script>"         -
+          )
       Otherwise res~append( line                                            -
         ~changeStr("%SectionNumbers%", sectionNumbersClass)                 -
         ~changeStr("%NumberFigures%",  numberFiguresClass)                  -
@@ -598,15 +618,47 @@ Hack:
   allowed = XRange(AlNum)".-_"
   styles = .Array~new
   Do i = i + 1 To res~items
-    Parse Value res[i] With ' class="highlight-rexx-'style'"'
+    -- The class attribute may carry additional classes after the style name
+    -- (e.g. "highlight-rexx-print rx-block"), so we stop at the first space
+    -- OR closing quote, whichever comes first, instead of requiring the quote
+    -- to follow the style name immediately.
+    Parse Value res[i] With ' class="highlight-rexx-'style'"' 
+    style = Word(style, 1)
     If style == "" Then Iterate
     If Verify(style, allowed) > 0 Then Iterate
     If \styles~hasItem(style) Then styles~append(style)
   End
 
+  ------------------------------------------------------------------------------
+  -- Link the sheets.  The styles this page actually uses are linked eagerly, --
+  -- each carrying data-rexx-style so the chooser can find it; every OTHER    --
+  -- style the chooser offers is linked with media="not all", which the       --
+  -- browser does not fetch until style-chooser.js flips it to "all".  This   --
+  -- is the same lazy-loading scheme the CGI (CGI.markdown.rex) uses, ported  --
+  -- here so a stand-alone md2html page ships the in-page style chooser too.  --
+  ------------------------------------------------------------------------------
+
   new = "    "
   Do style Over styles
-    new ||= "<link rel='stylesheet' href='"cssbase"/rexx-"style".css'>"
+    new ||= "<link rel='stylesheet' href='"cssbase"/rexx-"style".css'" -
+            "data-rexx-style='"style"'>"
+  End
+
+  -- The remaining shipped styles, lazily linked.  We enumerate them from the
+  -- css/ directory next to this program (same source the CGI uses), skipping
+  -- the "test<N>" development fixtures.  If that directory is not reachable
+  -- (e.g. a stand-alone run whose css/ lives only on the server) the chooser
+  -- still works for the eagerly-linked styles; the lazy list is best-effort.
+  myDir = FileSpec("Location", .context~package~name)
+  Call SysFileTree myDir"../css/rexx-*.css", sheets., "FO"
+  Do i = 1 To sheets.0
+    aStyle = FileSpec("Name", sheets.i)
+    Parse Var aStyle "rexx-"aStyle".css"
+    If aStyle == ""                      Then Iterate
+    If aStyle~caselessStartsWith("test") Then Iterate  -- dev-only fixture
+    If styles~hasItem(aStyle)            Then Iterate  -- already linked eagerly
+    new ||= "<link rel='stylesheet' href='"cssbase"/rexx-"aStyle".css'" -
+            "media='not all' data-rexx-style='"aStyle"'>"
   End
 
   res[subs] = new
@@ -631,6 +683,69 @@ OptionalRoutineMissing:
   code = Condition("O")~code
   If code == 43.1, Condition("A")[1] = routineName Then Return result
 Raise Propagate
+
+--------------------------------------------------------------------------------
+-- StyleChooserForm: append the in-page code-style chooser to the result      --
+-- array.  This is the md2html counterpart of the bar the CGI emits from      --
+-- rexx.epbcn.com.optional.cls, ported so a stand-alone page carries it too.  --
+--                                                                            --
+-- Every rexx-<style>.css the Parser ships becomes an <option>; the "test<N>" --
+-- development fixtures are skipped, matching the lazy-link list built for    --
+-- the <head> and the CGI's own rule.  The bar ships hidden="hidden": it is   --
+-- style-chooser.js that reveals it, and only on pages that really have       --
+-- highlighted Rexx blocks to restyle.  The print button rides along only for --
+-- print/* styles, exactly as in the CGI.                                     --
+--------------------------------------------------------------------------------
+StyleChooserForm: Procedure
+  Use Strict Arg res, filenameSpecificStyle, defaultStyle
+
+  -- defaultStyle is the style the page is actually rendered in (YAML style: or
+  -- md2html's "dark" default).  It MUST match, because style-chooser.js reads
+  -- data-rexx-default-style to decide which style the URL may safely omit and
+  -- which <option> to pre-select; a mismatch would mislabel the page on load.
+
+  -- Enumerate shipped styles from the css/ directory next to this program.
+  myDir = FileSpec("Location", .context~package~name)
+  Call SysFileTree myDir"../css/rexx-*.css", sheets., "FO"
+  options = .Array~new
+  Do i = 1 To sheets.0
+    name = FileSpec("Name", sheets.i)
+    Parse Var name "rexx-"name".css"
+    If name == ""                      Then Iterate
+    If name~caselessStartsWith("test") Then Iterate  -- dev-only fixture
+    If name == defaultStyle Then selected = ' selected="selected"'
+                            Else selected = ""
+    options~append('      <option value="'name'"'selected'>'name'</option>')
+  End
+
+  -- With no reachable css/ (e.g. a stand-alone run whose sheets live only on
+  -- the server) there are no options to offer, so we emit nothing: the page
+  -- still renders in its chosen style, just without the in-page switcher.
+  If options~isEmpty Then Return
+
+  res~append('    <form class="form-inline screenonly code-style-bar" hidden="hidden">')
+  res~append('      <div class="form-group">')
+  res~append('        <label for="rexx-style-chooser" style="margin-right: 10px;">')
+  res~append('          <span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Style')
+  res~append('        </label>')
+  res~append('        <select class="form-control" id="rexx-style-chooser"' -
+             ' data-rexx-default-style="'defaultStyle'"'                    -
+             ' style="width: auto; display: inline-block;">')
+  Do opt Over options
+    res~append(opt)
+  End
+  res~append('        </select>')
+  res~append('      </div>')
+  If filenameSpecificStyle~caselessStartsWith("print/") Then Do
+    res~append('      <div class="form-group" style="margin-left: 20px;">')
+    res~append('        <button type="button" class="btn btn-default" id="print-button">')
+    res~append('          <span class="glyphicon glyphicon-print" aria-hidden="true"></span> Print')
+    res~append('        </button>')
+    res~append('      </div>')
+  End
+  res~append('    </form>')
+
+  Return
 
 ::Resource Help End "::End"
 myname -- Markdown to HTML conversion tool
@@ -666,9 +781,9 @@ Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>.
 See myhelp for details.
 ::End
 
-::Requires "BaseClassesAndRoutines.cls"
-::Requires "ErrorHandler.cls"
-::Requires "CLISupport.cls"
-::Requires "FencedCode.cls"
-::Requires "YAMLFrontMatter.cls"
-::Requires "RexxPubOptions.cls"
+::Requires "parser/BaseClassesAndRoutines.cls"
+::Requires "parser/ErrorHandler.cls"
+::Requires "parser/CLISupport.cls"
+::Requires "parser/FencedCode.cls"
+::Requires "parser/YAMLFrontMatter.cls"
+::Requires "parser/RexxPubOptions.cls"

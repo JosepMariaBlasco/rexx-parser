@@ -68,7 +68,17 @@ html, body {
   position: absolute;
   inset: 0;
   display: none;
-  padding: 42px 56px var(--theme-footer-height, 64px) 56px;
+  /* Content inset is GEOMETRY, so it belongs to the theme/master, not to this
+     shared runtime. The runtime only supplies fallbacks; a theme sets its own
+     --theme-pad-top / --theme-pad-x to control how much air the content gets
+     above and at the sides. The footer band stays --theme-footer-height as
+     before. This is what lets a deck tighten its margins without editing the
+     runtime. */
+  padding:
+    var(--theme-pad-top, 42px)
+    var(--theme-pad-x, 56px)
+    var(--theme-footer-height, 64px)
+    var(--theme-pad-x, 56px);
   box-sizing: border-box;
   font-family: var(--theme-font-prose);
   color: var(--theme-fg);
@@ -79,6 +89,50 @@ html, body {
 }
 
 .slide.current { display: block; }
+
+/* FLAT (absolute-layout) regime. The ODP places every box by explicit page
+   coordinates against the full physical canvas (0cm = the slide's own edge),
+   so the theme's content padding — which exists to inset normal text flow —
+   must not apply here, or a box at left:0 lands 56px in and nothing reaches
+   the edge. Zero it so the absolute canvas owns the whole slide. The classic
+   <h1> regime keeps the padding. */
+.slide.flat { padding: 0; }
+
+/* The ODP measures a box's width as its TOTAL width — the frame edge to edge,
+   border and inner padding included — the way CSS border-box does. The browser
+   default (content-box) instead adds border and padding OUTSIDE the declared
+   width, so a box with a left padding (a process arrow whose label is indented
+   to clear its logo, padding-left:3.8cm) renders far wider than the ODP frame
+   and overflows to the right. border-box makes the emitted svg:width the real
+   rendered width, padding and border folded in, matching the source. Scoped to
+   the absolute boxes (direct children of .slide.flat). */
+.slide.flat > div { box-sizing: border-box; }
+
+/* A box's text is a <p> (one per box, its lines joined by <br>). Two browser
+   defaults fight the ODP here. First, the <p>'s default margin (~1em) does not
+   collapse inside the box's flex column, so it pushes the lines to opposite
+   ends — zeroed. Second, the <p> inherits the slide's 26px font-size, so the
+   <br> advances by ~26px even though the label text is smaller (13pt spans),
+   splitting a two-line label with a gap the source never had. Setting the <p>
+   itself to font-size:0 makes the line box take its height from the SPANS (each
+   carrying its real pt size) and from line-height, not from an inherited 26px;
+   the visible text is unaffected because every run is wrapped in a sized span.
+   A tight line-height then seats the two lines together as in the ODP. Scoped
+   to the absolute boxes (direct children of .slide.flat) so semantic <p>
+   regimes are untouched. */
+.slide.flat > div > p { margin: 0; font-size: 0; line-height: 1.2; }
+
+/* Master footer split across a right tab-stop (address left, author right).
+   The emitter emits two segment <span>s in a flex-row div, but Pandoc folds
+   them into a single <p>, which becomes the sole flex child and defeats
+   justify-content:space-between. Promote that <p> to the flex row itself so
+   the two segments land at opposite edges, as the ODP's tab-stop intends. */
+.slide.flat > div.master-footer-split > p {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: baseline;
+}
 
 /* Default page transition: a fade, applied only via the runtime's .anim-in    */
 /* marker so the animation catalogue (data-anim on a slide) can override it.    */
@@ -119,10 +173,32 @@ html, body {
 }
 
 /* body -- ordinary prose and lists                                           */
-.body { margin: 0.5em 0; }
+/* Prose base size. The body's level-1 text takes --theme-body-size (Rony's
+   outline level 1 is 21pt ≈ 34px, larger than the slide's own 26px base). The
+   per-level cascade below scales down from THIS size. A theme with no prose can
+   omit it; then the body falls back to the slide's inherited size. */
+.body { margin: 0.5em 0; font-size: var(--theme-body-size, 1em); }
 
 .body ul { margin: 0.3em 0; padding-left: 1.1em; }
 .body li { margin: 0.28em 0; }
+
+/* Outline font-size cascade: each nesting level is smaller than its parent,   */
+/* matching the LibreOffice Impress decks these slides are imported from. In    */
+/* those .odp the outline style declares a size PER LEVEL (level 1 the body     */
+/* size, then stepping down), so a deep bullet reads smaller than a shallow      */
+/* one. Reproducing that here keeps a generated deck visually close to the       */
+/* author's original instead of rendering every level at one flat size.          */
+/*                                                                            */
+/* Ratios are the corpus medians of level(n+1)/level(n) across all 38 decks    */
+/* (191 outline styles, all monotone non-increasing): 0.82, 0.89, 0.88. They    */
+/* are between-level ratios, NOT absolute: nested `em` compounds down the tree,  */
+/* so the effective size vs. level 1 lands at 1.00 / 0.82 / 0.73 / 0.64 -- the  */
+/* dominant (22,18,16,14)pt cascade and its rescaled siblings (32,28,24,20 ...). */
+/* Applied on the child ul so each level scales relative to the level above; a   */
+/* floor at level 4 stops the shrink where the corpus does (level 4+ is flat).   */
+.body ul ul       { font-size: 0.82em; }
+.body ul ul ul    { font-size: 0.89em; }
+.body ul ul ul ul { font-size: 0.88em; }   /* level 4; deeper stays at this size */
 
 /* -------------------------------------------------------------------------- */
 /* Two-column master page.                                                    */
@@ -166,8 +242,9 @@ html, body {
   box-sizing: border-box;
   line-height: 1.35;
   tab-size: 4;
-  width: 980px;                    /* must match BOX_WIDTH in the generator: */
-  max-width: 100%;                 /* the fitted size was computed for it    */
+  width: 100%;                     /* default: full content width. A deck that
+                                      wants Rony's centred, narrower box sets
+                                      its own width/margin in the theme/master. */
 }
 
 .code > pre, .output {
@@ -182,13 +259,45 @@ html, body {
 
 .output { background: var(--theme-output-bg); }
 
+/* An output block numbered by Pandoc (~~~output {.numberLines}) carries the
+   .output class on the <pre> ITSELF, and Pandoc gives that same <pre> a
+   margin-left:3em for its line-number gutter (pre.numberSource). The rule
+   above sets width:100% on .output; with box-sizing:border-box that resolves
+   to the FULL width of the wrapping div.sourceCode -- and then the 3em gutter
+   margin pushes the <pre> 3em PAST the wrapper's right edge. Pandoc's own
+   div.sourceCode{overflow:auto} then shows a horizontal scrollbar for content
+   that in fact fits: a spurious bar under a one-line output.
+
+   The <pre> must not claim the full width AND a gutter margin at once. Letting
+   width fall back to auto makes the <pre> shrink by exactly its own margin, so
+   its right edge lands back on the wrapper's -- no overflow, no bar, gutter
+   intact. This mirrors how our own numbered blocks work: there the width lives
+   on the .rx-block wrapper and the <pre> never fixes it. Keyed on numberSource,
+   the class Pandoc adds only when the block is numbered, so a plain unnumbered
+   output (no gutter, no margin) keeps the full-width rule and is untouched. */
+pre.output.numberSource { width: auto; }
+
 /*                                                                            */
-/* Build-time fitted size. The generator computes, from the longest line and   */
-/* the identity's monospaced metrics, the largest size at which that line      */
-/* fits, and emits it as --fit-size on the block. The fallback matters only    */
-/* if a block was emitted unfitted.                                            */
-/*                                                                            */
-.code > pre, .output { font-size: var(--fit-size, 20px); }
+/* Label-to-block adjacency. A loose <p> that introduces a block ("Output:")  */
+/* belongs tight against it, as in the source deck. The browser default gives  */
+/* a bare <p> 1em top+bottom, opening a gap far larger than the block's own     */
+/* 0.25em -- above AND below the label (the label "Output:" sits between the   */
+/* code block above and the output block below, so both its margins show).     */
+/* Keyed on ADJACENCY, not on "is a loose p": a <p> immediately followed by a  */
+/* code/output block gets BOTH margins tightened to 0.25em. Both matter -- the  */
+/* top margin closes the gap above the label (margin collapse against the      */
+/* preceding block takes the LARGER of the two, so the block's own margin can't */
+/* fix it; the label's own top margin must come down). CSS has no "preceded-by" */
+/* selector, but :has(+ ...) reaches this <p> from the block that FOLLOWS it,   */
+/* which is exactly the label. Chromium/paged.js render this deck, so :has is   */
+/* available.                                                                  */
+p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
+
+/* Code size is a FIXED value the theme declares (--theme-code-size), not a  */
+/* per-block size computed to fill a box. There is deliberately no fallback:  */
+/* a theme that shows code declares the size; a theme with no code needs      */
+/* none. (Per-slide override: --theme-code-size can be set on the section.)   */
+.code > pre, .output { font-size: var(--theme-code-size); }
 
 /* -------------------------------------------------------------------------- */
 /* Fragments -- stepped reveal.                                               */
@@ -203,52 +312,19 @@ html, body {
 /* Furniture: the parts supplied by the identity rather than by the slide.     */
 /* -------------------------------------------------------------------------- */
 
-/* The footer is three positional SLOTS, not a fixed set of named fields.      */
-/* What goes in each slot is the identity's business (--theme-footer-left and     */
-/* friends); what the values ARE is the document's. That split is the whole    */
-/* point: the same Markdown builds for another institution untouched, and the  */
-/* presenter's name never has to live in a stylesheet.                         */
-/*                                                                            */
-/* The band the footer sits in has a declared height, because a footer may run */
-/* to several lines and the runtime shrinks it to fit rather than let it climb */
-/* into the content. Both this rule and the slide's bottom padding read the    */
-/* same variable, so the reserved space and the used space cannot drift apart. */
-.deck-footer {
-  position: absolute;
-  left: 56px;
-  right: 56px;
-  bottom: 44px;
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  /* The controls chip is fixed in the bottom-right corner and about 30px tall.
-     The footer sits a clear band above it, so a footer of any length -- Rony's
-     runs the full institutional credit -- never slides under the chip, without
-     depending on reserving a guessed width. */
-  font-family: var(--theme-font-prose);
-  font-size: 15px;
-  line-height: 1.25;
-  color: var(--theme-muted);
-}
+/* No footer concept lives here any more. The runtime does not place a footer,
+   name its slots, or paint the author's ":::footer" zone: WHERE anything sits
+   at the bottom of a slide is the master's CSS to decide. The runtime's only
+   contribution to the bottom of the slide is DATA -- data-page / data-total and
+   the --page / --total custom properties, written by numberSlides() -- plus the
+   reserved band height (--theme-footer-height) that fitHeight reads so the body
+   never climbs into that space. The ".footer" class still arrives on the
+   author's zone (Pandoc emits <div class="footer">), but it is unstyled here;
+   the master positions it. */
 
-.deck-footer .footer-left   { flex: 1 1 0; text-align: left;   }
-.deck-footer .footer-center { flex: 0 1 auto; text-align: center; white-space: nowrap; }
-.deck-footer .footer-right  { flex: 1 1 0; text-align: right;  }
-
-/* An empty slot keeps its share of the row on purpose: the centre slot is     */
-/* centred because the two flexible slots either side balance it, and a deck   */
-/* that fills only one of them must not knock the page number off centre.      */
-
-.deck-logo {
-  position: absolute;
-  top: 30px;
-  right: 56px;
-  height: 58px;
-}
-
-/* Title slides carry no rule under the heading. They carry no page number    */
-/* either, but that is no longer a CSS matter: {page} resolves to empty on a   */
-/* title slide, so the number vanishes whichever slot the identity put it in.  */
+/* Title slides carry no rule under the heading. Whether they show a page       */
+/* number is the master's CSS to decide now (e.g. hide on .title-slide); the    */
+/* runtime writes data-page on every slide regardless.                          */
 .slide.title-slide .title { border-bottom: none; }
 
 /* -------------------------------------------------------------------------- */
@@ -286,18 +362,27 @@ html, body {
   align-items: center;
   flex-wrap: nowrap;
   gap: 6px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.94);
-  color: #1c1e22;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+  padding: 5px 12px;
+  border-radius: 7px;
+  /* On-demand (F8) means the box only shows when the presenter wants it, so it
+     no longer needs to hide -- it announces itself. A solid indigo panel with a
+     bright accent ring reads clearly as "controls active" over any slide, light
+     band or dark, and does not lean on the theme (it must stand out under -t
+     null too, where the theme vars are neutral). */
+  background: #1e2140;
+  color: #f2f3fb;
+  border: 1px solid #4c5bd4;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(76, 91, 212, 0.35);
   font: 12px/1.2 var(--theme-font-prose);
-  opacity: 0.7;
-  transition: opacity 160ms;
+  opacity: 1;
 }
 
-#controls:hover { opacity: 1; }
+/* The control box is hidden by default and toggled on with F8: it stays live
+   (jump and code-style still work) but only shows when asked, so it never sits
+   over the slide's own footer during a talk. The runtime flips .controls-hidden
+   on #controls; display:none takes it fully out of layout when hidden. */
+#controls.controls-hidden { display: none; }
+
 #controls label {
   white-space: nowrap;
   display: flex;
@@ -311,15 +396,15 @@ html, body {
   flex: 0 1 auto;
   max-width: 22ch;
   text-overflow: ellipsis;
-  background: #ffffff;
+  background: #f2f3fb;
   color: #16181c;
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  border: 1px solid #4c5bd4;
   border-radius: 3px;
   padding: 2px 4px;
 }
 #controls .controls-help {
   cursor: help;
-  opacity: 0.7;
+  opacity: 0.85;
   font-size: 14px;
   flex: 0 0 auto;
 }

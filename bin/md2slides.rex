@@ -14,10 +14,9 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20260815    0.1  First prototype (as md2deck.rex)                          */
 /* 20260816    0.2  Renamed md2deck -> md2slides. Identity split into two     */
-/*                  orthogonal axes: -t/--theme (brand, one) and -mp/--master- */
-/*                  pages (presentation, layered). Resolution by one rule:     */
-/*                  brand vs .css file. Highlighting flag renamed to           */
-/*                  --pandoc-highlight.                                        */
+/*                  orthogonal axes: -t/--theme (brand, one) and              */
+/*                  -mp/--master-pages (presentation, layered). Resolution    */
+/*                  by one rule: brand vs .css file.                          */
 /*                                                                            */
 /******************************************************************************/
 /*                                                                            */
@@ -43,9 +42,9 @@
 /* that requirement in April, and this follows suit.                          */
 /*                                                                            */
 /* Identity is two orthogonal axes, and this file emits neither: it lays out  */
-/* STRUCTURE and never names a font, a colour or a logo. The THEME (-t) brings */
-/* the brand -- fonts, palette, footer strings, in :root variables; the       */
-/* MASTER(s) (-mp) bring the presentation -- the rules that read those         */
+/* STRUCTURE and never names a font, a colour or a logo. The THEME (-t)       */
+/* brings the brand -- fonts, palette, footer strings, in :root variables;    */
+/* the MASTER(s) (-mp) bring the presentation -- the rules that read those    */
 /* variables. Adding an institution is a theme; adding a kind of presentation */
 /* is a master. Neither is a change here.                                     */
 /*                                                                            */
@@ -186,7 +185,7 @@
   Else cslPath = rootDir"/csl/"Lower(csl)".csl"
 
   ------------------------------------------------------------------------------
-  -- Read the source, extract the YAML front matter and the options          --
+  -- Read the source, extract the YAML front matter and the options           --
   ------------------------------------------------------------------------------
 
   source = .Array~new
@@ -246,7 +245,7 @@
   ------------------------------------------------------------------------------
   -- Rexx fenced code blocks go through the Highlighter, exactly as in the    --
   -- other pipelines. This is why a ~~~rexx block in a deck is marked up by   --
-  -- the real parser and not by an imitation of one.                         --
+  -- the real parser and not by an imitation of one.                          --
   ------------------------------------------------------------------------------
 
   defaultOptions. = 0
@@ -255,10 +254,22 @@
 
   source = FencedCode( sourceFile, source, defaultTheme, defaultOptions. )
 
+  -- Slide markers -> raw <hr class="slide">. A flat deck (from odp2md's absolute
+  -- layout) opens each slide with a `--- {.slide}` line instead of an <h1>, and
+  -- FoldIntoSlides folds on that. But Pandoc does NOT read `--- {.slide}` as a
+  -- thematic break: a `---` with a trailing attribute is plain text to Pandoc,
+  -- so the marker would survive verbatim into the body. We rewrite it to a raw
+  -- HTML `<hr class="slide">` block BEFORE Pandoc, which Pandoc passes through
+  -- untouched, giving the fold an unambiguous, content-safe boundary (a bare
+  -- `<hr>` an author drew inside a slide has no class and is never mistaken for
+  -- a break). A deck that still folds by <h1> simply has no such lines, so this
+  -- is a no-op there.
+  source = SlideMarkers(source)
+
   ------------------------------------------------------------------------------
-  -- Pandoc turns the Markdown into HTML. Header attributes survive as id,   --
+  -- Pandoc turns the Markdown into HTML. Header attributes survive as id,    --
   -- class and data-*, which is the whole reason the deck syntax needed no    --
-  -- invention: it is Pandoc's attribute syntax throughout.                  --
+  -- invention: it is Pandoc's attribute syntax throughout.                   --
   ------------------------------------------------------------------------------
 
   contents = .Array~new
@@ -295,6 +306,15 @@
 
   flat = contents~makeString("L", "0a"x)
 
+  -- Make the deck truly self-contained for pictures. Pandoc leaves content
+  -- images as <img src="img/<file>"> (relative refs into the deck's img/
+  -- folder that odp2md exported). We inline each as a base64 data URI so the
+  -- single .html carries its pictures with it - no img/ folder needed beside
+  -- it. Only img/-relative sources are touched: the theme/runtime data URIs
+  -- (logo SVGs, already embedded) and any absolute or http(s) src are left
+  -- alone. deckDir is where the .md - and thus img/ - lives.
+  flat = EmbedImages(flat, deckDir)
+
   ------------------------------------------------------------------------------
   -- Fold, assemble, write                                                    --
   ------------------------------------------------------------------------------
@@ -330,11 +350,11 @@
   End
 
   -- Metrics and footer contract live in the THEME: it owns :root. Masters carry
-  -- rules only, so they are never read for advance, floor, ceiling or band.
+  -- rules only. The footer band height is layout geometry (fitHeight reserves
+  -- it); the old advance/floor/ceiling were the code-fitter's, and the fitter is
+  -- gone -- code size is a fixed value the theme declares (--theme-code-size),
+  -- not something computed to fill a box.
   themeCSS = ReadFile(themeSheet)
-  advance  = MonoAdvance(themeCSS)
-  floor    = MinCodeSize(themeCSS)
-  ceiling  = MaxCodeSize(themeCSS)
   band     = FooterHeight(themeCSS)
 
   -- The effective sheet: theme first, then masters in cascade order, joined by
@@ -363,14 +383,15 @@
   fields = FooterFields(rexxpub)
   Call CheckFooter themeCSS, fields
 
-  -- A theme whose floor sits above its ceiling has no band left to fit into,
-  -- and the clamps would silently resolve it one way rather than the other.
-  -- Better said out loud than decided by the order of two Ifs.
-  If floor > ceiling Then
-    .Error~Say( "md2slides: warning: theme '"theme"' declares a code floor of" -
-                floor"px above its ceiling of" ceiling"px." )
+  stage = FoldIntoSlides(flat, band, fields)
 
-  stage = FoldIntoSlides(flat, advance, floor, band, ceiling)
+  -- No <h1> in the flat HTML means no slide ever opened: the input was empty,
+  -- was not markdown (e.g. an .odp passed by mistake), or carried no headings.
+  -- Writing a 200KB runtime-only deck in that case hides the mistake; say it.
+  If stage~countStr("<section") = 0 Then
+    Call Error "No slides produced from '"sourceFile"'. The input has no" -
+               "level-1 headings -- is it Markdown? (An .odp must be converted" -
+               "with odp2md first.) Aborting..."
 
   rexxThemes  = RexxThemes(rootDir)
   rexxOptions = RexxStyleOptions(rootDir, defaultTheme)
@@ -445,16 +466,24 @@ Error:
 /* FoldIntoSlides                                                             */
 /* =============                                                              */
 /*                                                                            */
-/* Pandoc hands us a flat sequence: h1, content, h1, content. A deck needs     */
-/* those grouped, because the runtime shows and hides whole slides. Each h1    */
-/* therefore opens a <section class="slide">, and the attributes the author    */
-/* wrote on the heading move up onto that section, where the runtime looks     */
+/* Pandoc hands us a flat sequence: h1, content, h1, content. A deck needs    */
+/* those grouped, because the runtime shows and hides whole slides. Each h1   */
+/* therefore opens a <section class="slide">, and the attributes the author   */
+/* wrote on the heading move up onto that section, where the runtime looks    */
 /* for them.                                                                  */
 /*                                                                            */
 /******************************************************************************/
 
 ::Routine FoldIntoSlides
-  Use Strict Arg flat, advance, floor, band, ceiling
+  Use Strict Arg flat, band, fields
+
+  -- Two folding regimes. A FLAT deck (odp2md's absolute layout) opens each
+  -- slide with a `<hr class="slide">` marker and carries no heading; a CLASSIC
+  -- deck (authored by hand, or reflow mode) opens each slide with an <h1> that
+  -- is both the boundary and the title. We pick by presence of the marker, so
+  -- an existing <h1>-authored deck folds byte-for-byte as before.
+  If flat~pos('<hr class="slide"') > 0 Then
+    Return FoldByMarker(flat, band, fields)
 
   out = ""
   Parse Var flat . "<h1" rest              -- Discard anything before slide 1
@@ -468,14 +497,307 @@ Error:
     -- blanks but not newlines, so whitespace is flattened here, once, rather
     -- than guarded against at every place an attribute is read.
     attrs = TagAttrs(Squeeze(tag))
-    out = out || RenderSlide(attrs, Squeeze(title), body, advance, floor, band, ceiling)
+    out = out || RenderSlide(attrs, Squeeze(title), body, band, fields)
   End
 
   Return out
 
 --------------------------------------------------------------------------------
--- Any run of whitespace becomes a single blank.                              --
+-- FoldByMarker - the FLAT regime. Each slide is the run of HTML between one  --
+-- `<hr class="slide">` and the next. No <h1>, no title: the slide's own title--
+-- is just another absolutely-positioned box inside the body. The <section>   --
+-- keeps all the structural chrome (logo band, footer band, slide/id classes) --
+-- so the runtime is happy, but paints no <h1 class="title"> of its own.      --
+-- Slide-level attributes (roles, animations, timings) are NOT carried here:  --
+-- in the flat layout they were deliberately dropped, to be recovered by the  --
+-- later semantic pass with theme + master-page perspective.                  --
 --------------------------------------------------------------------------------
+
+::Routine FoldByMarker
+  Use Strict Arg flat, band, fields
+
+  out = ""
+  -- Discard anything before the first marker (front matter, stray whitespace).
+  Parse Var flat . '<hr class="slide"' rest
+
+  Loop While rest \== ""
+    -- The text between here and ">" is this marker's own attribute run (e.g.
+    -- ` data-cm-w="25.4" data-cm-h="19.05" /`); the body runs to the next
+    -- marker. Pandoc emits the raw block as `<hr class="slide" ... />` (self-
+    -- closing); ">" ends the tag whichever attributes it carries.
+    Parse Var rest hrAttrs ">" body
+    Parse Var body body '<hr class="slide"' rest
+
+    -- TWO marker regimes, told apart by the canvas override the marker carries.
+    -- A marker with data-cm-w/h is odp2md's FLAT layout (absolute boxes in cm):
+    -- it renders through RenderFlatSlide, no title band, body owns its geometry.
+    -- A BARE marker (`--- {.slide}`, no cm) is the SEMANTIC regime: the author
+    -- placed zones (:::title, :::footer-center, code) and wants the master's
+    -- chrome -- title band, author footer -- with the title flowing from the
+    -- body's own :::title, not extracted from an <h1>. The two regimes share a
+    -- marker syntax but not a renderer; splitting here is what keeps "how you
+    -- cut" (by marker) orthogonal to "what regime you render" (flat vs semantic).
+    canvasAttrs = SlideCanvasAttrs(hrAttrs)
+    If canvasAttrs == "" Then
+      out = out || RenderMarkerSlide(body, band, fields)
+    Else
+      out = out || RenderFlatSlide(body, canvasAttrs, band, fields)
+  End
+
+  Return out
+
+--------------------------------------------------------------------------------
+-- SlideCanvasAttrs - pull the per-slide canvas override (data-cm-w/h) out of --
+-- an <hr>'s raw attribute run and return it as a clean attribute string to   --
+-- stamp on the <section> (or "" when the marker carried none). Only the      --
+-- canvas keys are forwarded; the trailing "/" of the self-closing tag and any--
+-- other stray token are dropped. The value is passed through verbatim - it is--
+-- odp2md's own CmScalar output, already noise-free.                          --
+--------------------------------------------------------------------------------
+
+::Routine SlideCanvasAttrs
+  Use Strict Arg raw
+
+  w = AttrValue(raw, "data-cm-w")
+  h = AttrValue(raw, "data-cm-h")
+  If w == "" | h == "" Then Return ""
+  Return ' data-cm-w="'w'" data-cm-h="'h'"'
+
+--------------------------------------------------------------------------------
+-- AttrValue - value of a name="..." attribute in a raw tag string, or "".      --
+--------------------------------------------------------------------------------
+
+::Routine AttrValue
+  Use Strict Arg raw, name
+
+  needle = name'="'
+  p = raw~pos(needle)
+  If p == 0 Then Return ""
+  rest = raw~substr(p + needle~length)
+  Parse Var rest val '"' .
+  Return val
+
+--------------------------------------------------------------------------------
+-- RenderFlatSlide - a <section> for the flat regime: same chrome as          --
+-- RenderSlide, minus the title <h1> and the attribute-driven role/anim/kicker--
+-- machinery (there is no heading to carry them). Every slide is a plain "list"--
+-- role page; the body is whatever absolute-positioned boxes Pandoc produced. --
+--------------------------------------------------------------------------------
+
+::Routine RenderFlatSlide
+  Use Strict Arg body, canvasAttrs, band, fields
+
+  -- canvasAttrs is the per-slide canvas override (data-cm-w/h) or "". It rides
+  -- on the <section> so a later pass can size this one slide to its own ODP
+  -- page; the deck default (front-matter canvas-cm-w/h -> --deck-w/h) already
+  -- covers every slide, so today this attribute is carried, not yet consumed.
+  parsed = SlideIdentity(body, fields)
+  sectionStyle = parsed[1]
+  chrome       = parsed[2]
+  body         = parsed[3]
+
+  out = '  <section class="slide flat" id="slide"'canvasAttrs''sectionStyle'>' || "0a"x
+  out = out || TransformBody(body, "list")
+  out = out || chrome
+  out = out || '  </section>' || "0a"x || "0a"x
+
+  Return out
+
+--------------------------------------------------------------------------------
+-- RenderMarkerSlide - a <section> for the SEMANTIC marker regime: the slide  --
+-- cut by a bare `--- {.slide}` (no cm canvas). Same master chrome as         --
+-- RenderSlide -- the "list" role, the author's three footer slots -- but it  --
+-- emits NO <h1 class="title"> of its own: the title is a zone the author     --
+-- placed in the body (:::title -> div.title), so it flows in as the first    --
+-- block through TransformBody. Crucially the section is NOT marked `flat`:   --
+-- flat is odp2md's absolute-cm regime, whose `.slide.flat > div > p` rule    --
+-- zeroes semantic <p>s (it was silently hiding the :::title). Here the slide --
+-- keeps the master's padding, title band and footer band, and the body is    --
+-- ordinary flow. Role/anim/kicker machinery is absent because a bare marker  --
+-- carries no attributes to drive it; when the model earns per-slide attrs on --
+-- the marker, they parse here the way RenderSlide parses an <h1>'s.          --
+--------------------------------------------------------------------------------
+
+::Routine RenderMarkerSlide
+  Use Strict Arg body, band, fields
+
+  -- Resolve the per-slide identity: defaults from the deck YAML (fields),
+  -- overridden by any :::presenter (etc.) zone the author placed in THIS slide.
+  -- Returns the data-* attribute run for the <section> and the body with the
+  -- consumed override zones removed (they are data, not visible prose).
+  parsed = SlideIdentity(body, fields)
+  sectionStyle = parsed[1]
+  chrome       = parsed[2]
+  body         = parsed[3]
+
+  out = '  <section class="slide" id="slide"'sectionStyle'>' || "0a"x
+  out = out || TransformBody(body, "list")
+  out = out || chrome
+  out = out || '  </section>' || "0a"x || "0a"x
+
+  Return out
+
+--------------------------------------------------------------------------------
+-- SlideIdentity - resolve the identity fields for ONE slide and return them  --
+-- as a data-* attribute run, together with the body stripped of the override --
+-- zones it consumed.                                                         --
+--                                                                            --
+-- The model: the FORMAT of the footer is the master's CSS; the FIELDS are the--
+-- document's; and a field has a per-DECK default (the YAML footer: block, in --
+-- `fields`) that any single slide may override locally with a zone -- e.g. a --
+-- guest inserting their own slide writes `::: presenter` / their name / `:::`--
+-- and it wins for that slide only. The runtime supplies page/total; everything--
+-- else is resolved HERE, at build, so the CSS only ever reads a finished value--
+-- via attr(data-...). No footer is composed, placed or named by this code.   --
+--                                                                            --
+-- Zones handled (Pandoc renders `::: name` as <div class="name">...</div>):  --
+--   presenter, affiliation, date  -> data-presenter / -affiliation / -date   --
+-- The zone, once read, is removed from the body: it is a datum, not prose.   --
+--------------------------------------------------------------------------------
+
+::Routine SlideIdentity
+  Use Strict Arg body, fields
+
+  -- Deck-level defaults from the YAML footer: block.
+  presenter   = IdentityDefault(fields, "presenter")
+  affiliation = IdentityDefault(fields, "affiliation")
+  date        = IdentityDefault(fields, "date")
+
+  -- Per-slide overrides: a zone in THIS slide beats the deck default. Each
+  -- call returns an array of (override-or-.Nil, body-with-zone-removed).
+  r = ZoneOverride(body, "presenter")
+  If r[1] \== .Nil Then presenter = r[1]
+  body = r[2]
+  r = ZoneOverride(body, "affiliation")
+  If r[1] \== .Nil Then affiliation = r[1]
+  body = r[2]
+  r = ZoneOverride(body, "date")
+  If r[1] \== .Nil Then date = r[1]
+  body = r[2]
+
+  -- Per-slide code size. The fitter is gone: code is a fixed size, but a slide
+  -- with more code needs a smaller one to fit (Rony drops 10pt->8pt by hand in
+  -- Impress between his slides 19 and 20). :::code-font-size lets the author say
+  -- so, in a literal CSS value ("8pt", "12px"). It overrides --theme-code-size
+  -- for THIS slide only, as a custom property on the section; the theme default
+  -- covers every slide that stays silent. (Per-block override is deferred.)
+  codeSize = ""
+  r = ZoneOverride(body, "code-font-size")
+  If r[1] \== .Nil Then codeSize = r[1]
+  body = r[2]
+
+  -- Per-slide title size, same pattern. Rony's heading is not one fixed size:
+  -- content slides use 18pt, a topic/section slide (his slide 18) uses 32pt.
+  -- :::title-font-size overrides --theme-title-size for THIS slide only.
+  titleSize = ""
+  r = ZoneOverride(body, "title-font-size")
+  If r[1] \== .Nil Then titleSize = r[1]
+  body = r[2]
+
+  -- Per-slide prose base size, same pattern. The per-level cascade scales down
+  -- from this; :::body-font-size overrides --theme-body-size for THIS slide.
+  bodySize = ""
+  r = ZoneOverride(body, "body-font-size")
+  If r[1] \== .Nil Then bodySize = r[1]
+  body = r[2]
+
+  styleDecls = ""
+  If codeSize  \== "" Then styleDecls = styleDecls'--theme-code-size: 'AttrEscape(codeSize)'; '
+  If titleSize \== "" Then styleDecls = styleDecls'--theme-title-size: 'AttrEscape(titleSize)'; '
+  If bodySize  \== "" Then styleDecls = styleDecls'--theme-body-size: 'AttrEscape(bodySize)'; '
+
+  sectionStyle = ""
+  If styleDecls \== "" Then
+    sectionStyle = ' style="'Strip(styleDecls)'"'
+
+  -- "today" resolves at build time to an ISO date. Any other value is the
+  -- author's own text, left verbatim.
+  If date == "today" Then date = ResolveToday()
+
+  -- Emit the resolved identity as REAL ELEMENTS the master will place (it is
+  -- document content, not a datum), plus the empty `chrome` anchor the master
+  -- fills with images by CSS (opt 2a: the pipeline knows nothing of logos or
+  -- seals; it only guarantees the anchor). affiliation/date also ride as data-*
+  -- on nothing here -- they are cheap to carry as elements too if the master
+  -- wants them; presenter is the one Rony's slide shows.
+  chrome = ""
+  If presenter \== "" Then
+    chrome = chrome'    <div class="presenter">'presenter'</div>' || "0a"x
+  If affiliation \== "" Then
+    chrome = chrome'    <div class="affiliation">'affiliation'</div>' || "0a"x
+  If date \== "" Then
+    chrome = chrome'    <div class="date">'date'</div>' || "0a"x
+  chrome = chrome'    <div class="chrome"></div>' || "0a"x
+
+  Return .Array~of(sectionStyle, chrome, body)
+
+--------------------------------------------------------------------------------
+-- IdentityDefault - one deck-level field from the YAML footer block, or "".  --
+--------------------------------------------------------------------------------
+
+::Routine IdentityDefault
+  Use Strict Arg fields, name
+
+  If \fields~isA(.StringTable)  Then Return ""
+  If \fields~hasIndex(name)     Then Return ""
+  value = fields[name]
+  If value == .Nil              Then Return ""
+  If \value~isA(.String)        Then Return ""
+  Return value
+
+--------------------------------------------------------------------------------
+-- ZoneOverride - if the body contains a `<div class="NAME">...</div>` zone   --
+-- (Pandoc's rendering of `::: NAME`), return its text content and the body   --
+-- with that zone removed; otherwise return .Nil and the body unchanged. The  --
+-- return is "override body", parsed by the caller with Parse Value ... With. --
+-- Only the FIRST such zone is consumed (one identity value per field, and a  --
+-- second would be an authoring error, not two presenters).                   --
+--------------------------------------------------------------------------------
+
+::Routine ZoneOverride
+  Use Strict Arg body, name
+
+  marker = '<div class="'name'"'
+  p = body~pos(marker)
+  If p = 0 Then Return .Array~of(.Nil, body)   -- no override; body untouched
+
+  -- Isolate the zone. Pandoc emits `<div class="name">\n<p>text</p>\n</div>`.
+  Parse Var body before (marker) inZone
+  Parse Var inZone . ">" inner "</div>" after
+  -- Strip an inner <p>...</p> wrapper and any tags, leaving the text.
+  text = Squeeze(StripTags(inner))
+
+  Return .Array~of(text, before || after)
+
+--------------------------------------------------------------------------------
+-- ResolveToday - the build date as ISO YYYY-MM-DD.                           --
+--------------------------------------------------------------------------------
+
+::Routine ResolveToday
+  iso = Date("Sorted")                  -- YYYYMMDD
+  Return Left(iso,4)"-"SubStr(iso,5,2)"-"Right(iso,2)
+
+--------------------------------------------------------------------------------
+-- StripTags - remove any HTML tags, leaving text content.                    --
+--------------------------------------------------------------------------------
+
+::Routine StripTags
+  Use Strict Arg html
+
+  out = ""
+  rest = html
+  Loop While rest \== ""
+    p = rest~pos("<")
+    If p = 0 Then Do
+      out = out || rest
+      Leave
+    End
+    out = out || Left(rest, p - 1)          -- text before the tag
+    q = rest~pos(">", p)
+    If q = 0 Then Leave                       -- malformed; stop
+    rest = SubStr(rest, q + 1)                -- skip past the tag
+  End
+  Return out
 
 ::Routine Squeeze
   Use Strict Arg text
@@ -486,6 +808,46 @@ Error:
   End
 
   Return Strip(text)
+
+--------------------------------------------------------------------------------
+-- SlideMarkers - rewrite each `--- {.slide}` line to a raw                   --
+-- `<hr class="slide">` HTML block BEFORE Pandoc. Pandoc does not treat       --
+-- `--- {.slide}` as a thematic break (a `---` with a trailing attribute is   --
+-- plain text to it), so we turn it into raw HTML, which Pandoc passes through--
+-- untouched. The marker must be on its own line; leading/trailing blanks are --
+-- tolerated. A deck with no such lines is returned unchanged                 --
+-- (the classic <h1> fold still applies).                                     --    
+--                                                                            --
+-- ATTRIBUTES. A bare marker is `--- {.slide}`; a marker MAY carry per-slide  --
+-- attributes inside the braces, e.g. `--- {.slide data-cm-w="25.4" ...}` (the--
+-- canonical-canvas per-slide override odp2md emits when a page's physical size--
+-- differs from the deck default). Whatever sits between `.slide` and the     --
+-- closing brace is copied verbatim onto the <hr>, so it reaches the folded   --
+-- <section> and survives for a later pass to consume. The bare form stays    --
+-- byte-identical to before (no trailing space when there is nothing to carry).--
+--------------------------------------------------------------------------------
+
+::Routine SlideMarkers
+  Use Strict Arg source
+
+  out = ""
+  Loop line Over source~makeArray            -- String -> lines (splits on LF)
+    s = Strip(line)
+    If s~left(11) == "--- {.slide", s~right(1) == "}" Then Do
+      -- the run between ".slide" and the final "}" is the attribute block
+      attrs = s~substr(12)                   -- everything after "--- {.slide"
+      attrs = attrs~left(attrs~length - 1)   -- drop the trailing "}"
+      attrs = Strip(attrs)
+      If attrs == "" Then
+        out = out || '<hr class="slide" />' || "0a"x
+      Else
+        out = out || '<hr class="slide"' attrs '/>' || "0a"x
+    End
+    Else
+      out = out || line || "0a"x
+  End
+
+  Return out
 
 --------------------------------------------------------------------------------
 -- Split an opening tag's attributes into a directory. Pandoc always quotes   --
@@ -510,17 +872,17 @@ Error:
 /*                                                                            */
 /* The catalogue is CLOSED, and it is closed here rather than in the CSS      */
 /* because CSS has no way to complain. An unknown effect name is not a        */
-/* rendering problem -- the stylesheet simply has no rule for it, the slide    */
-/* animates with the default and nothing anywhere says a word. The author      */
-/* who typed anim=fadeleft finds out in the lecture hall, if at all.           */
+/* rendering problem -- the stylesheet simply has no rule for it, the slide   */
+/* animates with the default and nothing anywhere says a word. The author     */
+/* who typed anim=fadeleft finds out in the lecture hall, if at all.          */
 /*                                                                            */
-/* So the name is checked at build time, where a typo is still cheap. The      */
-/* two vocabularies are separate on purpose: a page cannot blur in and an      */
-/* element cannot wash the accent colour across itself, and pretending they    */
+/* So the name is checked at build time, where a typo is still cheap. The     */
+/* two vocabularies are separate on purpose: a page cannot blur in and an     */
+/* element cannot wash the accent colour across itself, and pretending they   */
 /* share a namespace would only mean accepting names that do nothing.         */
 /*                                                                            */
-/* This is a WARNING, not a failure: the deck still builds, because a wrong    */
-/* animation is a blemish and refusing to produce the deck minutes before a    */
+/* This is a WARNING, not a failure: the deck still builds, because a wrong   */
+/* animation is a blemish and refusing to produce the deck minutes before a   */
 /* talk would be a far worse one.                                             */
 /*                                                                            */
 /******************************************************************************/
@@ -595,7 +957,7 @@ Error:
 --------------------------------------------------------------------------------
 
 ::Routine RenderSlide
-  Use Strict Arg attrs, title, body, advance, floor, band, ceiling
+  Use Strict Arg attrs, title, body, band, fields
 
   roles     = "title-slide section two-col business-card"
   classList = ""
@@ -639,35 +1001,25 @@ Error:
       passThrough = passThrough' 'k'="'attrs[k]'"'
   End
 
-  out = '  <section class="'names'" id="'id'"'marker''passThrough'>' || "0a"x
+  -- Resolve deck-default identity, overridden by any :::presenter/etc. zone in
+  -- this slide's body. The zones are consumed (data, not prose); the resolved
+  -- values return as REAL elements (presenter, etc.) plus the empty `chrome`
+  -- anchor, all placed inside the slide for the master's CSS to position.
+  -- sectionStyle carries a per-slide --theme-code-size override, if any.
+  parsed = SlideIdentity(body, fields)
+  sectionStyle = parsed[1]
+  chrome       = parsed[2]
+  body         = parsed[3]
 
-  -- Dividers carry no logo: they are a full-bleed field, not a content page.
-  If role \== "section" Then
-    out = out || '    <img class="deck-logo" src="%logo%" alt="">' || "0a"x
+  out = '  <section class="'names'" id="'id'"'marker''passThrough''sectionStyle'>' || "0a"x
 
   If attrs~hasIndex("data-kicker") Then
     out = out || '    <p class="kicker">'attrs["data-kicker"]'</p>' || "0a"x
 
-  -- A slide showing borrowed material overrides its own footer fields. That
-  -- costs nothing here: Pandoc turns any attribute it does not recognise into
-  -- a data-* one, and the pass-through above already forwards those onto the
-  -- section without knowing what they mean. Only the licence is worth a look,
-  -- since a mistyped one would be shown to an audience as written.
-  If attrs~hasIndex("data-footer-license") Then
-    Call CheckLicence Squeeze(attrs["data-footer-license"]), "on slide '"title"'"
-
   out = out || '    <h1 class="title">'title'</h1>' || "0a"x
-  out = out || TransformBody(body, role, advance, floor, band, ceiling)
+  out = out || TransformBody(body, role)
+  out = out || chrome
 
-  -- Three empty slots, and not one field name among them. What each slot says
-  -- is the identity's business and is filled in by the runtime, which is the
-  -- only place where {page} exists at all. No slide-number is emitted either:
-  -- the number is a footer field like any other.
-  out = out || '    <footer class="deck-footer">' -
-             || '<span class="footer-slot footer-left"></span>' -
-             || '<span class="footer-slot footer-center"></span>' -
-             || '<span class="footer-slot footer-right"></span>' -
-             || '</footer>' || "0a"x
   out = out || '  </section>' || "0a"x || "0a"x
 
   Return out
@@ -685,22 +1037,21 @@ Error:
 /*      labelled, revealable paragraph while staying legal Pandoc Markdown.   */
 /*   2. Column and card divs are gathered into their master-page container.   */
 /*   3. A top-level list is wrapped in .body, the runtime's prose slot.       */
-/*   4. Code blocks are fitted (see FitSize).                                 */
+/*   4. Highlighted code blocks get the runtime's .code class (fixed size).   */
 /*                                                                            */
 /******************************************************************************/
 
 ::Routine TransformBody
-  Use Strict Arg body, role, advance, floor, band, ceiling
+  Use Strict Arg body, role
 
   -- The Highlighter wraps its output in div.highlight-rexx-STYLE, which names
   -- a THEME, not a slot. Add the runtime's structural class so the block sits
-  -- in the code slot and obeys the fitted size; without it --fit-size is
-  -- computed and then read by nobody.
-  body = body~changeStr('<div class="highlight-rexx-', -
-                        '<div class="code highlight-rexx-')
+  -- in the code slot and takes the theme's fixed code size. (Code is no longer
+  -- fitted: --theme-code-size is a declared value, not one computed to fill a
+  -- box, so there is nothing to compute here.)
+  body = AddCodeClass(body)
 
   body = HoistSpans(body)
-  body = FitBlocks(body, advance, floor, band, ceiling)
 
   Select Case role
     When "two-col"       Then body = Gather(body, "col",  "columns")
@@ -721,7 +1072,46 @@ Error:
   Return body
 
 --------------------------------------------------------------------------------
+-- Give every highlighted BLOCK the runtime's structural class.               --
+--                                                                            --
+-- The class cannot be matched together with the tag ('<div class="high...'), --
+-- because Pandoc reorders attributes when it re-emits raw HTML: the block's  --
+-- own id now comes first, so the div reaches us as '<div id="rx1" class=...'.--
+-- We therefore look for the class attribute alone and then walk BACK to the  --
+-- tag that owns it -- which is also what tells a block apart from a prose    --
+-- MENTION, since a mention carries the very same class on a <span> and must  --
+-- not be given a block's geometry.                                           --
+--------------------------------------------------------------------------------
+
+::Routine AddCodeClass
+  Use Strict Arg body
+
+  marker = 'class="highlight-rexx-'
+  out    = ""
+
+  Loop While body~pos(marker) > 0
+    at   = body~pos(marker)
+    tag  = body~lastPos("<", at)             -- the tag that owns the attribute
+    head = body~left( at - 1 )               -- everything before the attribute
+    body = body~substr( at + Length(marker) )
+
+    If tag > 0, Lower( head~substr(tag, 5) ) == "<div "
+      Then out ||= head'class="code highlight-rexx-'
+      Else out ||= head||marker
+  End
+
+  Return out || body
+
+--------------------------------------------------------------------------------
 -- <p><span class="x">t</span></p>  ->  <p class="x">t</p>                    --
+--                                                                            --
+-- ONLY when the <p> holds exactly ONE span and nothing else. A <p> that      --
+-- wraps two spans joined by a <br> (a multi-line box label, "Security,<br>   --
+-- Debugging") must be left alone: hoisting the first span's attrs onto the   --
+-- <p> and stripping its </span> would mis-nest the second span (a stray      --
+-- </span>, an unclosed <span>) and the box renders blank. So a match whose   --
+-- captured text still contains a tag (< ) is NOT collapsed - it is emitted   --
+-- verbatim and we move past it.                                              --
 --------------------------------------------------------------------------------
 
 ::Routine HoistSpans
@@ -729,8 +1119,17 @@ Error:
 
   out = ""
   Loop While body~pos("<p><span ") > 0
-    Parse Var body pre "<p><span " spanAttrs ">" text "</span></p>" body
-    out = out || pre || "<p " || spanAttrs || ">" || text || "</p>"
+    Parse Var body pre "<p><span " spanAttrs ">" text "</span></p>" rest
+    If text~pos("<") > 0 Then Do
+      -- more than one element inside this <p> (e.g. a <br> and a second span):
+      -- not a lone span, leave the whole opener intact and advance past it.
+      out = out || pre || "<p><span " || spanAttrs || ">"
+      body = text || "</span></p>" || rest
+    End
+    Else Do
+      out = out || pre || "<p " || spanAttrs || ">" || text || "</p>"
+      body = rest
+    End
   End
 
   Return out || body
@@ -822,276 +1221,11 @@ Error:
 
   Return out || body
 
-/******************************************************************************/
-/*                                                                            */
-/* FitBlocks / FitSize                                                        */
-/* ===================                                                        */
-/*                                                                            */
-/* Code is never wrapped on a slide: a broken statement may be a syntax error.*/
-/* So the size is chosen at build time instead, from the longest line and the */
-/* identity's monospaced advance. Switching --ci re-fits every block, which   */
-/* is the point of keeping the metric in the identity stylesheet.             */
-/*                                                                            */
-/* The advance is a declared average, not a measured glyph width. Real        */
-/* metrics need FontMetrics through BSF4ooRexx; this is the approximation     */
-/* the PoC has used since v79, and it is honest about being one.              */
-/*                                                                            */
-/******************************************************************************/
-
-::Routine FitBlocks
-  Use Strict Arg body, advance, floor, band, ceiling
-
-  -- How many lines still fit once the runtime has shrunk a block as far as it
-  -- is allowed to. Derived, not guessed: the slide is 720 high, 42 goes to the
-  -- top margin, about 110 to kicker plus title, and the footer band is however
-  -- tall the identity declared it -- an identity with a two-line footer leaves
-  -- less room for code, and the warning has to know that.
-  maxLines = Trunc((568 - band) / (floor * 1.35))
-
-  out = ""
-  Loop While body~pos("<pre") > 0
-    Parse Var body pre "<pre" tag ">" code "</pre>" body
-    size = FitSize(code, advance, 944, floor, ceiling)
-
-    -- Width is settled here; height is settled in the browser, where the
-    -- identity's line-height and the rest of the slide are known. But a block
-    -- past this many lines cannot fit at a readable size under ANY identity,
-    -- and the author is better told now than left to find out from the back
-    -- of the room.
-    lines = code~countStr("0a"x) + 1
-    If lines > maxLines Then
-      .Error~Say( "md2slides: warning:" lines "lines of code will not fit a" -
-                  "slide above" floor"px. Consider splitting it." )
-
-    out = out || pre || "<pre" || tag || ' style="--fit-size: 'size'px">' -
-              || code || "</pre>"
-  End
-
-  Return out || body
-
-::Routine FitSize
-  Use Strict Arg code, advance, box, floor, ceiling
-
-  longest = 0
-  Loop line Over code~makeArray("0a"x)
-    cells = DisplayWidth(PlainText(line))
-    If cells > longest Then longest = cells
-  End
-
-  If longest = 0 Then Return ceiling
-
-  size = box / (longest * advance)
-
-  -- The ceiling and the floor are the IDENTITY's, not this routine's. Until
-  -- v83 both were written here as 20 and 11, and the floor in particular
-  -- contradicted --theme-min-code-size outright: an identity declaring that its
-  -- face stops being readable at 18px got blocks fitted to 11 anyway, and the
-  -- runtime could not repair it because fitHeight only ever shrinks.
-  If size > ceiling Then size = ceiling
-  If size < floor   Then size = floor
-
-  Return Format(size, , 1)
-
---------------------------------------------------------------------------------
--- How wide a line is on screen, in monospaced cells.                         --
---------------------------------------------------------------------------------
-
-/******************************************************************************/
-/*                                                                            */
-/* Rexx's Length counts BYTES, and the fitter was using it to decide how wide  */
-/* a line of code would be. In UTF-8 those are different questions: the Rexx   */
-/* sample line in the torture deck is 79 bytes and 57 cells, so it was fitted  */
-/* as if it were 39% longer than it looks.                                    */
-/*                                                                            */
-/* What follows is an APPROXIMATION and is meant to be read as one, in the     */
-/* same spirit as --theme-mono-advance being a declared average rather than real */
-/* glyph metrics. It decodes UTF-8 to code points -- which is where nearly all */
-/* the error was -- and then applies a small width table:                      */
-/*                                                                            */
-/*   - combining marks and variation selectors take no cell of their own, so   */
-/*     a Devanagari matra does not widen the line it modifies;                 */
-/*   - CJK, Hangul, fullwidth forms and emoji take two cells;                  */
-/*   - a code point immediately after ZERO WIDTH JOINER takes none, so the     */
-/*     common joined sequences (families, professions) count as one glyph      */
-/*     rather than as their parts.                                            */
-/*                                                                            */
-/* What it does NOT do is real grapheme clustering, and it does not pretend    */
-/* to: that needs a Unicode database, not a table in a build script. Sequences */
-/* joined by anything other than ZWJ will still be over-counted, which errs    */
-/* towards a smaller, safe size rather than towards a line that wraps.         */
-/*                                                                            */
-/******************************************************************************/
-
-::Routine DisplayWidth
-  Use Strict Arg text
-
-  width  = 0
-  joined = 0
-  i      = 1
-  n      = Length(text)
-
-  Loop While i <= n
-    b = C2D(SubStr(text, i, 1))
-    Select
-      When b < 128  Then Do; cp = b;       len = 1; End
-      When b >= 240 Then Do; cp = b - 240; len = 4; End
-      When b >= 224 Then Do; cp = b - 224; len = 3; End
-      When b >= 192 Then Do; cp = b - 192; len = 2; End
-      -- A stray continuation byte means the text is not well-formed UTF-8.
-      -- Count it as one cell and carry on: this is a fitter, not a validator.
-      Otherwise Do; cp = -1; len = 1; End
-    End
-
-    Loop k = 1 To len - 1
-      If i + k > n Then Leave
-      cp = cp * 64 + (C2D(SubStr(text, i + k, 1)) // 64)
-    End
-    i = i + len
-
-    If cp < 0 Then Do; width = width + 1; Iterate; End
-
-    If cp == 8205 Then Do              -- ZERO WIDTH JOINER
-      joined = 1
-      Iterate
-    End
-
-    If InRanges(cp, ZeroWidthRanges()) Then Iterate
-
-    If joined Then Do                  -- already paid for by what it joins
-      joined = 0
-      Iterate
-    End
-
-    If InRanges(cp, WideRanges()) Then width = width + 2
-    Else                                width = width + 1
-  End
-
-  Return width
-
-::Routine InRanges
-  Use Strict Arg cp, ranges
-
-  Loop i = 1 To Words(ranges) By 2
-    If cp >= X2D(Word(ranges, i)), cp <= X2D(Word(ranges, i + 1)) Then Return 1
-  End
-
-  Return 0
-
---------------------------------------------------------------------------------
--- Marks that ride on the previous glyph rather than taking a cell.           --
---------------------------------------------------------------------------------
-
-::Routine ZeroWidthRanges
-
-  r =   "0300 036F"                     -- combining diacriticals
-  r = r "0483 0489"                     -- Cyrillic
-  r = r "0591 05BD 05BF 05BF 05C1 05C2 05C4 05C5 05C7 05C7"
-  r = r "0610 061A 064B 065F 0670 0670 06D6 06DC 06DF 06E4"
-  r = r "06E7 06E8 06EA 06ED"           -- Hebrew and Arabic
-  r = r "0900 0902 093A 093A 093C 093C 0941 0948 094D 094D"
-  r = r "0951 0957 0962 0963"           -- Devanagari
-  r = r "200B 200F"                     -- zero-width space, joiners, marks
-  r = r "20D0 20F0"                     -- combining marks for symbols
-  r = r "FE00 FE0F"                     -- variation selectors
-
-  Return r
-
---------------------------------------------------------------------------------
--- Code points that take two cells in a monospaced face.                      --
---------------------------------------------------------------------------------
-
-::Routine WideRanges
-
-  r =   "1100 115F"                     -- Hangul Jamo
-  r = r "2E80 303E 3041 33FF"           -- CJK radicals, kana, punctuation
-  r = r "3400 4DBF"                     -- CJK extension A
-  r = r "4E00 9FFF"                     -- CJK unified ideographs
-  r = r "A000 A4CF"                     -- Yi
-  r = r "AC00 D7A3"                     -- Hangul syllables
-  r = r "F900 FAFF"                     -- CJK compatibility
-  r = r "FE30 FE6F FF00 FF60 FFE0 FFE6" -- fullwidth forms
-  r = r "1F300 1F9FF"                   -- emoji
-  r = r "20000 3FFFD"                   -- CJK extensions B and beyond
-
-  Return r
-
---------------------------------------------------------------------------------
--- The text a reader sees, stripped of everything written to produce it.      --
---------------------------------------------------------------------------------
-
-::Routine PlainText
-  Use Strict Arg line
-
-  -- First the markup the highlighter wrapped around the text.
-  plain = ""
-  Loop While line~pos("<") > 0
-    Parse Var line before "<" . ">" line
-    plain = plain || before
-  End
-  plain = plain || line
-
-  -- Then the entities. An entity is ONE character on screen however many it
-  -- takes to spell, and Pandoc writes &#39; for every apostrophe -- so a line
-  -- of Python with a dozen quoted keys measured half as long again as it was,
-  -- and every such block was fitted far smaller than it needed to be. Masked
-  -- until now because the sample lines were short enough to hit the ceiling.
-  out = ""
-  Loop While plain~pos("&") > 0
-    Parse Var plain before "&" rest
-    p = rest~pos(";")
-    -- A bare ampersand in prose is not an entity. Entities are short, so a
-    -- distant semicolon means the & stands for itself.
-    If p = 0 | p > 10 Then Do
-      out   = out || before"&"
-      plain = rest
-      Iterate
-    End
-    out   = out || before"x"
-    plain = SubStr(rest, p + 1)
-  End
-
-  Return out || plain
-
---------------------------------------------------------------------------------
--- The identity declares the advance of its monospaced face.                  --
---------------------------------------------------------------------------------
-
-::Routine MinCodeSize
-  Use Strict Arg css
-
-  If css~pos("--theme-min-code-size:") = 0 Then Return 14
-  Parse Var css . "--theme-min-code-size:" value "px" .
-
-  Return Strip(value)
-
---------------------------------------------------------------------------------
--- The identity declares the advance of its monospaced face.                  --
---------------------------------------------------------------------------------
-
-::Routine MaxCodeSize
-  Use Strict Arg css
-
-  If css~pos("--theme-max-code-size:") = 0 Then Return 20
-  Parse Var css . "--theme-max-code-size:" value "px" .
-
-  Return Strip(value)
-
---------------------------------------------------------------------------------
--- The identity declares the advance of its monospaced face.                  --
---------------------------------------------------------------------------------
-
-::Routine MonoAdvance
-  Use Strict Arg css
-
-  If css~pos("--theme-mono-advance:") = 0 Then Return 0.6
-  Parse Var css . "--theme-mono-advance:" value ";" .
-
-  Return Strip(value)
 
 --------------------------------------------------------------------------------
 -- PandocStyle: the identity's preferred Pandoc highlighting theme, or        --
--- "pygments" if it declares none. A dark identity names a dark theme here so  --
--- its token colours sit well on its own --theme-othercode-bg.                 --
+-- "pygments" if it declares none. A dark identity names a dark theme here so --
+-- its token colours sit well on its own --theme-othercode-bg.                --
 --------------------------------------------------------------------------------
 
 ::Routine PandocStyle
@@ -1107,9 +1241,9 @@ Error:
 --                                                                            --
 -- A deck is a single self-contained file, so it cannot lazy-load stylesheets --
 -- the way the CGI does. Instead every theme is embedded, and the in-deck     --
--- chooser switches between them by rewriting the highlight-rexx-<style>       --
--- class. The themes are the project's own flattened/rexx-*.css -- read from    --
--- there, never copied -- so md2slides and md2pdf share one set. (A "thin" deck  --
+-- chooser switches between them by rewriting the highlight-rexx-<style>      --
+-- class. The themes are the project's own flattened/rexx-*.css -- read from  --
+-- there, never copied -- so md2slides and md2pdf share one set. (A "thin" deck--
 -- carrying only a chosen few could be added later; for now it embeds all.)   --
 --------------------------------------------------------------------------------
 
@@ -1134,15 +1268,15 @@ Error:
   Return css
 
 --------------------------------------------------------------------------------
--- Minify: read a CSS file and drop the lines that carry no style -- blank     --
--- lines and whole-line comments -- then collapse the survivors' runs of       --
--- whitespace to single spaces with space(). These sheets are mostly licence   --
--- headers, section banners and deep indentation; with 25 of them embedded in  --
--- every deck that is a lot of dead weight. A line goes if, once stripped, it  --
--- is empty, or it is a comment that both opens and closes on that line        --
--- (/* ... */) with nothing after the close -- the inner-"*/" guard keeps a    --
--- line like "/* a */ real { }" intact. CSS ignores insignificant whitespace,  --
--- so collapsing it is safe here.                                              --
+-- Minify: read a CSS file and drop the lines that carry no style -- blank    --
+-- lines and whole-line comments -- then collapse the survivors' runs of      --
+-- whitespace to single spaces with space(). These sheets are mostly licence  --
+-- headers, section banners and deep indentation; with 25 of them embedded in --
+-- every deck that is a lot of dead weight. A line goes if, once stripped, it --
+-- is empty, or it is a comment that both opens and closes on that line       --
+-- (/* ... */) with nothing after the close -- the inner-"*/" guard keeps a   --
+-- line like "/* a */ real { }" intact. CSS ignores insignificant whitespace, --
+-- so collapsing it is safe here.                                             --
 --------------------------------------------------------------------------------
 
 ::Routine Minify
@@ -1214,7 +1348,7 @@ Error:
 /* same talk under the same identity required editing the identity.           */
 /*                                                                            */
 /* Nothing is interpolated here. The build collects the values and hands them */
-/* to the runtime, which is the only place where {page} exists -- numbering    */
+/* to the runtime, which is the only place where {page} exists -- numbering   */
 /* was taken away from the generator in v81 precisely because hand-written    */
 /* numbers drift. What the build does own is the CHECKING, because a warning  */
 /* is only useful before the deck reaches a lecture hall.                     */
@@ -1428,21 +1562,12 @@ Error:
   -- whole of "override per slide", and there is no second mechanism for it.
   stageAttrs = FooterAttrs(fields)
 
-  -- The logo belongs to the BRAND, not to the presentation: a deck is not less
-  -- a WU deck for being shown with dark code, or under a different master. The
-  -- file has a fixed name, logo.txt, inside the brand folder, so an institution
-  -- can find it without knowing our conventions. Search order: first next to
-  -- the deck (a brand travelling with its deck as <brand>.logo, kept for that
-  -- case), then the brand folder assets/<brand>/logo.txt, then the default.
-  logo     = ""
-  localLogo = deckDir || brand".logo"
-  brandLogo = home"/assets/"brand"/logo.txt"
-  defLogo   = home"/assets/default/logo.txt"
-  If      SysIsFile(localLogo) Then logo = ReadFile(localLogo)
-  Else If SysIsFile(brandLogo) Then logo = ReadFile(brandLogo)
-  Else If SysIsFile(defLogo)   Then logo = ReadFile(defLogo)
-  logo = Squeeze(Strip(logo))
-
+  -- Logos are no longer a pipeline concept. A logo is just an image: a master
+  -- may paint one (or several, or none) as a CSS background on whatever zone it
+  -- likes, and an author may drop an image into the Markdown with any name they
+  -- choose. There is no %logo% slot, no per-brand logo.txt, no privileged
+  -- "deck-logo" element -- the presentation owns its imagery through the master
+  -- CSS, exactly as it owns its geometry.
   html = ReadFile(home"/templates/deck.template")
 
   -- Non-Rexx ("other") code highlighting. Pandoc marks the tokens with
@@ -1458,9 +1583,28 @@ Error:
   pandocCSS = ""
   If SysIsFile(hlSheet) Then pandocCSS = ReadFile(hlSheet)
 
+  -- CANONICAL CANVAS. runtime.css defaults the render canvas to 1280x720px,
+  -- but the flat (odp2md) layout places boxes in literal cm against the ODP's
+  -- own page. When the deck front matter declares that page (canvas-cm-w/h, in
+  -- cm), the stage must BE that page or the cm boxes stop short of the edge
+  -- (28cm -> 1058px inside a 1280px stage = 82.7% wide). We convert cm to px at
+  -- the CSS reference 96dpi (1cm = 96/2.54 = 37.795px, the same factor the
+  -- browser renders a `28cm` box at, so boxes and stage share one scale) and
+  -- emit a :root override AFTER runtime.css, where the cascade lets it win.
+  -- Omitted when the deck declares no canvas (classic decks, factory input):
+  -- runtime.css's 1280x720 then stands unchanged.
+  canvasOverride = DeckCanvasCSS(rexxpub)
+  -- The font override must beat the THEME (which sets --theme-font-prose/mono),
+  -- and the theme sheet loads as identityCSS AFTER runtime.css. So the deck
+  -- fonts ride at the END of identityCSS, last in the cascade, where they win.
+  -- The canvas override has no such contest (themes never set --deck-w/h) and
+  -- stays with runtime.css.
+  fontsOverride = DeckFontsCSS(rexxpub)
+
   html = html~caselessChangeStr("%title%",   title)
-  html = html~caselessChangeStr("%runtimeCSS%", ReadFile(home"/css/runtime.css"))
-  html = html~caselessChangeStr("%identityCSS%",      identityCSS)
+  html = html~caselessChangeStr("%runtimeCSS%", ReadFile(home"/css/runtime.css") -
+                                             || canvasOverride)
+  html = html~caselessChangeStr("%identityCSS%",      identityCSS || fontsOverride)
   html = html~caselessChangeStr("%extraCSS%",   ReadFile(home"/css/bcard.css") -
                                              || ReadFile(home"/css/overlay.css") -
                                              || ReadFile(home"/css/anim.css") -
@@ -1473,9 +1617,62 @@ Error:
   html = html~caselessChangeStr("%jumpJS%",     ReadFile(home"/js/jump.js"))
   html = html~caselessChangeStr("%stage%",      stage)
   html = html~caselessChangeStr("%stageAttrs%", stageAttrs)
-  html = html~caselessChangeStr("%logo%",       logo)
 
   Return html
+
+--------------------------------------------------------------------------------
+-- DeckCanvasCSS - a :root override setting --deck-w/--deck-h to the deck's     --
+-- physical page size (front-matter canvas-cm-w/h, in cm) converted to px, or   --
+-- "" when the deck declares no canvas. Emitted after runtime.css so it wins    --
+-- the cascade. cm->px at 96dpi (the CSS reference the browser uses to render a --
+-- `Ncm` length), so the stage and the cm-positioned boxes share one scale and  --
+-- the flat layout reaches the slide's own edges. Rounded to an integer px      --
+-- (runtime.css multiplies --deck-w by 1px; a fractional deck size buys no      --
+-- fidelity the box cm don't already carry and keeps the value clean).          --
+--------------------------------------------------------------------------------
+
+::Routine DeckCanvasCSS
+  Use Strict Arg rexxpub
+
+  If \rexxpub~hasIndex("canvas-cm-w") Then Return ""
+  If \rexxpub~hasIndex("canvas-cm-h") Then Return ""
+  cmW = rexxpub["canvas-cm-w"]
+  cmH = rexxpub["canvas-cm-h"]
+  If \cmW~dataType("N") | \cmH~dataType("N") Then Return ""
+
+  pxPerCm = 96 / 2.54
+  pxW = (cmW * pxPerCm)~format(, 0)     -- round to integer px
+  pxH = (cmH * pxPerCm)~format(, 0)
+
+  Return "0a"x || ":root { --deck-w:" pxW"; --deck-h:" pxH"; }" || "0a"x
+
+--------------------------------------------------------------------------------
+-- DeckFontsCSS - a :root override setting --deck-font-prose / --deck-font-mono --
+-- to the deck's dominant faces (front-matter font-prose / font-mono), or "" per --
+-- key when absent. Emitted after runtime.css so it wins the cascade, exactly    --
+-- like DeckCanvasCSS. The base font rides here, once per deck, instead of the    --
+-- emitter stamping font-family on every run: prose text inherits                 --
+-- --deck-font-prose, the code registers (<pre>/<code>/.output) use              --
+-- --deck-font-mono. Each family is quoted and given a generic fallback           --
+-- (sans-serif / monospace) so a deck that resolves no face still renders sane,   --
+-- and a face the machine lacks degrades to the right generic. The names come     --
+-- from the ODP verbatim (e.g. IBM Plex Sans, Tahoma, Courier New).               --
+--------------------------------------------------------------------------------
+
+::Routine DeckFontsCSS
+  Use Strict Arg rexxpub
+
+  decls = ""
+  If rexxpub~hasIndex("font-prose") Then Do
+    fp = rexxpub["font-prose"]
+    If fp \== "" Then decls = decls "--theme-font-prose: '"fp"', sans-serif;"
+  End
+  If rexxpub~hasIndex("font-mono") Then Do
+    fm = rexxpub["font-mono"]
+    If fm \== "" Then decls = decls "--theme-font-mono: '"fm"', monospace;"
+  End
+  If decls == "" Then Return ""
+  Return "0a"x || ":root {" decls "}" || "0a"x
 
 --------------------------------------------------------------------------------
 -- Identity resolution: one distinction, two worlds.                          --
@@ -1524,10 +1721,10 @@ Error:
   Return ""
 
 --------------------------------------------------------------------------------
--- The master that stands when no -mp is given: the theme's own default        --
--- presentation. A brand keeps it in assets/<brand>/master.css; a brand that   --
--- ships none borrows assets/default/. A file-world theme has no brand folder  --
--- to hold a default master, so it stands on the default brand's master.       --
+-- The master that stands when no -mp is given: the theme's own default       --
+-- presentation. A brand keeps it in assets/<brand>/master.css; a brand that  --
+-- ships none borrows assets/default/. A file-world theme has no brand folder --
+-- to hold a default master, so it stands on the default brand's master.      --
 --------------------------------------------------------------------------------
 
 ::Routine ResolveMasterStand
@@ -1543,8 +1740,8 @@ Error:
   Return ""
 
 --------------------------------------------------------------------------------
--- File world: a relative .css cascades self (next to the deck) > cwd >        --
--- assets/default/; an absolute path is taken as given, with no cascade. The   --
+-- File world: a relative .css cascades self (next to the deck) > cwd >       --
+-- assets/default/; an absolute path is taken as given, with no cascade. The  --
 -- 'axis' argument only shapes the assets/default/ fallback name.             --
 --------------------------------------------------------------------------------
 
@@ -1607,9 +1804,87 @@ Error:
 
   Return
 
-::Requires "BaseClassesAndRoutines.cls"
-::Requires "ErrorHandler.cls"
-::Requires "CLISupport.cls"
-::Requires "FencedCode.cls"
-::Requires "YAMLFrontMatter.cls"
-::Requires "RexxPubOptions.cls"
+::Routine EmbedImages Public
+  Use Strict Arg html, deckDir
+
+  -- Inline every <img src="img/<file>"> as a base64 data URI, so the deck
+  -- carries its content pictures inside the single .html. odp2md exports the
+  -- ODP's pictures to <deckDir>/img/ and the .md links them as img/<file>;
+  -- Pandoc passes those through as relative <img src>. We rewrite only those:
+  -- a src that does not start with "img/" (an already-embedded data: URI, an
+  -- absolute path, an http(s) URL) is left untouched.
+  If deckDir == "" Then deckDir = "./"
+  If deckDir~right(1) \== "/" Then deckDir = deckDir"/"
+
+  MARK = 'src="img/'
+  out  = ""
+  rest = html
+  Loop Forever
+    p = rest~pos(MARK)
+    If p == 0 Then Do
+      out = out || rest                     -- no more images: flush the tail
+      Leave
+    End
+
+    -- Emit everything up to (not including) the 'img/' in this src, then the
+    -- literal 'src="' so the attribute stays intact.
+    out  = out || rest~substr(1, p - 1) || 'src="'
+    -- Position just after 'src="img/' ... actually after 'src="' so we can read
+    -- the whole relative path starting at 'img/'.
+    after = rest~substr(p + MARK~length - 4)   -- starts at 'img/<file>"...'
+    q     = after~pos('"')                     -- closing quote of the src value
+    If q == 0 Then Do                          -- malformed; emit rest verbatim
+      out  = out || after
+      Leave
+    End
+    relPath = after~substr(1, q - 1)           -- img/<file>
+    rest    = after~substr(q + 1)              -- everything after the close quote
+
+    dataUri = DataUriFor(deckDir || relPath)
+    If dataUri == "" Then out = out || relPath || '"'      -- unreadable: keep ref
+                     Else out = out || dataUri  || '"'
+  End
+
+  Return out
+
+/******************************************************************************/
+/* DataUriFor - a file's contents as a base64 data: URI, or "" if unreadable. */
+/* MIME comes from the extension; unknown extensions fall back to             */
+/* application/octet-stream, which browsers still render for common images.   */
+/******************************************************************************/
+
+::Routine DataUriFor Public
+  Use Strict Arg path
+
+  If \ SysIsFile(path) Then Return ""
+  bytes = .File~readChars(path)             -- whole binary in one call
+  If bytes == .Nil Then Return ""
+  mime  = MimeForExt(path)
+  Return "data:" || mime || ";base64," || bytes~encodeBase64
+
+/******************************************************************************/
+/* MimeForExt - image MIME type for a path's extension.                       */
+/******************************************************************************/
+
+::Routine MimeForExt Public
+  Use Strict Arg path
+  dot = path~lastPos(".")
+  ext = ""
+  If dot > 0 Then ext = path~substr(dot + 1)~lower
+  Select Case ext
+    When "png"          Then Return "image/png"
+    When "jpg", "jpeg"  Then Return "image/jpeg"
+    When "gif"          Then Return "image/gif"
+    When "svg"          Then Return "image/svg+xml"
+    When "webp"         Then Return "image/webp"
+    When "bmp"          Then Return "image/bmp"
+    When "tif", "tiff"  Then Return "image/tiff"
+    Otherwise                Return "application/octet-stream"
+  End
+
+::Requires "parser/BaseClassesAndRoutines.cls"
+::Requires "parser/ErrorHandler.cls"
+::Requires "parser/CLISupport.cls"
+::Requires "parser/FencedCode.cls"
+::Requires "parser/YAMLFrontMatter.cls"
+::Requires "parser/RexxPubOptions.cls"

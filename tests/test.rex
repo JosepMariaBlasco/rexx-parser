@@ -1,3 +1,1 @@
-::Resource BODY
-kk
-::END
+If a = if Then Else = then; Else if = 2 -- Yuck

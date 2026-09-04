@@ -20,7 +20,7 @@
 /*                        with entries like "pages", "title", "page size".    */
 /*                                                                            */
 /*   pdfText(pdfFile)     Run pdftotext on a PDF file. Returns the            */
-/*                        extracted text as a string.                          */
+/*                        extracted text as a string.                         */
 /*                                                                            */
 /*   assertPDF(pdfFile)   Assert that a file is a valid PDF.                  */
 /*                                                                            */
@@ -46,7 +46,7 @@
 ::Class PDFTestCase Subclass ooTestCase Public
 
 /******************************************************************************/
-/* Class-level attributes: project directory and fixtures directory.           */
+/* Class-level attributes: project directory and fixtures directory.          */
 /******************************************************************************/
 
 ::Attribute projectDir Class
@@ -68,7 +68,7 @@
 /*                                                                            */
 /* Arguments:                                                                 */
 /*   fixture  - filename (e.g. "basic.md") relative to fixtures/              */
-/*   options  - optional extra CLI options (default: "")                       */
+/*   options  - optional extra CLI options (default: "")                      */
 /*                                                                            */
 /* Returns a Directory with entries:                                          */
 /*   "rc"      - return code from md2pdf.rex                                  */

@@ -51,8 +51,8 @@
 /*     figure-label              - custom label text (default: "")            */
 /*                                                                            */
 /*   Pandoc metadata (from top-level YAML):                                   */
-/*     language                  - HTML lang attribute (Pandoc variable      */
-/*                                 'lang'; or .Nil if not set)               */
+/*     language                  - HTML lang attribute (Pandoc variable       */
+/*                                 'lang'; or .Nil if not set)                */
 /*     highlight-style           - Pandoc highlighting theme                  */
 /*                                 (or .Nil if not set)                       */
 /*                                                                            */

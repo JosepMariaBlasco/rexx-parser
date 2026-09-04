@@ -101,15 +101,15 @@
   myDir = FileSpec("Location",.context~package~name)
   Call SysFileTree myDir"../css/*.css",F.,"FO"
 
-  --------------------------------------------------------------------------
-  -- The style chooser.  Every sheet the Parser ships becomes an option.    --
-  -- "rexx-test<N>.css" are development fixtures rather than styles, and    --
-  -- are skipped here by the same rule hldocprep and hldoc2HTML use, so     --
-  -- this chooser and the DocBook one always offer the same list.          --
-  --                                                                        --
-  -- The bar ships hidden: style-chooser.js reveals it, and only on pages   --
-  -- that really do have highlighted blocks to restyle.                     --
-  --------------------------------------------------------------------------
+  ------------------------------------------------------------------------------
+  -- The style chooser.  Every sheet the Parser ships becomes an option.      --
+  -- "rexx-test<N>.css" are development fixtures rather than styles, and      --
+  -- are skipped here by the same rule hldocprep and hldoc2HTML use, so       --
+  -- this chooser and the DocBook one always offer the same list.             --
+  --                                                                          --
+  -- The bar ships hidden: style-chooser.js reveals it, and only on pages     --
+  -- that really do have highlighted blocks to restyle.                       --
+  ------------------------------------------------------------------------------
 
   defaultStyle = "dark"   -- Keep in step with the default in CGI.markdown.rex
 

@@ -132,30 +132,56 @@
 
 /* Support for line numbers                                                   */
 
-.highlight-rexx-vim-dark-slate pre.number-lines {
-          padding-left: 50px;
-  }
+/* HTML Driver: numbered lines. The wrapper, not the <pre>, is the scrolling
+   box: a <pre> with overflow-x:auto clips whatever its content sticks out to
+   the LEFT, and the gutter lives exactly there.
 
-.highlight-rexx-vim-dark-slate pre.number-lines.w3 {padding-left: 58px; }
+   The number hangs OUTSIDE the code ground, in a gutter of its own, with a
+   continuous rule between gutter and code. The <pre> is pushed 3em right and
+   given a left border: that opens the gutter, and the border IS the rule.
+   Each line is a <span> shifted 4em left by relative positioning (visual
+   only -- the box does not move), and the number is an inline-block 4em cell
+   in front of the line, which pushes the code back where it belongs. The
+   number is generated content on the line's anchor, counted by CSS, so it is
+   never selected or copied along with the code.
 
-.highlight-rexx-vim-dark-slate pre.number-lines.w3 code:before {width:58px;}
+   The 4em cell holds five digits at any font size, so the gutter does not
+   need to vary with rx-w<n>. */
 
-.highlight-rexx-vim-dark-slate pre.number-lines.w4 {padding-left: 65px; }
-
-.highlight-rexx-vim-dark-slate pre.number-lines.w4 code:before {width:65px;}
-
-.highlight-rexx-vim-dark-slate pre.number-lines.w5 {padding-left: 72px; }
-
-.highlight-rexx-vim-dark-slate pre.number-lines.w5 code:before {width:72px;}
-
-.highlight-rexx-vim-dark-slate pre.number-lines code:before{
-      content: attr(lineno) " | ";
-      position:absolute;
-      left:10px;
-      width:50px;
-      text-align:right;
-      /* %LINENR%     */ color: #666666 ;
-    }
+.highlight-rexx-vim-dark-slate.rx-block {
+  overflow-x: auto;
+}
+.highlight-rexx-vim-dark-slate pre.rx-numbered {
+  overflow: visible;
+  margin-left: 3em;
+  border-left: 1px solid var(--rx-gutter-bar, #b0b0a8);
+  padding-left: 4px;
+}
+.highlight-rexx-vim-dark-slate pre.rx-numbered code {
+  counter-reset: rx-line 0;
+}
+.highlight-rexx-vim-dark-slate pre.rx-numbered code > span {
+  position: relative;
+  left: -4em;
+  counter-increment: rx-line;
+}
+.highlight-rexx-vim-dark-slate pre.rx-numbered code > span > a:first-child::before {
+  content: counter(rx-line);
+  position: relative;
+  left: -1em;
+  width: 4em;
+  padding: 0;
+  margin-right: 4px;
+  display: inline-block;
+  text-align: right;
+  text-align-last: right;
+  box-sizing: border-box;
+  vertical-align: baseline;
+  border: none;
+  color: var(--rx-gutter-number, #b0b0a8);
+  -webkit-user-select: none;
+  user-select: none;
+}
 
 /* .rx-ws, .rx-cont { color: #cc0; } */
 

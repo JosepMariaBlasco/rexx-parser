@@ -216,8 +216,8 @@ Extra:
 --------------------------------------------------------------------------------
 
 ::Requires "Rexx.Parser.cls"
-::Requires "ErrorHandler.cls"
-::Requires "CLISupport.cls"
+::Requires "parser/ErrorHandler.cls"
+::Requires "parser/CLISupport.cls"
 ::Requires "modules/print/print.cls"    -- Helps in debugging
 
 ::Resource Help end "::End"

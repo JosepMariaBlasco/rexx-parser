@@ -60,18 +60,84 @@
     color: #b0b0a8;
   }
 
-  pre.number-lines {
-          padding-left: 50px;
-    &.w3 {padding-left: 58px; code:before {width:58px;} }
-    &.w4 {padding-left: 65px; code:before {width:65px;} }
-    &.w5 {padding-left: 72px; code:before {width:72px;} }
-    code:before{
-      content: attr(lineno) " | ";
-      position:absolute;
-      left:10px;
-      width:50px;
-      text-align:right;
-      color: #b0b0a8;
+  /* Line numbering. The number hangs OUTSIDE the code ground, in a gutter of  */
+  /* its own, with a continuous rule between gutter and code -- the same       */
+  /* result Pandoc gets for its fenced blocks, reached by the same technique.  */
+  /* The technique is borrowed; the class names are NOT. Pandoc scopes its     */
+  /* rules by ITS names (.sourceCode, .numberSource), so a block wearing them  */
+  /* would take its margins, overflow, line-height and background from a sheet */
+  /* we do not control -- a dependency that would surface as a bug nobody      */
+  /* could trace. Everything below is keyed to rx- names and stated in full.   */
+  /*                                                                           */
+  /* How it works. The <pre> is pushed 3em right and given a left border: that */
+  /* opens a gutter outside the code ground, and the border IS the vertical    */
+  /* rule. Each line is a <span> shifted 4em left by relative positioning      */
+  /* (visual only -- the box does not move), and the number is an inline-block */
+  /* 4em cell in front of the line, which pushes the code back to where it     */
+  /* belongs. Net effect: code where the <pre> says, number in the gutter.     */
+  /* The number is generated content on the line's anchor, counted by CSS, so  */
+  /* it is never selected or copied along with the code.                       */
+  /*                                                                           */
+  /* The 4em cell holds five digits at any font size, so the gutter does not   */
+  /* need to vary with rx-w<n>; a block that needs more can widen it there.    */
+  /* The scrolling box has to be the WRAPPER, not the <pre>. A <pre> with      */
+  /* overflow-x:auto (markdown.css sets exactly that, and it is a sane default */
+  /* for code) is a scroll container, and anything a scroll container's        */
+  /* content sticks out to the LEFT is clipped and cannot be scrolled to. The  */
+  /* gutter lives precisely there, so a numbered <pre> is given back           */
+  /* overflow:visible and the wrapper takes over the horizontal scrolling.     */
+  &.rx-block { overflow-x: auto; }
+
+  pre.rx-numbered {
+    overflow: visible;
+    margin-left: 3em;
+    /* The gutter's two colours come from theme variables, each with the
+       discreet grey as fallback. A theme that says nothing gets the grey;
+       a theme that wants, say, a bold blue rule sets --rx-gutter-bar once
+       on its .highlight-rexx-<name> and never touches this block.         */
+    border-left: 1px solid var(--rx-gutter-bar, #b0b0a8);   /* the vertical bar */
+    padding-left: 4px;
+
+    code { counter-reset: rx-line 0; }
+
+    code > span {
+      position: relative;
+      left: -4em;
+      counter-increment: rx-line;
+    }
+
+    code > span > a:first-child::before {
+      content: counter(rx-line);
+      position: relative;
+      left: -1em;
+      /* The cell's OUTER width must not depend on the host page. Pandoc's cell
+         is 4em wide with 4px of padding inside it -- but whether that padding
+         counts inside or outside depends on whether the page carries a global
+         border-box reset, which we do not control. Stating the outer width
+         and putting the gap in margin-right instead makes the geometry the
+         same in every host: 4em of cell, then a fixed 4px gap to the rule.  */
+      width: 4em;
+      padding: 0;
+      margin-right: 4px;
+      display: inline-block;
+      text-align: right;
+      /* A host page that justifies its text sets text-align-last, which is
+         INHERITED and wins over text-align on a last line -- and a one-line
+         number is always a last line. Stated here so the digits cannot be
+         pushed to the far end of the cell by a stylesheet we do not own.   */
+      text-align-last: right;
+      /* box-sizing is stated, not inherited: a host page may or may not carry
+         a global border-box reset (Bootstrap has one), and the cell's outer
+         width has to be the same either way. border-box is the value that
+         makes the cell 4em INCLUDING its padding -- which is what a Pandoc
+         block ends up with under such a reset, so the two line up.         */
+      box-sizing: border-box;
+      vertical-align: baseline;
+      border: none;
+      color: var(--rx-gutter-number, #b0b0a8);
+      /* keep the number out of text selection / copy */
+      -webkit-user-select: none;
+      user-select: none;
     }
   }
 

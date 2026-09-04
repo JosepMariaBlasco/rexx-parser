@@ -27,7 +27,7 @@
 /* 20260312         Add YAML listings: and figures: sub-options               */
 /* 20260312         Add YAML highlight-style; --pandoc-highlighting-style CLI */
 /* 20260313         Move error handling to ErrorHandler.cls                   */
-/* 20260313    0.5  Refactor YAML/caption code to RexxPubOptions.cls          */
+/* 20260313    0.6  Refactor YAML/caption code to RexxPubOptions.cls          */
 /* 20260314         Remove author-only CLI options: --size, --outline,        */
 /*                  --section-numbers, --no-number-figures, --docclass,       */
 /*                  --language (now YAML-only)                                */
@@ -467,7 +467,11 @@ AllWentWell:
   loaded  = .Set~new
   rest = contents
   Loop While rest~pos('class="highlight-rexx-') > 0
+    -- The class attribute holds more than the style name (the block also
+    -- carries the structural rx-block class), so the name ends at the first
+    -- blank OR at the closing quote, whichever comes first.
     Parse Var rest 'class="highlight-rexx-'extraStyle'"'rest
+    Parse Var extraStyle extraStyle ." "
     If extraStyle == "" Then Iterate
     If extraStyle~verify(allowed) > 0 Then Iterate
     If extraStyle == defaultTheme Then Iterate
@@ -503,19 +507,19 @@ AllWentWell:
     Then numberFiguresClass = "number-figures"
     Else numberFiguresClass = ""
 
-  /* Load numberFigures.js — handles data-caption on code blocks             */
+  /* Load numberFigures.js - handles data-caption on code blocks              */
   /* and numbers <figure> elements when "number-figures" class is present.    */
   numberFigures = rootDir"/js/numberFigures.js"
   chunk = CharIn(numberFigures, 1, Chars(numberFigures) )
   figuresHandler = "<script>"chunk"</script>"
 
-  /* Build listing and figure data-* attributes and CSS overrides            */
+  /* Build listing and figure data-* attributes and CSS overrides             */
   captionResult = BuildCaptionOverrides(opts)
   overrideCSS   = captionResult["overrideCSS"]
   listingsAttrs = captionResult["listingsAttrs"]
   figuresAttrs  = captionResult["figuresAttrs"]
 
-  /* Build chapter attributes                                                */
+  /* Build chapter attributes                                                 */
   chapterNum = opts["chapter"]
   If chapterNum \== .Nil
     Then chapterAttrs = ' data-chapter="'chapterNum'"' -
@@ -744,9 +748,9 @@ See myhelp for details.
 </html>
 ::END
 
-::Requires "BaseClassesAndRoutines.cls"
-::Requires "ErrorHandler.cls"
-::Requires "CLISupport.cls"
-::Requires "FencedCode.cls"
-::Requires "YAMLFrontMatter.cls"
-::Requires "RexxPubOptions.cls"
+::Requires "parser/BaseClassesAndRoutines.cls"
+::Requires "parser/ErrorHandler.cls"
+::Requires "parser/CLISupport.cls"
+::Requires "parser/FencedCode.cls"
+::Requires "parser/YAMLFrontMatter.cls"
+::Requires "parser/RexxPubOptions.cls"
