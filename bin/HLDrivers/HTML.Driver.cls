@@ -79,11 +79,13 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
   /* not control the last word on our margins, overflow, line height and      */
   /* background. We copy the mechanism and keep the naming.                   */
   /*                                                                          */
-  /* "rx-block" is the structural hook: it marks the element that OWNS the    */
-  /* block, as opposed to the theme class, which only names its colours. A    */
-  /* numbered block needs it, because the number hangs outside the <pre> and  */
-  /* so the <pre> cannot be the scrolling box -- the wrapper has to be.       */
-  divTag = '<div class="highlight-rexx-'style' rx-block" id="'blockID'"' -
+  /* "rx-blockwrap" is the structural hook: it marks the element that OWNS the */
+  /* block, as opposed to the theme class, which only names its colours. A     */
+  /* numbered block needs it, because the number hangs outside the <pre> and   */
+  /* so the <pre> cannot be the scrolling box -- the wrapper has to be. (Named */
+  /* "blockwrap", not "block": "rx-block" is the taken-constant class of a     */
+  /* block-instruction name (DO/LOOP/SELECT), a distinct, long-standing use.)  */
+  divTag = '<div class="highlight-rexx-'style' rx-blockwrap" id="'blockID'"' -
            || captionAttr || lockAttr || '>'
 
   -- No patch? A simple div will do.
@@ -208,6 +210,54 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
   self~Say( "</span></code></pre></div>" )
 
 /******************************************************************************/
+/* HTML.Inline.Highlighter -- the SAME engine, no block chrome                */
+/* ===========================================================                */
+/*                                                                            */
+/* A `{.rexx}` mention is the parser tokenising a fragment of prose, exactly  */
+/* as a fenced block does -- same parser, same Print loop, same Highlight     */
+/* below. What a mention is NOT is a block: it has no <div> ground, no <pre>, */
+/* no <code>, no per-line anchor. Those belong to a listing that owns a       */
+/* rectangle on the slide; a mention is a run of tokens that flows inside a   */
+/* line of prose, and its OWN wrapper (the <code class="rexx"> chip) is put   */
+/* on by ProseMention, the single place that already wraps every mention.     */
+/*                                                                            */
+/* So this driver reuses the whole engine and overrides only the three        */
+/* methods that emit block chrome: Prolog and Epilog fall silent, and         */
+/* startLine emits a bare newline (the base class's default) instead of       */
+/* closing one line span and opening the next with an anchor. Highlight,      */
+/* Init, Emit, Say and the CSS machinery are inherited untouched -- the       */
+/* tokens come out byte-for-byte as the block driver's do (<span class=       */
+/* "rx-...">), which is the whole point: the fenced path was just ONE         */
+/* consumer of the engine, and this is another, inline one. Nothing here      */
+/* parses the block driver's output or knows its shape, so the two cannot     */
+/* drift apart.                                                               */
+/*                                                                            */
+/* A fragment is conceptually one line, but the author may legitimately span  */
+/* two (`If a=b Then c; Then Nop` written across a break): startLine keeps    */
+/* the break as a newline so the tokens on the second line are not glued to   */
+/* the first. The <code> is not display:block, so the newline collapses to a  */
+/* space in normal flow -- present when it matters (source fidelity for a     */
+/* copy), invisible when it does not.                                         */
+/******************************************************************************/
+
+::Class HTML.Inline.Highlighter SubClass HTML.Highlighter Public
+
+::Method Prolog
+  /* A mention has no block ground: emit nothing. ProseMention supplies the   */
+  /* chip wrapper. */
+  Nop
+
+::Method startLine
+  /* A bare newline between source lines (the abstract base's own default).   */
+  /* No line span, no anchor -- those are a block's furniture. */
+  Use Strict Arg lineNo
+  self~say( "" )
+
+::Method Epilog
+  /* Nothing to close: Prolog opened nothing. */
+  Nop
+
+/******************************************************************************/
 /* PROSE MENTIONS -- the micro-container for `x`{.rexx-*} outside fences      */
 /* ===========================================================                */
 /*                                                                            */
@@ -257,10 +307,13 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
   Return n
 
 --------------------------------------------------------------------------------
--- EscapeHTML -- shared HTML-escaping for both Highlight and ProseMention     --
+-- EscapeHTML -- shared HTML-escaping for Highlight, ProseMention and, across --
+-- the package boundary, FencedCode's RexxFragment (the {.rexx} error shout   --
+-- escapes the offending fragment the same way). Public so that last caller   --
+-- reaches it; it is a pure text utility with no driver state.                --
 --------------------------------------------------------------------------------
 
-::Routine EscapeHTML Private
+::Routine EscapeHTML Public
   Use Strict Arg string
   Return string~changeStr( "&", "&amp;" ) -
                ~changeStr( ">", "&gt;"  ) -

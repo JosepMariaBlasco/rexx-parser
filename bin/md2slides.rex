@@ -306,6 +306,14 @@
 
   flat = contents~makeString("L", "0a"x)
 
+  -- Translate author sugar to custom properties. Pandoc turns `::: {.contents
+  -- scale=0.83}` into <div class="contents" data-scale="0.83">; here we rewrite
+  -- the sugar attributes (data-scale, ...) into style="--contents-scale: 0.83".
+  -- The author never types a CSS custom property; the generator does. Adding a
+  -- new piece of sugar is one line in SugarMap, not a new code path -- so the
+  -- next convenience we invent costs a table row, not a parser branch.
+  flat = TranslateSugar(flat)
+
   -- Make the deck truly self-contained for pictures. Pandoc leaves content
   -- images as <img src="img/<file>"> (relative refs into the deck's img/
   -- folder that odp2md exported). We inline each as a base64 data URI so the
@@ -538,8 +546,12 @@ Error:
     -- marker syntax but not a renderer; splitting here is what keeps "how you
     -- cut" (by marker) orthogonal to "what regime you render" (flat vs semantic).
     canvasAttrs = SlideCanvasAttrs(hrAttrs)
-    If canvasAttrs == "" Then
-      out = out || RenderMarkerSlide(body, band, fields)
+    If canvasAttrs == "" Then Do
+      -- A per-slide master selector (`--- {.slide .master}`) rides as
+      -- data-master on the marker; lift it onto the semantic slide's class.
+      masterClass = SlideMasterClass(hrAttrs)
+      out = out || RenderMarkerSlide(body, band, fields, masterClass)
+    End
     Else
       out = out || RenderFlatSlide(body, canvasAttrs, band, fields)
   End
@@ -562,6 +574,24 @@ Error:
   h = AttrValue(raw, "data-cm-h")
   If w == "" | h == "" Then Return ""
   Return ' data-cm-w="'w'" data-cm-h="'h'"'
+
+--------------------------------------------------------------------------------
+-- SlideMasterClass - pull the per-slide master selector (data-master) out of --
+-- an <hr>'s raw attribute run and return it as a class run to append to the  --
+-- <section>'s class (" master", or "" when the marker named none). This is   --
+-- the author's `--- {.slide .master}` come home: SlideMarkers parked the     --
+-- class on the <hr> as data-master to keep the fold's literal split intact;  --
+-- here it becomes a real CSS class on the slide, where the master's          --
+-- `.slide.master` rules can shape this one molde. Multiple classes are kept  --
+-- space-separated, verbatim.                                                 --
+--------------------------------------------------------------------------------
+
+::Routine SlideMasterClass
+  Use Strict Arg raw
+
+  m = AttrValue(raw, "data-master")
+  If m == "" Then Return ""
+  Return " "Strip(m)
 
 --------------------------------------------------------------------------------
 -- AttrValue - value of a name="..." attribute in a raw tag string, or "".      --
@@ -619,7 +649,7 @@ Error:
 --------------------------------------------------------------------------------
 
 ::Routine RenderMarkerSlide
-  Use Strict Arg body, band, fields
+  Use Strict Arg body, band, fields, masterClass = ""
 
   -- Resolve the per-slide identity: defaults from the deck YAML (fields),
   -- overridden by any :::presenter (etc.) zone the author placed in THIS slide.
@@ -630,7 +660,10 @@ Error:
   chrome       = parsed[2]
   body         = parsed[3]
 
-  out = '  <section class="slide" id="slide"'sectionStyle'>' || "0a"x
+  -- masterClass is the per-slide molde selector (" master", or "") the author
+  -- named on the marker; it joins the fixed "slide" class so the master's
+  -- `.slide.master` CSS shapes this one slide.
+  out = '  <section class="slide'masterClass'" id="slide"'sectionStyle'>' || "0a"x
   out = out || TransformBody(body, "list")
   out = out || chrome
   out = out || '  </section>' || "0a"x || "0a"x
@@ -818,13 +851,25 @@ Error:
 -- tolerated. A deck with no such lines is returned unchanged                 --
 -- (the classic <h1> fold still applies).                                     --    
 --                                                                            --
--- ATTRIBUTES. A bare marker is `--- {.slide}`; a marker MAY carry per-slide  --
--- attributes inside the braces, e.g. `--- {.slide data-cm-w="25.4" ...}` (the--
--- canonical-canvas per-slide override odp2md emits when a page's physical size--
--- differs from the deck default). Whatever sits between `.slide` and the     --
--- closing brace is copied verbatim onto the <hr>, so it reaches the folded   --
--- <section> and survives for a later pass to consume. The bare form stays    --
--- byte-identical to before (no trailing space when there is nothing to carry).--
+-- ATTRIBUTES AND CLASSES. A bare marker is `--- {.slide}`; a marker MAY carry --
+-- more inside the braces, of two kinds, in Pandoc's own attribute syntax:     --
+--                                                                            --
+--   * per-slide ATTRIBUTES (name="value"), e.g.                              --
+--     `--- {.slide data-cm-w="25.4" data-cm-h="19.05"}` -- the canonical-canvas--
+--     per-slide override odp2md emits when a page's physical size differs from--
+--     the deck default. These are copied verbatim onto the <hr>.             --
+--   * extra CLASSES (`.name`), e.g. `--- {.slide .master}` -- a per-slide     --
+--     MASTER selector: the author names a slide "molde" and the master's CSS  --
+--     shapes `.slide.master` (title size, band, etc.) without the author      --
+--     repeating those metrics slide by slide. The pipeline does NOT interpret --
+--     the name; it only carries it, so the master owns what each molde means. --
+--                                                                            --
+-- The class does NOT go into the <hr>'s own `class` (that must stay exactly   --
+-- `"slide"` so FoldByMarker's literal `<hr class="slide"` split keeps casing).--
+-- It rides as `data-master="..."`, a plain attribute like data-cm-w, which a  --
+-- later pass lifts onto the <section>'s class where the master CSS reads it.  --
+-- The bare form stays byte-identical to before (no trailing space when there  --
+-- is nothing to carry).                                                       --
 --------------------------------------------------------------------------------
 
 ::Routine SlideMarkers
@@ -834,14 +879,31 @@ Error:
   Loop line Over source~makeArray            -- String -> lines (splits on LF)
     s = Strip(line)
     If s~left(11) == "--- {.slide", s~right(1) == "}" Then Do
-      -- the run between ".slide" and the final "}" is the attribute block
-      attrs = s~substr(12)                   -- everything after "--- {.slide"
-      attrs = attrs~left(attrs~length - 1)   -- drop the trailing "}"
-      attrs = Strip(attrs)
-      If attrs == "" Then
-        out = out || '<hr class="slide" />' || "0a"x
-      Else
-        out = out || '<hr class="slide"' attrs '/>' || "0a"x
+      -- the run between ".slide" and the final "}" holds classes and attributes
+      inner = s~substr(12)                   -- everything after "--- {.slide"
+      inner = inner~left(inner~length - 1)   -- drop the trailing "}"
+      inner = Strip(inner)
+
+      -- Split the run into `.class` tokens and everything else (attributes and
+      -- the self-closing "/"). Classes fold into one data-master value; the
+      -- rest is preserved verbatim, in order.
+      classes = ""
+      attrs   = ""
+      Do word Over inner~makeArray(" ")
+        If word == "" Then Iterate
+        If word~left(1) == "." Then
+          classes = classes word~substr(2)
+        Else
+          attrs = attrs word
+      End
+      classes = Strip(classes)
+      attrs   = Strip(attrs)
+
+      carry = ""
+      If classes \== "" Then carry = ' data-master="'classes'"'
+      If attrs   \== "" Then carry = carry' 'attrs
+
+      out = out || '<hr class="slide"'carry' />' || "0a"x
     End
     Else
       out = out || line || "0a"x
@@ -1054,22 +1116,265 @@ Error:
   body = HoistSpans(body)
 
   Select Case role
-    When "two-col"       Then body = Gather(body, "col",  "columns")
     When "business-card" Then body = Cards(body)
     Otherwise Nop
   End
 
-  -- A bare list is the slide's prose. Wrap it once, not per list.
-  If body~pos("<ul>") > 0, body~pos('class="body"') = 0, -
-     body~pos('class="col') = 0 Then Do
-    Parse Var body pre "<ul>" mid
-    n = LastPos("</ul>", mid)
-    tail = mid~substr(n + 5)
-    mid  = mid~left(n - 1)
-    body = pre'<div class="body"><ul>'mid'</ul></div>'tail
-  End
+  -- Wrap the slide's PROSE in .body, so prose text takes --theme-body-size no
+  -- matter where it sits. The old rule wrapped only a single <ul> run and bailed
+  -- out entirely when the slide held columns -- so prose that came as bare <p>,
+  -- or ANY prose on a slide that also had a :::row, fell through to the slide's
+  -- base font-size and rendered smaller than its siblings (the "paragraph after
+  -- the row is a different size" bug). The model was wrong: .body is meant to be
+  -- "the slide's prose", not "the one central list". WrapProse makes it that:
+  -- every top-level prose run (contiguous <p>/<ul>/<ol>) gets its own .body;
+  -- structural blocks (title, row, code, output, chrome, cards) are left alone.
+  body = WrapProse(body)
 
   Return body
+
+--------------------------------------------------------------------------------
+-- WrapProse - wrap each contiguous run of top-level PROSE in <div class=body>.--
+--                                                                            --
+-- Pandoc emits the slide body as top-level blocks, one per line-start: <p>,   --
+-- <ul>, <ol> are prose; <div class="title|row|code...|chrome">, <pre>, the    --
+-- highlighted code div and the cards are structure. We walk the blocks, group  --
+-- consecutive prose blocks, and wrap each group once. Structure passes through --
+-- untouched and BREAKS a run, so prose before and after a :::row become two    --
+-- separate .body wrappers, each correctly sized -- which is exactly the fix.   --
+-- Idempotent: a block already inside a .body (or any wrapper) is not at top    --
+-- level here, so it is never re-wrapped.                                       --
+--------------------------------------------------------------------------------
+::Routine WrapProse
+  Use Strict Arg body
+
+  lines = body~makeArray("0a"x)      -- one block starts per line at column 0
+  out   = ""
+  run   = ""                          -- accumulated prose awaiting its wrapper
+  mode  = "TOP"                       -- TOP | PROSE | STRUCT (inside a block)
+  depth = 0                           -- open-tag depth while inside a block
+
+  Do line Over lines
+    Select
+      When mode == "STRUCT" Then Do
+        out ||= line || "0a"x
+        depth += CountOpens(line) - CountCloses(line)
+        If depth <= 0 Then mode = "TOP"
+      End
+
+      When mode == "PROSE" Then Do
+        -- Inside a multi-line prose block (a list): keep collecting until it
+        -- closes, then return to TOP still holding the run (more prose may
+        -- follow and share the same .body).
+        run ||= line || "0a"x
+        depth += CountOpens(line) - CountCloses(line)
+        If depth <= 0 Then mode = "TOP"
+      End
+
+      Otherwise Do   -- mode == "TOP": decide what THIS block is
+        trimmed = line~strip("L")
+        Select
+          When trimmed == "" Then
+            -- Blank between blocks: keep with the run if one is building.
+            If run \== "" Then run ||= line || "0a"x
+                          Else out ||= line || "0a"x
+
+          When trimmed~left(3) == "<p>" | trimmed~left(4) == "<ul>" | -
+               trimmed~left(4) == "<ol>" Then Do
+            run ||= line || "0a"x
+            d = CountOpens(line) - CountCloses(line)
+            If d > 0 Then Do; mode = "PROSE"; depth = d; End
+          End
+
+          Otherwise Do
+            -- Structural block: flush pending prose, then pass it through.
+            If run \== "" Then Do
+              out ||= '<div class="body">' || "0a"x || run || '</div>' || "0a"x
+              run = ""
+            End
+            out ||= line || "0a"x
+            -- A :::contents is TRANSPARENT to the flow: its children are ordinary
+            -- blocks that deserve the same wrapping as at slide level. So its
+            -- OPENING does not send us opaque -- we stay in TOP and keep wrapping
+            -- the prose inside. We simply don't count its <div> into depth; its
+            -- matching </div> then arrives later as a lone close in TOP and is
+            -- emitted with no effect (d <= 0, so no STRUCT). Structures INSIDE
+            -- the contents (row, code, output) still open and close their own
+            -- depth normally, so they stay opaque as before. Every other
+            -- structural block stays opaque: its inner prose is handled by its
+            -- own slot rules (columns size their own <p>, code is code).
+            If trimmed~left(21) == '<div class="contents"' Then Nop
+            Else Do
+              d = CountOpens(line) - CountCloses(line)
+              If d > 0 Then Do; mode = "STRUCT"; depth = d; End
+            End
+          End
+        End
+      End
+    End
+  End
+
+  If run \== "" Then
+    out ||= '<div class="body">' || "0a"x || run || '</div>' || "0a"x
+
+  Return out
+
+--------------------------------------------------------------------------------
+-- Count opening / closing block-level tags on one line. Good enough for the   --
+-- one-block-per-line HTML Pandoc emits: we only need to know when a structural --
+-- <div>/<pre> that opened on this line has not yet closed.                     --
+--------------------------------------------------------------------------------
+::Routine CountOpens
+  Use Strict Arg s
+  Return CountMatches(s, "<div") + CountMatches(s, "<pre>") + -
+         CountMatches(s, "<ul>") + CountMatches(s, "<ol>") + -
+         CountMatches(s, "<p>")
+
+::Routine CountCloses
+  Use Strict Arg s
+  Return CountMatches(s, "</div>") + CountMatches(s, "</pre>") + -
+         CountMatches(s, "</ul>") + CountMatches(s, "</ol>") + -
+         CountMatches(s, "</p>")
+
+::Routine CountMatches
+  Use Strict Arg s, needle
+  n = 0; p = 1
+  Do Forever
+    p = s~pos(needle, p)
+    If p = 0 Then Leave
+    n += 1; p += needle~length
+  End
+  Return n
+
+--------------------------------------------------------------------------------
+-- Author sugar -> CSS custom properties.                                      --
+--                                                                            --
+-- The runtime is driven by custom properties (--contents-scale, ...), but a  --
+-- custom property in style="" is plumbing: `{style="--contents-scale:0.83"}` --
+-- is a horrible thing to ask an author to type. So the author writes a plain  --
+-- attribute -- `::: {.contents scale=0.83}` -- and Pandoc hands us            --
+-- <div ... data-scale="0.83">. TranslateSugar rewrites those into a style="". --
+--                                                                            --
+-- SugarMap is the whole vocabulary: author name -> custom property. It is the --
+-- ONE place that grows. A new convenience is a new row here; the mechanism    --
+-- below never changes. That is the point -- once we trade plumbing for        --
+-- legibility we will want to do it again and again, and each time should cost --
+-- a line, not a branch.                                                       --
+--                                                                            --
+-- SCALE COMPOSES BY MULTIPLICATION, and we do it HERE, not in CSS: a 0.9      --
+-- nested in a 0.8 must render at 0.72, but CSS custom properties cannot        --
+-- multiply an inherited value by a local one (self-reference is forbidden).    --
+-- So we keep a stack of the scale in force and emit each group's PRODUCT        --
+-- outright. The author writes 0.9; the generator writes 0.72. Composition is   --
+-- ours to compute -- exactly the kind of work we take on so the author does    --
+-- not have to. Other sugars are per-tag and need no stack; scale is special    --
+-- because it is the one that accumulates through nesting.                      --
+--------------------------------------------------------------------------------
+::Routine SugarMap
+  map = .StringTable~new
+  map["scale"] = "--contents-scale"   -- shrink a whole contents/row's text
+  Return map
+
+-- Walk the HTML, carrying a stack of the multiplied scale in force. Each        --
+-- .contents/.row that opens multiplies its own scale into the stack top and     --
+-- emits the product; the div's close pops it. Non-scale sugar is per-tag.       --
+::Routine TranslateSugar
+  Use Strict Arg html
+
+  scales = .Array~new           -- stack of accumulated scale factors
+  depths = .Array~new           -- the block-depth at which each push happened
+  depth  = 0                    -- running open-block depth
+
+  out = ""
+  Do line Over html~makeArray("0a"x)
+    trimmed = line~strip("L")
+    isGroup = (trimmed~pos('<div class="contents"') == 1) | -
+              (trimmed~pos('<div class="row"') == 1)
+
+    If isGroup Then Do
+      inherited = 1
+      If scales~items > 0 Then inherited = scales[scales~items]
+      -- pull this group's own scale (if any) and compute the product
+      own = SugarValue(line, "scale")
+      If own \== "" Then Do
+        prod = inherited * own
+        line = SugarToStyle(line, "scale", prod)   -- emit the PRODUCT
+        scales~append(prod)
+      End
+      Else
+        scales~append(inherited)                    -- no local scale: carry it
+      depths~append(depth)
+    End
+
+    -- any OTHER (per-tag) sugar on this line is translated as-is
+    line = SugarToStyle(line)
+
+    out ||= line || "0a"x
+
+    -- track depth; when a group we pushed for closes, pop its scale
+    depth += CountOpens(line) - CountCloses(line)
+    Do While depths~items > 0
+      If depth > depths[depths~items] Then Leave
+      scales~delete(scales~items)
+      depths~delete(depths~items)
+    End
+  End
+
+  Return out~left(out~length - 1)
+
+-- Read one sugar attribute's raw value from a tag (data-NAME or NAME), or "".  --
+::Routine SugarValue
+  Use Strict Arg tag, name
+  Do variant Over ("data-"name, name)
+    needle = variant'="'
+    p = tag~pos(needle)
+    If p == 0 Then Iterate
+    vstart = p + needle~length
+    vend   = tag~pos('"', vstart)
+    If vend == 0 Then Iterate
+    Return tag~substr(vstart, vend - vstart)
+  End
+  Return ""
+
+-- Rewrite mapped sugar on ONE tag into an appended/merged style="".            --
+-- Two modes:                                                                   --
+--   SugarToStyle(tag)                  -> translate every mapped sugar as-is    --
+--   SugarToStyle(tag, name, override)  -> translate `name` using `override` as  --
+--                                         its value (used for the scale product)--
+::Routine SugarToStyle
+  Use Strict Arg tag, only = "", override = ""
+  map = SugarMap()
+
+  decls = ""
+  work  = tag
+  Do name Over map~allIndexes
+    If only \== "", name \== only Then Iterate   -- targeted mode: this name only
+    prop = map[name]
+    Do variant Over ("data-"name, name)
+      needle = variant'="'
+      p = work~pos(needle)
+      If p == 0 Then Iterate
+      vstart = p + needle~length
+      vend   = work~pos('"', vstart)
+      If vend == 0 Then Iterate
+      value  = work~substr(vstart, vend - vstart)
+      emit   = value
+      If only \== "", override \== "" Then emit = override
+      decls  = decls || prop': 'emit'; '
+      work   = work~changeStr(' 'needle||value'"', "")
+    End
+  End
+
+  If decls == "" Then Return tag       -- no sugar: byte-identical
+
+  decls = decls~strip
+  sp = work~pos('style="')
+  If sp > 0 Then Do
+    ins = sp + 7
+    Return work~substr(1, ins-1) || decls' ' || work~substr(ins)
+  End
+  gt = work~lastPos(">")
+  Return work~substr(1, gt-1)' style="'decls'"'work~substr(gt)
 
 --------------------------------------------------------------------------------
 -- Give every highlighted BLOCK the runtime's structural class.               --

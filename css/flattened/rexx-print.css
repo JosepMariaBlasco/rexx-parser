@@ -87,7 +87,7 @@
    The 4em cell holds five digits at any font size, so the gutter does not
    need to vary with rx-w<n>. */
 
-.highlight-rexx-print.rx-block {
+.highlight-rexx-print.rx-blockwrap {
   overflow-x: auto;
 }
 .highlight-rexx-print pre.rx-numbered {

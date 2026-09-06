@@ -106,7 +106,7 @@ All fixtures are in `fixtures/`:
 | `hello.rex` | Rexx source file for `view=highlight` tests |
 
 
-What is tested (39 tests)
+What is tested (31 tests)
 --------------------------
 
 - **Basic response** (8): status 200, HTML structure, title extraction,
@@ -116,7 +116,7 @@ What is tested (39 tests)
   markdown.css.
 - **Fenced code** (3): highlight div, keyword classes, theme CSS.
 - **URL param style** (2): style=light changes highlight class and CSS.
-- **URL param print=pdf** (8): paged.polyfill.js inclusion,
+- **URL param print=pdf** (5): paged.polyfill.js inclusion,
   print-specific CSS loading for basic (no docclass), article.
 - **Invalid parameters** (1): unknown param returns 404.
 - **Nonexistent file** (1): returns 404.

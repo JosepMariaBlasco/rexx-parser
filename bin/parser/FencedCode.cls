@@ -157,18 +157,18 @@
 package = .context~package
 myName  =  package~name
 mypath  =  FileSpec( "Location", myName )
-myDir   = .File~new( mypath"../" )~absolutePath
+parentDir   = .File~new( mypath"../" )~absolutePath
 
 /******************************************************************************/
 /* Dependencies                                                               */
 /******************************************************************************/
 
--- ProseMention(), for prose mentions
-package~loadPackage(myDir"/HLDrivers/HTML.Driver.cls")
+package~loadPackage(parentDir"/Rexx.Parser.cls")
 
+-- ProseMention(), for prose mentions
+package~loadPackage(parentDir"/HLDrivers/HTML.Driver.cls")
 
 ::Requires "BaseClassesAndRoutines.cls"
-::Requires "Rexx.Parser.cls"
 ::Requires "Highlighter.cls"
 ::Requires "StylePatch.cls"
 ::Requires "ANSI.ErrorText.cls"
@@ -311,7 +311,7 @@ package~loadPackage(myDir"/HLDrivers/HTML.Driver.cls")
     -- Up to line (start-1), lines are prose: scan them for `` `x`{.rexx-*} ``
     -- mentions (ScanProseMentions is a no-op on a line with none).
     Do line Over source~section( 1, start - 1 )
-      processed~append( ScanProseMentions( line, proseHTMLClass, defaultStyle ) )
+      processed~append( ScanProseMentions( line, proseHTMLClass, defaultStyle, proseOptions. ) )
     End
     -- We now copy the highlighted lines
     processed~appendAll( highlighted )
@@ -328,7 +328,7 @@ package~loadPackage(myDir"/HLDrivers/HTML.Driver.cls")
 
   -- Copy any remaining line in the source array -- also prose, also scanned
   Do line Over source
-    processed~append( ScanProseMentions( line, proseHTMLClass, defaultStyle ) )
+    processed~append( ScanProseMentions( line, proseHTMLClass, defaultStyle, proseOptions. ) )
   End
 
   Return processed
@@ -374,7 +374,7 @@ MissingEndMarker:
 -- A line with no backtick is returned unchanged without further scanning.    --
 
 ::Routine ScanProseMentions Private
-  Use Strict Arg line, HTMLClass, style
+  Use Strict Arg line, HTMLClass, style, proseOptions.
 
   If \line~contains("`") Then Return line
 
@@ -423,48 +423,332 @@ MissingEndMarker:
     spanEnd   = SubStr(body, q + n)  -- immutable: right after the closing run
     afterSpan = spanEnd
 
-    -- Is the span immediately followed by {.rexx-name} or {.rexx-name:style}?
+    -- Is the span immediately followed by a Rexx attribute span? Two families
+    -- share the "{.rexx" opening:
+    --   {.rexx}   {.rexx:style}          -- AUTO-PARSE: tokenise the fragment
+    --   {.rexx-name}  {.rexx-name:style} -- BY-ELEMENT: tag one manual mention
+    -- We capture the attribute body once (everything between the braces) and
+    -- then classify, so the brace-matching guard (reject a stray "{" before
+    -- the real close) is written in one place for both.
     tag = ""
-    If afterSpan~startsWith("{.rexx-") Then Do
-      Parse Value afterSpan With "{.rexx-"tag"}"rest2
-      -- Parse stops at the FIRST "}"; reject if the tag itself contains "{"
-      -- or spans past a "}" that was not really the attribute's own close
-      -- (afterSpan~pos of the matched "}" must precede any earlier "{")
+    isRexxAttr = 0
+    If afterSpan~startsWith("{.rexx") Then Do
       closeBrace = Pos("}", afterSpan)
       openBrace2 = Pos("{", afterSpan, 2)
-      If closeBrace == 0 Then tag = "" -- No closing brace: not a mention
-      Else If openBrace2 \== 0, openBrace2 < closeBrace Then tag = ""
-      Else afterSpan = SubStr(afterSpan, closeBrace + 1)
+      If closeBrace == 0 Then Nop            -- No closing brace: not a mention
+      Else If openBrace2 \== 0, openBrace2 < closeBrace Then Nop -- stray "{"
+      Else Do
+        tag        = SubStr( afterSpan, 2, closeBrace - 2 )  -- drop "{" and "}"
+        isRexxAttr = 1
+        afterSpan  = SubStr( afterSpan, closeBrace + 1 )
+      End
     End
-    Else tag = ""
 
-    If tag == "" Then Do -- Not a recognised mention: copy the span verbatim
+    If \isRexxAttr Then Do -- Not a Rexx attribute span: copy verbatim
       out ||= run || content || run
       rest = spanEnd -- resume right after the closing run, untouched
       Iterate
     End
 
-    -- "name" or "name:style" -- the ":style" pinning suffix is future work
-    -- (see FencedCode.cls's header and HTMLClasses.cls's ProseTable), but we
-    -- already strip it here so an author experimenting with it does not get
-    -- a mangled public name looked up instead.
-    Parse Var tag publicName":"pinnedStyle
+    -- Classify. "tag" is now the dotted attribute name without braces:
+    --   ".rexx"  or ".rexx:style"        -> auto-parse
+    --   ".rexx-name" or ".rexx-name:style" -> by-element
+    -- Split the style pin (":style") first; it applies to either family.
+    Parse Var tag dotted":"pinnedStyle
+
+    mentionStyle = style
+    If pinnedStyle \== "" Then mentionStyle = pinnedStyle
+
+    If dotted == ".rexx" Then Do
+      -- AUTO-PARSE: hand the fragment to the inline highlighter. It PARSES
+      -- for real (same engine as a fenced block), so an ill-formed fragment
+      -- raises Syntax -- caught here and rendered as an in-situ shout, the
+      -- "via A" of the design: the fragment IS its own context, so no line
+      -- number or source reconstruction, just the red chip.
+      out ||= RexxFragment( content, mentionStyle, proseOptions. )
+      rest = afterSpan
+      Iterate
+    End
+
+    -- BY-ELEMENT: ".rexx-name" -> public name "name".
+    If \dotted~startsWith(".rexx-") Then Do -- ".rexxFOO": not a real family
+      out ||= run || content || run || "{"tag"}"
+      rest = afterSpan
+      Iterate
+    End
+    publicName = SubStr( dotted, 7 )  -- drop ".rexx-"
+
+    -- KLUDGE: the compound `directive` (`::Method`). It is not one element but
+    -- a two-element sequence (`::` + keyword), so it has no row in ProseTable
+    -- (which maps a public name to ONE category). `{.rexx}` cannot help either:
+    -- `::Method` alone is a directive missing its required name, so it does not
+    -- parse. We split the content into `::` and the keyword by hand and emit a
+    -- SINGLE chip holding two token spans -- `dir` then `dkw` -- both classes
+    -- derived from the SAME HTMLClass stem the generic path uses, so there is
+    -- still one source of truth. Content shape: `::` then optional whitespace
+    -- then the keyword. Anything that does not fit is left verbatim (a typo the
+    -- author can see), never a red shout: this path never parses.
+    If publicName == "directive" Then Do
+      parsed = ParseCompoundDirective( content )
+      If parsed == .Nil Then Do -- malformed: leave the mention verbatim
+        out ||= run || content || run || "{"tag"}"
+        rest = afterSpan
+        Iterate
+      End
+      dirText = parsed[1]        -- the "::" (plus any whitespace the author wrote)
+      kwText  = parsed[2]        -- the directive keyword
+      dirClass = HTMLClass[ .EL.DIRECTIVE_START   ]
+      kwClass  = HTMLClass[ .EL.DIRECTIVE_KEYWORD ]
+      inner = '<span class="'dirClass'">'EscapeHTML(dirText)'</span>' -
+           || '<span class="'kwClass'">'EscapeHTML(kwText)'</span>'
+      out ||= '<span class="highlight-rexx-'mentionStyle'">' -
+           || '<code class="rexx">'inner'</code></span>'
+      rest = afterSpan
+      Iterate
+    End
+
+    -- KLUDGE: `exposed-stem` and `exposed-compound`. A stem or compound is not
+    -- a single element -- it is a base plus (for a compound) tails -- so tagging
+    -- the whole thing with one class would flatten its internal structure. So
+    -- we AUTO-PARSE it via {.rexx} (which tokenises the structure correctly, but
+    -- as NON-exposed, since a bare fragment has no Expose to declare it) and
+    -- then correct just the BASE: relabel its stem class to the exposed-stem
+    -- class. Only the base -- an aisolated fragment cannot know which tails are
+    -- exposed (see `exp.a.exp`, where the last tail is exposed too, but only the
+    -- enclosing Expose reveals it). That is a documented product limitation.
+    --
+    -- SAFETY RULE (JMB): if the auto-parse did NOT make the first span a stem,
+    -- something is wrong -- the fragment is not a stem/compound -- so we do not
+    -- force anything: we emit an error chip, our own honest shout.
+    If publicName == "exposed-stem" | publicName == "exposed-compound" Then Do
+      out ||= ExposedStemChip( content, mentionStyle, HTMLClass, proseOptions. )
+      rest = afterSpan
+      Iterate
+    End
 
     tags = ProseElementTags( HTMLClass, publicName )
 
     If tags == .Nil Then Do -- Unpublished name (typo?): leave verbatim
-      out ||= run || content || run || "{.rexx-"tag"}"
+      out ||= run || content || run || "{"tag"}"
     End
-    Else Do
-      mentionStyle = style
-      If pinnedStyle \== "" Then mentionStyle = pinnedStyle
+    Else
       out ||= ProseMention( mentionStyle, tags, content )
-    End
 
     rest = afterSpan
   End
 
   Return out
+
+--------------------------------------------------------------------------------
+-- RexxFragment -- tokenise a `{.rexx}` inline fragment (auto-parse)          --
+--------------------------------------------------------------------------------
+-- The counterpart of a by-element mention: instead of tagging the content    --
+-- with one manual class, we PARSE it -- the same engine a fenced block uses, --
+-- reached through the "HTML-INLINE" driver, which emits the token spans with --
+-- none of the block chrome (<div>/<pre>/<code>/anchors). The token stream is --
+-- byte-for-byte what a fenced block would produce for the same source, so a  --
+-- fragment and a listing of the same code colour identically.                --
+--                                                                            --
+-- WHERE THE LINE IS DRAWN. `{.rexx}` recovers everything the TEXT knows      --
+-- about itself: a fragment that "holds" (fixes its tokens' roles -- a whole  --
+-- clause, a complete directive) parses and colours truthfully. A fragment    --
+-- that does NOT hold cannot be coldoured without inventing a context the     --
+-- author did not write, so the parser raises Syntax and we do NOT guess --   --
+-- we shout (below). What no completion can recover (exposed vs not; a Call   --
+-- resolving internal/external/builtin) is extra-textual and stays the job of --
+-- the by-element mentions, which supply exactly that.                        --
+--                                                                            --
+-- VIA A -- the shout. A fenced block that fails to parse reproduces the line --
+-- and its number (it lives in a listing, away from the reader). A fragment   --
+-- needs neither: it sits in the prose, in front of the author, so the shout  --
+-- is just a red inline chip showing the offending fragment. No line, no      --
+-- number, no reconstruction. Minimum ceremony, maximum locality.             --
+--                                                                            --
+-- ARGUMENTS                                                                  --
+--   content:      the fragment's source text (already un-escaped; the        --
+--                 highlighter escapes as it emits).                          --
+--   style:        the highlight style for the chip (document default, or a   --
+--                 ":style" pin the author wrote after {.rexx}).              --
+--   proseOptions: the document's prose options -- the SAME source of truth   --
+--                 the by-element path uses, so classprefix=, constant= etc.  --
+--                 stay in sync. We clone it and flip only mode to inline.    --
+--                                                                            --
+-- RETURNS a single HTML string: the chip, tokenised on success, red on fail. --
+
+::Routine RexxFragment Private
+  Use Strict Arg content, style, proseOptions.
+
+  Signal On Syntax
+
+  -- Clone the prose options and retarget them at the inline driver. We copy
+  -- into a fresh stem so we never mutate the caller's one-shot proseOptions.
+  fragOptions. = 0
+  Do idx Over proseOptions.~allIndexes
+    fragOptions.idx = proseOptions.idx
+  End
+  fragOptions.mode  = "HTML-INLINE"
+  fragOptions.style = style
+
+  source = .Array~of( content )
+  highlighter = .Highlighter~new( "<{.rexx} fragment>", source, fragOptions. )
+  tokens = highlighter~parse
+
+  -- parse returns an array of output lines; inline emits no forced newlines,
+  -- so for a one-line fragment this is a single element (a trailing "" may be
+  -- appended by the emitter's Say -- drop empties and concatenate directly:
+  -- a fragment is one continuous run of tokens, so the rare two-line fragment
+  -- joins seamlessly with no separator to leak into the copy or the flow).
+  html = ""
+  Do piece Over tokens
+    If piece == "" Then Iterate
+    html ||= piece
+  End
+
+  -- Wrap in the same chip ProseMention uses, but the inner content is already
+  -- tokenised HTML (not text to escape): class "rexx" only, the tokens carry
+  -- their own rx-* classes.
+  Return '<span class="highlight-rexx-'style'"><code class="rexx">' -
+         || html || '</code></span>'
+
+Syntax:
+  -- VIA A: the fragment did not hold. Shout in situ -- red chip, the offending
+  -- fragment shown, AND the parser's own complaint appended so the author sees
+  -- exactly what the parser choked on. Deliberately ugly, not pretty: the goal
+  -- is maximum information for debugging, not typography.
+  --
+  -- Two texts are appended when available: the GENERIC error text (the code's
+  -- fixed wording, e.g. "Symbol expected.") and the SPECIFIC message (the
+  -- contextualised one, e.g. "Symbol expected after PARSE keyword."). Both are
+  -- guarded: on some edge cases the specific message is not delivered, so we
+  -- emit whichever pieces exist and never assume the second one is there.
+  -- Condition("O") is a Directory, so probe it with hasIndex/[] rather than
+  -- hasMethod: the pieces we want are entries, not methods.
+  co  = Condition("O")
+  errText = ""
+  detail  = ""
+  If co \== .Nil Then Do
+    -- Generic error text (first message).
+    If co~hasIndex("ERRORTEXT"), co["ERRORTEXT"] \== .Nil Then errText = co["ERRORTEXT"]
+    -- Specific, contextualised message (second message) -- may be absent on
+    -- some edge cases, hence the guard; we never assume it is there.
+    If co~hasIndex("MESSAGE"), co["MESSAGE"] \== .Nil Then detail = co["MESSAGE"]
+  End
+  Return ErrorChip( content, style, errText, detail )
+
+--------------------------------------------------------------------------------
+-- ParseCompoundDirective -- split `::Method` into ("::", "Method")           --
+--------------------------------------------------------------------------------
+-- The content of a `{.rexx-directive}` mention: the literal `::` directive   --
+-- start, then optional whitespace, then the directive keyword. We keep any   --
+-- whitespace the author wrote GLUED to the "::" half, so the chip's copy     --
+-- reproduces `::  Method` faithfully while the keyword span still styles only--
+-- the word. This never PARSES (a lone `::Method` is not a valid program) --  --
+-- it is a purely textual split, on purpose: the whole reason the compound    --
+-- exists is that `{.rexx}` rejects it.                                       --
+--                                                                            --
+-- RETURNS a 2-element array (dirPart, keyword), or .Nil if the content does  --
+-- not have the `::` + word shape (caller then leaves the mention verbatim).  --
+
+::Routine ParseCompoundDirective Private
+  Use Strict Arg content
+
+  -- Must start with "::"
+  If content~length < 3 Then Return .Nil
+  If content~substr(1, 2) \== "::" Then Return .Nil
+
+  rest = content~substr(3)                 -- everything after the "::"
+
+  -- Absorb leading whitespace into the "::" half.
+  ws = ""
+  Loop While rest \== ""
+    c = rest~left(1)
+    If c \== " ", c \== "09"x Then Leave
+    ws ||= c
+    rest = rest~substr(2)
+  End
+
+  -- What remains must be a single word (the keyword): non-empty, no embedded
+  -- whitespace. A trailing name or subkeyword means the author wrote more than
+  -- the bare `::Method` -- that is a different (probably `{.rexx}`) case.
+  keyword = rest
+  If keyword == "" Then Return .Nil
+  If keyword~verify(" "||"09"x, "Match") \== 0 Then Return .Nil
+
+  Return .Array~of( "::" || ws, keyword )
+
+--------------------------------------------------------------------------------
+-- ExposedStemChip -- exposed-stem / exposed-compound via auto-parse + fix    --
+--------------------------------------------------------------------------------
+-- A stem or compound has internal structure (base, tails), so we let {.rexx} --
+-- tokenise it truthfully (RexxFragment), then relabel ONLY the base's stem   --
+-- class to the exposed-stem class. A bare fragment cannot know which tails are--
+-- exposed, so tails are left as the auto-parse coloured them -- a documented --
+-- limitation.                                                                --
+--                                                                            --
+-- SAFETY (JMB's rule): if RexxFragment shouted (the fragment did not parse), --
+-- we pass that error chip straight through. If it parsed but the FIRST span is --
+-- not the stem class, the fragment was not a stem/compound, so we do not force --
+-- anything -- we build our own error chip. We only relabel when we actually  --
+-- see the stem class where the base must be.                                 --
+--                                                                            --
+-- Both classes are derived from HTMLClass (one source of truth): the normal  --
+-- stem class (what the auto-parse emits for the base) and the exposed-stem   --
+-- class (what we relabel it to).                                             --
+--                                                                            --
+-- RETURNS the finished chip HTML.                                            --
+
+::Routine ExposedStemChip Private
+  Use Strict Arg content, style, HTMLClass, proseOptions.
+
+  chip = RexxFragment( content, style, proseOptions. )
+
+  -- If the fragment did not parse, RexxFragment already produced the red error
+  -- chip. Honour it -- do not try to relabel a shout.
+  If chip~pos("rx-fragment-error") > 0 Then Return chip
+
+  stemClass  = HTMLClass[ .EL.STEM_VARIABLE         ]  -- what the base parses as
+  xstemClass = HTMLClass[ .EL.EXPOSED_STEM_VARIABLE ]  -- what we relabel it to
+
+  -- The base is the FIRST token span, which sits immediately after the
+  -- <code ...> opening (the very first <span ...> is the chip wrapper, not a
+  -- token, so we anchor on the code open). It must carry exactly the stem class
+  -- for us to relabel it; anything else means "not a stem/compound" -> error.
+  codeOpen = chip~pos( '<code class="rexx">' )
+  firstTokenSpan = 0
+  If codeOpen > 0 Then
+    firstTokenSpan = codeOpen + length( '<code class="rexx">' )
+  marker = '<span class="'stemClass'">'
+  If firstTokenSpan == 0 | chip~substr( firstTokenSpan, marker~length ) \== marker Then
+    Return ErrorChip( content, style, -
+      "Not a stem or compound variable", -
+      "The {.rexx-exposed-*} fragment did not begin with a stem" )
+
+  -- Relabel just this base span: swap the stem class for the exposed one.
+  p = firstTokenSpan
+  Return chip~substr(1, p - 1) -
+      || '<span class="'xstemClass'">' -
+      || chip~substr( p + marker~length )
+
+--------------------------------------------------------------------------------
+-- ErrorChip -- the red "shout" chip, shared by the error paths               --
+--------------------------------------------------------------------------------
+-- Same shape RexxFragment's Syntax handler emits: the offending text in a red--
+-- chip, followed by one or two messages in their own span. Used where WE     --
+-- detect the error (not the parser), so we supply the messages ourselves.    --
+
+::Routine ErrorChip Private
+  Use Strict Arg content, style, generic, specific
+
+  msg = ""
+  If generic  \== "" Then msg ||= "***" || EscapeHTML(generic)
+  If specific \== "", specific \== generic Then msg ||= "***" || EscapeHTML(specific)
+  errorSpan = ""
+  If msg \== "" Then
+    errorSpan = '<span class="rx-fragment-error-msg"' -
+             || ' style="color:#c00;font-weight:bold;">' || msg || '</span>'
+  Return '<span class="highlight-rexx-'style'"><code class="rexx rx-fragment-error"' -
+      || ' style="background-color:#c00;color:#fff;font-weight:bold;">' -
+      || EscapeHTML(content) || '</code>' || errorSpan || '</span>'
 
 --------------------------------------------------------------------------------
 -- DeIndent -- Remove up to `n` leading whitespace columns from a line        --

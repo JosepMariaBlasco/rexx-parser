@@ -44,7 +44,7 @@ Else
 ::Method test_basic_highlight_div
   result = FencedCode("test.md", .resources~Basic)
   flat   = result~makeString('L', "0A"x)
-  self~assertTrue(flat~caselessPos('<div class="highlight-rexx-dark rx-block" id="rx') > 0, -
+  self~assertTrue(flat~caselessPos('<div class="highlight-rexx-dark rx-blockwrap" id="rx') > 0, -
     "Basic: contains highlight div with default style")
 
 ::Method test_basic_pre_code_tags
@@ -367,13 +367,94 @@ Else
   result = FencedCode("test.md", .resources~ProseVar)
   flat   = result~makeString('L', "0A"x)
   self~assertTrue(flat~pos('<code class="rexx rx-var">foo</code>') > 0, -
-    "Prose mention: rexx-var resolves to 'rx-var'")
+    "Prose mention: rexx-variable resolves to 'rx-var'")
 
 ::Method test_prose_directive_mention
+  -- The COMPOUND `directive`: `::Method` is `::` + keyword, so it renders as a
+  -- single chip holding two token spans (rx-dir then rx-dkw), NOT one monolith.
   result = FencedCode("test.md", .resources~ProseDirective)
   flat   = result~makeString('L', "0A"x)
-  self~assertTrue(flat~pos('<code class="rexx rx-dkw">::METHOD</code>') > 0, -
-    "Prose mention: rexx-directive resolves to 'rx-dkw' (directive keyword)")
+  expected = '<code class="rexx"><span class="rx-dir">::</span>' -
+          || '<span class="rx-dkw">METHOD</span></code>'
+  self~assertTrue(flat~pos(expected) > 0, -
+    "Prose mention: rexx-directive (compound) resolves to rx-dir + rx-dkw")
+
+::Method test_prose_directive_start_mention
+  result = FencedCode("test.md", .resources~ProseDirectiveStart)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-dir">::</code>') > 0, -
+    "Prose mention: rexx-directive-start resolves to 'rx-dir'")
+
+::Method test_prose_directive_keyword_mention
+  result = FencedCode("test.md", .resources~ProseDirectiveKeyword)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-dkw">Method</code>') > 0, -
+    "Prose mention: rexx-directive-keyword resolves to 'rx-dkw'")
+
+-- Section 3a coverage: a taken-constant name (requires) and an exposed
+-- variable (which maps by element, not through the constant axis).
+::Method test_prose_requires_mention
+  result = FencedCode("test.md", .resources~ProseRequires)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-const rx-requires">utils.rex</code>') > 0, -
+    "Prose mention: rexx-requires resolves to 'rx-const rx-requires'")
+
+::Method test_prose_exposed_variable_mention
+  result = FencedCode("test.md", .resources~ProseExposedVariable)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-xvar">total</code>') > 0, -
+    "Prose mention: rexx-exposed-variable resolves to 'rx-xvar' (by element)")
+
+-- Section 3b coverage: an explicit function form and a bare shortcut (which
+-- must resolve to the SUBROUTINE subcategory, the engine's term for procedure).
+::Method test_prose_builtin_function_mention
+  result = FencedCode("test.md", .resources~ProseBuiltinFunction)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-const rx-bif-func">Length</code>') > 0, -
+    "Prose mention: rexx-builtin-function resolves to 'rx-const rx-bif-func'")
+
+::Method test_prose_internal_shortcut_mention
+  result = FencedCode("test.md", .resources~ProseInternalShortcut)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-const rx-int-proc">Helper</code>') > 0, -
+    "Prose mention: rexx-internal (shortcut) resolves to the subroutine class")
+
+-- A {.rexx} fragment that does not parse "shouts": the red chip AND the
+-- parser's own complaint appended (generic error text + specific message),
+-- so the author sees exactly what the parser choked on.
+::Method test_prose_fragment_error_shows_message
+  result = FencedCode("test.md", .resources~ProseBadFragment)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('rx-fragment-error') > 0, -
+    "Bad fragment: the offending code is shown in the red error chip")
+  self~assertTrue(flat~pos('rx-fragment-error-msg') > 0, -
+    "Bad fragment: the parser's complaint is appended in its own span")
+  self~assertTrue(flat~pos('after ::METHOD keyword') > 0, -
+    "Bad fragment: the specific, contextualised message is included")
+
+-- exposed-stem / exposed-compound: auto-parse then relabel the base stem to
+-- the exposed class. Only the base -- tails stay as the auto-parse coloured
+-- them (a documented limitation, since a bare fragment has no Expose context).
+::Method test_prose_exposed_stem_mention
+  result = FencedCode("test.md", .resources~ProseExposedStem)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx"><span class="rx-xstem">data.</span></code>') > 0, -
+    "exposed-stem: the base is relabelled to rx-xstem")
+
+::Method test_prose_exposed_compound_mention
+  result = FencedCode("test.md", .resources~ProseExposedCompound)
+  flat   = result~makeString('L', "0A"x)
+  -- Base relabelled to rx-xstem; the tail stays a normal rx-var (limitation).
+  self~assertTrue(flat~pos('<span class="rx-xstem">order.</span><span class="rx-var">item</span>') > 0, -
+    "exposed-compound: base becomes rx-xstem, tail stays rx-var")
+
+::Method test_prose_exposed_not_a_stem_errors
+  -- SAFETY: if the auto-parse did not make the base a stem, we do not force
+  -- anything -- we shout with our own error chip.
+  result = FencedCode("test.md", .resources~ProseExposedNotStem)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('rx-fragment-error') > 0, -
+    "exposed-* on a non-stem fragment produces an honest error chip")
 
 ::Method test_prose_around_fence_before
   -- Prose BEFORE a fence goes through source~section(1, start-1): the
@@ -422,7 +503,7 @@ Else
   result = FencedCode("test.md", .resources~ProseDoubledBacktick)
   flat   = result~makeString('L', "0A"x)
   self~assertTrue(flat~pos('<code class="rexx rx-var">a`b</code>') > 0, -
-    "Doubled backtick: a``b``{.rexx-var} keeps the inner backtick as content")
+    "Doubled backtick: a``b``{.rexx-variable} keeps the inner backtick as content")
 
 ::Method test_prose_escaped_span_not_a_mention
   -- A doubled-backtick span used the OTHER way -- to quote a single-backtick
@@ -456,7 +537,7 @@ Else
     "Unclosed span: a code span with no closing backtick is left untouched")
 
 ::Method test_prose_pinned_style
-  -- The `` `x`{.rexx-var:light} `` pinning form (future syntax, already
+  -- The `` `x`{.rexx-variable:light} `` pinning form (future syntax, already
   -- accepted by the scanner -- see FencedCode.cls's header) overrides the
   -- document's default style for that one mention only.
   result = FencedCode("test.md", .resources~ProsePinnedStyle)
@@ -472,7 +553,7 @@ Else
   self~assertTrue(flat~pos('<code class="rexx rx-const rx-method">Bark</code>') > 0, -
     "Adjacent mentions: the first mention (rexx-method) resolves correctly")
   self~assertTrue(flat~pos('<code class="rexx rx-var">foo</code>') > 0, -
-    "Adjacent mentions: the second mention (rexx-var) resolves correctly")
+    "Adjacent mentions: the second mention (rexx-variable) resolves correctly")
 
 ::Method test_prose_plain_backtick_code_untouched
   -- Ordinary inline code with no attribute span at all must pass through
@@ -489,6 +570,146 @@ Else
   flat   = result~makeString('L', "0A"x)
   self~assertTrue(flat~pos("Plain prose, nothing special here.") > 0, -
     "No backtick: a line with no backtick at all is returned unchanged")
+
+/******************************************************************************/
+/* Auto-parse mentions: `x`{.rexx} -- the fragment is PARSED, not tagged      */
+/*                                                                            */
+/* A `{.rexx}` mention hands its content to the same engine a fenced block    */
+/* uses (via the HTML-INLINE driver), so a fragment that "holds" colours      */
+/* token-by-token, identically to a listing of the same source; a fragment    */
+/* that does not hold raises Syntax and is shown as an in-situ red shout.      */
+/******************************************************************************/
+
+::Method test_prose_autoparse_directive
+  -- A complete directive holds: every token gets its real class, the same
+  -- classes a fenced block would give the same source.
+  result = FencedCode("test.md", .resources~ProseAutoDirective)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<span class="rx-dkw">CLASS</span>') > 0, -
+    "Auto-parse: ::CLASS directive keyword tokenises to rx-dkw")
+  self~assertTrue(flat~pos('<span class="rx-dskw">SubClass</span>') > 0, -
+    "Auto-parse: SubClass subkeyword tokenises to rx-dskw")
+
+::Method test_prose_autoparse_wrapper
+  -- The tokens sit inside the SAME chip a by-element mention uses, but the
+  -- inner <code> carries only class "rexx" (the tokens carry their own).
+  result = FencedCode("test.md", .resources~ProseAutoDirective)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<span class="highlight-rexx-dark"><code class="rexx">') > 0, -
+    "Auto-parse: wrapped in the highlight-rexx-<style> chip with a plain rexx <code>")
+
+::Method test_prose_autoparse_clause
+  -- A complete clause holds too: keywords, variable and operator all coloured.
+  result = FencedCode("test.md", .resources~ProseAutoClause)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<span class="rx-kw">If</span>') > 0, -
+    "Auto-parse: If keyword in a complete clause tokenises to rx-kw")
+
+::Method test_prose_autoparse_matches_fenced
+  -- The whole point of reusing the engine: a fragment and a fenced block of
+  -- the SAME source produce the SAME token spans, so they render identically.
+  result = FencedCode("test.md", .resources~ProseAutoMatchesFenced)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<span class="rx-dkw">CLASS</span>') > 0, -
+    "Auto-parse matches fenced: the mention emits the same rx-dkw span...")
+  -- ...and the fenced block below it emits that exact same span too.
+  count = 0
+  pos   = 1
+  Loop Forever
+    pos = flat~pos('<span class="rx-dkw">CLASS</span>', pos)
+    If pos == 0 Then Leave
+    count += 1
+    pos += 1
+  End
+  self~assertEquals(2, count, -
+    "Auto-parse matches fenced: mention and fenced block emit the identical span")
+
+::Method test_prose_autoparse_broken_shouts
+  -- Via A: a fragment that does not hold (an incomplete DO) raises Syntax and
+  -- is rendered as a red in-situ shout carrying the offending fragment -- no
+  -- line number, no reconstruction (the fragment IS its own context).
+  result = FencedCode("test.md", .resources~ProseAutoBroken)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('rx-fragment-error') > 0, -
+    "Via A: a fragment that does not hold gets the rx-fragment-error class")
+  self~assertTrue(flat~pos('Do i = 1 To</code>') > 0, -
+    "Via A: the offending fragment itself is shown inside the shout")
+
+::Method test_prose_autoparse_broken_no_line_number
+  -- The shout must NOT carry a line number or source reconstruction the way a
+  -- fenced block's --continue trap does: the fragment is in the prose already.
+  result = FencedCode("test.md", .resources~ProseAutoBroken)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~caselessPos('line') == 0 | flat~pos('Do i = 1 To</code>') > 0, -
+    "Via A: no line-number ceremony -- just the fragment in a red chip")
+
+::Method test_prose_autoparse_pinned_style
+  -- `{.rexx:light}` -- the style pin applies to an auto-parse mention just as
+  -- it does to a by-element one, overriding the document default for the chip.
+  result = FencedCode("test.md", .resources~ProseAutoPinnedStyle)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<span class="highlight-rexx-light"><code class="rexx">') > 0, -
+    "Auto-parse pinned style: :light overrides the document default for this chip")
+
+::Method test_prose_byelement_still_distinct
+  -- {.rexx-variable} (by-element) and {.rexx} (auto-parse) share the "{.rexx"
+  -- opening but must NOT be confused: a by-element mention still tags one
+  -- token and does NOT go through the parser.
+  result = FencedCode("test.md", .resources~ProseByElementAndAuto)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-var">foo</code>') > 0, -
+    "Coexistence: the by-element {.rexx-variable} still tags one token, unparsed")
+  self~assertTrue(flat~pos('<span class="rx-kw">Say</span>') > 0, -
+    "Coexistence: the {.rexx} alongside it is parsed into tokens")
+
+/******************************************************************************/
+/* The semantic keyword family: instruction / subkeyword / directive /        */
+/* directive-subkeyword. Named by what the author asserts the word IS, not    */
+/* by the syntactic role it would take in an unwritten context. Each maps to  */
+/* a distinct element category (kw/skw/dkw/dskw), so a mentioned word shares   */
+/* its colour with the same word tokenised inside a fence.                    */
+/******************************************************************************/
+
+::Method test_prose_instruction_mention
+  -- The headline case: `Expose`{.rexx-instruction} -> rx-kw, covering every
+  -- keyword instruction with one diaphanous public name.
+  result = FencedCode("test.md", .resources~ProseInstruction)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-kw">Expose</code>') > 0, -
+    "Semantic: rexx-instruction resolves to rx-kw")
+
+::Method test_prose_subkeyword_mention
+  result = FencedCode("test.md", .resources~ProseSubkeyword)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-skw">Until</code>') > 0, -
+    "Semantic: rexx-subkeyword resolves to rx-skw")
+
+::Method test_prose_directive_subkeyword_mention
+  result = FencedCode("test.md", .resources~ProseDirectiveSubkeyword)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-dskw">Subclass</code>') > 0, -
+    "Semantic: rexx-directive-subkeyword resolves to rx-dskw")
+
+::Method test_prose_same_word_different_category
+  -- The point of semantic naming: the SAME word (Expose) is an instruction in
+  -- one plane and a directive-subkeyword in the other. The author's chosen
+  -- name decides which class it gets -- rx-kw here, rx-dskw there.
+  result = FencedCode("test.md", .resources~ProseExposeBothWays)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-kw">Expose</code>') > 0, -
+    "Semantic: Expose asserted as instruction -> rx-kw")
+  self~assertTrue(flat~pos('<code class="rexx rx-dskw">Expose</code>') > 0, -
+    "Semantic: the same Expose asserted as directive-subkeyword -> rx-dskw")
+
+::Method test_prose_instruction_matches_fenced
+  -- A mentioned instruction and a fenced-block keyword of the same word must
+  -- carry the identical class string, so they render in the same colour.
+  result = FencedCode("test.md", .resources~ProseInstructionMatchesFenced)
+  flat   = result~makeString('L', "0A"x)
+  self~assertTrue(flat~pos('<code class="rexx rx-kw">Say</code>') > 0, -
+    "Semantic match: the mention carries rx-kw...")
+  self~assertTrue(flat~pos('<span class="rx-kw">Say</span>') > 0, -
+    "Semantic match: ...and the fenced block gives Say the SAME rx-kw")
 
 /******************************************************************************/
 /* Test data                                                                  */
@@ -637,11 +858,51 @@ We call `Bark`{.rexx-method} here.
 ::END
 
 ::Resource ProseVar
-We use `foo`{.rexx-var} here.
+We use `foo`{.rexx-variable} here.
 ::END
 
 ::Resource ProseDirective
 The `::METHOD`{.rexx-directive} directive creates a method.
+::END
+
+::Resource ProseDirectiveStart
+Every directive opens with `::`{.rexx-directive-start} in column one.
+::END
+
+::Resource ProseDirectiveKeyword
+The `Method`{.rexx-directive-keyword} keyword names the directive.
+::END
+
+::Resource ProseRequires
+The `utils.rex`{.rexx-requires} file is pulled in with a directive.
+::END
+
+::Resource ProseExposedVariable
+The `total`{.rexx-exposed-variable} instance variable accumulates the sum.
+::END
+
+::Resource ProseBuiltinFunction
+The `Length`{.rexx-builtin-function} built-in returns a count.
+::END
+
+::Resource ProseInternalShortcut
+We call `Helper`{.rexx-internal} to do the work.
+::END
+
+::Resource ProseBadFragment
+An incomplete directive like `::Method`{.rexx} cannot parse on its own.
+::END
+
+::Resource ProseExposedStem
+The `data.`{.rexx-exposed-stem} stem holds the accumulated values.
+::END
+
+::Resource ProseExposedCompound
+The `order.item`{.rexx-exposed-compound} compound is exposed in the method.
+::END
+
+::Resource ProseExposedNotStem
+Tagging `plain`{.rexx-exposed-stem} which is not a stem is an error.
 ::END
 
 ::Resource ProseAroundFence
@@ -651,7 +912,7 @@ Before the fence: `Bark`{.rexx-method}.
 Nop
 ```
 
-After the fence: `foo`{.rexx-var}.
+After the fence: `foo`{.rexx-variable}.
 ::END
 
 ::Resource ProseUseDefinitionMatch
@@ -664,7 +925,7 @@ In prose: `Bark`{.rexx-method}.
 ::END
 
 ::Resource ProseDoubledBacktick
-A span with an inner backtick: ``a`b``{.rexx-var}.
+A span with an inner backtick: ``a`b``{.rexx-variable}.
 ::END
 
 ::Resource ProseEscapedSpan
@@ -680,11 +941,11 @@ No closing backtick: `Bark{.rexx-method} here.
 ::END
 
 ::Resource ProsePinnedStyle
-Pinned to light: `foo`{.rexx-var:light}.
+Pinned to light: `foo`{.rexx-variable:light}.
 ::END
 
 ::Resource ProseAdjacentMentions
-Back to back: `Bark`{.rexx-method}`foo`{.rexx-var} no space.
+Back to back: `Bark`{.rexx-method}`foo`{.rexx-variable} no space.
 ::END
 
 ::Resource ProsePlainCode
@@ -693,5 +954,57 @@ Ordinary code: `plain code` with no attribute.
 
 ::Resource ProseNoBacktick
 Plain prose, nothing special here.
+::END
+
+::Resource ProseAutoDirective
+A complete directive: `::CLASS Foo SubClass Bar`{.rexx} holds and colours.
+::END
+
+::Resource ProseAutoClause
+A complete clause: `If a = b Then Nop`{.rexx} colours fully.
+::END
+
+::Resource ProseAutoMatchesFenced
+In prose: `::CLASS Foo SubClass Bar`{.rexx}.
+
+```rexx
+::CLASS Foo SubClass Bar
+```
+::END
+
+::Resource ProseAutoBroken
+This does not hold: `Do i = 1 To`{.rexx} and so it shouts.
+::END
+
+::Resource ProseAutoPinnedStyle
+Pinned to light: `Nop`{.rexx:light}.
+::END
+
+::Resource ProseByElementAndAuto
+By-element `foo`{.rexx-variable} beside auto-parse `Say foo`{.rexx}.
+::END
+
+::Resource ProseInstruction
+The `Expose`{.rexx-instruction} instruction exposes variables.
+::END
+
+::Resource ProseSubkeyword
+The `Until`{.rexx-subkeyword} connector ends a loop.
+::END
+
+::Resource ProseDirectiveSubkeyword
+The `Subclass`{.rexx-directive-subkeyword} in a class directive.
+::END
+
+::Resource ProseExposeBothWays
+As instruction `Expose`{.rexx-instruction}, as dir-subkw `Expose`{.rexx-directive-subkeyword}.
+::END
+
+::Resource ProseInstructionMatchesFenced
+In prose: `Say`{.rexx-instruction}.
+
+```rexx
+Say "hello"
+```
 ::END
 

@@ -28,6 +28,20 @@
   --theme-output-bg:    #e8e8e8;
   --theme-title-weight: 700;
 
+  /* Code size is DERIVED from prose size, not an independent absolute. There is
+     one source of truth for text size -- --theme-body-size -- and code keeps a
+     declared PROPORTION to it via --theme-code-ratio, so the two never drift out
+     of relation: raise the prose and the code follows. The default ratio is a
+     harmonious 0.7 (code noticeably smaller than prose but clearly of the same
+     type family). A theme is free to override the ratio -- Rony's ODP set code
+     deliberately small (10pt against 21pt prose, ~0.47), so his theme declares
+     --theme-code-ratio: 0.47 and recovers that look WITHIN the proportion model,
+     rather than pinning an absolute --theme-code-size that would sever the
+     relation. A per-slide :::code-font-size still overrides the result with an
+     absolute when a single slide needs it. */
+  --theme-code-ratio: 0.7;
+  --theme-code-size:  calc(var(--theme-body-size, 34px) * var(--theme-code-ratio));
+
   /* Deck geometry. 16:9, matching the slides class page size.               */
   --deck-w: 1280;
   --deck-h: 720;
@@ -179,6 +193,18 @@ html, body {
    omit it; then the body falls back to the slide's inherited size. */
 .body { margin: 0.5em 0; font-size: var(--theme-body-size, 1em); }
 
+/* The .body owns the separation from its neighbours (its own 0.5em margin). Its
+   first and last children must not ADD their own edge margins on top -- a lead
+   <p> carries ~1em and a lead <ul> ~0.3em, which stack onto the body's margin
+   and open a gap that is pure waste: doubled separation where one is meant. It
+   goes unnoticed on a roomy slide but, when rows above have filled the stage,
+   the extra top margin is what pushes trailing prose down over the footer. So
+   we zero the inner edge margins; the rhythm BETWEEN a body's blocks is
+   untouched, only the boundary the body already accounts for. (Same principle
+   as the row's `> * > :first-child { margin-top:0 }`, applied to the body.) */
+.body > :first-child { margin-top: 0; }
+.body > :last-child  { margin-bottom: 0; }
+
 .body ul { margin: 0.3em 0; padding-left: 1.1em; }
 .body li { margin: 0.28em 0; }
 
@@ -201,20 +227,133 @@ html, body {
 .body ul ul ul ul { font-size: 0.88em; }   /* level 4; deeper stays at this size */
 
 /* -------------------------------------------------------------------------- */
-/* Two-column master page.                                                    */
+/* Two-dimensional layout -- a 12-unit grid (Bootstrap-shaped, no responsive).  */
 /*                                                                            */
-/* A LAYOUT (not identity) choice: it decides where things sit, so it lives   */
-/* in the runtime. A slide tagged  class="slide two-col"  arranges its two     */
-/* .col children side by side under the title. Structural only -- fonts and    */
-/* colours still come from whatever identity is loaded.                        */
+/* A LAYOUT (not identity) choice, so it lives in the runtime. A :::row lays   */
+/* its :::col-N children side by side; :::col-N takes N/12 of the row's width. */
+/* Because a slide is a FIXED canvas, there are no breakpoints and no wrap:    */
+/* a column's share is absolute. Columns that don't sum to 12 simply leave     */
+/* space to the right; columns that exceed 12 overflow the canvas -- both are   */
+/* the author's call, not the grid's to police. The grid is a width system.    */
+/*                                                                            */
+/* Nothing in the pipeline interprets these: Pandoc renders `::: row` and      */
+/* `::: col-6` as nested <div class="row"> / <div class="col-6">, and the      */
+/* highlighter runs inside a column exactly as it does at slide level. This    */
+/* replaces the old fixed `two-col` slide-mode: same gap/alignment/min-width   */
+/* decisions, but a local container instead of a whole-slide mode, N columns   */
+/* instead of two, and a 12-share split instead of a forced 50/50.            */
 /* -------------------------------------------------------------------------- */
 
-.two-col .columns {
+.slide .row {
   display: flex;
-  gap: 40px;
-  align-items: flex-start;
+  gap: var(--row-gap, 40px);
+  align-items: flex-start;   /* prose + code align at the top, not stretched */
 }
-.two-col .col { flex: 1; min-width: 0; }   /* min-width:0 lets code blocks shrink */
+/* Share via flex-GROW on a zero basis, NOT flex-basis percentages. A percentage
+   basis measures N/12 of the row's FULL width and ignores the gap, so two col-6
+   ask for 50%+50%=100% AND a 40px gap on top -> the pair overflows by one gap
+   and the last column pushes past the right margin (the bug that made the right
+   margin look narrow). With basis:0 and grow:N, flexbox subtracts the gap(s)
+   from the row first and then splits the REMAINING space in the ratio of the
+   grows -- so any number of columns, any gap, always fits the row exactly.
+   col-N is thus "N parts of 12 of the space left after gutters", which is what
+   symmetric margins require. */
+.slide .col-1,  .slide .col-2,  .slide .col-3,  .slide .col-4,
+.slide .col-5,  .slide .col-6,  .slide .col-7,  .slide .col-8,
+.slide .col-9,  .slide .col-10, .slide .col-11, .slide .col-12 {
+  flex-basis: 0;
+  min-width: 0;              /* a code panel shrinks instead of overflowing */
+}
+.slide .col-1  { flex-grow: 1;  }
+.slide .col-2  { flex-grow: 2;  }
+.slide .col-3  { flex-grow: 3;  }
+.slide .col-4  { flex-grow: 4;  }
+.slide .col-5  { flex-grow: 5;  }
+.slide .col-6  { flex-grow: 6;  }
+.slide .col-7  { flex-grow: 7;  }
+.slide .col-8  { flex-grow: 8;  }
+.slide .col-9  { flex-grow: 9;  }
+.slide .col-10 { flex-grow: 10; }
+.slide .col-11 { flex-grow: 11; }
+.slide .col-12 { flex-grow: 12; }
+
+/* Align the TOP of each column's content. align-items:flex-start lines up the
+   column boxes, but the first child inside each still carries its own top
+   margin, and those differ by kind: a prose <p> inherits .body's 0.5em (~26px
+   at body size) while a .code box carries only ~6px -- so text starting a
+   column sits ~19px lower than code starting the sibling column, and two
+   side-by-side blocks visibly misalign at the top. The first child has no
+   previous sibling to separate from, so its top margin serves no purpose here:
+   zero it. Scoped to a column's direct first child, so the normal vertical
+   rhythm between stacked blocks outside a row is untouched. */
+.slide .row > * > :first-child { margin-top: 0; }
+
+/* Contents scale -- one knob to shrink a whole block's text at once. A chunk
+   of content that fits but runs a little tall can be dialled down with a single
+   number instead of re-picking the code/body font-size zones by hand and
+   keeping them in proportion. The author writes ::: {.contents scale=0.85} and
+   every text size inside drops to 85%, code and prose together, each shrinking
+   from its OWN base so their relative proportion is preserved.
+
+   `contents` is the generic scalable group; `row` is a `contents` that also
+   lays its children out in columns, so it shares the very same knob -- one
+   scaling mechanism, not two.
+
+   Nesting MULTIPLIES, but the multiplication is done in the GENERATOR, not
+   here: a 0.9 inside a 0.8 is emitted as a resolved --contents-scale:0.72 on
+   the inner group. CSS custom properties cannot multiply an inherited value by
+   a local one without self-reference (which the spec forbids), so the build
+   keeps a stack of scales and writes each group's product outright. The author
+   still just writes scale=0.9; the composition is ours to compute. That is why
+   this stylesheet is flat: every group already carries its final factor.
+
+   We scale where the size is CONSUMED (font-size on the blocks), never by
+   redefining --theme-*-size in terms of themselves. The outline's per-level
+   cascade (0.82em...) rides on the already-scaled .body; unitless line-heights
+   follow the font down on their own. TITLE and footer are OUT of scope: they
+   are chrome placed by the master, not content the author flowed. */
+/* The scale in force defaults to 1 at the slide root and INHERITS from there:
+   a group without its own scale must keep whatever an ancestor group set, not
+   reset to 1. So the default lives on .slide, and a group only ever carries a
+   --contents-scale when the generator wrote one (i.e. it had scale=). A nested
+   row inside a scaled contents thus inherits the parent's factor; the generator
+   already folded any nesting into the numbers it emits. */
+.slide { --contents-scale: 1; }
+.slide .contents .body,       .slide .row .body,
+.slide .contents > p,         .slide .row > p,
+.slide .row .col-1  > p, .slide .row .col-2  > p, .slide .row .col-3  > p,
+.slide .row .col-4  > p, .slide .row .col-5  > p, .slide .row .col-6  > p,
+.slide .row .col-7  > p, .slide .row .col-8  > p, .slide .row .col-9  > p,
+.slide .row .col-10 > p, .slide .row .col-11 > p, .slide .row .col-12 > p,
+.slide .contents [class*="col-"] > ul,
+.slide .row [class*="col-"] > ul,
+.slide .contents > ul, .slide .contents > ol {
+  font-size: calc(var(--theme-body-size, 1em) * var(--contents-scale));
+}
+.slide .contents .code > pre, .slide .row .code > pre,
+.slide .contents .output,     .slide .row .output {
+  font-size: calc(var(--theme-code-size) * var(--contents-scale));
+}
+
+/* Anything placed DIRECTLY inside a :::row that is not a column is an          */
+/* authoring error. A bare paragraph or block becomes an unsized flex item     */
+/* whose width silently depends on its content -- never what the author meant.  */
+/* This is a product aimed at real authors, so we make the mistake LOUD rather */
+/* than paper over it with a "helpful" default: a visible complaint in the     */
+/* render beats a silent mislayout the author discovers in the room. The list  */
+/* of valid children is the closed col-1..col-12 vocabulary, matched exactly   */
+/* (an explicit whitelist, not a `[class*="col-"]` substring test, so a future */
+/* unrelated class containing "col-" is never flagged by accident).            */
+.slide .row > :not(.col-1):not(.col-2):not(.col-3):not(.col-4):not(.col-5):not(.col-6):not(.col-7):not(.col-8):not(.col-9):not(.col-10):not(.col-11):not(.col-12) {
+  outline: 3px dashed #c9211e;
+  outline-offset: 4px;
+}
+.slide .row > :not(.col-1):not(.col-2):not(.col-3):not(.col-4):not(.col-5):not(.col-6):not(.col-7):not(.col-8):not(.col-9):not(.col-10):not(.col-11):not(.col-12)::before {
+  content: "\26A0 not in a :::col-N";
+  display: block;
+  font: 600 14px var(--theme-font-prose, sans-serif);
+  color: #c9211e;
+}
 
 /* label -- a short caption introducing a block ("Output:")                   */
 .label {
@@ -272,7 +411,7 @@ html, body {
    width fall back to auto makes the <pre> shrink by exactly its own margin, so
    its right edge lands back on the wrapper's -- no overflow, no bar, gutter
    intact. This mirrors how our own numbered blocks work: there the width lives
-   on the .rx-block wrapper and the <pre> never fixes it. Keyed on numberSource,
+   on the .rx-blockwrap wrapper and the <pre> never fixes it. Keyed on numberSource,
    the class Pandoc adds only when the block is numbered, so a plain unnumbered
    output (no gutter, no margin) keeps the full-width rule and is untouched. */
 pre.output.numberSource { width: auto; }

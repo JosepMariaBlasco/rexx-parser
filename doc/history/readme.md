@@ -8,6 +8,8 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
+<tr><td>20260906<td>0.7<td>  
+  <li> Jump release level to mark addition of inline code highlighting.
 <tr><td>20260522<td>0.6<td>
 <ul>
   <li> Jump release level to mark addition of support for Rexx/VM.

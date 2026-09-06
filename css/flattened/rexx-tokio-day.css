@@ -75,7 +75,7 @@
    The 4em cell holds five digits at any font size, so the gutter does not
    need to vary with rx-w<n>. */
 
-.highlight-rexx-tokio-day.rx-block {
+.highlight-rexx-tokio-day.rx-blockwrap {
   overflow-x: auto;
 }
 .highlight-rexx-tokio-day pre.rx-numbered {

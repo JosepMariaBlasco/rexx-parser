@@ -285,53 +285,6 @@
     });
   }
 
-  /* ---------------------------------------------------------------------- */
-  /* The footer.                                                             */
-  /*                                                                         */
-  /* One rule decides everything here: the FORMAT is the identity's and the   */
-  /* FIELDS are the document's. An institution says that its footer carries   */
-  /* the institute on the left, the page number in the middle and the         */
-  /* presenter on the right; the deck says who the presenter is. Neither      */
-  /* knows the other's business, which is why the same Markdown builds for    */
-  /* another institution without a word changed -- and why a presenter's name */
-  /* never again ends up written into a stylesheet, as it was here before.    */
-  /*                                                                         */
-  /* Composition happens at run time rather than at build time because two of */
-  /* the fields cannot exist any earlier: {page} and {total-pages} are the    */
-  /* runtime's own, computed from document order, and were deliberately taken */
-  /* away from the generator when hand-written numbers proved to drift. One   */
-  /* mechanism that can serve every field beats two that each serve half.     */
-  /* ---------------------------------------------------------------------- */
-
-  /* Self-documenting names, expanded to what a reader can actually act on.   */
-  /* A licence is not a trait of an institution -- CC BY-SA reads the same in */
-  /* Vienna and in Barcelona -- so the table lives here and not in a CI.      */
-  var LICENCES = {
-    "cc-by":               "CC BY 4.0",
-    "cc-by-sa":            "CC BY-SA 4.0",
-    "cc-by-nc":            "CC BY-NC 4.0",
-    "cc-by-nc-sa":         "CC BY-NC-SA 4.0",
-    "cc-by-nd":            "CC BY-ND 4.0",
-    "cc-by-nc-nd":         "CC BY-NC-ND 4.0",
-    "cc0":                 "CC0 1.0",
-    "public-domain":       "Public domain",
-    "all-rights-reserved": "All rights reserved",
-    "gfdl":                "GFDL 1.3",
-    "apache-2.0":          "Apache License 2.0"
-  };
-
-  /* A name may pin a version: cc-by-sa-3.0 is CC BY-SA 3.0. Anything the     */
-  /* table does not know is shown verbatim, so a jurisdiction port or an odd  */
-  /* wording is never blocked; the build is what warns about a likely typo.   */
-  function expandLicence(value) {
-    if (LICENCES[value]) return LICENCES[value];
-    var m = /^(.*)-(\d+(?:\.\d+)?)$/.exec(value);
-    if (m && LICENCES[m[1]]) {
-      return LICENCES[m[1]].replace(/\s\d+(\.\d+)?$/, " " + m[2]);
-    }
-    return value;
-  }
-
   /* The content must not climb into the bottom band; fitHeight subtracts this */
   /* to know where the usable area ends. This is LAYOUT geometry (how much air */
   /* the body gets), not a footer concept -- the band exists whether or not    */

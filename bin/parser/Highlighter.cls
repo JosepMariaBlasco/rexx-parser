@@ -138,6 +138,8 @@ Return
   Select Case Options.mode
     When "HTML"  Then
       Options.!Driver =  .HTML.Highlighter~new( Options., output )
+    When "HTML-INLINE" Then
+      Options.!Driver =  .HTML.Inline.Highlighter~new( Options., output )
     When "ANSI" Then
       Options.!Driver =  .ANSI.Highlighter~new( Options., output )
     When "LATEX" Then

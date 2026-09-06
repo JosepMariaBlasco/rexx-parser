@@ -568,12 +568,102 @@ Return HTMLClass
 
   Table. = .Nil -- One- or two-item array: (category) or (category, subcategory)
 
-  Table.["var"]       = .Array~of( .EL.SIMPLE_VARIABLE )
-  Table.["class"]     = .Array~of( .EL.TAKEN_CONSTANT, .CLASS.NAME   )
-  Table.["method"]    = .Array~of( .EL.TAKEN_CONSTANT, .METHOD.NAME  )
-  Table.["routine"]   = .Array~of( .EL.TAKEN_CONSTANT, .ROUTINE.NAME )
-  Table.["label"]     = .Array~of( .EL.TAKEN_CONSTANT, .LABEL.NAME   )
-  Table.["directive"] = .Array~of( .EL.DIRECTIVE_KEYWORD )
+  --
+  -- Section 2 -- the keyword family
+  --
+  -- Named SEMANTICALLY -- by what the author asserts the word IS, not by the
+  -- syntactic role it would take inside a construct the author did not write. A
+  -- lone `Expose` in prose is not "a keyword": it is an INSTRUCTION of the
+  -- language, and that it acts as a keyword is something only its enclosing
+  -- method reveals. So the public name is "instruction", which is diaphanous to
+  -- an author and covers EVERY keyword instruction (Say, Do, If, Call, Parse,
+  -- Expose...) in one word -- the same word maps to .EL.KEYWORD, so a mentioned
+  -- `Expose` and a fenced `Expose` share rx-kw and thus their colour.
+  -- (Technically Expose is the "keyword" of a keyword instruction;
+  -- "instruction" trades that pedantic accuracy for clarity. A "rexx-keyword"
+  -- alias can be added here later if anyone needs it.)
+  --
+  -- Symmetrically: "subkeyword" for the connectors of a construct (To, By,
+  -- Until, While...), "directive-keyword" (-> dkw) for the keyword of a
+  -- directive taken alone (the Method in ::Method, the Class in ::Class...),
+  -- and "directive-subkeyword" for a directive's own connectors (Public,
+  -- Subclass, Private, Inherit...). The SAME word can be an instruction or a
+  -- directive-subkeyword depending on the plane; the semantic name lets the
+  -- author say which one they mean -- which is the whole point. These map to
+  -- DISTINCT element categories (kw/skw/dkw/dskw), so the distinction carries
+  -- a real, separately-colourable class, not just a label.
+  -- "directive-subkeyword" is wordy, but a lone directive subkeyword in prose
+  -- is vanishingly rare (and {.rexx} covers it if you give it the clause), so
+  -- the wordiness never bites.
+  --
+  -- "variable" (-> the simple-variable class) is the override for a plain
+  -- variable whose name is ALSO a keyword instruction (`parse`, `say`...): a
+  -- one-token fragment of such a name would be captured as a keyword clause and
+  -- fail to parse under {.rexx}, so the author publishes "variable" to say "I
+  -- mean the variable, not the keyword".
+  Table.["instruction"]          = .Array~of( .EL.KEYWORD )
+  Table.["subkeyword"]           = .Array~of( .EL.SUBKEYWORD )
+  Table.["directive-keyword"]    = .Array~of( .EL.DIRECTIVE_KEYWORD )
+  Table.["directive-subkeyword"] = .Array~of( .EL.DIRECTIVE_SUBKEYWORD )
+  Table.["variable"]             = .Array~of( .EL.SIMPLE_VARIABLE )
+
+  -- "directive-start" (-> dir) is the `::` on its own; "directive" (the
+  -- compound `::Method`) is BOTH and lives as a kludge in FencedCode.cls,
+  -- because it is a two-element sequence, not a single category (see below).
+  Table.["directive-start"]      = .Array~of( .EL.DIRECTIVE_START )
+
+  --
+  -- Section 3a -- taken constants: names and markers
+  --
+  -- Each maps to .EL.TAKEN_CONSTANT plus the constant subcategory the engine
+  -- assigns; the class HTMLClasses() emits for that pair is the single source
+  -- of truth, so a mentioned name and a fenced one always share their colour.
+  Table.["class"]              = .Array~of( .EL.TAKEN_CONSTANT, .CLASS.NAME             )
+  Table.["method"]             = .Array~of( .EL.TAKEN_CONSTANT, .METHOD.NAME            )
+  Table.["routine"]            = .Array~of( .EL.TAKEN_CONSTANT, .ROUTINE.NAME           )
+  Table.["label"]              = .Array~of( .EL.TAKEN_CONSTANT, .LABEL.NAME             )
+  Table.["namespace"]          = .Array~of( .EL.TAKEN_CONSTANT, .NAMESPACE.NAME         )
+  Table.["annotation"]         = .Array~of( .EL.TAKEN_CONSTANT, .ANNOTATION.NAME        )
+  Table.["argument"]           = .Array~of( .EL.TAKEN_CONSTANT, .ARGUMENT.NAME          )
+  Table.["block"]              = .Array~of( .EL.TAKEN_CONSTANT, .BLOCK.INSTRUCTION.NAME  )
+  Table.["environment"]        = .Array~of( .EL.TAKEN_CONSTANT, .ENVIRONMENT.NAME       )
+  Table.["requires"]           = .Array~of( .EL.TAKEN_CONSTANT, .REQUIRES.PROGRAM.NAME   )
+  Table.["resource"]           = .Array~of( .EL.TAKEN_CONSTANT, .RESOURCE.NAME          )
+  Table.["resource-delimiter"] = .Array~of( .EL.TAKEN_CONSTANT, .RESOURCE.DELIMITER.NAME )
+  Table.["user-condition"]     = .Array~of( .EL.TAKEN_CONSTANT, .USER.CONDITION.NAME     )
+  Table.["constant-value"]     = .Array~of( .EL.TAKEN_CONSTANT, .CONSTANT.VALUE         )
+  Table.["annotation-value"]   = .Array~of( .EL.TAKEN_CONSTANT, .ANNOTATION.VALUE       )
+
+  -- Exposed variables are NOT taken constants: the engine gives them their own
+  -- element categories (xvar/xcmp/xstem), so they map by element, like
+  -- "variable" above, not through the constant subcategory axis.
+  Table.["exposed-variable"]   = .Array~of( .EL.EXPOSED_SIMPLE_VARIABLE   )
+  Table.["exposed-compound"]   = .Array~of( .EL.EXPOSED_COMPOUND_VARIABLE )
+  Table.["exposed-stem"]       = .Array~of( .EL.EXPOSED_STEM_VARIABLE     )
+
+  --
+  -- Section 3b -- calls (function / subroutine axis)
+  --
+  -- The engine's term is SUBROUTINE, not "procedure": a function must return a
+  -- value, a subroutine need not. The public names follow the engine. The bare
+  -- shortcut (`rexx-internal`...) means the subroutine form -- the commoner one
+  -- in prose -- so it maps to the same subcategory as the explicit
+  -- "-subroutine" name.
+  Table.["internal-function"]          = .Array~of( .EL.TAKEN_CONSTANT, .INTERNAL.FUNCTION.NAME           )
+  Table.["internal-subroutine"]        = .Array~of( .EL.TAKEN_CONSTANT, .INTERNAL.SUBROUTINE.NAME         )
+  Table.["internal"]                   = .Array~of( .EL.TAKEN_CONSTANT, .INTERNAL.SUBROUTINE.NAME         )
+  Table.["builtin-function"]           = .Array~of( .EL.TAKEN_CONSTANT, .BUILTIN.FUNCTION.NAME            )
+  Table.["builtin-subroutine"]         = .Array~of( .EL.TAKEN_CONSTANT, .BUILTIN.SUBROUTINE.NAME          )
+  Table.["builtin"]                    = .Array~of( .EL.TAKEN_CONSTANT, .BUILTIN.SUBROUTINE.NAME          )
+  Table.["package-function"]           = .Array~of( .EL.TAKEN_CONSTANT, .PACKAGE.FUNCTION.NAME            )
+  Table.["package-subroutine"]         = .Array~of( .EL.TAKEN_CONSTANT, .PACKAGE.SUBROUTINE.NAME          )
+  Table.["package"]                    = .Array~of( .EL.TAKEN_CONSTANT, .PACKAGE.SUBROUTINE.NAME          )
+  Table.["external-function"]          = .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.FUNCTION.NAME           )
+  Table.["external-subroutine"]        = .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.SUBROUTINE.NAME         )
+  Table.["external"]                   = .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.SUBROUTINE.NAME         )
+  Table.["external-package-function"]  = .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.PACKAGE.FUNCTION.NAME   )
+  Table.["external-package-subroutine"]= .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.PACKAGE.SUBROUTINE.NAME )
+  Table.["external-package"]           = .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.PACKAGE.SUBROUTINE.NAME )
 
 Return Table.
 

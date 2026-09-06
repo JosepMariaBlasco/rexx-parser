@@ -148,7 +148,7 @@
    The 4em cell holds five digits at any font size, so the gutter does not
    need to vary with rx-w<n>. */
 
-.highlight-rexx-vim-dark-slate.rx-block {
+.highlight-rexx-vim-dark-slate.rx-blockwrap {
   overflow-x: auto;
 }
 .highlight-rexx-vim-dark-slate pre.rx-numbered {

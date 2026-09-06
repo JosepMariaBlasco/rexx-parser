@@ -82,7 +82,7 @@
   /* content sticks out to the LEFT is clipped and cannot be scrolled to. The  */
   /* gutter lives precisely there, so a numbered <pre> is given back           */
   /* overflow:visible and the wrapper takes over the horizontal scrolling.     */
-  &.rx-block { overflow-x: auto; }
+  &.rx-blockwrap { overflow-x: auto; }
 
   pre.rx-numbered {
     overflow: visible;

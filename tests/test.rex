@@ -1,1 +1,3 @@
-If a = if Then Else = then; Else if = 2 -- Yuck
+::Method M
+  Expose exp exp.
+  Say exp.a.exp
