@@ -328,6 +328,30 @@ html, body {
    lines of a small table, not as paragraphs. */
 .slide .row + .row.tight { margin-top: 0; }
 
+/* ::: {.row .ruled}: a line down the middle of each gap between columns, as
+   in a two-column comparison (Rony's "ooRexx vs. VBScript", 29-Sep). Drawn by
+   each column after the first, from its top to its bottom, so it is there
+   from the start even when everything in the columns comes in steps. Ruled
+   rows one under the other join into ONE line: the rule of a ruled row that
+   follows another reaches up through the space between them. For that, the
+   columns of the rows must line up (the same col-N), which is the point of
+   writing a comparison as one row per topic. */
+.slide .row.ruled { align-items: stretch; }   /* the line as tall as the row */
+.slide .row.ruled > * + * { position: relative; }
+.slide .row.ruled > * + *::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--row-gap, 40px) / -2 - var(--skin-column-rule-width, 2px) / 2);
+  border-left: var(--skin-column-rule-width, 2px) solid
+               var(--skin-column-rule, var(--skin-fg, #1a1a1a));
+}
+.slide .row.ruled + .row.ruled > * + *::before {
+  top: calc(-1 * var(--skin-body-size, 1em) * var(--contents-scale, 1));
+}
+.slide .row.ruled + .row.ruled.tight > * + *::before { top: 0; }
+
 /* Contents scale -- one knob to shrink a whole block's text at once. A chunk
    of content that fits but runs a little tall can be dialled down with a single
    number instead of re-picking the code/body font-size zones by hand and
@@ -473,6 +497,32 @@ html, body {
   display: block;
   max-width: 100%;
 }
+/* offset="dx dy" (TranslateOffset): a cascade. The pictures share ONE grid
+   cell, each pushed right and down by k times the offset, k = its place after
+   the first. A grid cell grows to hold everything in it, margins included, so
+   the block is as big as the whole cascade and stays in flow: no absolute
+   positioning, nothing under it is overlapped. Later pictures paint over
+   earlier ones, in the order written. Past the 12th, k stays 11. */
+.slide .layers.offset { display: inline-grid; }
+.slide .layers.offset > * {
+  grid-area: 1 / 1;
+  position: static;
+  justify-self: start;
+  align-self: start;
+  margin: calc(var(--k, 0) * var(--layers-dy, 0px)) 0 0
+          calc(var(--k, 0) * var(--layers-dx, 0px));
+}
+.slide .layers.offset > :nth-child(2)  { --k: 1; }
+.slide .layers.offset > :nth-child(3)  { --k: 2; }
+.slide .layers.offset > :nth-child(4)  { --k: 3; }
+.slide .layers.offset > :nth-child(5)  { --k: 4; }
+.slide .layers.offset > :nth-child(6)  { --k: 5; }
+.slide .layers.offset > :nth-child(7)  { --k: 6; }
+.slide .layers.offset > :nth-child(8)  { --k: 7; }
+.slide .layers.offset > :nth-child(9)  { --k: 8; }
+.slide .layers.offset > :nth-child(10) { --k: 9; }
+.slide .layers.offset > :nth-child(11) { --k: 10; }
+.slide .layers.offset > :nth-child(n+12) { --k: 11; }
 /* cols=1:5 on the wrapper: the columns are given shares of the table, so the
    table itself has to have a width to share out -- that of its holder. */
 .slide table.cols { width: 100%; }

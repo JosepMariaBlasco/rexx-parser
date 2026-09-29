@@ -34,6 +34,7 @@
 /* 20260315         Extract FindFile internal routine for file search         */
 /* 20260926         Front matter read with yaml.cls; invalid YAML is fatal;   */
 /*                  exit code 1 when the single file given fails              */
+/* 20260929         Add --style (CLI > YAML > default), as md2pdf and md2epub */
 /*                                                                            */
 /******************************************************************************/
 
@@ -63,6 +64,8 @@
   numberFigures  = 1
   path           = ""
   continue       = 0
+  defaultTheme   = "dark"
+  cliStyle       = 0                      -- Track if --style was specified
 
 ProcessOptions:
 
@@ -98,8 +101,31 @@ ProcessOptions:
         jsbase = args[1]
         args~delete(1)
       End
+      When "--style" Then Do
+        If args~size == 0 Then
+          Call Error "Missing style name after '"option"' option."
+        defaultTheme = Lower(args[1])
+        cliStyle = 1
+        args~delete(1)
+      End
       Otherwise Call Error "Invalid option '"option"'."
     End
+  End
+
+  ------------------------------------------------------------------------------
+  -- Validate --style against the shipped sheets: the css/ directory next to  --
+  -- this program, which is also where StyleChooserForm takes its <option>s.  --
+  -- An unknown name would reach the chooser as a data-rexx-default-style     --
+  -- that no <option> offers, and style-chooser.js would silently fall back   --
+  -- to another style.  With no reachable css/ there is no chooser either, so --
+  -- there is nothing to check against, and nothing to mislabel.              --
+  ------------------------------------------------------------------------------
+
+  If cliStyle Then Do
+    shippedCSS = FileSpec("Location", .context~package~name)"../css"
+    If SysIsFileDirectory(shippedCSS),                                        -
+      \SysFileExists(shippedCSS"/rexx-"defaultTheme".css") Then
+        Call Error "Style '"defaultTheme"' not found."
   End
 
   ------------------------------------------------------------------------------
@@ -289,7 +315,7 @@ TemplateFound:
     Say Time("Long") "Processing" file"..."
     Call ProcessFile file, newDir, md.i, template, cssbase, jsbase, -
       itrace, attributes, continue, sectionNumbers, singleFileMode, -
-      numberFigures, highlightStyle
+      numberFigures, highlightStyle, defaultTheme, cliStyle
     processed += 1
   End
 
@@ -316,7 +342,7 @@ DoSingleFile:
   Call Directory fileObj~parentFile~absolutePath
   Call ProcessFile fileObj, destDir, fileObj~absolutePath, template, -
     cssbase, jsbase, itrace, attributes, continue, sectionNumbers, -
-    singleFileMode, numberFigures, highlightStyle
+    singleFileMode, numberFigures, highlightStyle, defaultTheme, cliStyle
   -- 0 when it went well; 1, or no result at all, when the file was in error
   fileRC = 1
   If Var("RESULT") Then fileRC = result
@@ -377,7 +403,7 @@ Help:
 ::Routine ProcessFile
   Use Strict Arg file, directory, sourceFn, template, -
     cssbase, jsbase, itrace, attributes, continue, sectionNumbers, -
-    singleFileMode, numberFigures, highlightStyle
+    singleFileMode, numberFigures, highlightStyle, defaultTheme, cliStyle
 
   filename = file~absolutePath
   name     = FileSpec("Name",filename)
@@ -393,7 +419,7 @@ Help:
   ------------------------------------------------------------------------------
   -- Parse YAML front matter for RexxPub options                              --
   -- Precedence:                                                              --
-  --   style:          YAML > default  (no CLI option in md2html)             --
+  --   style:          CLI > YAML > default  (reader-wins, as in md2pdf)      --
   --   everything else: YAML > default  (author's intent prevails)            --
   ------------------------------------------------------------------------------
 
@@ -462,10 +488,11 @@ Help:
   -- We process Rexx fenced code blocks first                                 --
   ------------------------------------------------------------------------------
 
-  defaultTheme = "dark"
-
-  -- YAML style overrides the default (md2html has no --style CLI option)
-  If opts["style"] \== .Nil Then defaultTheme = opts["style"]
+  -- style: CLI > YAML > default.  defaultTheme arrives as --style, or as the
+  -- "dark" default; the YAML only speaks when --style was not given.  This
+  -- one variable feeds FencedCode (blocks and prose mentions) and, below,
+  -- StyleChooserForm (data-rexx-default-style), so the two always agree.
+  If \cliStyle, opts["style"] \== .Nil Then defaultTheme = opts["style"]
 
   Signal On Syntax Name IndividualFileFailed
 
@@ -714,10 +741,11 @@ Raise Propagate
 StyleChooserForm: Procedure
   Use Strict Arg res, filenameSpecificStyle, defaultStyle
 
-  -- defaultStyle is the style the page is actually rendered in (YAML style: or
-  -- md2html's "dark" default).  It MUST match, because style-chooser.js reads
-  -- data-rexx-default-style to decide which style the URL may safely omit and
-  -- which <option> to pre-select; a mismatch would mislabel the page on load.
+  -- defaultStyle is the style the page is actually rendered in (--style, else
+  -- YAML style:, else md2html's "dark" default).  It MUST match, because
+  -- style-chooser.js reads data-rexx-default-style to decide which style the
+  -- URL may safely omit and which <option> to pre-select; a mismatch would
+  -- mislabel the page on load.
 
   -- Enumerate shipped styles from the css/ directory next to this program.
   myDir = FileSpec("Location", .context~package~name)
@@ -783,6 +811,7 @@ Options:
 -it, --itrace              Print internal traceback on error
 -j jsbase, --js jsbase     Where to locate the JavaScript files
 -p path, --path path       Search path for default.md2html and md2html.custom.rex
+--style name               Default highlighting style
 
 cssbase and jsbase default to "css" and "js" subdirectories
 in the destination directory, when they exist.

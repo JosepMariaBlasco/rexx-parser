@@ -465,7 +465,26 @@ same size, one per step, and stack them in a `::: layers` zone:
 ```
 
 The first picture sits in the slide like any other and gives the stack its
-size; every later one is drawn exactly over it. Each `.fragment` arrives on a
+size; every later one is drawn exactly over it.
+
+For screenshots that pile up — each window a little to the right of and
+below the one before — give the stack an **offset**:
+
+```
+::: {.layers offset="60px 40px"}
+![](img/first.png){width=600px}
+
+![](img/second.png){width=600px .fragment .afterPrevious}
+
+![](img/third.png){width=600px .fragment .afterPrevious}
+:::
+```
+
+Each picture after the first is moved that much further right and down than
+the one before it; one length (`offset=1.5em`) moves it that much both ways.
+Any length works but a percentage. The block is as big as the whole pile, so
+what comes after it comes after the last picture. `offset=` works on
+`::: layers` only, and the build says so if it finds it anywhere else. Each `.fragment` arrives on a
 key press, so the diagram grows under the audience's eyes, and the explanation
 for each step can arrive with it.
 
@@ -1072,6 +1091,34 @@ sits right under the one before: `::: {.row .tight}`. (For real tabular
 material, a Markdown table is shorter to write: see [Marking
 Fragments](#marking-fragments).)
 
+A comparison — two languages, two approaches — reads best with a **line
+between the columns**. Add `.ruled` to the row, and write one row per topic,
+so that each topic starts at the same height on both sides:
+
+```
+::: {.row .ruled}
+::: col-6
+- Message operator
+  - `~` (Tilde)
+:::
+::: col-6
+- "Message" (dereference) operator
+  - `.` (dot)
+:::
+:::
+
+::: {.row .ruled}
+...the next topic, on both sides...
+:::
+```
+
+Ruled rows one under another make one unbroken line, as long as their
+columns line up (the same `col-N`). The line belongs to the row, not to its
+content, so it is there from the start even when everything in the columns
+comes in steps; to reveal both sides of a topic on one press, make the right
+side `.withPrevious`. The skin sets its colour and width,
+`--skin-column-rule` (the text colour) and `--skin-column-rule-width` (`2px`).
+
 Indenting a Block
 -----------------
 
@@ -1578,7 +1625,9 @@ slide never surprises you. Case does not matter either, as in Rexx: `Init`
 and `init` are the same beat.
 
 Lines may be given singly, as a range, or as a list of both, and several
-beats may be named at once, separated by blanks or by semicolons:
+beats may be named at once, separated by blanks or by semicolons. A block
+need not show its line numbers to have its lines marked: in one that shows
+none, the lines count from 1, the first line of the block.
 
 ```
 ~~~rexx {.numberLines spot="init:2; salary:5-7,9"}
@@ -1609,9 +1658,7 @@ freely, `trap:2,[ANY:]`.
   `caseless` to the spot: `spot="trap:[say] caseless"`.
 - **Within one line.** A mark does not run on into the next line; that is
   what a whole-line mark is for.
-- **Any block**: `rexx`, `output`, anything. A text needs no line numbers,
-  so an unnumbered `output` can be marked; whole lines still need
-  `.numberLines`.
+- **Any block**: `rexx`, `output`, anything, numbered or not.
 - Brackets inside the text pair up, so `[a[1]]` marks `a[1]`.
 - A text that is not there is reported by `d`, with its slide.
 

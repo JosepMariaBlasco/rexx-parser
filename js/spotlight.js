@@ -11,8 +11,8 @@
 /*      This line builds the object...                                        */
 /*      :::                                                                   */
 /*                                                                            */
-/*      ~~~rexx   {.numberLines spot="init:2"}                                */
-/*      ~~~output {.numberLines spot="init:1"}                                */
+/*      ~~~rexx   {spot="init:2"}                                             */
+/*      ~~~output {spot="init:1"}                                             */
 /*                                                                            */
 /*  One click: the sentence appears AND line 2 of the program AND line 1 of   */
 /*  the output light up.                                                      */
@@ -144,6 +144,59 @@
       }
       out.push({ beat: name, lines: lines, texts: texts });
     });
+    return out;
+  }
+
+  /* --------------------------------------------------------------------     */
+  /* Line elements for a block that has none (v225).                          */
+  /*                                                                          */
+  /* A Rexx listing always comes with one span per line, numbered or not, and */
+  /* so does any language Pandoc highlights. A block Pandoc does NOT          */
+  /* highlight -- ~~~output, plain text -- is one run of text in its <code>,   */
+  /* and whole-line marks had nothing to stand on: "whole lines need          */
+  /* .numberLines" was the only way out. Rony never numbers his listings, and */
+  /* his decks strike whole lines all the time (29-Sep, the ODP collection).  */
+  /*                                                                          */
+  /* So give the block the lines it lacks: each line's nodes go in a <span>   */
+  /* child of <code>, and the "\n" between them stays as text, exactly the    */
+  /* shape Pandoc gives a highlighted block. The spans carry no id (an id is  */
+  /* Pandoc's or the highlighter's, and one made up here could collide), so   */
+  /* the map is returned rather than found again by linesOf. Line numbers    */
+  /* count from 1, as for the end of an arrow in a block that shows none.     */
+  /*                                                                          */
+  /* Only plain text and elements with no line end inside them can be split  */
+  /* this way; anything else returns null and the caller says so.            */
+  /* --------------------------------------------------------------------     */
+  function makeLines(code) {
+    var kids = Array.prototype.slice.call(code.childNodes);
+    for (var i = 0; i < kids.length; i++) {
+      if (kids[i].nodeType !== 3 && kids[i].textContent.indexOf("\n") >= 0) return null;
+    }
+    var cur = null;
+    function line() {
+      cur = document.createElement("span");
+      code.appendChild(cur);
+    }
+    while (code.firstChild) code.removeChild(code.firstChild);
+    kids.forEach(function (k) {
+      if (k.nodeType !== 3) { if (!cur) line(); cur.appendChild(k); return; }
+      var parts = k.data.split("\n");
+      parts.forEach(function (part, j) {
+        if (j > 0) { code.appendChild(document.createTextNode("\n")); cur = null; }
+        if (part === "") return;
+        if (!cur) line();
+        cur.appendChild(document.createTextNode(part));
+      });
+    });
+    /* An empty line is still a line: number it, with an empty span, so the   */
+    /* numbers the author counts are the lines of the block.                  */
+    var out = {}, k = 0, node = code.firstChild, open = true;
+    for (; node; node = node.nextSibling) {
+      if (node.nodeType === 3) {                      /* a "\n" between lines */
+        if (open) { var e = document.createElement("span"); code.insertBefore(e, node); out[++k] = e; }
+        open = true;
+      } else { out[++k] = node; open = false; }
+    }
     return out;
   }
 
@@ -381,6 +434,11 @@
       var code  = el.querySelector("pre code");
       var lines = code ? linesOf(el) : null;
       var numbered = !!(lines && Object.keys(lines).length);
+      /* A block without line elements gets them, if some beat wants a line.  */
+      if (code && !numbered && specs.some(function (x) { return x.lines.length; })) {
+        lines = makeLines(code);
+        numbered = !!lines;
+      }
 
       for (var s = 0; s < specs.length; s++) {
         var spec = specs[s];
@@ -394,12 +452,12 @@
           continue;
         }
         if (spec.lines.length && !numbered) {
-          /* Used to join the beat as a whole block and light nothing. A line */
-          /* number the audience cannot see is not an address: say so, and   */
-          /* point at the form that needs no numbers.                        */
-          warn('spot="' + el.getAttribute("data-spot") + '": whole lines' +
-               ' need .numberLines; to mark a text, write ' + spec.beat +
-               ':[text]', el);
+          /* Only when the block could not be given lines (makeLines): a line */
+          /* end inside an element of an unhighlighted block. Not expected;  */
+          /* said, so that a mark that fails to appear never goes unnoticed. */
+          warn('spot="' + el.getAttribute("data-spot") + '": the lines of' +
+               ' this block cannot be marked; to mark a text, write ' +
+               spec.beat + ':[text]', el);
         }
         for (var k = 0; numbered && k < spec.lines.length; k++) {
           var span = lines[spec.lines[k]];
@@ -557,8 +615,10 @@
     var blocks = slide.querySelectorAll("[data-spot]");
     for (var i = 0; i < blocks.length; i++) {
       var blk  = blocks[i];
-      var pre  = blk.querySelector("pre");
-      var line = blk.querySelector("code > span[id]");
+      /* An ~~~output carries spot= on its <pre> itself; and its lines, made */
+      /* by makeLines, have no id -- any line span will do for the measure.   */
+      var pre  = blk.matches("pre") ? blk : blk.querySelector("pre");
+      var line = blk.querySelector("code > span");
       if (!pre || !line) continue;
       var wrap  = pre.parentElement;
       var csL   = getComputedStyle(line);

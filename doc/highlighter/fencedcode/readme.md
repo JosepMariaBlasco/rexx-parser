@@ -306,15 +306,17 @@ separated by blanks or by semicolons, as you prefer &mdash;
 thing. Lines may be given singly (`2`), as an inclusive range (`5-7`),
 or as a comma-separated list of both (`2,5-7,9`). Line numbers are the
 ones the reader sees: under [startFrom=97](#startfrom), `spot="x:97"`
-means the first line of the block. Requires
-[.numberLines](#numberlines) &mdash; if you are going to say "line 5",
-your reader needs to be able to count to it.
+means the first line of the block. The block need not show its
+numbers: without [.numberLines](#numberlines) the lines count from 1,
+the first line of the block, so a listing can be marked the way it is
+shown.
 
 A few words can be marked instead of a line, by writing them between
 square brackets: `spot="trap:[NOVALUE NAME ANY],[ANY:]"` marks those
 texts wherever they appear in the block, and `trap:5[ANY:]` only on
-line 5. The match is by whole words, ignores case and stays within one
-line; brackets inside the text pair up (`[a[1]]`). A text needs no
+line 5. The match is by whole words, as written, and stays within one
+line; to match in any case, add the word `caseless` to the attribute,
+`spot="trap:[say] caseless"`. Brackets inside the text pair up (`[a[1]]`). A text needs no
 line numbers, so it works on an unnumbered block too. The marks are
 drawn by the slide runtime; see
 [the md2slides documentation](../../utilities/md2slides/#marking-words).

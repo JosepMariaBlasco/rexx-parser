@@ -34,6 +34,9 @@
 /*                  specifications (99.917 when it is not one).               */
 /*                  ::ANNOTATE: a signed value is a number (19.923, as        */
 /*                  ooRexx); Annotate.Directive~options. (a getter).          */
+/* 20260929         Options.Directive~settings: every setting of ::OPTIONS,   */
+/*                  in order, as (NAME, value) pairs (the RVM applies them).  */
+/*                  TRACE: the value in any case ('a', as ooRexx).            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -820,6 +823,10 @@ Return
   options.commands   = 1
   options.macrospace = 1
   ignoreBlanks       = .True
+  -- The settings, in the order they are given (a later one overrides an
+  -- earlier one: ALL SYNTAX ERROR CONDITION), as (NAME, value) pairs.
+  settings           = .Array~new
+  options.["SETTINGS"] = settings
 
   If element < .EL.END_OF_CLAUSE Then Signal Done
 
@@ -849,6 +856,7 @@ Return
           If WordPos( element~value, "CONDITION SYNTAX") == 0 Then Signal 25.927
         End
         options.condition = element~value
+        settings~append( .Array~of( condition, element~value ) )
         Call Set.Directive.SubKeyword element
         element = TheElementAfter( element )
       End
@@ -856,18 +864,25 @@ Return
       When tValue == "NOCOMMANDS"   Then options.commands   = 0
       When tValue == "MACROSPACE"   Then options.macrospace = 1
       When tValue == "NOMACROSPACE" Then options.macrospace = 0
-      When tValue == "PROLOG"       Then options.prolog     = 1
-      When tValue == "NOPROLOG"     Then options.prolog     = 0
+      When tValue == "PROLOG"       Then Do
+        options.prolog = 1
+        settings~append( .Array~of( "PROLOG", 1 ) )
+      End
+      When tValue == "NOPROLOG"     Then Do
+        options.prolog = 0
+        settings~append( .Array~of( "PROLOG", 0 ) )
+      End
       When tValue == "FORM"         Then Do
         If element \< .ALL.SYMBOLS Then Signal 20.925
         If WordPos( element~value, "SCIENTIFIC ENGINEERING") == 0 Then Signal 25.011
         options.form = element~value
+        settings~append( .Array~of( "FORM", element~value ) )
         Call Set.Directive.SubKeyword element
         element = TheElementAfter( element )
       End
       When tValue == "TRACE" Then Do
         If element \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.919
-        tValue = element~value
+        tValue = Upper( element~value )
         c = Strip(tValue, "L", "?")[1]
         If c \== "", Pos(c, "ACEFILNOR") == 0 Then Signal 24.001
         If c == "" Then Options.trace = tValue
@@ -876,12 +891,14 @@ Return
           If Length( ? ) // 2 Then c = "?"c
           options.trace = c
         End
+        settings~append( .Array~of( "TRACE", options.trace ) )
         element = TheElementAfter( element, ignoreBlanks )
       End
       When tValue == "NUMERIC" Then Do
         If element \< .ALL.SYMBOLS Then Signal 20.935
         If WordPos( element~value, "INHERIT NOINHERIT") == 0 Then Signal 25.935
         options.["NUMERIC"] = element~value
+        settings~append( .Array~of( "NUMERIC", element~value ) )
         Call Set.Directive.SubKeyword element
         element = TheElementAfter( element )
       End
@@ -894,6 +911,7 @@ Return
           ( tValue == "DIGITS" & value < 1 ) Then
           If tValue == "DIGITS" Then Signal 26.005; Else Signal 26.006
         options.tValue = value
+        settings~append( .Array~of( tValue, value ) )
         element = TheElementAfter( element, ignoreBlanks )
       End
     End
@@ -949,6 +967,11 @@ Done:
 ::Attribute Commands   -- Executor only
 ::Attribute Macrospace -- Executor only
 ::Attribute Prolog
+-- The settings, in the order given: an Array of (NAME, value) pairs. NAME
+-- is DIGITS, FUZZ, FORM, TRACE, NUMERIC (INHERIT or NOINHERIT), PROLOG (1 or
+-- 0), or a condition (ALL, ERROR, FAILURE, LOSTDIGITS, NOSTRING, NOTREADY,
+-- NOVALUE: SYNTAX or CONDITION; NOVALUE ERROR too, the old form of SYNTAX).
+::Attribute Settings
 ::Method init
   Expose Commands Macrospace
   Use Strict Arg package, begin, end, options.
@@ -956,6 +979,7 @@ Done:
   self~commands   = options.commands
   self~macrospace = options.macrospace
   self~prolog     = options.prolog
+  self~settings   = options.settings
 
   self~init:super( package, begin, end )
 

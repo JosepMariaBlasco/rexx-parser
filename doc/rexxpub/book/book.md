@@ -2411,7 +2411,9 @@ subdirectory.
 in a file, rather than stopping.
 
 `--default attributes` passes default attributes to FencedCode, as
-in md2pdf.
+in md2pdf.  They are written into every fence: `--default style=name`
+pins every block to that style, and the page's style chooser leaves
+such blocks alone.  To set the style of the whole page, use `--style`.
 
 `-h` or `--help` displays a usage summary.
 
@@ -2426,8 +2428,10 @@ file (`default.md2html`) and the customisation file
 locations (current directory, destination directory, source
 directory, and the Rexx external search order).
 
-`--section-numbers N` overrides the section numbering depth (default:
-3 for article, 2 for book, 0 for slides).
+`--style name` selects the Rexx Highlighter style for the whole page:
+code blocks, Rexx mentions in the prose, and the style chooser.  It
+takes precedence over the YAML `style:` value.  An unknown name is an
+error.
 
 `--no-number-figures` disables the automatic numbering of figures
 and code listings.

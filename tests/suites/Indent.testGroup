@@ -432,6 +432,40 @@ Else
   src = self~file(self~projectRoot"/bin/md2slides.rex")
   self~assertTrue(src~pos("flat = TranslateFlow(flat)") > 0, "wiring: the build calls it")
 
+/* -- v225: offset= (a cascade of pictures) and .ruled (Rony's ODP, 29-Sep) - */
+/* offset= goes on ::: layers only, one or two lengths, no %: the pictures   */
+/* share a grid cell and the block is as big as the cascade. .ruled is CSS.  */
+
+::Method test_offset_becomes_a_class_and_two_lengths
+  out = self~run("TranslateOffset", .Array~of('<div class="layers" data-offset="40px 30px">'))
+  self~assertEquals('<div class="offset layers" style="--layers-dx: 40px; --layers-dy: 30px;">', out, "two lengths")
+  out = self~run("TranslateOffset", .Array~of('<div class="layers" data-offset="1.5em">'))
+  self~assertEquals('<div class="offset layers" style="--layers-dx: 1.5em; --layers-dy: 1.5em;">', out, "one is both")
+  out = self~run("TranslateOffset", .Array~of('<div class="layers" data-offset="1cm,0">'))
+  self~assertEquals('<div class="offset layers" style="--layers-dx: 1cm; --layers-dy: 0;">', out, "a comma, and 0")
+
+::Method test_a_bad_offset_is_reported
+  parse value self~said("TRANSLATEOFFSET", '<div class="layers" data-offset="10%">') with said "00"x out
+  self~assertTrue(said~pos('offset="10%" is not one or two lengths') > 0, "% is reported ("said")")
+  self~assertEquals('<div class="layers">', out, "and dropped")
+  parse value self~said("TRANSLATEOFFSET", '<div class="layers" data-offset="-5px">') with said "00"x out
+  self~assertTrue(said~pos('offset="-5px" is not one or two lengths') > 0, "so is a negative one")
+  parse value self~said("TRANSLATEOFFSET", '<div class="layers" data-offset="1px 2px 3px">') with said "00"x out
+  self~assertTrue(said~pos('is not one or two lengths') > 0, "and three")
+  parse value self~said("TRANSLATEOFFSET", '<div class="contents" data-offset="10px">') with said "00"x out
+  self~assertTrue(said~pos("only works on a ::: layers block") > 0, "only on layers ("said")")
+  self~assertEquals('<div class="contents">', out, "and dropped")
+
+::Method test_offset_and_ruled_are_in_the_stylesheet
+  css = self~file(self~projectRoot"/bin/md2slides/css/runtime.css")
+  self~assertTrue(css~pos(".slide .layers.offset { display: inline-grid; }") > 0, "one grid cell, in flow")
+  self~assertTrue(css~pos("grid-area: 1 / 1;") > 0, "all the pictures in it")
+  self~assertTrue(css~pos(".slide .layers.offset > :nth-child(2)  { --k: 1; }") > 0, "each one step further")
+  self~assertTrue(css~pos(".slide .row.ruled > * + *::before {") > 0, "the rule is drawn by the columns")
+  self~assertTrue(css~pos(".slide .row.ruled + .row.ruled > * + *::before {") > 0, "and joins across rows")
+  src = self~file(self~projectRoot"/bin/md2slides.rex")
+  self~assertTrue(src~pos("flat = TranslateOffset(flat)") > 0, "wiring: the build calls it")
+
 ::Method said
   /* A routine's warnings and its output, as "warnings 00x output"           */
   Use Strict Arg name, html
@@ -446,7 +480,10 @@ Else
 ::Method file
   Use Strict Arg path
   s = .Stream~new(path)
-  s~open("read")
+  /* A file that cannot be opened is said, not read as "": an empty text  */
+  /* made the assertions after it fail with no hint of why.               */
+  If s~open("read") \== "READY:" Then
+    Raise Syntax 98.900 Array("cannot read" path":" s~description)
   text = s~charIn(1, s~chars)
   s~close
   Return text
@@ -566,7 +603,13 @@ Else
 /* Read the outline cascade steps straight out of runtime.css: the em value  */
 /* of each `.body ul ul[...] { font-size: N em }`. Returns [0.82,0.89,0.88].  */
 ::Method cssCascade
-  css = .Stream~new(self~projectRoot"/bin/md2slides/css/runtime.css")~makeArray
+  /* Opened and CLOSED explicitly. An implicit open (makeArray on a stream   */
+  /* never opened) was never closed, and on Windows the sheet stayed held: */
+  /* every later self~file of it read nothing (v225d, JMB's run, 29-Sep).  */
+  s = .Stream~new(self~projectRoot"/bin/md2slides/css/runtime.css")
+  s~open("read")
+  css = s~makeArray
+  s~close
   steps = .Array~new
   Do line Over css
     t = line~strip

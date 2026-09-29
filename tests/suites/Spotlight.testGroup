@@ -619,8 +619,13 @@ Done:
   sheet = CharIn(css, 1, Stream(css, "C", "QUERY SIZE"))
   Call Stream css, "C", "CLOSE"
   Parse Var sheet . ".slide div.sourceCode {" rule "}" .
-  self~assertTrue(rule~pos("overflow: visible") > 0, -
-    "a Pandoc listing on a slide shows no scroll bar")
+  /* v225: clip across, not visible: the 4em shift painted a marked line's   */
+  /* wash and bar outside the block. clip, unlike hidden/auto, never scrolls. */
+  self~assertTrue(rule~pos("overflow-x: clip") > 0, -
+    "a Pandoc listing on a slide shows no scroll bar, and nothing left of it")
+  self~assertTrue(rule~pos("overflow-y: visible") > 0, "down, nothing is cut")
+  self~assertEquals(0, rule~pos("auto"), "never a scroller")
+  self~assertEquals(0, rule~pos("hidden"), "hidden would make it one")
 
 /******************************************************************************/
 /* Helpers                                                                    */
@@ -653,6 +658,23 @@ Done:
   self~assertTrue(rt~pos('stepWaitMs(next, "before")') > 0, "wait-before= on a fragment times its step")
   self~assertTrue(rt~pos('stepWaitMs(steps[i], "after")') > 0, "and wait-after= the one after it")
   self~assertTrue(rt~pos('stepWaitMs(steps[0], "before")') > 0, "a slide's first step too")
+
+::Method test_lines_need_no_numbers
+  /* v225 (Rony's ODP collection): whole-line marks on a block that shows no  */
+  /* numbers. A Rexx listing and anything Pandoc highlights already had line  */
+  /* spans; an ~~~output had none, and said "whole lines need .numberLines".  */
+  /* makeLines gives it one span per line (no id), counted from 1, and the    */
+  /* stroke is measured on any line span of the block, or of the <pre> that  */
+  /* carries spot= itself.                                                    */
+  script = self~file("/js/spotlight.js")
+  self~assertTrue(script~pos("function makeLines(code) {") > 0, "lines are made where missing")
+  self~assertTrue(script~pos("lines = makeLines(code);") > 0, "prepare makes them when a beat wants a line")
+  self~assertEquals(0, script~pos("whole lines' || ' need .numberLines"), "the old warning is gone")
+  self~assertEquals(0, script~pos("need .numberLines"), "nowhere")
+  self~assertTrue(script~pos('var line = blk.querySelector("code > span");') > 0, -
+    "the stroke is measured on a line with no id too")
+  self~assertTrue(script~pos('blk.matches("pre") ? blk') > 0, -
+    "and on an ~~~output, whose <pre> carries spot=")
 
 ::Method file
   Use Strict Arg rel

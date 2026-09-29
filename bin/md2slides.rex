@@ -414,6 +414,7 @@
   flat = TranslateSugar(flat)
   flat = TranslateLevel(flat)
   flat = TranslateFlow(flat)
+  flat = TranslateOffset(flat)
   -- caption= on a code block, and the caption of a picture: as in the article
   -- pipelines (numberFigures.js), but done here, at build (v214).
   flat = Captions(flat, opts)
@@ -3869,6 +3870,70 @@ Error:
     out ||= line || "0a"x
   End
   Return out~left(out~length - 1)
+
+--------------------------------------------------------------------------------
+-- offset= - pictures in a cascade (v225; Rony's ODP collection, 29-Sep:      --
+-- five screenshots each a little right of and below the one before).        --
+--                                                                            --
+--     ::: {.layers offset="40px 30px"}                                       --
+--     ![](img/a.png)                                                         --
+--                                                                            --
+--     ![](img/b.png){.fragment .afterPrevious}                               --
+--     :::                                                                    --
+--                                                                            --
+-- Each picture after the first is moved that much further right and down    --
+-- than the one before it. One length moves it that much both ways. The      --
+-- ::: gets the class `offset` and --layers-dx/--layers-dy, and runtime.css   --
+-- does the rest: the pictures share one grid cell, so the cascade stays IN   --
+-- FLOW and the block is as big as the whole cascade (what comes under it     --
+-- comes under the last picture, not under the first). Only on ::: layers;   --
+-- only lengths, and not %, which in a grid cell would refer to the cell      --
+-- itself.                                                                    --
+--------------------------------------------------------------------------------
+
+::Routine TranslateOffset Public
+  Use Strict Arg html
+
+  If html~pos('offset="') == 0 Then Return html
+
+  out = ""
+  Do line Over html~makeArray("0a"x)
+    Parse Value TagWith(line, "offset") With lt gt
+    If lt > 0 Then Do
+      tag  = line~substr(lt, gt - lt + 1)
+      spec = SugarValue(tag, "offset")
+      tag  = DropSugar(tag, "offset")
+      Parse Value spec~changeStr(",", " ") With dx dy extra
+      If dy == "" Then dy = dx
+      Parse Var tag . 'class="' classes '"'
+      If WordPos("layers", classes) == 0 Then
+        Call Warn 'offset="'spec'" only works on a ::: layers block; ignored.'
+      Else If \OffsetLength(dx) | \OffsetLength(dy) | extra \== "" Then
+        Call Warn 'offset="'spec'" is not one or two lengths (40px,' -
+                  '1.5em, 1cm...); ignored.'
+      Else Do
+        cp = tag~pos('class="')
+        tag = tag~left(cp + 6) || "offset " || tag~substr(cp + 7)
+        tag = AddStyle(tag, "--layers-dx: "dx"; --layers-dy: "dy";")
+      End
+      line = line~left(lt - 1) || tag || line~substr(gt + 1)
+    End
+    out ||= line || "0a"x
+  End
+  Return out~left(out~length - 1)
+
+-- OffsetLength - is `v` a length offset= takes: 0, or a non-negative number --
+-- with a unit of length (no %: see TranslateOffset).                         --
+::Routine OffsetLength Public
+  Use Strict Arg v
+  If v == "0" Then Return 1
+  Do unit Over .Array~of("px", "em", "rem", "cm", "mm", "pt", "in")
+    If \v~caselessEndsWith(unit) Then Iterate
+    n = v~left(v~length - unit~length)
+    If n == "" Then Return 0
+    Return n~dataType("N") & n >= 0 & n~verify("0123456789.") == 0
+  End
+  Return 0
 
 -- TagWith - "lt gt": where the opening tag that carries the sugar attribute  --
 -- `name` (data-name="..." or name="...") begins and ends in `line`, or "0 0". --

@@ -80,5 +80,13 @@ div.sourceCode > pre {
    overflow, with overlay bars that hide it): Pandoc lays each line out with its
    number 4em wide and then moves the whole line 4em left (position: relative),
    and the box the line was laid out in still reaches 4em past the right edge.
-   What does not fit on a slide is not fitted by scrolling, so no scrolling. */
-.slide div.sourceCode { overflow: visible; }
+   What does not fit on a slide is not fitted by scrolling, so no scrolling.
+
+   CLIP, not visible, across (v225). The same 4em shift paints the first 17px
+   or so of every line LEFT of the wrapper, and a spotlight line is painted:
+   with overflow visible its wash and its bar showed as an orange stub outside
+   the block (a numbered ~~~output with spot=). Our own Rexx blocks never showed
+   it because their wrapper scrolls, and a scroller clips. overflow-x: clip
+   trims exactly that and, unlike hidden or auto, makes no scroll container, so
+   no bar can come back; down, it stays visible. */
+.slide div.sourceCode { overflow-x: clip; overflow-y: visible; }

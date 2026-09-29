@@ -1,0 +1,210 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Md2htmlStyle.testGroup - md2html --style (end to end)                      */
+/* =====================================================                      */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260929    0.7  First version (GitHub issue #43, JLF)                     */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* md2html --style NAME sets the document style, like md2pdf and md2epub:    */
+/*                                                                            */
+/*   - Blocks, prose mentions and the style chooser all get the same style,   */
+/*     and no block is locked (the chooser restyles everything together).    */
+/*   - Precedence: CLI > YAML > default ("dark").                             */
+/*   - An unknown name is an error, not a chooser that silently falls back.   */
+/*   - --default style=NAME keeps its meaning: pin every block, locked.       */
+/*                                                                            */
+/* The logic lives in md2html's main program and in ProcessFile, so these     */
+/* tests run the real program on a small file.  They need Pandoc; without it */
+/* they return without asserting anything (as PictureSize does for            */
+/* ImageMagick).                                                              */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Md2htmlStyle.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class Md2htmlStyle.testGroup Subclass ooTestCase Public
+
+::Attribute dir
+
+/* -- The chooser, the blocks and the mentions agree ------------------------- */
+
+::Method test_cli_style_sets_blocks_mentions_and_chooser
+  If \self~hasPandoc Then Return
+  page = self~md2html("--default executor --style vim-light-zellner", "plain")
+  self~assertEquals("vim-light-zellner vim-light-zellner", self~styles(page), -
+    "the block and the prose mention")
+  self~assertEquals("vim-light-zellner", self~chooserDefault(page), -
+    "data-rexx-default-style")
+  self~assertEquals("vim-light-zellner", self~chooserSelected(page), -
+    "the <option> pre-selected")
+  self~assertEquals(0, page~pos("data-rexx-style-locked"), -
+    "no block is locked: the chooser restyles them all")
+
+::Method test_cli_style_is_lowercased
+  If \self~hasPandoc Then Return
+  page = self~md2html("--style Tokio-Night", "plain")
+  self~assertEquals("tokio-night tokio-night", self~styles(page))
+  self~assertEquals("tokio-night", self~chooserDefault(page))
+
+/* -- Precedence: CLI > YAML > default ---------------------------------------- */
+
+::Method test_cli_beats_yaml
+  If \self~hasPandoc Then Return
+  page = self~md2html("--style electric", "yaml")
+  self~assertEquals("electric electric", self~styles(page), "YAML says light")
+  self~assertEquals("electric", self~chooserDefault(page))
+
+::Method test_yaml_without_cli
+  If \self~hasPandoc Then Return
+  page = self~md2html("", "yaml")
+  self~assertEquals("light light", self~styles(page))
+  self~assertEquals("light", self~chooserDefault(page))
+
+::Method test_default_is_dark
+  If \self~hasPandoc Then Return
+  page = self~md2html("", "plain")
+  self~assertEquals("dark dark", self~styles(page))
+  self~assertEquals("dark", self~chooserDefault(page))
+
+/* -- Errors ------------------------------------------------------------------ */
+
+::Method test_unknown_style_is_an_error
+  If \self~hasPandoc Then Return
+  said = self~md2html("--style no-such-style", "plain", 1)
+  self~assertTrue(said~pos("Style 'no-such-style' not found.") > 0, said)
+  self~assertFalse(SysFileExists(self~dir"/out/plain.html"), "no page written")
+
+::Method test_missing_style_name
+  If \self~hasPandoc Then Return
+  said = self~md2html("--style", "", 1)
+  self~assertTrue(said~pos("Missing style name after '--style' option.") > 0, said)
+
+/* -- --default style= does not change ---------------------------------------- */
+
+::Method test_default_style_still_pins_blocks
+  If \self~hasPandoc Then Return
+  page = self~md2html('--default "executor style=vim-light-zellner"', "plain")
+  self~assertTrue(page~pos("data-rexx-style-locked") > 0, "the block is locked")
+  self~assertTrue(page~pos('highlight-rexx-vim-light-zellner') > 0, "in zellner")
+  self~assertEquals("dark", self~chooserDefault(page), -
+    "the document style is still the default")
+
+/* -- Helpers ----------------------------------------------------------------- */
+
+::Method setUp
+  base = Value("TMPDIR", , "ENVIRONMENT")
+  If base == "" Then base = Value("TEMP", , "ENVIRONMENT")
+  If base == "" Then base = "/tmp"
+  self~dir = base"/md2htmlstyle-"Date("S")Time("L")~changeStr(":", "")~changeStr(".", "")
+  Call SysMkDir self~dir
+  Call SysMkDir self~dir"/out"
+  body = .Array~of(                                                         -
+    "# Test",                                                               -
+    "",                                                                     -
+    'A mention, `say "hi"`{.rexx}, in prose.',                              -
+    "",                                                                     -
+    "```rexx",                                                              -
+    'say "Hello"',                                                          -
+    "```",                                                                  -
+    ""                                                                      -
+  )
+  self~write("plain.md", body)
+  self~write("yaml.md",  .Array~of("---", "rexxpub:", "  style: light", "---")~appendAll(body))
+
+::Method tearDown
+  Call SysFileTree self~dir"/*", "f.", "FOS"
+  Do i = 1 To f.0
+    Call SysFileDelete f.i
+  End
+  Call SysRmDir self~dir"/out"
+  Call SysRmDir self~dir
+
+::Method write
+  Use Strict Arg name, lines
+  s = .Stream~new(self~dir"/"name)
+  s~open("Write Replace")
+  s~arrayOut(lines)
+  s~close
+
+::Method hasPandoc
+  Address COMMAND "pandoc -v" With Output Stem o. Error Stem e.
+  Return rc == 0
+
+-- Run md2html with these options on doc.md, into out/.  Returns the page
+-- written, or, when failing is expected, what the program said.
+::Method md2html
+  Use Strict Arg options, doc, failing = 0
+  Parse Source . . me
+  bin  = .File~new(FileSpec("Location", me)"../../bin")~absolutePath
+  prog = bin"/md2html.rex"
+  -- md2html finds its classes along the PATH.  The runner puts bin there,
+  -- but relative to tests/, and we are about to leave that directory.
+  If .File~separator == "\" Then sep = ";"; Else sep = ":"
+  path = Value("PATH", , "ENVIRONMENT")
+  Call Value "PATH", bin || sep || path, "ENVIRONMENT"
+  here = Directory()
+  Call Directory self~dir
+  If doc == "" Then target = ""
+  Else              target = doc".md out"
+  Address COMMAND 'rexx "'prog'"' options target -
+    With Output Stem o. Error Stem e.
+  code = rc
+  Call Directory here
+  Call Value "PATH", path, "ENVIRONMENT"
+  said = ""
+  Do i = 1 To o.0; said ||= o.i" "; End
+  Do i = 1 To e.0; said ||= e.i" "; End
+  If failing Then Do
+    self~assertEquals(1, code, said)
+    Return said
+  End
+  self~assertEquals(0, code, said)
+  page = self~dir"/out/"doc".html"
+  text = CharIn(page, 1, Chars(page))
+  Call Stream page, "C", "Close"
+  Return text
+
+-- The highlight-rexx-* class of every highlighted piece, in page order
+::Method styles
+  Use Strict Arg page
+  found = ""
+  rest  = page
+  Loop While rest~pos('class="highlight-rexx-') > 0
+    Parse Var rest 'class="highlight-rexx-' style '"' rest
+    found = found Word(style, 1)
+  End
+  Return Strip(found)
+
+::Method chooserDefault
+  Use Strict Arg page
+  Parse Var page 'data-rexx-default-style="' style '"'
+  Return style
+
+::Method chooserSelected
+  Use Strict Arg page
+  p = page~pos('" selected="selected"')
+  If p == 0 Then Return ""
+  q = page~lastPos('<option value="', p)
+  Return page~substr(q + 15, p - q - 15)

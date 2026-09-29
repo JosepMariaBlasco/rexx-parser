@@ -44,6 +44,7 @@ Options
 `-it`, `--itrace`                                                                 Print internal traceback on error
 <code>-j <em>jsbase</em></code>, <code>--js  <em>jsbase</em></code>               Where to locate the JavaScript files
 <code>-p <em>path</em></code>, <code>--path  <em>path</em></code>                 First path to search for `default.md2html` and `md2html.custom.rex`
+<code>--style <em>name</em></code>                                               Default highlighting style
 --------------------------------------------------------------------------------- ------------------------------
 
 \
@@ -82,9 +83,20 @@ case-insensitive), as well as `listings:` and `figures:` sub-tables for
 caption and frame customization.  The Pandoc top-level metadata fields
 `lang` (HTML language) and `highlight-style` are also recognized.
 
-All options are set exclusively in the YAML front matter.  Since md2html
-has no `--style` command-line option, the YAML `style` value is always
-used when present; otherwise, the default (`dark`) applies.
+The highlighting style can also be given on the command line, with
+`--style name`, as in md2pdf and md2epub.  The command line wins over the
+YAML `style` value, which wins over the default (`dark`).  The style set
+this way is the style of the whole page: code blocks, Rexx mentions in the
+prose, and the option pre-selected in the page's style chooser.  A name
+that is not one of the shipped styles is an error.
+
+This is not the same as `--default "style=name"`.  `--default` writes its
+attributes into every code block, as if the author had typed them on each
+fence, so `style=` there pins every block to that style: the style chooser
+leaves those blocks alone, and the Rexx mentions in the prose still follow
+the document style.  To set the style of the document, use `--style`.
+
+All other options are set exclusively in the YAML front matter.
 
 See the [YAML front matter documentation](../../rexxpub/yaml/) for the
 full specification.
