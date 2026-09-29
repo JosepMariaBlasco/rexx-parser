@@ -37,6 +37,23 @@
 /* 20260522         CMS: Disallow CALL namespace:name                         */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
 /* 20260621         CMS: Implement TRACE !                                    */
+/* 20260923    0.7  ADDRESS: add redirection accessors (with,                 */
+/*                  redirectionType/Target/Option)                            */
+/* 20260923         CALL ON/OFF, SIGNAL OFF: add condition, userCondition     */
+/*                  and (CALL ON) trapName accessors                          */
+/* 20260924         CALL ON ... NAME: the clause ends at its end, not at NAME */
+/* 20260924         INTERPRET option: EXPOSE (99.908), FORWARD (99.923),      */
+/*                  GUARD (99.912), REPLY (99.924) and USE LOCAL (99.915)     */
+/*                  are not allowed.                                          */
+/* 20260924         TRACE: the sign of TRACE -n / +n is kept (sign)           */
+/* 20260926         USE LOCAL: a constant symbol is 31.2 or 31.3 (was 20.927) */
+/* 20260928         PARSE: a positional pattern that is not a whole number is */
+/*                  an error when it runs (26.4), as in ooRexx; at parse time */
+/*                  only with earlyCheck PARSE. After a prefix, any constant  */
+/*                  symbol (as ooRexx); nothing after it: 38.901.             */
+/*                  GUARD WHEN: an expression that refers to no variable the  */
+/*                  method exposes is 99.913 (a translation error, as         */
+/*                  ooRexx). Guard.Instruction~on (a getter).                 */
 /*                                                                            */
 /******************************************************************************/
 
@@ -258,6 +275,51 @@ Done:
     Then env_expression  = options.env_expression
     Else env_expression  = .Nil
 
+--------------------------------------------------------------------------------
+-- Redirection accessors (ADDRESS ... WITH ...)
+--
+-- 'stream' is one of INPUT, OUTPUT or ERROR (case does not matter).
+--
+--   with                     -- .True when the instruction has a WITH clause.
+--   redirectionType(stream)  -- "NORMAL", "STEM", "STREAM" or "USING" when the
+--                               stream was specified, "" when it was not.
+--   redirectionTarget(stream)-- The target: a stem element (STEM), a string or
+--                               constant symbol element, or a subexpression
+--                               (STREAM and USING). .Nil for NORMAL and for a
+--                               stream that was not specified.
+--   redirectionOption(stream)-- "APPEND" or "REPLACE" when specified (OUTPUT
+--                               and ERROR only), "" otherwise.
+--------------------------------------------------------------------------------
+
+::Method with
+  Expose options.
+  Return options.~hasIndex("WITH")
+
+::Method redirectionType
+  Expose options.
+  Use Strict Arg stream
+  stream = Upper(stream)
+  Do type Over .Array~of("NORMAL", "STEM", "STREAM", "USING")
+    If options.~hasIndex(stream"_"type) Then Return type
+  End
+  Return ""
+
+::Method redirectionTarget
+  Expose options.
+  Use Strict Arg stream
+  stream = Upper(stream)
+  type   = self~redirectionType(stream)
+  If type == "" | type == "NORMAL" Then Return .Nil
+  Return options.[stream"_"type]
+
+::Method redirectionOption
+  Expose options.
+  Use Strict Arg stream
+  stream = Upper(stream)
+  If options.~hasIndex(stream"_APPEND")  Then Return "APPEND"
+  If options.~hasIndex(stream"_REPLACE") Then Return "REPLACE"
+  Return ""
+
 /******************************************************************************/
 /* ARG instruction                                                            */
 /******************************************************************************/
@@ -382,7 +444,7 @@ ProcessArguments:
   Use Strict Arg package, begin, end, name, arguments
   self~init:super(package, begin, end)
 
--- A namespace-qualified call, i.e. call namespace:name args               
+-- A namespace-qualified call, i.e. call namespace:name args
 
 ::Class NameSpace.Qualified.Call.Instruction Public SubClass Rexx.Instruction
 ::Attribute nameSpace
@@ -464,6 +526,8 @@ ProcessArguments:
 --------------------------------------------------------------------------------
 
 ::Class Call.Off.Instruction Public SubClass Rexx.Instruction
+::Attribute condition     Get  -- the condition keyword element (ERROR, ANY...)
+::Attribute userCondition Get  -- the USER condition name element, or .Nil
 ::Method init
   Expose condition userCondition
   Use Strict Arg package, begin, end, condition, userCondition = .Nil
@@ -536,7 +600,7 @@ ProcessArguments:
   If end \< .EL.END_OF_CLAUSE Then Signal 21.903
 
   Return .Call.On.Instruction~new(-
-    package, begin, element, condition, userCondition, trapName -
+    package, begin, end, condition, userCondition, trapName -
   )
 
 -- String or symbol expected after NAME keyword.
@@ -561,6 +625,9 @@ ProcessArguments:
 --------------------------------------------------------------------------------
 
 ::Class Call.On.Instruction Public SubClass Rexx.Instruction
+::Attribute condition     Get  -- the condition keyword element (ERROR, ANY...)
+::Attribute userCondition Get  -- the USER condition name element, or .Nil
+::Attribute trapName      Get  -- the NAME element (symbol or string), or .Nil
 ::Method init
   Expose condition userCondition trapName
   Use Strict Arg package, begin, end, condition, -
@@ -614,7 +681,13 @@ ProcessArguments:
 ::Routine Expose.Instruction Public
   Use Strict Arg package, begin, end, elements
 
+  -- INTERPRET data must not contain EXPOSE.
+  If .Options.Interpret Then Signal 99.908
+
   Return Name.List.Instruction( package, .Expose.Instruction, begin, end, elements )
+
+-- INTERPRET data must not contain EXPOSE.
+99.908: Syntax( 99.908, elements[1] )
 
 --------------------------------------------------------------------------------
 --   exposed format: a list of valid symbols; a parenthesized symbol is       --
@@ -636,6 +709,9 @@ ProcessArguments:
   Use Strict Arg package, begin, end, elements
 
   FORWARD = elements[1]
+
+  -- INTERPRET data must not contain FORWARD.
+  If .Options.Interpret Then Signal 99.923
 
   seen.         = 0
   options.      = 0
@@ -753,6 +829,9 @@ Done:
 -- Missing expression following CLASS keyword of a FORWARD instruction.
 35.928: Syntax( 35.928, FORWARD )
 
+-- INTERPRET data must not contain FORWARD.
+99.923: Syntax( 99.923, FORWARD )
+
 --------------------------------------------------------------------------------
 
 ::Class Forward.Instruction Public SubClass Rexx.Instruction
@@ -795,6 +874,9 @@ Done:
 
   GUARD = elements[1]
 
+  -- INTERPRET data must not contain GUARD.
+  If .Options.Interpret Then Signal 99.912
+
   keyword = TheElementAfter( GUARD )
 
   If keyword \< .ALL.VAR_SYMBOLS            Then Signal 25.913
@@ -816,10 +898,10 @@ Done:
 
   element = TheElementAfter( when )
 
-  -- TODO [LATER] Implement 99.913 (see message text below)
-
   Call PrepareExpression package, element
   expression = Expression.List( package, element, , "logical")
+
+  If \GuardRefersToExposed( package, element ) Then Signal 99.913
 
   end = expression~end
 
@@ -831,17 +913,69 @@ Done:
 -- GUARD must be followed by the keyword ON or OFF; found "&1".
 25.913: Syntax( 25.913, GUARD, keyword )
 
+-- INTERPRET data must not contain GUARD.
+99.912: Syntax( 99.912, GUARD )
+
 -- GUARD instruction did not include references to exposed variables.
 99.913: Syntax( 99.913, GUARD )
 
 --------------------------------------------------------------------------------
 
 ::Class Guard.Instruction Public SubClass Rexx.Instruction
+::Attribute on         Get -- 1 for GUARD ON, 0 for GUARD OFF
 ::Attribute expression
 ::Method init
   Expose on expression
   Use Strict Arg package, begin, end, on, expression = .Nil
   self~init:super( package, begin, end )
+
+--------------------------------------------------------------------------------
+-- GuardRefersToExposed: whether the GUARD WHEN expression that starts at
+-- "first" refers to a variable the method exposes, as ooRexx's
+-- captureGuardVariable and isExposed. The references are the simple
+-- variables and the stems, also those of a compound (its stem, and its
+-- tails that are variables). A variable is exposed when the body starts
+-- with an EXPOSE that names it (a symbol of the list; not a "(list)"), or
+-- with a USE LOCAL that does not, and it is not a special variable.
+-- ooRexx caches the compounds, and it does not look at a compound it has
+-- seen before in the same code: "x = a.b; GUARD ON WHEN a.b" is 99.913
+-- even when A. is exposed. That is a bug; we do not reproduce it.
+--------------------------------------------------------------------------------
+
+::Routine GuardRefersToExposed
+  Use Strict Arg package, first
+
+  body     = package~currentBodies~top
+  exposed  = body~exposed
+  useLocal = body~useLocal
+  If exposed~isEmpty, useLocal == .Nil Then Return .False
+
+  element = first
+  Loop Until element == .Nil | element < .EL.END_OF_CLAUSE
+    Select
+      When element < .ALL.SIMPLE_VARIABLES | -
+           element < .ALL.STEM_VARIABLES Then
+        If IsExposed( element~value ) Then Return .True
+      When element < .ALL.COMPOUND_VARIABLES Then Do
+        Parse Upper Value element~value With stem "." tails
+        If IsExposed( stem"." ) Then Return .True
+        Do While tails \== ""
+          Parse Var tails tail "." tails
+          If tail == "" | Pos( Left( tail, 1 ), "0123456789" ) > 0 Then
+            Iterate
+          If IsExposed( tail ) Then Return .True
+        End
+      End
+      Otherwise Nop
+    End
+    element = element~next
+  End
+  Return .False
+
+IsExposed:
+  If \exposed~isEmpty Then Return exposed~hasItem( Arg(1) )
+  If WordPos( Arg(1), "RC RESULT SIGL SELF SUPER" ) > 0 Then Return .False
+  Return \useLocal~hasItem( Arg(1) )
 
 /******************************************************************************/
 /* INTERPRET instruction                                                      */
@@ -1706,9 +1840,14 @@ Expression:
 ::Routine Reply.Instruction Public
   -- Message 99.919 is run-time only
   Use Strict Arg package, begin, end, elements
+  -- INTERPRET data must not contain REPLY.
+  If .Options.Interpret Then Signal 99.924
   Return Optional.Expression.Instruction( -
     package, .Reply.Instruction, begin, end, elements  -
   )
+
+-- INTERPRET data must not contain REPLY.
+99.924: Syntax( 99.924, elements[1] )
 
 --------------------------------------------------------------------------------
 
@@ -1885,6 +2024,8 @@ Expression:
 --------------------------------------------------------------------------------
 
 ::Class Signal.Off.Instruction Public SubClass Rexx.Instruction
+::Attribute condition     Get  -- the condition keyword element (ERROR, ANY...)
+::Attribute userCondition Get  -- the USER condition name element, or .Nil
 ::Method init
   Expose condition userCondition
   Use Strict Arg package, begin, end, condition, userCondition = .Nil
@@ -2078,20 +2219,23 @@ Done:
 
 ::Class Trace.Instruction Public SubClass Rexx.Instruction
 ::Attribute number     Get
+::Attribute sign       Get    -- The "-" or "+" of TRACE -n / +n, or .Nil
 ::Attribute theString  Get
 ::Attribute symbol     Get
 ::Attribute expression Get
 ::Method init
-  Expose number theString symbol expression
+  Expose number sign theString symbol expression
 
   Use Strict Arg package, begin, end, options.
 
   number     = .Nil
+  sign       = .Nil
   theString  = .Nil
   symbol     = .Nil
   expression = .Nil
 
   If options.~hasIndex("NUMBER") Then number     = options.["NUMBER"]
+  If options.~hasIndex("SIGNEDNUMBER") Then sign  = options.["SIGNEDNUMBER"][1]
   If options.~hasIndex("STRING") Then theString  = options.["STRING"]
   If options.~hasIndex("SYMBOL") Then symbol     = options.["SYMBOL"]
   If options.~hasIndex("VALUE" ) Then expression = options.["VALUE" ]
@@ -2369,6 +2513,9 @@ NextElement:
 
   Use Strict Arg package, begin, LOCAL
 
+  -- INTERPRET data must not contain USE LOCAL.
+  If .Options.Interpret Then Signal 99.915
+
   list          = Array()
   name          = TheElementAfter( LOCAL )
   ignoreBlanks  = .True
@@ -2388,6 +2535,11 @@ NextElement:
         UseLocal[]         = name~value
         locals[name~value] = name~source
       End
+      -- A constant symbol, as ooRexx: 31.3 (a period first), 31.2.
+      When name < .ALL.SYMBOLS Then Do
+        If Left( name~value, 1 ) == "." Then Signal 31.003
+        Signal 31.002
+      End
       Otherwise Signal 20.927
     End
     name = TheElementAfter( name, ignoreBlanks )
@@ -2398,8 +2550,17 @@ NextElement:
 -- Symbol expected after USE LOCAL.
 20.927: Syntax( 20.927, LOCAL )
 
+-- Variable symbol must not start with a number; found "&1".
+31.002: Syntax( 31.002, LOCAL, name )
+
+-- Variable symbol must not start with a "."; found "&1".
+31.003: Syntax( 31.003, LOCAL, name )
+
 -- USE LOCAL cannot process compound variables; found "&1".
 99.948: Syntax( 99.948, LOCAL, name )
+
+-- INTERPRET data must not contain USE LOCAL.
+99.915: Syntax( 99.915, LOCAL )
 
 --------------------------------------------------------------------------------
 
@@ -2609,6 +2770,10 @@ GetASymbol:
 
   terminators      = .EL.COMMA || .EL.END_OF_CLAUSE
 
+  -- A positional pattern that is not a whole number: 26.4 when it runs, as
+  -- in ooRexx; here, only with earlyCheck PARSE.
+  earlyCheck = .Parser.Options~earlyCheck~hasItem( "PARSE" )
+
   Loop Until element < terminators
 
     Select
@@ -2663,7 +2828,7 @@ GetASymbol:
         Signal 38.001
       End
       When element < .ALL.SYMBOLS Then Do
-        If \DataType(element~value,"I") Then Signal 26.004
+        If earlyCheck, \DataType(element~value,"I") Then Signal 26.004
         template~append(element)
       End
       When element < .ALL.POSITION_PREFIXES  Then Do
@@ -2726,8 +2891,13 @@ GetASymbol:
 
   element = TheElementAfter( prefix )
 
-  If element < .ALL.NUMBERS Then Do
-    If \DataType(element~value,"I") Then Signal 26.004
+  -- Not a whole number: 26.4 when it runs (see Template).
+  earlyCheck = .Parser.Options~earlyCheck~hasItem( "PARSE" )
+
+  -- A number or a constant symbol (ooRexx: any symbol that is not a
+  -- variable, as "1y" or ".x").
+  If element < ( .ALL.NUMBERS || .ALL.CONST_SYMBOLS ) Then Do
+    If earlyCheck, \DataType(element~value,"I") Then Signal 26.004
     Return .Prefixed.Template~new( prefix, element )
   End
 
@@ -2736,6 +2906,9 @@ GetASymbol:
       prefix, Subexpression.Template( package, element ) -
     )
 
+  -- Nothing after the prefix: 38.901, as ooRexx.
+  If element < .EL.END_OF_CLAUSE Then Signal 38.901
+
   Signal 38.002
 
 -- Positional pattern of PARSE template must be a whole number; found "&1".
@@ -2743,6 +2916,9 @@ GetASymbol:
 
 -- Incorrect PARSE position detected at "&1".
 38.002: Syntax( 38.002, prefix, element )
+
+-- Missing PARSE relative position.
+38.901: Syntax( 38.901, prefix )
 
 --------------------------------------------------------------------------------
 

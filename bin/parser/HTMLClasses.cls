@@ -505,7 +505,7 @@ SkipOverConstant:
   Call Constant .PACKAGE.FUNCTION.NAME,            "pkg-func"
   Call Constant .PACKAGE.SUBROUTINE.NAME,          "pkg-proc"
   Call Constant .EXTERNAL.PACKAGE.FUNCTION.NAME,   "ext-pkg-func"
-  Call Constant .EXTERNAL.PACKAGE.SUBROUTINE.NAME, "ext-pkg-func"
+  Call Constant .EXTERNAL.PACKAGE.SUBROUTINE.NAME, "ext-pkg-proc"
   Call Constant .EXTERNAL.FUNCTION.NAME,           "ext-func"
   Call Constant .EXTERNAL.SUBROUTINE.NAME,         "ext-proc"
 
@@ -541,7 +541,7 @@ Return HTMLClass
 /* A prose author does not know, and should not need to know, the internal    */
 /* rx-* class taxonomy (which is compound, and shaped by the Options. that    */
 /* were active when the fenced blocks around it were highlighted). Instead,   */
-/* the author writes `` `Bark`{.rexx-method} `` and we translate the public   */
+/* the author writes `` `Bark`{.rexx method} `` and we translate the public   */
 /* name to whatever HTMLClasses would have emitted for that element           */
 /* category under the SAME Options. - one source of truth, so a future        */
 /* change to classprefix, or to "constant" mode, or to the rx-* taxonomy      */
@@ -554,144 +554,287 @@ Return HTMLClass
 /******************************************************************************/
 
 --
--- ProseTable returns the public-name -> element-category table.
+-- ProseModifierTable returns the unified {.rexx MODIFIER} vocabulary table.
 --
--- Every entry maps a public name (without the "rexx-" prefix, which is
--- FencedCode.cls's concern, not ours) to either:
---   * a single element category, or
---   * the .EL.TAKEN_CONSTANT category plus a constant subcategory.
+-- ONE table, ONE source of truth for every modifier a prose mention may carry.
+-- It replaces the three vocabularies v175 kept apart (IsProseMode's mode list,
+-- IsProseAssertion's semantic names, and the ProseTable of element categories).
+-- Collapsing them removes the last hyphens from the vocabulary: a modifier that
+-- used to be a hyphenated atom (`internal-function`, `constant-value`,
+-- `directive-keyword`) is now COMPOSITION -- two or three space-separated words
+-- the tag parser matches longest-first (3 -> 2 -> 1). See ScanProseMentions.
 --
--- To publish a new name: add one line here. Nowhere else changes.
+-- INDEX: the space form ("internal function", "external package function").
+-- VALUE: an Array whose FIRST item is the modifier TYPE, and whose remaining
+--        items are that type's payload:
 --
+--   ("MODE")                    -- a parse mode refining an auto-parse. The
+--                                  index IS the mode name; ModeChip consumes it.
+--                                  Domain-checked, shouts in situ if misapplied.
+--   ("OPERATOR", category)      -- an operator NAMED because its glyph cannot be
+--                                  written as span content. Today only "blank
+--                                  concatenation" (glyph is a space). Resolves
+--                                  through SymbolChip, exactly like a glyph hit.
+--   ("ELEMENT", category)             -- a semantic name -> one element category.
+--   ("ELEMENT", category, subcategory)-- ... -> .EL.TAKEN_CONSTANT + subcategory.
+--                                  What the author asserts a word IS. The class
+--                                  HTMLClasses() emits for the (sub)category is
+--                                  the single source of truth, so a mentioned
+--                                  name and a fenced token share their colour.
+--   ("KLUDGE")                  -- a name with no single category, handled
+--                                  specially in the by-element path ("directive"
+--                                  = `::`+keyword; "exposed" = auto-parse then
+--                                  relabel). The index IS the kludge name.
+--
+-- To publish a new modifier: add one line here. Nowhere else changes.
+--
+-- LONGEST-MATCH is unambiguous because no real fence attribute (style,
+-- numberLines, classprefix...) is ever the 2nd or 3rd component of an entry:
+-- attributes carry "=value" or are single words the parser never treats as a
+-- modifier's tail. So a 2- or 3-word modifier can never be mistaken for a
+-- 1-word modifier followed by an attribute.
 
-::Routine ProseTable Public
+::Routine ProseModifierTable Public
 
-  Table. = .Nil -- One- or two-item array: (category) or (category, subcategory)
+  Table. = .Nil
 
   --
-  -- Section 2 -- the keyword family
+  -- MODES -- refine an auto-parse. "blank concatenation" is NOT here: it is an
+  -- OPERATOR (below), not a mode -- a named operator whose glyph is a space.
   --
-  -- Named SEMANTICALLY -- by what the author asserts the word IS, not by the
-  -- syntactic role it would take inside a construct the author did not write. A
-  -- lone `Expose` in prose is not "a keyword": it is an INSTRUCTION of the
-  -- language, and that it acts as a keyword is something only its enclosing
-  -- method reveals. So the public name is "instruction", which is diaphanous to
-  -- an author and covers EVERY keyword instruction (Say, Do, If, Call, Parse,
-  -- Expose...) in one word -- the same word maps to .EL.KEYWORD, so a mentioned
-  -- `Expose` and a fenced `Expose` share rx-kw and thus their colour.
-  -- (Technically Expose is the "keyword" of a keyword instruction;
-  -- "instruction" trades that pedantic accuracy for clarity. A "rexx-keyword"
-  -- alias can be added here later if anyone needs it.)
+  Table.["prefix"]     = .Array~of( "MODE" )
+  Table.["reference"]  = .Array~of( "MODE" )
+  Table.["comparison"] = .Array~of( "MODE" )
+  Table.["assignment"] = .Array~of( "MODE" )
+  Table.["expression"] = .Array~of( "MODE" )
+
   --
-  -- Symmetrically: "subkeyword" for the connectors of a construct (To, By,
-  -- Until, While...), "directive-keyword" (-> dkw) for the keyword of a
-  -- directive taken alone (the Method in ::Method, the Class in ::Class...),
-  -- and "directive-subkeyword" for a directive's own connectors (Public,
-  -- Subclass, Private, Inherit...). The SAME word can be an instruction or a
-  -- directive-subkeyword depending on the plane; the semantic name lets the
-  -- author say which one they mean -- which is the whole point. These map to
-  -- DISTINCT element categories (kw/skw/dkw/dskw), so the distinction carries
-  -- a real, separately-colourable class, not just a label.
-  -- "directive-subkeyword" is wordy, but a lone directive subkeyword in prose
-  -- is vanishingly rare (and {.rexx} covers it if you give it the clause), so
-  -- the wordiness never bites.
+  -- NAMED OPERATORS -- operators reached by name because their glyph cannot be
+  -- span content. The blank concatenation operator (.EL.OP.BLANK) is the sibling
+  -- of "||" (.EL.OP.CONCATENATION): a genuine operator, not whitespace. Its glyph
+  -- is a single space, the one glyph that cannot be abbreviated as content, so it
+  -- is the only operator that must be named instead of written.
+  --
+  Table.["blank concatenation"] = .Array~of( "OPERATOR", .EL.OP.BLANK )
+
+  --
+  -- ELEMENTS -- the keyword family. Named SEMANTICALLY -- by what the author
+  -- asserts the word IS, not by the syntactic role it would take inside a
+  -- construct the author did not write.
   --
   -- "variable" (-> the simple-variable class) is the override for a plain
   -- variable whose name is ALSO a keyword instruction (`parse`, `say`...): a
   -- one-token fragment of such a name would be captured as a keyword clause and
   -- fail to parse under {.rexx}, so the author publishes "variable" to say "I
   -- mean the variable, not the keyword".
-  Table.["instruction"]          = .Array~of( .EL.KEYWORD )
-  Table.["subkeyword"]           = .Array~of( .EL.SUBKEYWORD )
-  Table.["directive-keyword"]    = .Array~of( .EL.DIRECTIVE_KEYWORD )
-  Table.["directive-subkeyword"] = .Array~of( .EL.DIRECTIVE_SUBKEYWORD )
-  Table.["variable"]             = .Array~of( .EL.SIMPLE_VARIABLE )
-
-  -- "directive-start" (-> dir) is the `::` on its own; "directive" (the
-  -- compound `::Method`) is BOTH and lives as a kludge in FencedCode.cls,
-  -- because it is a two-element sequence, not a single category (see below).
-  Table.["directive-start"]      = .Array~of( .EL.DIRECTIVE_START )
-
   --
-  -- Section 3a -- taken constants: names and markers
-  --
-  -- Each maps to .EL.TAKEN_CONSTANT plus the constant subcategory the engine
-  -- assigns; the class HTMLClasses() emits for that pair is the single source
-  -- of truth, so a mentioned name and a fenced one always share their colour.
-  Table.["class"]              = .Array~of( .EL.TAKEN_CONSTANT, .CLASS.NAME             )
-  Table.["method"]             = .Array~of( .EL.TAKEN_CONSTANT, .METHOD.NAME            )
-  Table.["routine"]            = .Array~of( .EL.TAKEN_CONSTANT, .ROUTINE.NAME           )
-  Table.["label"]              = .Array~of( .EL.TAKEN_CONSTANT, .LABEL.NAME             )
-  Table.["namespace"]          = .Array~of( .EL.TAKEN_CONSTANT, .NAMESPACE.NAME         )
-  Table.["annotation"]         = .Array~of( .EL.TAKEN_CONSTANT, .ANNOTATION.NAME        )
-  Table.["argument"]           = .Array~of( .EL.TAKEN_CONSTANT, .ARGUMENT.NAME          )
-  Table.["block"]              = .Array~of( .EL.TAKEN_CONSTANT, .BLOCK.INSTRUCTION.NAME  )
-  Table.["environment"]        = .Array~of( .EL.TAKEN_CONSTANT, .ENVIRONMENT.NAME       )
-  Table.["requires"]           = .Array~of( .EL.TAKEN_CONSTANT, .REQUIRES.PROGRAM.NAME   )
-  Table.["resource"]           = .Array~of( .EL.TAKEN_CONSTANT, .RESOURCE.NAME          )
-  Table.["resource-delimiter"] = .Array~of( .EL.TAKEN_CONSTANT, .RESOURCE.DELIMITER.NAME )
-  Table.["user-condition"]     = .Array~of( .EL.TAKEN_CONSTANT, .USER.CONDITION.NAME     )
-  Table.["constant-value"]     = .Array~of( .EL.TAKEN_CONSTANT, .CONSTANT.VALUE         )
-  Table.["annotation-value"]   = .Array~of( .EL.TAKEN_CONSTANT, .ANNOTATION.VALUE       )
+  Table.["keyword"]              = .Array~of( "ELEMENT", .EL.KEYWORD )
+  Table.["subkeyword"]           = .Array~of( "ELEMENT", .EL.SUBKEYWORD )
+  Table.["directive keyword"]    = .Array~of( "ELEMENT", .EL.DIRECTIVE_KEYWORD )
+  Table.["directive subkeyword"] = .Array~of( "ELEMENT", .EL.DIRECTIVE_SUBKEYWORD )
+  Table.["variable"]             = .Array~of( "ELEMENT", .EL.SIMPLE_VARIABLE )
 
-  -- Exposed variables are NOT taken constants: the engine gives them their own
-  -- element categories (xvar/xcmp/xstem), so they map by element, like
-  -- "variable" above, not through the constant subcategory axis.
-  Table.["exposed-variable"]   = .Array~of( .EL.EXPOSED_SIMPLE_VARIABLE   )
-  Table.["exposed-compound"]   = .Array~of( .EL.EXPOSED_COMPOUND_VARIABLE )
-  Table.["exposed-stem"]       = .Array~of( .EL.EXPOSED_STEM_VARIABLE     )
+  -- The old "directive-start" name (a lone `::`) is gone: `::` colours by GLYPH
+  -- lookup (ProseSymbolTable), no author assertion needed. The compound
+  -- "directive" (`::Method`) survives as a kludge (below), being a two-element
+  -- sequence with no single category.
 
   --
-  -- Section 3b -- calls (function / subroutine axis)
+  -- ELEMENTS -- taken constants: names and markers. Each maps to
+  -- .EL.TAKEN_CONSTANT plus the constant subcategory the engine assigns.
   --
-  -- The engine's term is SUBROUTINE, not "procedure": a function must return a
-  -- value, a subroutine need not. The public names follow the engine. The bare
-  -- shortcut (`rexx-internal`...) means the subroutine form -- the commoner one
-  -- in prose -- so it maps to the same subcategory as the explicit
-  -- "-subroutine" name.
-  Table.["internal-function"]          = .Array~of( .EL.TAKEN_CONSTANT, .INTERNAL.FUNCTION.NAME           )
-  Table.["internal-subroutine"]        = .Array~of( .EL.TAKEN_CONSTANT, .INTERNAL.SUBROUTINE.NAME         )
-  Table.["internal"]                   = .Array~of( .EL.TAKEN_CONSTANT, .INTERNAL.SUBROUTINE.NAME         )
-  Table.["builtin-function"]           = .Array~of( .EL.TAKEN_CONSTANT, .BUILTIN.FUNCTION.NAME            )
-  Table.["builtin-subroutine"]         = .Array~of( .EL.TAKEN_CONSTANT, .BUILTIN.SUBROUTINE.NAME          )
-  Table.["builtin"]                    = .Array~of( .EL.TAKEN_CONSTANT, .BUILTIN.SUBROUTINE.NAME          )
-  Table.["package-function"]           = .Array~of( .EL.TAKEN_CONSTANT, .PACKAGE.FUNCTION.NAME            )
-  Table.["package-subroutine"]         = .Array~of( .EL.TAKEN_CONSTANT, .PACKAGE.SUBROUTINE.NAME          )
-  Table.["package"]                    = .Array~of( .EL.TAKEN_CONSTANT, .PACKAGE.SUBROUTINE.NAME          )
-  Table.["external-function"]          = .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.FUNCTION.NAME           )
-  Table.["external-subroutine"]        = .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.SUBROUTINE.NAME         )
-  Table.["external"]                   = .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.SUBROUTINE.NAME         )
-  Table.["external-package-function"]  = .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.PACKAGE.FUNCTION.NAME   )
-  Table.["external-package-subroutine"]= .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.PACKAGE.SUBROUTINE.NAME )
-  Table.["external-package"]           = .Array~of( .EL.TAKEN_CONSTANT, .EXTERNAL.PACKAGE.SUBROUTINE.NAME )
+  Table.["class"]              = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .CLASS.NAME              )
+  Table.["method"]             = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .METHOD.NAME             )
+  Table.["routine"]            = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .ROUTINE.NAME            )
+  Table.["label"]              = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .LABEL.NAME              )
+  Table.["namespace"]          = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .NAMESPACE.NAME          )
+  Table.["annotation"]         = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .ANNOTATION.NAME         )
+  Table.["argument"]           = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .ARGUMENT.NAME           )
+  Table.["block"]              = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .BLOCK.INSTRUCTION.NAME  )
+  Table.["environment"]        = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .ENVIRONMENT.NAME        )
+  Table.["requires"]           = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .REQUIRES.PROGRAM.NAME   )
+  Table.["resource"]           = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .RESOURCE.NAME           )
+  Table.["resource delimiter"] = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .RESOURCE.DELIMITER.NAME )
+  Table.["user condition"]     = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .USER.CONDITION.NAME     )
+  Table.["constant value"]     = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .CONSTANT.VALUE          )
+  Table.["annotation value"]   = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .ANNOTATION.VALUE        )
+
+  -- Exposed variables USED to be three rows (exposed-variable / exposed-compound
+  -- / exposed-stem). They are now the SINGLE "exposed" KLUDGE (below): the author
+  -- asserts only the extra-textual fact "this is exposed"; WHICH kind (simple /
+  -- compound / stem) the auto-parse deduces from the text. See ExposedChip.
+
+  --
+  -- ELEMENTS -- calls (function / subroutine axis). These are where the hyphens
+  -- died into composition. The engine's term is SUBROUTINE, not "procedure": a
+  -- function must return a value, a subroutine need not. The bare 1-word form
+  -- ("internal") means the subroutine sense -- the commoner one in prose.
+  -- "external package" (2 words) is the same subroutine shortcut for the
+  -- external-package origin; "external package function" (3 words) is the only
+  -- entry that needs three components.
+  --
+  Table.["internal function"]           = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .INTERNAL.FUNCTION.NAME           )
+  Table.["internal subroutine"]         = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .INTERNAL.SUBROUTINE.NAME         )
+  Table.["internal"]                    = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .INTERNAL.SUBROUTINE.NAME         )
+  Table.["builtin function"]            = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .BUILTIN.FUNCTION.NAME            )
+  Table.["builtin subroutine"]          = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .BUILTIN.SUBROUTINE.NAME          )
+  Table.["builtin"]                     = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .BUILTIN.SUBROUTINE.NAME          )
+  Table.["package function"]            = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .PACKAGE.FUNCTION.NAME            )
+  Table.["package subroutine"]          = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .PACKAGE.SUBROUTINE.NAME          )
+  Table.["package"]                     = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .PACKAGE.SUBROUTINE.NAME          )
+  Table.["external function"]           = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .EXTERNAL.FUNCTION.NAME           )
+  Table.["external subroutine"]         = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .EXTERNAL.SUBROUTINE.NAME         )
+  Table.["external"]                    = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .EXTERNAL.SUBROUTINE.NAME         )
+  Table.["external package function"]   = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .EXTERNAL.PACKAGE.FUNCTION.NAME   )
+  Table.["external package subroutine"] = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .EXTERNAL.PACKAGE.SUBROUTINE.NAME )
+  Table.["external package"]            = .Array~of( "ELEMENT", .EL.TAKEN_CONSTANT, .EXTERNAL.PACKAGE.SUBROUTINE.NAME )
+
+  --
+  -- KLUDGES -- names with no single category, handled specially in the
+  -- by-element path of ScanProseMentions. "directive" (`::Method`) is a
+  -- two-element `::`+keyword sequence; "exposed" auto-parses to find the variable
+  -- kind and relabels the base to its exposed colour.
+  --
+  Table.["directive"] = .Array~of( "KLUDGE" )
+  Table.["exposed"]   = .Array~of( "KLUDGE" )
+
+  --
+  -- Glyph operators, assignment operators and special characters are NOT named
+  -- here: a glyph is coloured by writing the glyph itself inside {.rexx},
+  -- resolved by LOOKUP against ProseSymbolTable (glyph -> category, below). The
+  -- few glyphs a bare lookup cannot disambiguate are reached by a MODE modifier
+  -- above ("=" -> comparison/assignment; "+"/"-" -> prefix; "<"/">" -> reference).
 
 Return Table.
 
 --
--- ProseElementTags - translate a public name to its HTML class string
+-- ProseSymbolTable returns the glyph -> element-category table.
+--
+-- The counterpart of ProseTable for the OTHER prose axis: where ProseTable maps
+-- a semantic NAME an author asserts ("method", "class"), this maps a Rexx
+-- GLYPH directly to its category, so `` `*`{.rexx} `` colours without any name.
+-- FencedCode.cls's ScanProseMentions consults this BEFORE handing a bare
+-- {.rexx} fragment to the auto-parser: a lone glyph does not sustain itself as a
+-- parseable unit, so the parser would shout; the lookup answers first.
+--
+-- Every glyph is copied VERBATIM from the engine's own Scanner (Scanner.cls),
+-- so the two never drift: if the Scanner recognises "\==" as strict-not-equal,
+-- so do we, with the same category.
+--
+-- DELIBERATELY ABSENT (they have no single default -- a modifier resolves them,
+-- see ScanProseMentions and the note at the end of ProseTable):
+--   "="  -- OP.EQUAL vs ASG.EQUAL: bare {.rexx} shouts, modifier picks.
+--   the unary "+"/"-", the reference "<"/">", and the blank operator: the
+--   binary/comparison senses ARE the defaults and live here; the other senses
+--   are modifier-only, so no glyph row would be unambiguous.
+--
+-- To publish a new glyph: add one line here. Nowhere else changes.
+--
+
+::Routine ProseSymbolTable Public
+
+  Sym. = .Nil
+
+  -- Operators (Scanner.cls single- and multi-char operator tables).
+  Sym.["+"]   = .EL.OP.PLUS
+  Sym.["-"]   = .EL.OP.MINUS
+  Sym.["*"]   = .EL.OP.MULTIPLICATION
+  Sym.["/"]   = .EL.OP.DIVISION
+  Sym.["%"]   = .EL.OP.INTEGER_DIVISION
+  Sym.["//"]  = .EL.OP.REMAINDER
+  Sym.["**"]  = .EL.OP.POWER
+  Sym.["||"]  = .EL.OP.CONCATENATION
+  Sym.["&"]   = .EL.OP.AND
+  Sym.["|"]   = .EL.OP.OR
+  Sym.["&&"]  = .EL.OP.XOR
+  Sym.["\"]   = .EL.OP.NEGATION
+  Sym.["~"]   = .EL.OP.MESSAGE
+  Sym.["~~"]  = .EL.OP.CASCADING_MESSAGE
+
+  -- Non-strict comparison. ">" and "<" default here; the reference sense is
+  -- {.rexx reference}. "=" is absent (ambiguous, modifier-only).
+  Sym.["\="]  = .EL.OP.NOT_EQUAL
+  Sym.[">"]   = .EL.OP.GREATER_THAN
+  Sym.["<"]   = .EL.OP.LOWER_THAN
+  Sym.[">="]  = .EL.OP.GREATER_OR_EQUAL
+  Sym.["<="]  = .EL.OP.LOWER_OR_EQUAL
+  Sym.["><"]  = .EL.OP.GREATER_OR_LOWER_THAN
+  Sym.["<>"]  = .EL.OP.LOWER_OR_GREATER_THAN
+  Sym.["\>"]  = .EL.OP.NOT_GREATER_THAN
+  Sym.["\<"]  = .EL.OP.NOT_LOWER_THAN
+
+  -- Strict comparison.
+  Sym.["=="]  = .EL.OP.STRICT.EQUAL
+  Sym.["\=="] = .EL.OP.STRICT.NOT_EQUAL
+  Sym.[">>"]  = .EL.OP.STRICT.GREATER_THAN
+  Sym.["<<"]  = .EL.OP.STRICT.LOWER_THAN
+  Sym.[">>="] = .EL.OP.STRICT.GREATER_OR_EQUAL
+  Sym.["<<="] = .EL.OP.STRICT.LOWER_OR_EQUAL
+  Sym.["\>>"] = .EL.OP.STRICT.NOT_GREATER_THAN
+  Sym.["\<<"] = .EL.OP.STRICT.NOT_LOWER_THAN
+
+  -- (Extended) assignment operators. The bare "=" assignment is modifier-only
+  -- ({.rexx assignment}); the compound forms are unambiguous and live here.
+  Sym.["+="]  = .EL.ASG.PLUS
+  Sym.["-="]  = .EL.ASG.MINUS
+  Sym.["*="]  = .EL.ASG.MULTIPLY
+  Sym.["/="]  = .EL.ASG.DIVIDE
+  Sym.["%="]  = .EL.ASG.INTEGER_DIVISION
+  Sym.["//="] = .EL.ASG.REMAINDER
+  Sym.["||="] = .EL.ASG.CONCATENATION
+  Sym.["&="]  = .EL.ASG.AND
+  Sym.["|="]  = .EL.ASG.OR
+  Sym.["&&="] = .EL.ASG.XOR
+  Sym.["**="] = .EL.ASG.POWER
+
+  -- Special characters (rexxref 1.10.4.7, minus "~" -- an operator above -- and
+  -- ";"). "::" is here as a plain glyph: it is the directive start, and a lone
+  -- `::` in prose colours as rx-dir by lookup, with no modifier -- the old
+  -- "directive-start" semantic name is gone (a `::` needs no author assertion,
+  -- its glyph is unambiguous). Must precede ":" is irrelevant (exact-match
+  -- lookup, not longest-prefix), but we keep "::" adjacent to ":" for clarity.
+  Sym.["::"]  = .EL.DIRECTIVE_START
+  Sym.[","]   = .EL.COMMA
+  Sym.[":"]   = .EL.COLON
+  Sym.["("]   = .EL.LEFT_PARENTHESIS
+  Sym.[")"]   = .EL.RIGHT_PARENTHESIS
+  Sym.["["]   = .EL.LEFT_BRACKET
+  Sym.["]"]   = .EL.RIGHT_BRACKET
+  Sym.["{"]   = .EL.LEFT_CURLY_BRACKET
+  Sym.["}"]   = .EL.RIGHT_CURLY_BRACKET
+
+Return Sym.
+
+--
+-- ProseElementTags - translate a semantic modifier name to its HTML class string
 --
 -- ARGUMENTS
 -- ---------
 --   HTMLClass:  The stem returned by HTMLClasses(Options.), already built
 --               against the Options. in effect for the surrounding document.
---   PublicName: A name from ProseTable's table, e.g. "method" (the "rexx-"
---               prefix already stripped by the caller).
+--   PublicName: An ELEMENT modifier from ProseModifierTable, in its space form
+--               (e.g. "method", "internal function"; the "rexx-" prefix already
+--               stripped by the caller).
 --
 -- RETURNS
 -- -------
 --   The HTML class string (e.g. "rx-const rx-method"), exactly what a
 --   fenced block would emit for that category today. .Nil if PublicName is
---   not a published name — vocabulary validation is the caller's job
+--   not a published ELEMENT name — vocabulary validation is the caller's job
 --   (FencedCode.cls), so a typo can be reported with the source position,
---   which we don't have here.
+--   which we don't have here. A modifier that IS published but is not of type
+--   ELEMENT (a MODE, OPERATOR or KLUDGE) also returns .Nil: those do not resolve
+--   to a flat element class and are handled by their own paths in the caller.
 --
 
 ::Routine ProseElementTags Public
   Use Strict Arg HTMLClass, PublicName
 
-  Table. = ProseTable()
+  Table. = ProseModifierTable()
   entry  = Table.[ PublicName ]
   If entry == .Nil Then Return .Nil
+  If entry[1] \== "ELEMENT" Then Return .Nil
 
-  If entry~items == 1 Then Return HTMLClass[ entry[1] ]
-  Return HTMLClass[ entry[1], entry[2] ]
+  -- entry is ("ELEMENT", category) or ("ELEMENT", category, subcategory)
+  If entry~items == 2 Then Return HTMLClass[ entry[2] ]
+  Return HTMLClass[ entry[2], entry[3] ]

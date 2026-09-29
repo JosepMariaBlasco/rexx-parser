@@ -36,6 +36,10 @@
 /* 20251125         Add support for Executor                                  */
 /* 20251226    0.4a Send error messages to .error, not .output                */
 /* 20260620         CMS: Implement multi-line strings                         */
+/* 20260911         %SPLIT: honour a configurable marker char (metachar=)     */
+/* 20260912         Drop %SPLIT entirely: RemoveSplitMarkers, the metachar    */
+/*                  default and Options.!Splits. FencedCode cuts a program=   */
+/*                  listing cold, after emission, so no marker is needed.     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -105,7 +109,9 @@ package~loadPackage(pkgLocal~."/HLDrivers/Drivers.cls")
       Array("Style names are limited to letters, numbers, '.', '-' and '_'.")
 
   Do tail Over Options.~allIndexes
-    If tail == "CAPTION" Then Iterate
+    -- Text the author wrote, not a keyword: caption= is shown, spot= is
+    -- searched for in the listing (spot='trap:["DATE"()]', Rony 28-Sep).
+    If tail == "CAPTION" | tail == "SPOT" Then Iterate
     Options.tail = Lower( options.tail )
   End
   Options.mode = Upper( Options.mode )

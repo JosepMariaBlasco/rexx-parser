@@ -1,0 +1,92 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Print.testGroup - a deck on paper                                          */
+/* =================================                                          */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260923         First version                                             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED                                                          */
+/*                                                                            */
+/* Rony printed from Firefox and got two pages per slide, a title page cut in */
+/* half and footers in the wrong place. The cause was the print sheet sizing  */
+/* a slide 100% x 100vh -- and Firefox takes 100vh from its window, not the   */
+/* page. On paper a slide is now its screen canvas, exactly, on a page of    */
+/* that size. Measured with real PDFs from both engines (Chromium, and        */
+/* Firefox through WebDriver BiDi): 31 pages for 31 slides. The suite cannot  */
+/* print, so it pins the CSS that makes that true.                            */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Print.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class Print.testGroup Subclass ooTestCase Public
+
+::Method test_a_printed_slide_keeps_its_canvas
+  p = self~printSheet
+  self~assertTrue(p~pos("width:  calc(var(--deck-w) * 1px);") > 0,  "the canvas width")
+  self~assertTrue(p~pos("height: calc(var(--deck-h) * 1px);") > 0,  "the canvas height")
+  self~assertEquals(0, p~pos("height: 100vh"),                     "never the window's height")
+
+::Method test_the_page_is_the_canvas
+  p = self~printSheet
+  self~assertTrue(p~pos("size: 1280px 720px;") > 0, "one slide, one page, same size")
+  self~assertTrue(p~pos("margin: 0;") > 0,          "no page margin")
+
+::Method test_one_slide_per_page_in_both_spellings
+  p = self~printSheet
+  self~assertTrue(p~pos("break-before: page;") > 0,      "CSS 3")
+  self~assertTrue(p~pos("page-break-before: always;") > 0, "CSS 2, for older engines")
+
+::Method test_firefox_gets_vector_blank_marks
+  /* Firefox prints a one-cell gradient mark as a solid block; there the     */
+  /* mark is a masked vector glyph. Chromium keeps its gradients (it prints  */
+  /* them right, and prints the mask as closed boxes).                       */
+  p = self~printSheet
+  at = p~pos("@supports (-moz-appearance: none)")
+  self~assertTrue(at > 0, "a Gecko-only block")
+  self~assertTrue(p~substr(at)~pos("#stage .rx-blank-mark") > 0, "that redraws the blank mark")
+  self~assertTrue(p~substr(at)~pos("mask: url(") > 0,           "as a mask")
+
+::Method test_every_box_is_fitted_before_printing
+  rt = self~file("/bin/md2slides/js/runtime.js")
+  self~assertTrue(rt~pos('addEventListener("beforeprint", fitAllBoxes)') > 0, "all slides, not just the current one")
+
+::Method printSheet
+  css = self~file("/bin/md2slides/css/runtime.css")
+  at  = css~pos("@media print {")
+  self~assertTrue(at > 0, "runtime.css has a print block")
+  Return css~substr(at)
+
+::Method file
+  Use Strict Arg rel
+  f   = self~projectRoot || rel
+  src = CharIn(f, 1, Stream(f, "C", "QUERY SIZE"))
+  Call Stream f, "C", "CLOSE"
+  Return src
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/Print.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent

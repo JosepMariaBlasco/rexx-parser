@@ -1,8 +1,15 @@
 /* -------------------------------------------------------------------------- */
-/* Jump overlay -- any-page target list + typed page number. Neutral chrome,   */
-/* deliberately identity-agnostic: it is presenter furniture, not slide CI.    */
+/* Presenter overlays -- shared chrome for the two modals the runtime raises:  */
+/* the jump overlay (key g: any-page target list + typed page number) and the  */
+/* code-style modal (key s: pick the rexx highlight style). Both use the same  */
+/* jo-* panel so they read as one family. Neutral, deliberately identity-      */
+/* agnostic: this is presenter furniture, not slide CI.                        */
 /* -------------------------------------------------------------------------- */
-#jump-overlay {
+#jump-overlay,
+#style-overlay,
+#help-overlay,
+#about-overlay,
+#stats-overlay {
   position: fixed;
   inset: 0;
   z-index: 9998;
@@ -10,11 +17,19 @@
   background: rgba(0, 0, 0, 0.55);
   align-items: center;
   justify-content: center;
-  font-family: var(--theme-font-prose, sans-serif);
+  font-family: var(--skin-font-prose, sans-serif);
 }
-#jump-overlay.open { display: flex; }
+#jump-overlay.open,
+#style-overlay.open,
+#help-overlay.open,
+#about-overlay.open,
+#stats-overlay.open { display: flex; }
 
-#jump-overlay .jo-panel {
+#jump-overlay .jo-panel,
+#style-overlay .jo-panel,
+#help-overlay .jo-panel,
+#about-overlay .jo-panel,
+#stats-overlay .jo-panel {
   width: min(560px, 86vw);
   max-height: 78vh;
   display: flex;
@@ -25,21 +40,29 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
-#jump-overlay .jo-head {
+#jump-overlay .jo-head,
+#style-overlay .jo-head,
+#help-overlay .jo-head,
+#about-overlay .jo-head,
+#stats-overlay .jo-head {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 16px 18px;
   border-bottom: 1px solid #333;
 }
-#jump-overlay .jo-head span {
+#jump-overlay .jo-head span,
+#style-overlay .jo-head span,
+#help-overlay .jo-head span,
+#about-overlay .jo-head span,
+#stats-overlay .jo-head span {
   font-size: 15px;
   color: #aaa;
   white-space: nowrap;
 }
 #jump-overlay #jo-input {
   flex: 1;
-  font: 18px/1.2 var(--theme-font-mono, monospace);
+  font: 18px/1.2 var(--skin-font-mono, monospace);
   background: #000;
   color: #fff;
   border: 1px solid #555;
@@ -49,11 +72,16 @@
 }
 #jump-overlay #jo-input:focus { border-color: #0096d3; }
 
-#jump-overlay .jo-list {
+#jump-overlay .jo-list,
+#style-overlay .jo-list,
+#help-overlay .jo-list,
+#about-overlay .jo-list,
+#stats-overlay .jo-list {
   overflow-y: auto;
   padding: 8px;
 }
-#jump-overlay .jo-item {
+#jump-overlay .jo-item,
+#style-overlay .jo-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -62,29 +90,378 @@
   background: transparent;
   border: none;
   color: #ddd;
-  font: 14px/1.3 var(--theme-font-prose, sans-serif);
+  font: 14px/1.3 var(--skin-font-prose, sans-serif);
   padding: 9px 12px;
   border-radius: 6px;
   cursor: pointer;
 }
-#jump-overlay .jo-item:hover { background: #2b2b2e; }
-#jump-overlay .jo-item.here  { background: #0b3d5c; }
+#jump-overlay .jo-item:hover,
+#style-overlay .jo-item:hover { background: #2b2b2e; }
+#jump-overlay .jo-item.here,
+#style-overlay .jo-item.here  { background: #0b3d5c; }
+/* .here marks where you *are* (current slide / active style); .sel marks where  */
+/* the keyboard cursor points as you arrow through the list. A bright inset ring  */
+/* reads as "selected" and layers cleanly over .here when the two coincide.       */
+#jump-overlay .jo-item.sel,
+#style-overlay .jo-item.sel {
+  background: #2b2b2e;
+  box-shadow: inset 0 0 0 2px #0096d3;
+}
+#jump-overlay .jo-item.here.sel,
+#style-overlay .jo-item.here.sel { background: #0b3d5c; }
 #jump-overlay .jo-num {
   min-width: 26px;
   text-align: right;
-  font-family: var(--theme-font-mono, monospace);
+  font-family: var(--skin-font-mono, monospace);
   color: #7fb2d0;
 }
-#jump-overlay .jo-label { flex: 1; }
-#jump-overlay .jo-kind {
+#jump-overlay .jo-label,
+#style-overlay .jo-label { flex: 1; }
+#jump-overlay .jo-kind,
+#style-overlay .jo-kind {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #777;
 }
-#jump-overlay .jo-hint {
+#jump-overlay .jo-hint,
+#style-overlay .jo-hint,
+#help-overlay .jo-hint,
+#about-overlay .jo-hint,
+#stats-overlay .jo-hint {
   padding: 10px 18px;
   border-top: 1px solid #333;
   font-size: 12px;
   color: #888;
+}
+
+/* Structure in the jump overlay (JMB: mark sections "además" of the kind tag). */
+/* A section title page is the structural spine of the deck; its slides hang     */
+/* beneath it. So a section item reads louder -- brighter ink, bold label, a     */
+/* faint rule above it to open the group -- and the ordinary slides that follow  */
+/* are indented under it, the way reveal.js-menu shows the outline. The marker    */
+/* is driven by the .jo-section / .jo-child classes the runtime puts on items.   */
+#jump-overlay .jo-item.jo-section {
+  color: #fff;
+  margin-top: 4px;
+  border-top: 1px solid #333;
+}
+#jump-overlay .jo-item.jo-section:first-child {
+  margin-top: 0;
+  border-top: none;
+}
+#jump-overlay .jo-item.jo-section .jo-label { font-weight: 600; }
+#jump-overlay .jo-item.jo-section .jo-kind  { color: #7fb2d0; }
+/* Slides that sit under a section are stepped in so the hierarchy is visible    */
+/* at a glance; the number column keeps its own width, only the label indents.   */
+#jump-overlay .jo-item.jo-child .jo-label { padding-left: 18px; }
+
+/* -------------------------------------------------------------------------- */
+/* Search in the jump overlay. A row grows a second line -- the extract that    */
+/* says WHY the slide matched -- so the label and the extract stack in a body   */
+/* column and the row aligns from the top once there is one.                    */
+/* -------------------------------------------------------------------------- */
+#jump-overlay .jo-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+#jump-overlay .jo-snip {
+  display: none;
+  font: 12px/1.45 var(--skin-font-prose, sans-serif);
+  color: #9a9a9a;
+}
+#jump-overlay .jo-list.filtering .jo-snip { display: block; }
+#jump-overlay .jo-list.filtering .jo-item { align-items: flex-start; }
+#jump-overlay .jo-snip b {
+  color: #fff;
+  background: #0b3d5c;
+  border-radius: 2px;
+  padding: 0 2px;
+  font-weight: 600;
+}
+/* With a filter on, the outline is gone: a matching slide's section may not    */
+/* be on the list at all, and an indent under nothing reads as a wrong parent.  */
+/* So while filtering the rows are flat and the section tag alone says what     */
+/* kind of page it is.                                                         */
+#jump-overlay .jo-list.filtering .jo-item.jo-child .jo-label { padding-left: 0; }
+#jump-overlay .jo-list.filtering .jo-item.jo-section {
+  margin-top: 0;
+  border-top: none;
+}
+#jump-overlay .jo-empty {
+  display: none;
+  padding: 18px 12px;
+  color: #888;
+  font: 14px/1.3 var(--skin-font-prose, sans-serif);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Help (F1). Same jo-panel chrome as the other two, so the three read as one  */
+/* family. It sits above them: F1 works from inside an overlay, and the help   */
+/* has to land on top of the one that raised it.                               */
+/* -------------------------------------------------------------------------- */
+#help-overlay { z-index: 9999; }
+/* Wider than its two siblings, and only this one: it holds two tables side by */
+/* side so neither falls below the fold. The go dialog's keys arriving under   */
+/* the deck's made the panel scroll, and a key you have to scroll to find is   */
+/* the problem this list exists to solve.                                      */
+#help-overlay .jo-panel {
+  width: min(1040px, 94vw);
+  /* A little taller than the other two as well: this panel is read, not       */
+  /* scrolled through, and the few extra vh are what keep it whole in a short  */
+  /* window.                                                                   */
+  max-height: 88vh;
+}
+#help-overlay .hk-cols {
+  display: flex;
+  flex-wrap: wrap;          /* one column when there is no room for two */
+  align-items: flex-start;
+  gap: 0 18px;
+}
+#help-overlay .hk-col { flex: 1 1 380px; min-width: 0; }
+/* No divider between the columns: each block is already opened by a rule of   */
+/* its own (the note's, the subhead's), and a second line between them only    */
+/* looks wrong the moment they wrap into one column.                           */
+#help-overlay .hk-row {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  padding: 6px 10px;
+  font: 14px/1.35 var(--skin-font-prose, sans-serif);
+  color: #ddd;
+}
+#help-overlay .hk-keys {
+  flex: 0 0 176px;
+  text-align: right;
+  font-family: var(--skin-font-mono, monospace);
+  font-size: 13px;
+  color: #7fb2d0;
+}
+#help-overlay .hk-what { flex: 1; }
+#help-overlay .hk-note {
+  margin: 10px 12px 2px;
+  padding-top: 10px;
+  border-top: 1px solid #333;
+  font: 13px/1.45 var(--skin-font-prose, sans-serif);
+  color: #9a9a9a;
+}
+/* The go dialog's own keys are a second block under their own heading, because */
+/* they are not deck keys: they only mean anything while that dialog is open,   */
+/* and reading them in one run with the deck's would suggest PageDown does the  */
+/* same thing in both places, which is exactly what it does not do.             */
+#help-overlay .hk-sub {
+  margin: 6px 12px 4px;
+  padding-top: 10px;
+  border-top: 1px solid #333;
+  font: 600 12px/1.4 var(--skin-font-prose, sans-serif);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7fb2d0;
+}
+/* A chord that is a synonym, not a key of its own: dimmer, so the row reads as */
+/* one entry rather than two.                                                   */
+#help-overlay .hk-alt {
+  color: #7a7a7a;
+  font-size: 12px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* About (a). The help's chrome, a little wider; rows of key and value, and    */
+/* the same rows again, in the skin's own type, on the printed about page.     */
+/* -------------------------------------------------------------------------- */
+#about-overlay { z-index: 9999; }
+#about-overlay .jo-panel { width: min(760px, 92vw); }
+#help-overlay .hk-about { color: #7fb2d0; }
+
+.ab-title { font-size: 1.25em; font-weight: 600; margin: 4px 6px 10px; }
+.ab-sub {
+  margin: 14px 6px 4px;
+  font-size: 0.72em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+.ab-row { display: flex; gap: 16px; padding: 3px 6px; line-height: 1.35; }
+.ab-key { flex: 0 0 11em; opacity: 0.7; }
+.ab-val { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ab-cmd {
+  margin: 2px 6px;
+  padding: 6px 10px;
+  font-family: var(--skin-font-mono, monospace);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+  border-radius: 6px;
+  background: rgba(127, 127, 127, 0.15);
+}
+#about-overlay .jo-list { font-size: 15px; }
+#about-overlay a { color: #7fb2d0; }
+
+/* The printed page: not on screen, ever; on paper, a sheet like the slides. */
+.slide.about-sheet { display: none !important; }
+.slide.about-sheet .ab-page {
+  font-family: var(--skin-font-prose, sans-serif);
+  color: var(--skin-fg, #000);
+  font-size: 18px;
+  columns: 2;
+  column-gap: 48px;
+}
+.slide.about-sheet .ab-title { column-span: all; font-size: 30px; }
+.slide.about-sheet .ab-sub { break-after: avoid; }
+.slide.about-sheet .ab-row { break-inside: avoid; }
+.slide.about-sheet a { color: inherit; text-decoration: none; }
+@media print {
+  .slide.about-sheet { display: block !important; }
+  #about-overlay, #help-overlay, #stats-overlay, #slide-clock { display: none !important; }
+}
+
+/* H: the time per slide (Rony, 26-Sep). The about page's chrome, wider, with */
+/* a table; the controls are plain form elements on the dark panel.          */
+#stats-overlay { z-index: 9999; }
+#stats-overlay .jo-panel { width: min(980px, 94vw); max-height: 88vh; }
+#stats-overlay .jo-list { font-size: 14px; }
+#stats-overlay .st-bar {
+  display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center;
+  margin: 2px 6px 10px;
+}
+#stats-overlay .st-bar label { display: flex; gap: 6px; align-items: center; opacity: 0.9; }
+#stats-overlay select, #stats-overlay input[type=text], #stats-overlay button {
+  font: inherit; color: #eee; background: #2b2b2e;
+  border: 1px solid #444; border-radius: 6px; padding: 3px 8px;
+}
+#stats-overlay input[type=text] { width: 16em; }
+#stats-overlay button { cursor: pointer; }
+#stats-overlay button:hover { background: #0b3d5c; }
+#stats-overlay .st-sum { margin: 4px 6px 10px; line-height: 1.5; }
+#stats-overlay .st-table { width: calc(100% - 12px); margin: 0 6px; border-collapse: collapse; }
+#stats-overlay .st-table th, #stats-overlay .st-table td {
+  padding: 2px 8px; text-align: right; border-bottom: 1px solid #333;
+  font-variant-numeric: tabular-nums;
+}
+#stats-overlay .st-table th:nth-child(2), #stats-overlay .st-table td:nth-child(2) {
+  text-align: left; width: 100%;
+}
+#stats-overlay .st-table th { white-space: nowrap; position: sticky; top: 0; background: #1c1c1e; color: #aaa; font-weight: 600; }
+#stats-overlay .st-sec td { font-weight: 600; color: #7fb2d0; padding-top: 8px; }
+#stats-overlay .st-sec td:first-child { text-align: left; }
+#stats-overlay .st-none td { opacity: 0.45; }
+#stats-overlay .st-top { display: flex; gap: 24px; margin: 6px 0; }
+#stats-overlay .st-top > div { flex: 1; min-width: 0; }
+#stats-overlay .st-top ol { margin: 2px 6px; padding-left: 1.6em; }
+#stats-overlay .st-actions { margin-top: 12px; }
+#stats-overlay .st-note { opacity: 0.7; }
+
+/* M: the time on this slide, top left of the stage (rehearsing). Fixed to  */
+/* the window like the countdown, placed and sized with the stage.           */
+#slide-clock {
+  position: fixed; z-index: 9997; display: none; pointer-events: none;
+  padding: 0.15em 0.5em; border-radius: 0.3em;
+  font: 600 1em/1.3 var(--skin-font-mono, monospace);
+  color: #fff; background: rgba(28, 28, 30, 0.8);
+  white-space: pre; font-variant-numeric: tabular-nums;
+}
+#slide-clock.open { display: block; }
+
+/* -------------------------------------------------------------------------- */
+/* The presenter's timer: its popup, and the live fields in the margin boxes. */
+/* The runtime places the popup over the stage's footer (or header) band and */
+/* sizes it with the deck; it sits above a blank screen.                      */
+/* -------------------------------------------------------------------------- */
+#timer-toast {
+  position: fixed;
+  z-index: 10000;
+  transform: translateX(-50%);
+  display: none;
+  padding: 0.35em 0.9em;
+  border-radius: 0.5em;
+  font-family: var(--skin-font-prose, sans-serif);
+  font-weight: 600;
+  white-space: nowrap;
+  color: #fff;
+  background: rgba(28, 28, 30, 0.92);
+  box-shadow: 0 0.3em 1.2em rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+#timer-toast.open { display: block; }
+#timer-toast.warn { background: #b86e00; }
+#timer-toast.over { background: #c9211e; }
+.margin .live.over { color: #c9211e; font-weight: 600; }
+@media print {
+  #timer-toast { display: none !important; }
+  .margin .live { visibility: hidden; }
+}
+
+/* -------------------------------------------------------------------------- */
+/* The countdown (C, countdown=, and a break's length): big, over the middle  */
+/* of the stage, sized with the deck by the runtime (font-size = 40 px of     */
+/* stage). Blue while it counts down, red once the time is up (not green:     */
+/* red and green are the pair colour-blind eyes confuse; Rony, 25-Sep). A     */
+/* message, when there is one, goes above the time. Clicks go                 */
+/* through it to the deck. And the little dialog of P and C that asks for it. */
+/* -------------------------------------------------------------------------- */
+#countdown {
+  position: fixed;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  display: none;
+  padding: 0.3em 0.9em 0.45em;
+  border-radius: 0.4em;
+  text-align: center;
+  font-family: var(--skin-font-prose, sans-serif);
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background: rgba(20, 20, 22, 0.78);
+  box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+#countdown.open { display: block; }
+#countdown .cd-main {
+  font-size: 4em;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+#countdown .cd-msg { font-size: 1.4em; font-weight: 600; line-height: 1.2; }
+#countdown .cd-msg:empty { display: none; }
+#countdown .cd-sub { font-size: 0.9em; font-weight: 600; opacity: 0.9; }
+/* A break: when it began and how long it has lasted (Rony, 26-Sep). */
+#countdown .cd-since { font-size: 0.75em; opacity: 0.75; margin-top: 0.2em; }
+#countdown .cd-since:empty { display: none; }
+#countdown.go .cd-main { color: #409cff; }
+#countdown.over .cd-main, #countdown.over .cd-sub { color: #ff453a; }
+
+#countdown-ask {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+#countdown-ask.open { display: flex; }
+#countdown-ask .ca-panel {
+  min-width: 24em;
+  max-width: 90vw;
+  padding: 1em 1.2em;
+  border-radius: 0.5em;
+  font: 16px/1.4 system-ui, sans-serif;
+  color: #1c1c1e;
+  background: #fff;
+  box-shadow: 0 0.4em 1.6em rgba(0, 0, 0, 0.4);
+}
+#countdown-ask input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.6em;
+  padding: 0.35em 0.5em;
+  font: inherit;
+  font-size: 1.4em;
+}
+#countdown-ask .ca-error { min-height: 1.4em; margin-top: 0.3em; color: #c9211e; }
+@media print {
+  #countdown, #countdown-ask { display: none !important; }
 }

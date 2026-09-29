@@ -15,6 +15,9 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260316    0.5  First version                                             */
+/* 20260926         The early checks EXPOSE and USELOCAL (98.992, 98.993)     */
+/* 20260928         The early check PARSE (26.4: a positional pattern that is */
+/*                  not a whole number)                                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -41,7 +44,7 @@
   Else
     label = code":" source~substr(1, min(50, source~length))~strip
 
-  options = .Array~of( (earlyCheck, (BIFs, SIGNAL, GUARD, LEAVE, ITERATE)) )
+  options = .Array~of( (earlyCheck, (BIFs, SIGNAL, GUARD, EXPOSE, USELOCAL, LEAVE, ITERATE, PARSE)) )
 
   -- Step 1: Check the ooRexx interpreter
   Signal On Syntax Name InterpreterTrapped
@@ -127,7 +130,7 @@ ParserTrapped:
       label = "OK:" source~substr(1, min(50, source~length))~strip
   End
 
-  options = .Array~of( (earlyCheck, (BIFs, SIGNAL, GUARD, LEAVE, ITERATE)) )
+  options = .Array~of( (earlyCheck, (BIFs, SIGNAL, GUARD, EXPOSE, USELOCAL, LEAVE, ITERATE, PARSE)) )
 
   -- Step 1: Check the ooRexx interpreter
   Signal On Syntax Name InterpreterFailed
@@ -178,7 +181,7 @@ ParserFailed:
       label = "OK:" source~substr(1, min(50, source~length))~strip
   End
 
-  options = .Array~of( (earlyCheck, (BIFs, SIGNAL, GUARD, LEAVE, ITERATE)) )
+  options = .Array~of( (earlyCheck, (BIFs, SIGNAL, GUARD, EXPOSE, USELOCAL, LEAVE, ITERATE, PARSE)) )
 
   Signal On Syntax Name ParserFailed
   .Rexx.Parser~new("", source, options)~package

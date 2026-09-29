@@ -1,0 +1,295 @@
+/******************************************************************************/
+/*                                                                            */
+/*  spotlight.css - the spotlight: MECHANISM ONLY                             */
+/*                                                                            */
+/*  There is deliberately not one colour in this file, and not one style name */
+/*  either. The tints live in each style sheet, next to that style's own token */
+/*  palette.                                                                  */
+/*                                                                            */
+/*  That split is not tidiness, it is correctness. An earlier draft carried    */
+/*  the colours here and keyed the dark recipe on two style names,            */
+/*  .highlight-rexx-dark and .highlight-rexx-electric. There are SIXTEEN dark  */
+/*  styles in css/: tokio-night, rgfdark and the twelve vim-dark ones would    */
+/*  all have been served the light recipe -- a strong wash over a dark ground, */
+/*  which buries the token colouring. Nobody would have found out until        */
+/*  somebody presented with vim-dark-desert. A sheet that reaches into other   */
+/*  sheets by name is incomplete the moment a new style is added, and it is    */
+/*  invisible to whoever edits that style's palette.                          */
+/*                                                                            */
+/*  So: this file owns HOW a marked line behaves. Each style owns WHAT COLOUR  */
+/*  its pens are, because that is the same decision as its token palette and   */
+/*  belongs in the same file. A style declares four pens as custom properties: */
+/*                                                                            */
+/*      .highlight-rexx-<name> { --spot-pen-1-bar: #...;                      */
+/*                               --spot-pen-1-bg:  rgba(...); ... }           */
+/*                                                                            */
+/*  A style that declares none still works: it falls back to the single        */
+/*  neutral pen below. That is a FALLBACK so nothing renders blank, not a      */
+/*  palette -- a style meant to be used with the pen declares its own.         */
+/*                                                                            */
+/******************************************************************************/
+
+/* ------------------------------------------------------------------------- */
+/* The box. A marked line has to paint edge to edge, but a line span is       */
+/* inline and only as wide as its text, so a bare background would stop at    */
+/* the last character and read as a ragged text selection rather than as a    */
+/* stroke of a pen. inline-block + width:100% squares it off.                 */
+/*                                                                            */
+/* The stroke deliberately runs across the line-number gutter as well. That   */
+/* is what makes it read as a pen stroke: nobody marking a printed listing    */
+/* steers around the number in the margin. It reaches there for free, because */
+/* a numbered listing already slides its line spans left over the gutter with */
+/* position:relative and left:-4em.                                           */
+/*                                                                            */
+/* Only LINES get the box. A prose fragment that joined the beat must not be  */
+/* boxed -- it only reveals -- hence the code > span scoping throughout.      */
+/* ------------------------------------------------------------------------- */
+code > span[data-spot-beat] {
+  display: inline-block;
+  width: 100%;
+  box-sizing: border-box;
+  border-left: 3px solid transparent;   /* reserved always, so nothing shifts */
+  margin-left: -3px;                    /* ...and reclaimed, so nothing moves */
+  /* The bar's strip is declared here, transparent and already at its full    */
+  /* width, so lighting a line animates its COLOUR and nothing else. Left to  */
+  /* the .spot-on rule alone the offset would interpolate from zero too, and  */
+  /* a strip narrower than the overhang is entirely clipped -- the bar would  */
+  /* wipe in over the last 80ms instead of fading with the wash.              */
+  box-shadow: inset var(--spot-bar-x, 0px) 0 0 0 transparent;
+  transition: background-color var(--spot-dur, .28s) ease,
+              border-left-color var(--spot-dur, .28s) ease,
+              box-shadow var(--spot-dur, .28s) ease;
+}
+
+/* ------------------------------------------------------------------------- */
+/* The strike, and why the right-hand end is a SHADOW and not extra width.    */
+/*                                                                            */
+/* That same left:-4em is a relative offset: it moves what is PAINTED and     */
+/* leaves the layout box where it was. So the line keeps the width of the     */
+/* <pre>'s content area and is merely drawn further left, and it ends short   */
+/* on the right by exactly what it gained on the left, plus the <pre>'s right */
+/* padding. Nothing revealed that for years, because nothing painted a        */
+/* background on those spans until the spotlight did.                        */
+/*                                                                            */
+/* The obvious repair -- widen the box by that shortfall -- works and is      */
+/* wrong: the wrapper is a scrolling box (div.code, overflow-x:auto), a wider */
+/* line is real overflow, and a horizontal scrollbar appears under a listing  */
+/* that fits perfectly well. The same trap the runtime already documents for  */
+/* pre.output.numberSource.                                                   */
+/*                                                                            */
+/* A box-shadow paints outside the border box but is INK overflow, never      */
+/* scrollable overflow, so it colours the missing strip and moves no          */
+/* scrollbar. Offset right by the shortfall, no blur, no spread: a solid copy */
+/* of the line peeking out from behind it, in the pen's own colour. It is     */
+/* also clipped by the scrolling box at exactly the edge we want it to stop.  */
+/*                                                                            */
+/*   --spot-bleed-r  the shortfall, measured on the page by spotlight.js and  */
+/*                   set per block. Measured, not written here: the gutter is */
+/*                   4em in a sheet this file does not own and a future style */
+/*                   may set it differently, and this file holds no style     */
+/*                   values by design. Absent the script it is 0 and the      */
+/*                   stroke simply ends where it always did.                  */
+/*   + 3px           pays back the bar: margin-left:-3px slides the box left  */
+/*                   so the reserved border costs no indent, but under        */
+/*                   border-box the border eats into the width.               */
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* The bar, and why the left-hand end is an INSET shadow.                    */
+/*                                                                           */
+/* border-left paints at the span's own left edge. On a NUMBERED listing     */
+/* that edge is not where the stroke starts: left:-4em drags the whole box   */
+/* left of div.code's padding box, and div.code is a scrolling box, so the   */
+/* bar is clipped away entirely. Measured: zero pixels of the bar colour on  */
+/* the slide, in every style. It only ever showed on unnumbered blocks --    */
+/* which is why a program listing and the ~~~output block of the same beat   */
+/* did not match, one wearing a bar and the other not.                       */
+/*                                                                           */
+/* An INSET shadow with no blur and no spread fills a strip of width dx down */
+/* the inside of the left edge. Give it the width of the overhang and the    */
+/* same clip that ate the border trims the strip to exactly the 3px that     */
+/* survive -- the bar lands on the visible edge without anyone computing     */
+/* where that edge is. It paints above the wash and below the border, and it */
+/* rides the transition already declared for box-shadow.                     */
+/*                                                                           */
+/*   --spot-bar-x  the overhang, measured per block by spotlight.js beside   */
+/*                 --spot-bleed-r. Absent the script it is 0, the strip has  */
+/*                 no width, and border-left paints the bar as it always     */
+/*                 did -- correct wherever it was correct before.            */
+/*                                                                           */
+/* Keep border-left-color set. It is what draws the bar in the unnumbered    */
+/* case and whenever the script has not run, and where the strip does the    */
+/* work the border is clipped and costs nothing.                             */
+/* ------------------------------------------------------------------------- */
+code > span[data-spot-pen="1"].spot-on {
+  background-color: var(--spot-pen-1-bg, rgba(255, 214, 0, .40));
+  border-left-color: var(--spot-pen-1-bar, #E6B800);
+  box-shadow: inset var(--spot-bar-x, 0px) 0 0 0
+              var(--spot-pen-1-bar, #E6B800),
+              calc(var(--spot-bleed-r, 0px) + 3px) 0 0 0
+              var(--spot-pen-1-bg, rgba(255, 214, 0, .40));
+}
+code > span[data-spot-pen="2"].spot-on {
+  background-color: var(--spot-pen-2-bg, rgba(255, 214, 0, .40));
+  border-left-color: var(--spot-pen-2-bar, #E6B800);
+  box-shadow: inset var(--spot-bar-x, 0px) 0 0 0
+              var(--spot-pen-2-bar, #E6B800),
+              calc(var(--spot-bleed-r, 0px) + 3px) 0 0 0
+              var(--spot-pen-2-bg, rgba(255, 214, 0, .40));
+}
+code > span[data-spot-pen="3"].spot-on {
+  background-color: var(--spot-pen-3-bg, rgba(255, 214, 0, .40));
+  border-left-color: var(--spot-pen-3-bar, #E6B800);
+  box-shadow: inset var(--spot-bar-x, 0px) 0 0 0
+              var(--spot-pen-3-bar, #E6B800),
+              calc(var(--spot-bleed-r, 0px) + 3px) 0 0 0
+              var(--spot-pen-3-bg, rgba(255, 214, 0, .40));
+}
+code > span[data-spot-pen="4"].spot-on {
+  background-color: var(--spot-pen-4-bg, rgba(255, 214, 0, .40));
+  border-left-color: var(--spot-pen-4-bar, #E6B800);
+  box-shadow: inset var(--spot-bar-x, 0px) 0 0 0
+              var(--spot-pen-4-bar, #E6B800),
+              calc(var(--spot-bleed-r, 0px) + 3px) 0 0 0
+              var(--spot-pen-4-bg, rgba(255, 214, 0, .40));
+}
+
+/* ------------------------------------------------------------------------- */
+/* Paged media. Transitions do not exist on paper and a printed page is       */
+/* always the finished state, so every beat prints struck. This is also what  */
+/* makes the feature degrade sanely outside the slide runtime: in md2html,    */
+/* md2pdf and md2epub there is no "advance", so the beats simply collapse     */
+/* into one finished picture instead of breaking.                             */
+/* ------------------------------------------------------------------------- */
+@media print {
+  code > span[data-spot-beat] { transition: none; }
+
+  code > span[data-spot-pen="1"] {
+    background-color: var(--spot-pen-1-bg, rgba(255, 214, 0, .40));
+    border-left-color: var(--spot-pen-1-bar, #E6B800);
+    box-shadow: inset var(--spot-bar-x, 0px) 0 0 0
+                var(--spot-pen-1-bar, #E6B800),
+                calc(var(--spot-bleed-r, 0px) + 3px) 0 0 0
+                var(--spot-pen-1-bg, rgba(255, 214, 0, .40));
+  }
+  code > span[data-spot-pen="2"] {
+    background-color: var(--spot-pen-2-bg, rgba(255, 214, 0, .40));
+    border-left-color: var(--spot-pen-2-bar, #E6B800);
+    box-shadow: inset var(--spot-bar-x, 0px) 0 0 0
+                var(--spot-pen-2-bar, #E6B800),
+                calc(var(--spot-bleed-r, 0px) + 3px) 0 0 0
+                var(--spot-pen-2-bg, rgba(255, 214, 0, .40));
+  }
+  code > span[data-spot-pen="3"] {
+    background-color: var(--spot-pen-3-bg, rgba(255, 214, 0, .40));
+    border-left-color: var(--spot-pen-3-bar, #E6B800);
+    box-shadow: inset var(--spot-bar-x, 0px) 0 0 0
+                var(--spot-pen-3-bar, #E6B800),
+                calc(var(--spot-bleed-r, 0px) + 3px) 0 0 0
+                var(--spot-pen-3-bg, rgba(255, 214, 0, .40));
+  }
+  code > span[data-spot-pen="4"] {
+    background-color: var(--spot-pen-4-bg, rgba(255, 214, 0, .40));
+    border-left-color: var(--spot-pen-4-bar, #E6B800);
+    box-shadow: inset var(--spot-bar-x, 0px) 0 0 0
+                var(--spot-pen-4-bar, #E6B800),
+                calc(var(--spot-bleed-r, 0px) + 3px) 0 0 0
+                var(--spot-pen-4-bg, rgba(255, 214, 0, .40));
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* A marked TEXT (spot="trap:[NOVALUE NAME ANY]") -- v217.                    */
+/*                                                                           */
+/* The same pen as a line, on a smaller surface: just the wash, tight around */
+/* the text, the way one runs a highlighter over two words. No bar and no    */
+/* edge-to-edge stroke -- those say "this line", and this says "these words".*/
+/*                                                                           */
+/* The UA gives <mark> a yellow background and black text; both are undone,  */
+/* so the token colours show through and nothing is lit before its beat.     */
+/* A text that spans several tokens is several <mark>s side by side; only    */
+/* the first and last round their outer corners, so it reads as one stroke.  */
+/* ------------------------------------------------------------------------- */
+mark.spot-mark {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+  transition: background-color var(--spot-dur, .28s) ease;
+}
+mark.spot-mark-first {
+  border-top-left-radius: .2em;
+  border-bottom-left-radius: .2em;
+}
+mark.spot-mark-last {
+  border-top-right-radius: .2em;
+  border-bottom-right-radius: .2em;
+}
+mark.spot-mark[data-spot-pen="1"].spot-on {
+  background-color: var(--spot-pen-1-bg, rgba(255, 214, 0, .40));
+}
+mark.spot-mark[data-spot-pen="2"].spot-on {
+  background-color: var(--spot-pen-2-bg, rgba(255, 214, 0, .40));
+}
+mark.spot-mark[data-spot-pen="3"].spot-on {
+  background-color: var(--spot-pen-3-bg, rgba(255, 214, 0, .40));
+}
+mark.spot-mark[data-spot-pen="4"].spot-on {
+  background-color: var(--spot-pen-4-bg, rgba(255, 214, 0, .40));
+}
+
+/* ------------------------------------------------------------------------- */
+/* How the marks come in (v224; Rony, 28-Sep: the animation he writes on the */
+/* spot should be honoured). The empty trigger of a beat,                    */
+/*                                                                           */
+/*     []{spot=trap .afterPrev anim=pen anim-duration=3}                     */
+/*                                                                           */
+/* has nothing of its own to animate, so spotlight.js hands what it says to  */
+/* the beat's marks: --spot-dur, the time they take (0 for anim=cut), and     */
+/* .spot-stroke for anim=pen. The default, anim=fade, is the wash fading in, */
+/* as it always did.                                                         */
+/*                                                                           */
+/* The pen is the wash drawn from left to right: the pen's colour as a       */
+/* background IMAGE that grows from nothing to the full width, while the     */
+/* background colour stays clear. A text cut into several <mark>s (one per   */
+/* token) is ONE stroke: spotlight.js gives each piece its share of the time */
+/* and a delay, so the pen runs through them in order.                        */
+/* ------------------------------------------------------------------------- */
+code > span[data-spot-pen="1"], mark.spot-mark[data-spot-pen="1"] { --spot-ink: var(--spot-pen-1-bg, rgba(255, 214, 0, .40)); }
+code > span[data-spot-pen="2"], mark.spot-mark[data-spot-pen="2"] { --spot-ink: var(--spot-pen-2-bg, rgba(255, 214, 0, .40)); }
+code > span[data-spot-pen="3"], mark.spot-mark[data-spot-pen="3"] { --spot-ink: var(--spot-pen-3-bg, rgba(255, 214, 0, .40)); }
+code > span[data-spot-pen="4"], mark.spot-mark[data-spot-pen="4"] { --spot-ink: var(--spot-pen-4-bg, rgba(255, 214, 0, .40)); }
+
+code > span[data-spot-beat].spot-stroke,
+mark.spot-mark.spot-stroke {
+  background-image: linear-gradient(var(--spot-ink), var(--spot-ink));
+  background-repeat: no-repeat;
+  background-size: 0% 100%;
+}
+mark.spot-mark.spot-stroke {
+  transition: background-size var(--spot-dur, .28s) linear;
+}
+code > span[data-spot-beat].spot-stroke {
+  transition: background-size var(--spot-dur, .28s) linear,
+              border-left-color var(--spot-dur, .28s) ease,
+              box-shadow var(--spot-dur, .28s) ease;
+}
+code > span[data-spot-beat].spot-stroke.spot-on,
+mark.spot-mark.spot-stroke.spot-on {
+  background-color: transparent;
+  background-size: 100% 100%;
+}
+
+@media print {
+  mark.spot-mark { transition: none; }
+  mark.spot-mark[data-spot-pen="1"] {
+    background-color: var(--spot-pen-1-bg, rgba(255, 214, 0, .40));
+  }
+  mark.spot-mark[data-spot-pen="2"] {
+    background-color: var(--spot-pen-2-bg, rgba(255, 214, 0, .40));
+  }
+  mark.spot-mark[data-spot-pen="3"] {
+    background-color: var(--spot-pen-3-bg, rgba(255, 214, 0, .40));
+  }
+  mark.spot-mark[data-spot-pen="4"] {
+    background-color: var(--spot-pen-4-bg, rgba(255, 214, 0, .40));
+  }
+}

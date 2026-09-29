@@ -17,6 +17,10 @@
 /* 20241206    0.1  First public release                                      */
 /* 20250318    0.2  Change syntax to class::method                            */
 /* 20250328         Main dir is now rexx-parser instead of rexx[.]parser      */
+/* 20260928    0.7  Attribute.Directive::String: options.external is .Nil     */
+/*                  when there is no EXTERNAL. Method.Directive::String used  */
+/*                  an options. stem the directive does not have (34.1): it   */
+/*                  uses its getters. EXTERNAL specifications are quoted.     */
 /*                                                                            */
 /******************************************************************************/
 
@@ -237,7 +241,8 @@ Call (loader) "BaseClassesAndRoutines", 1
   If  options.protected Then ret = ret "PROTECTED"
   If  options.abstract  Then ret = ret "ABSTRACT"
   If options.delegateName \== "" Then ret = ret "DELEGATE" options.delegateName
-  If options.external     \== "" Then ret = ret "EXTERNAL" options.external
+  If options.external   \== .Nil Then
+    ret = ret "EXTERNAL" '"'ChangeStr('"', options.external, '""')'"'
   Return ret
 
 --------------------------------------------------------------------------------
@@ -280,18 +285,21 @@ Call (loader) "BaseClassesAndRoutines", 1
 --------------------------------------------------------------------------------
 
 ::Method "Method.Directive::String"
-  Expose name options.
-  ret = "::METHOD" name
-  If options.attribute    Then ret = ret "ATTRIBUTE"
-  If options.class        Then ret = ret "CLASS"
-  ret = ret options.visibility
-  If options.guarded      Then ret = ret "GUARDED"
-  If options.protected    Then ret = ret "PROTECTED"
-  If options.abstract     Then ret = ret "ABSTRACT"
-  If options.delegateName \== "" Then
-    ret = ret "DELEGATE" options.delegateName
-  If options.external     \== "" Then
-    ret = ret "EXTERNAL" options.external
+  ret = "::METHOD" self~name
+  If self~isAttribute   Then ret = ret "ATTRIBUTE"
+  If self~isClassMethod Then ret = ret "CLASS"
+  Select
+    When self~isPrivate Then ret = ret "PRIVATE"
+    When self~isPackage Then ret = ret "PACKAGE"
+    Otherwise                ret = ret "PUBLIC"
+  End
+  If \self~isGuarded    Then ret = ret "UNGUARDED"
+  If self~isProtected   Then ret = ret "PROTECTED"
+  If self~isAbstract    Then ret = ret "ABSTRACT"
+  If self~delegateName \== .Nil Then
+    ret = ret "DELEGATE" self~delegateName
+  If self~external \== .Nil Then
+    ret = ret "EXTERNAL" '"'ChangeStr('"', self~external, '""')'"'
   Return ret
 
 --------------------------------------------------------------------------------

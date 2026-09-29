@@ -30,6 +30,11 @@
 /* 20260522    0.5  CMS: Add support for CMS Rexx expressions                 */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
 /* 20260620         CMS: Implement multi-line strings                         */
+/* 20260925         Indexed.Or.Invoked.Term: trailingBlock was not kept       */
+/* 20260928         Expression.List: an empty logical list is 35.929 (IF,     */
+/*                  WHEN, WHILE, UNTIL with no expression)                    */
+/* 20260928         The function calls of a ::CONSTANT expression are kept by */
+/*                  the package (constantCalls), to be classified too.        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -354,6 +359,10 @@ EndNamed:
   If element \< terminators Then Call 35.001 element
 
   If trailingComma, logical Then Call 35.929 begin
+
+  -- No expression at all (IF, WHEN, WHILE, UNTIL, GUARD ... WHEN): 35.929,
+  -- as ooRexx.
+  If logical, expressions~items == 0 Then Call 35.929 begin
 
   If arguments Then Do
     Do While expressions~lastItem~isA(.Element)
@@ -1129,11 +1138,13 @@ Done:
 
   name~invocationType = Function
 
-  -- When evaluating calculated constants, there is no active body. TODO
+  -- A ::CONSTANT expression is in no body: its calls are kept by the
+  -- package, and SecondPass resolves them with no labels, as ooRexx.
   body = package~currentBodies~top
   If body \== .Nil Then body~calledRoutineNames~append( -
     (name, arguments, trailingBlock)                   -
   )
+  Else package~constantCalls~append( (name, arguments, trailingBlock) )
 
   Exit .Function.Call.Term~new(name, arguments, trailingBlock )
 
@@ -1522,11 +1533,13 @@ Return
 
   name~invocationType = Function
 
-  -- When evaluating calculated constants, there is no active body. TODO
+  -- A ::CONSTANT expression is in no body: its calls are kept by the
+  -- package, and SecondPass resolves them with no labels, as ooRexx.
   body = package~currentBodies~top
   If body \== .Nil Then body~calledRoutineNames~append( -
     (name, arguments, trailingBlock)                   -
   )
+  Else package~constantCalls~append( (name, arguments, trailingBlock) )
 
   Exit .Function.Call.Term~new( name, arguments, trailingBlock )
 
@@ -1639,7 +1652,7 @@ Return
 ::Attribute arguments     Get
 ::Attribute trailingBlock Get
 ::Method init
-  Expose term arguments bracket begin end
+  Expose term arguments bracket begin end trailingBlock
   Use Strict Arg bracket, term, arguments, trailingBlock
   rBracket = arguments~end
   begin    = term~begin

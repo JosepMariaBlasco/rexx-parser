@@ -31,12 +31,16 @@ Toggles:
 `+all`                              Activate all toggles. This is the default.
 `-all`                              Deactivate all toggles.
 `[+|-]bifs`                         Check BIF arguments.
+`[+|-]expose`                       Toggle checking that EXPOSE is in a method body.
 `[+|-]guard`                        Toggle checking that GUARD is in a method body.
 `[+|-]iterate`                      Toggle detecting incorrect ITERATEs, or ITERATEs
                                     to inexistent targets.
 `[+|-]leave`                        Toggle detecting incorrect LEAVEs, or LEAVEs
                                     to inexistent targets.
+`[+|-]parse`                        Toggle checking that PARSE positional patterns
+                                    are whole numbers.
 `[+|-]signal`                       Toggle detecting SIGNALs to inexistent labels.
+`[+|-]uselocal`                     Toggle checking that USE LOCAL is in a method body.
 &nbsp;
 `[+|-]debug`                        (De)activate debug mode (not affected by "all").
 `[+|-]itrace`                       Toggle printing internal traceback on error.

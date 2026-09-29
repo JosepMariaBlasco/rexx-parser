@@ -1,0 +1,349 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* AboutTimer.testGroup - md2slides: the about page and the presenter timer   */
+/* =========================================================================  */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260923         First version                                             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHAT THIS PINS                                                             */
+/*                                                                            */
+/* Both are Rony's requests of 23-Sep. The about page: what is OFF in about:  */
+/* must not be in the file at all (a deck sent out carries only what its      */
+/* author let out), and folders stay out unless path: yes. The timer: what    */
+/* the build hands the runtime (#deck-timer), and what it warns about. The    */
+/* popups themselves run on the clock and are checked in the browser.         */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.AboutTimer.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "parser/YAMLFrontMatter.cls"
+
+::Class AboutTimer.testGroup Subclass ooTestCase Public
+
+/* -- about ----------------------------------------------------------------- */
+
+::Method test_about_defaults_leave_folders_out
+  j = self~about(.StringTable~new)
+  self~assertTrue(j~pos('"deck":{') > 0,              "deck is on by default")
+  self~assertTrue(j~pos('"system":{') > 0,            "so is system")
+  self~assertTrue(j~pos('"links":[') > 0,             "and links")
+  self~assertTrue(j~pos('Object_REXX') > 0,           "ooRexx on Wikipedia among them")
+  self~assertTrue(j~pos('"timing":true') > 0,         "timing is on by default")
+  self~assertTrue(j~pos('"print":false') > 0,         "print is off")
+  self~assertTrue(j~pos('"file":"deck.md"') > 0,      "the file, by name only")
+  self~assertTrue(j~pos('"skin":"skin-x.css"') > 0,   "the skin, by name only")
+  self~assertEquals(0, j~pos("/secret/"),             "no folder anywhere")
+  self~assertTrue(j~pos('"command":"md2slides --skin skin-x.css deck.md"') > 0, -
+    "the command, its paths reduced to names")
+
+::Method test_about_path_yes_shows_folders
+  j = self~about(self~block("path", "yes"))
+  self~assertTrue(j~pos("/secret/skin-x.css") > 0, "path: yes lets folders out")
+
+::Method test_about_off_groups_are_absent
+  b = self~block("system", "no")
+  b["command"] = "no"
+  j = self~about(b)
+  self~assertEquals(0, j~pos('"system":{'), "system: no is not written")
+  self~assertEquals(0, j~pos('"command":"'), "command: no is not written")
+  self~assertEquals(0, j~pos('"oorexx":'), "not even the version")
+  j = self~about(self~block("timing", "no"))
+  self~assertTrue(j~pos('"timing":false') > 0, "timing: no reaches the runtime")
+
+::Method test_about_no_is_null
+  rp = .StringTable~new
+  rp["about"] = "no"
+  self~assertEquals("null", self~call("AboutJSON", rp, self~facts))
+
+::Method test_about_unknown_key_warns
+  said = self~said("AboutJSON", self~wrap(self~block("colour", "yes")), self~facts)
+  self~assertTrue(said~pos("about: has no 'colour'") > 0, "an unknown group is reported")
+
+/* -- timer ----------------------------------------------------------------- */
+
+::Method test_timer_defaults
+  j = self~call("TimerJSON", .StringTable~new, '<section class="slide">')
+  self~assertEquals('{"total":null,"warn":[300,60],"interval":10,"where":"footer","seconds":180,"sound":false,"record":false,"pauseMessage":"","countdownMessage":""}', j)
+
+::Method test_timer_block_is_read
+  b = .StringTable~new
+  b["total"] = "45"; b["warn"] = "5:1:0.5"; b["popup-every"] = "15"; b["where"] = "header"
+  j = self~call("TimerJSON", self~wrap(b, "timer"), '<section class="slide">')
+  self~assertEquals('{"total":2700,"warn":[300,60,30],"interval":15,"where":"header","seconds":180,"sound":false,"record":false,"pauseMessage":"","countdownMessage":""}', j)
+
+::Method test_timer_seconds_and_sound
+  b = .StringTable~new
+  b["switch-to-seconds"] = "2.5"; b["sound"] = "yes"
+  j = self~call("TimerJSON", self~wrap(b, "timer"), '<section class="slide">')
+  self~assertTrue(j~pos('"seconds":150,"sound":true') > 0, "switch-to-seconds: in minutes, sound: yes")
+  b["record"] = "yes"
+  j = self~call("TimerJSON", self~wrap(b, "timer"), '<section class="slide">')
+  self~assertTrue(j~pos('"record":true') > 0, "record: yes")
+  b["switch-to-seconds"] = "all"
+  j = self~call("TimerJSON", self~wrap(b, "timer"), '<section class="slide">')
+  self~assertTrue(j~pos('"seconds":null') > 0, "switch-to-seconds: all")
+  b["switch-to-seconds"] = "no"
+  j = self~call("TimerJSON", self~wrap(b, "timer"), '<section class="slide">')
+  self~assertTrue(j~pos('"seconds":0,') > 0, "switch-to-seconds: no")
+  b["switch-to-seconds"] = "soon"
+  said = self~said("TimerJSON", self~wrap(b, "timer"), '<section class="slide">')
+  self~assertTrue(said~pos("switch-to-seconds: 'soon' is not a number") > 0, "a bad switch-to-seconds: is reported")
+
+/* What a break panel (or a countdown) says when nobody typed a message    */
+/* (Rony, 26-Sep); and a pause slide may carry only a message, a break that */
+/* counts up -- only something that starts like a number must be one.     */
+::Method test_timer_default_messages
+  b = .StringTable~new
+  b["pause-message"] = 'Coffee "break"'; b["countdown-message"] = "We start soon"
+  j = self~call("TimerJSON", self~wrap(b, "timer"), '<section class="slide">')
+  self~assertTrue(j~pos('"pauseMessage":"Coffee \"break\""') > 0, "pause-message:, escaped")
+  self~assertTrue(j~pos('"countdownMessage":"We start soon"') > 0,  "countdown-message:")
+  said = self~said("TimerJSON", .StringTable~new, '<section class="slide" data-pause="Questions">')
+  self~assertEquals(0, said~pos("does not start with minutes"), "pause= with only a message is fine")
+  said = self~said("TimerJSON", .StringTable~new, '<section class="slide" data-pause="1O Coffee">')
+  self~assertTrue(said~pos("does not start with minutes") > 0, "a mistyped number is still reported")
+
+-- The names before 25-Sep still work, and say what they are called now.
+::Method test_timer_old_names
+  b = .StringTable~new
+  b["seconds"] = "2"; b["interval"] = "5"
+  j = self~call("TimerJSON", self~wrap(b, "timer"), '<section class="slide">')
+  self~assertTrue(j~pos('"interval":5,') > 0, "interval: still works")
+  self~assertTrue(j~pos('"seconds":120,') > 0, "seconds: still works")
+  said = self~said("TimerJSON", self~wrap(b, "timer"), '<section class="slide">')
+  self~assertTrue(said~pos("interval: is now called popup-every:") > 0, "interval: is reported")
+  self~assertTrue(said~pos("seconds: is now called switch-to-seconds:") > 0, "seconds: is reported")
+
+::Method test_countdown_values
+  Do v Over .Array~of("5", "7.5", "17:00", "9:05", "0:00", "23:59", -
+    "15 Coffee break", "17:00  We start soon")
+    self~assertEquals(1, self~call("CountdownSpec", v), v "is a countdown")
+  End
+  Do v Over .Array~of("0", "-5", "24:00", "17:60", "17:5", "5min", "", "1:2:3", -
+    "Coffee break 15", "soon 5")
+    self~assertEquals(0, self~call("CountdownSpec", v), v "is not")
+  End
+  st = '<section class="slide" data-countdown="soon"><section class="slide" data-pause="15:3">'
+  said = self~said("TimerJSON", .StringTable~new, st)
+  self~assertTrue(said~pos("slide 1: countdown=soon does not start with") > 0, "a bad countdown= is reported")
+  self~assertTrue(said~pos("slide 2: pause=15:3 does not start with") > 0, "a bad pause= is reported")
+
+::Method test_sections_make_the_total
+  st = '<section class="slide" data-time="10"><section class="slide" data-time="7.5">'
+  j  = self~call("TimerJSON", .StringTable~new, st)
+  self~assertTrue(j~pos('"total":1050') > 0, "no total: the sections' sum is the total")
+
+::Method test_sections_over_the_total_warn
+  b = .StringTable~new
+  b["total"] = "10"
+  st = '<section class="slide" data-time="6"><section class="slide" data-time="6">'
+  said = self~said("TimerJSON", self~wrap(b, "timer"), st)
+  self~assertTrue(said~pos("add up to 12 minutes, more than the total of 10") > 0, "reported")
+
+::Method test_sections_under_the_total_need_a_preamble
+  b = .StringTable~new
+  b["total"] = "20"
+  st = '<section class="slide" data-time="5"><section class="slide" data-time="5">'
+  said = self~said("TimerJSON", self~wrap(b, "timer"), st)
+  self~assertTrue(said~pos("less than the total of 20") > 0, "nobody takes the rest: reported")
+  st = '<section class="slide"><section class="slide" data-time="5">'
+  said = self~said("TimerJSON", self~wrap(b, "timer"), st)
+  self~assertEquals(0, said~pos("less than"), "a slide before the first section takes it")
+
+::Method test_live_fields_survive_the_build
+  f = .StringTable~new
+  all = "{clock} {elapsed} {remaining} {section-remaining} {section-elapsed}" -
+        "{section} {sections} {section-total}"
+  out = self~call("ExpandFields", all, f)
+  self~assertEquals(all, out)
+
+::Method test_runtime_wiring
+  rt = self~file("/bin/md2slides/js/runtime.js")
+  self~assertTrue(rt~pos('["t", "Timer:') > 0,                "HELP lists t")
+  self~assertTrue(rt~pos('["r", "Restart the timer') > 0,     "HELP lists r")
+  self~assertTrue(rt~pos('["a", "About this deck') > 0,       "HELP lists a")
+  self~assertTrue(rt~pos('addEventListener("fullscreenchange"') > 0, "full screen starts it")
+  self~assertTrue(rt~pos("sessionStorage") > 0,               "it survives a reload")
+  self~assertTrue(rt~pos('["c", "Countdown') > 0,             "HELP lists c")
+  self~assertTrue(rt~pos('getAttribute("data-countdown")') > 0, "a slide's countdown= is read")
+  self~assertTrue(rt~pos('getAttribute("data-pause")') > 0,   "a slide's pause= is read")
+  self~assertTrue(rt~pos('class="live"') > 0,                 "live fields become spans")
+  self~assertTrue(rt~pos('["p", "Pause the timer') > 0,       "HELP lists p")
+  self~assertTrue(rt~pos('classList.contains("pause")') > 0,  "a .pause slide pauses")
+  self~assertTrue(rt~pos('classList.contains("startPause")') > 0, "so does .startPause")
+  self~assertTrue(rt~pos("section-elapsed") > 0,              "{section-elapsed} is live")
+  self~assertTrue(rt~pos("\{sections\}") > 0,                 "{sections} is filled")
+  t = self~file("/bin/md2slides/templates/deck.template")
+  self~assertTrue(t~pos('id="deck-about">%about%') > 0, "the template has the about slot")
+  self~assertTrue(t~pos('id="deck-timer">%timer%') > 0, "and the timer slot")
+
+/* v216 (Rony, 27-Sep): over time, a red popup came back every popup-every  */
+/* seconds -- every second, with popup-every: 1 -- before the key that       */
+/* closed it was up, for as long as the talk ran on. Now: one per whole      */
+/* minute over, and Esc or T over one silences them until R R. Checked in a  */
+/* browser at the time; these pin the pieces that make it.                   */
+::Method test_overtime_popups
+  rt = self~file("/bin/md2slides/js/runtime.js")
+  self~assertTrue(rt~pos("var over = Math.floor(-rem / 60);") > 0, -
+    "overtime is announced per whole minute, not per interval")
+  self~assertTrue(rt~pos("if (rem > 0 && rem <= 60) {") > 0, -
+    "popup-every paces the last minute only")
+  self~assertTrue(rt~pos('e.key === "Escape" && toastOpen() && toastKind === "over"') > 0, -
+    "Esc over a red popup silences them")
+  self~assertTrue(rt~pos('if (toastOpen() && toastKind === "over") {') > 0, -
+    "and so does T, which keeps full screen")
+  self~assertTrue(rt~pos("muted: tMuted") > 0, "silenced survives a reload")
+  self~assertEquals(2, rt~countStr("  tMuted = false;"), "a start and a restart un-silence")
+  self~assertTrue(rt~pos('["Esc / t on a red popup"') > 0, "HELP says how")
+
+/* -- helpers ---------------------------------------------------------------- */
+
+::Method facts
+  f = .StringTable~new
+  f["source"]  = self~projectRoot"/tests/suites/AboutTimer.testGroup"
+  f["target"]  = "deck.html"
+  f["args"]    = .Array~of("--skin", "/secret/skin-x.css", "deck.md")
+  f["skin"]    = "/secret/skin-x.css"
+  f["masters"] = .Array~new
+  f["pandoc"]  = "pandoc 9.9"
+  f["root"]    = self~projectRoot
+  f["seconds"] = "0.1"
+  Return f
+
+::Method about
+  Use Strict Arg blk
+  j = self~call("AboutJSON", self~wrap(blk), self~facts)
+  -- the deck's own name stands in for the test file's
+  Return j~changeStr("AboutTimer.testGroup", "deck.md")
+
+::Method block
+  Use Strict Arg k, v
+  b = .StringTable~new
+  b[k] = v
+  Return b
+
+/******************************************************************************/
+/* yes/no through the front-matter reader: YAML booleans, so true and false   */
+/******************************************************************************/
+
+::Method test_timer_booleans_through_the_reader
+  src = .Array~of("---", "rexxpub:", "  timer:", "    switch-to-seconds: no", -
+    "    sound: yes", "    record: on", "---")
+  said = self~said("TimerJSON", YAMLFrontMatter(src)["rexxpub"], '<section class="slide">')
+  self~assertEquals("", said, "yes, no and on raise no warning")
+  j = self~call("TimerJSON", YAMLFrontMatter(src)["rexxpub"], '<section class="slide">')
+  self~assertTrue(j~pos('"seconds":0,"sound":true,"record":true') > 0, -
+    "switch-to-seconds: no, sound: yes, record: on ("j")")
+  src[4] = "    switch-to-seconds: yes"
+  j = self~call("TimerJSON", YAMLFrontMatter(src)["rexxpub"], '<section class="slide">')
+  self~assertTrue(j~pos('"seconds":null') > 0, "switch-to-seconds: yes is all")
+  src[4] = "    warn: no"
+  j = self~call("TimerJSON", YAMLFrontMatter(src)["rexxpub"], '<section class="slide">')
+  self~assertTrue(j~pos('"warn":[]') > 0, "warn: no ("j")")
+
+::Method test_about_booleans_through_the_reader
+  src = .Array~of("---", "rexxpub:", "  about:", "    path: yes", "    links: off", "---")
+  said = self~said("AboutJSON", YAMLFrontMatter(src)["rexxpub"], self~facts)
+  self~assertEquals("", said, "yes and off raise no warning")
+  src = .Array~of("---", "rexxpub:", "  about: no", "---")
+  self~assertEquals("null", self~call("AboutJSON", YAMLFrontMatter(src)["rexxpub"], self~facts), -
+    "about: no turns the dialog off")
+
+::Method wrap
+  Use Strict Arg blk, name = "about"
+  rp = .StringTable~new
+  rp[name] = blk
+  Return rp
+
+::Method call
+  Use Strict Arg name, ...
+  args = Arg(2, "A")
+  rtn  = self~md2slides~findRoutine(name~upper)
+  prev    = .Error~destination
+  discard = .Error~destination(.Said~new)
+  r       = rtn~callWith(args)
+  discard = .Error~destination(prev)
+  Return r
+
+::Method said
+  Use Strict Arg name, ...
+  args = Arg(2, "A")
+  rtn     = self~md2slides~findRoutine(name~upper)
+  sink    = .Said~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  discard = rtn~callWith(args)
+  discard = .Error~destination(prev)
+  Return sink~text
+
+::Method file
+  Use Strict Arg rel
+  f = self~projectRoot || rel
+  s = CharIn(f, 1, Stream(f, "C", "QUERY SIZE"))
+  Call Stream f, "C", "CLOSE"
+  Return s
+
+::Method md2slides
+  pkg = .local["ABOUTTIMER.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  prev    = .Error~destination
+  discard = .Error~destination(.Said~new)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["ABOUTTIMER.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/AboutTimer.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+::Class Said
+
+::Method init
+  Expose text
+  text = ""
+
+::Method text
+  Expose text
+  Return text
+
+::Method lineOut
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method say
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method charOut
+  Expose text
+  Use Arg chars
+  text = text || chars
+  Return 0

@@ -1,0 +1,199 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* IndentedBlocks.testGroup - Listings inside list items, and tabs            */
+/* ================================================================           */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260920         First version                                             */
+/* 20260920         Pandoc flags come from md2slides (PandocOptions)          */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED AT ALL                                                  */
+/*                                                                            */
+/* Both from Rony's slide on variables, a listing inside a list item:         */
+/*                                                                            */
+/*   - Lines 2 onwards stood two columns right of line 1. The block is        */
+/*     re-indented so Pandoc keeps it in the item, but Pandoc removes only   */
+/*     the item's indentation, and the fence sat deeper than that: the rest  */
+/*     stayed inside the <pre>, where blanks are content.                     */
+/*   - With blanks=all, `A<tab><tab>=` showed a gap and no mark: tabs were    */
+/*     never marked at all.                                                   */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.IndentedBlocks.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "parser/FencedCode.cls"
+
+::Class IndentedBlocks.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* Indentation                                                                */
+/******************************************************************************/
+
+::Method test_lines_after_the_first_keep_their_column
+  /* Rony's shape: the item's content starts at column 5, the fence at 7.  */
+  html = self~pandoc(.Array~of("* Variables", "", "  - Example", "", -
+                               "      ```rexx", "      a = 1", "      b = 2", "      ```"))
+  Parse Var html . "<pre" pre "</pre>"
+  self~assertEquals(0, pre~pos("0a"x"  <"), -
+    "no blanks left over in front of line 2 inside the <pre>")
+  self~assertEquals(2, pre~countStr('<span id="rx'), "and both lines are there")
+
+::Method test_an_indented_pre_is_one_line
+  out = self~fenced(.Array~of("- x", "", "    ```rexx", "    a = 1", "    b = 2", "    ```"))
+  Parse Var out . "<pre" pre "</pre>"
+  self~assertEquals(0, pre~pos("0a"x), "the <pre> has no physical line break")
+  self~assertTrue(pre~pos("&#10;") > 0, "its line breaks are &#10;")
+
+::Method test_a_tab_in_an_indented_listing_survives_pandoc
+  /* Rony's comment slide: a literal tab in the one-line <pre> made Pandoc   */
+  /* re-read the listing as Markdown -- lines re-wrapped, and the stars of  */
+  /* the comment closers taken for emphasis.                                */
+  /* His four lines as they are: shorter cases do not trip Pandoc.         */
+  tab  = "09"x
+  html = self~pandoc(.Array~of("* Comments", "", "  ```rexx", -
+                   "  say 3"tab"+ "tab"/* This /**/ is", -
+                   "        a /* nested", -
+                   "             /* aha */ comment */ which spans", -
+                   "  "tab||tab"multiple lines */ 4", "  ```"))
+  Parse Var html . "<pre" pre "</pre>"
+  self~assertEquals(0, pre~pos("<em>"), "no emphasis inside the listing")
+  self~assertEquals(0, pre~pos("0a"x), "and it is still one line")
+
+::Method test_a_top_level_block_is_left_as_it_was
+  out = self~fenced(.Array~of("```rexx", "a = 1", "b = 2", "```"))
+  Parse Var out . "<pre" pre "</pre>"
+  self~assertEquals(0, pre~pos("&#10;"), "indent 0: nothing to fix, nothing changed")
+
+/* A fence can open on the line of its list item (`- ```rexx`): Pandoc puts */
+/* the listing in the item. We did not see it, took its closing ``` for the  */
+/* opening of a non-rexx block, and every rexx fence after it on the page    */
+/* went unhighlighted (Rony's "Repetition, 1").                              */
+::Method test_a_fence_after_a_list_marker_is_highlighted
+  html = self~pandoc(.Array~of("* a", "  - ```rexx", "    say 1", "    ```", "", "```rexx", "say 2", "```"))
+  self~assertEquals(2, html~countStr("rx-blockwrap"), "both listings are highlighted")
+  self~assertTrue(html~pos("<li><div") > 0, "the first one is inside its item")
+  self~assertEquals(0, html~pos("```"), "no fence is left as text")
+
+::Method test_list_marker_prefixes
+  self~assertEquals(4, FenceMarkerPrefix("  - ```rexx"), "bullet, nested")
+  self~assertEquals(4, FenceMarkerPrefix("1.  ~~~rexx"), "number, two blanks")
+  self~assertEquals(5, FenceMarkerPrefix("- 1. ```rexx"), "two markers on one line")
+  self~assertEquals(4, FenceMarkerPrefix("(a) ```rexx"), "a letter in parentheses")
+  self~assertEquals(0, FenceMarkerPrefix("-     ```rexx"), "five blanks: indented code, not a fence")
+  self~assertEquals(0, FenceMarkerPrefix("- text ```rexx"), "text before the backticks")
+  self~assertEquals(0, FenceMarkerPrefix("-```rexx"), "no blank after the marker")
+  self~assertEquals(0, FenceMarkerPrefix("```rexx"), "a plain fence is not this case")
+
+::Method test_a_fence_far_from_its_marker_does_not_swallow_the_next
+  /* `-     ```rexx` is indented code (Pandoc), and its closing ``` must not  */
+  /* be taken for an opening: the real fence after it is still highlighted. */
+  html = self~pandoc(.Array~of("* a", "  -     ```rexx", "        say 1", "        ```", "", -
+                               "```rexx", "say 2", "```"))
+  self~assertEquals(1, html~countStr("rx-blockwrap"), "the second listing is highlighted")
+  self~assertTrue(html~pos("```rexx") > 0, "the first shows as code, as Pandoc reads it")
+
+/******************************************************************************/
+/* Tabs                                                                       */
+/******************************************************************************/
+
+::Method test_blanks_all_marks_tabs
+  out = self~fenced(.Array~of("```rexx {blanks=all}", "A"||"0909"x||"= 1", "```"))
+  self~assertEquals(2, out~countStr('<span class="rx-tab-mark">'||"09"x||'</span>'), -
+    "one mark per tab")
+
+::Method test_a_tab_that_is_an_operator_is_marked_under_blanks
+  /* `a<tab>"x"` concatenates with a blank: the program sees it. */
+  out = self~fenced(.Array~of("```rexx {.blanks}", 'Say a'||"09"x||'"x"', "```"))
+  self~assertEquals(1, out~countStr("rx-tab-mark"), "the operator's tab is data")
+
+::Method test_indentation_tabs_are_not_marked_under_blanks
+  out = self~fenced(.Array~of("```rexx {.blanks}", "09"x||"Say 1", "```"))
+  self~assertEquals(0, out~countStr("rx-tab-mark"), "layout is marked only under blanks=all")
+
+::Method test_every_palette_draws_the_tab_mark
+  root = self~projectRoot
+  Call SysFileTree root"/css/rexx-*.css", "a.", "FO"
+  Call SysFileTree root"/css/flattened/rexx-*.css", "b.", "FO"
+  files = .Array~new
+  Do i = 1 To a.0; files~append(a.i); End
+  Do i = 1 To b.0; files~append(b.i); End
+  files~append(root"/css/vim/vim.css.template")
+  missing = ""
+  Do f Over files
+    text = CharIn(f, 1, Stream(f, "C", "QUERY SIZE")); Call Stream f, "C", "CLOSE"
+    If text~pos(".rx-tab-mark {") == 0 Then missing = missing FileSpec("Name", f)
+  End
+  self~assertTrue(files~items >= 53, "the 26 palettes, their 26 flattened twins and the template")
+  self~assertEquals("", Strip(missing), "every one of them draws the tab mark")
+
+/******************************************************************************/
+/* Plumbing                                                                   */
+/******************************************************************************/
+
+::Method fenced
+  Use Strict Arg lines
+  Return FencedCode("test.md", lines)~makeString("L", "0a"x)
+
+::Method pandoc
+  Use Strict Arg lines
+  input  = FencedCode("test.md", lines)
+  output = .Array~new
+  -- The flags are md2slides's own, asked for, not retyped: this helper once
+  -- carried a hand copy (without --preserve-tabs) that hid the tab bug.
+  flags = self~md2slides~findRoutine("PANDOCOPTIONS")~call
+  Address COMMAND "pandoc" flags -
+    With Input Using (input) Output Using (output) Error Stem discard.
+  Return output~makeString("L", "0a"x)
+
+::Method md2slides
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* public routines without running it as one. The prologue does run, finds   */
+  /* no input file and complains; that complaint is swallowed here.            */
+  pkg = .local["INDENTEDBLOCKS.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["INDENTEDBLOCKS.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/* Swallows what md2slides's prologue says when loaded as a package (no input */
+/* file). .Error is a Monitor and forwards whichever of the three it was      */
+/* written to.                                                                */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0

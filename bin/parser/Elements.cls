@@ -421,6 +421,22 @@
   Expose line end
   Return line end
 
+-- splitAfterFirst -- keep the first character, and put the rest in a new
+-- whitespace element, linked right after this one (.Nil when there is no
+-- rest). Used for the blank concatenation operator: "a    b" has ONE blank
+-- operator, and the other three blanks are whitespace.
+::Method splitAfterFirst
+  Expose line start end sourceLine
+  If end - start <= 1 Then Return .Nil
+  rest = .WhiteSpace.Element~new( line, start + 1, end, sourceLine )
+  end  = start + 1
+  rest~ignorable = 1
+  rest~prev = self
+  rest~next = self~next
+  If self~next \== .Nil Then self~next~prev = rest
+  self~next = rest
+  Return rest
+
 --------------------------------------------------------------------------------
 
 ::Class Shebang Public subclass Element
@@ -477,4 +493,4 @@
 ::Constant value ""
 ::Method init
   Use Strict Arg line, col
-  self~init:super(.EL.IMPLICIT_EXIT, line, col)
+  self~init:super(.EL.IMPLICIT_EXIT, line, col)

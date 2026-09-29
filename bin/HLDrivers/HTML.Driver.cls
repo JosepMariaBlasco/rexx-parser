@@ -20,13 +20,7 @@
 /* 20250622    0.2d Change fg/bg char separator to ":"                        */
 /* 20260310    0.5  Implement captions                                        */
 /* 20260709    0.6  Mark explicit styles (for RexxHTTP)                       */
-/* 20260831    0.7  Add ProseMention -- the inline micro-container for        */
-/*                  `x`{.rexx-*} mentions in prose (FencedCode.cls)           */
-/* 20260901    0.8  Restructure the emitted markup: a div wrapper, one <code> */
-/*                  holding a <span> per line, each with its own anchor. The  */
-/*                  shape is Pandoc's -- it is what allows the line number to */
-/*                  sit outside the code ground -- but the class names are    */
-/*                  ours, so no foreign stylesheet reaches our blocks.        */
+/* 20260831         Add ProseMention -- the inline micro-container for        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -61,8 +55,17 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
 
   /* Build optional data-caption attribute                                    */
   If Options.["CAPTION"] \== "", Options.["CAPTION"] \== 0 Then
-    captionAttr = ' data-caption="'Options.["CAPTION"]'"'
+    captionAttr = ' data-caption="'AttrText(Options.["CAPTION"])'"'
   Else captionAttr = ""
+
+  /* Build optional data-spot attribute: the beat spec from spot=, passed     */
+  /* through untouched. Pandoc puts the very same attribute, with the very    */
+  /* same spelling, on the wrapper of the blocks IT emits (a spot= on a       */
+  /* ~~~output or ~~~python fence arrives as data-spot on its div.sourceCode),*/
+  /* so downstream there is one attribute to look for and not two.            */
+  If Options.["SPOT"] \== "", Options.["SPOT"] \== 0 Then
+    spotAttr = ' data-spot="'AttrText(Options.["SPOT"])'"'
+  Else spotAttr = ""
 
   /* Mark blocks whose style the author fixed via style=, so a downstream     */
   /* client-side style chooser can leave them alone (it only restyles         */
@@ -79,14 +82,14 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
   /* not control the last word on our margins, overflow, line height and      */
   /* background. We copy the mechanism and keep the naming.                   */
   /*                                                                          */
-  /* "rx-blockwrap" is the structural hook: it marks the element that OWNS the */
-  /* block, as opposed to the theme class, which only names its colours. A     */
-  /* numbered block needs it, because the number hangs outside the <pre> and   */
-  /* so the <pre> cannot be the scrolling box -- the wrapper has to be. (Named */
-  /* "blockwrap", not "block": "rx-block" is the taken-constant class of a     */
-  /* block-instruction name (DO/LOOP/SELECT), a distinct, long-standing use.)  */
+  /* "rx-blockwrap" is the structural hook: it marks the element that OWNS the*/
+  /* block, as opposed to the theme class, which only names its colours. A    */
+  /* numbered block needs it, because the number hangs outside the <pre> and  */
+  /* so the <pre> cannot be the scrolling box -- the wrapper has to be. (Named*/
+  /* "blockwrap", not "block": "rx-block" is the taken-constant class of a    */
+  /* block-instruction name (DO/LOOP/SELECT), a distinct, long-standing use.) */
   divTag = '<div class="highlight-rexx-'style' rx-blockwrap" id="'blockID'"' -
-           || captionAttr || lockAttr || '>'
+           || captionAttr || lockAttr || spotAttr || '>'
 
   -- No patch? A simple div will do.
   If patch == .Nil Then Do
@@ -168,6 +171,7 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
 -- At the beginning of every line of code...
 
 ::Method startLine
+  Expose Options.
   Use Strict Arg lineNo
 
   self~say(  '</span>' )
@@ -197,8 +201,11 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
 -- Print a highlighted element value
 
 ::Method Highlight
+  Expose Options.
   Use Strict Arg category, subCategory, variant, tags, string
-  self~emit( '<span class="'tags'">'EscapeHTML(string)'</span>' )
+  self~emit( '<span class="'tags'">' -
+             || ShowBlanks( Options., category, EscapeHTML(string) ) -
+             || '</span>' )
 
 -- What to print at the end
 
@@ -259,7 +266,7 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
 
 /******************************************************************************/
 /* PROSE MENTIONS -- the micro-container for `x`{.rexx-*} outside fences      */
-/* ===========================================================                */
+/* =====================================================================      */
 /*                                                                            */
 /* Called by FencedCode.cls's ScanProseMentions, once per recognised          */
 /* mention, standalone -- there is no per-mention Highlighter.Driver          */
@@ -271,8 +278,7 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
 /* Each mention gets its OWN wrapper (never a shared ancestor): with the 25   */
 /* Rexx themes all embedded in one slide deck, a shared ancestor's style      */
 /* would collide with whichever fenced block's own style-div happened to be   */
-/* declared later in the concatenated CSS -- see                              */
-/* slides-refresh/revision-codigo-en-prosa.md sec. 2.4. One ancestor per      */
+/* declared later in the concatenated CSS. One ancestor per                   */
 /* element makes that collision structurally impossible: there is only ever   */
 /* the mention's own div-equivalent to match against.                         */
 /*                                                                            */
@@ -297,9 +303,14 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
 -- lives in .environment, the same place the driver system already keeps its  --
 -- cross-instance state (see .CSS.Cache in Drivers.cls). One process builds   --
 -- one document, so one counter per process is exactly the right scope.       --
+--                                                                            --
+-- Public because FencedCode draws from it too: when it cuts one emitted      --
+-- block into the N blocks of a program= listing, the slices after the first  --
+-- need ids of their own, and they have to come from THIS counter -- a second --
+-- one would collide with it. One counter per document, one place it lives.   --
 --------------------------------------------------------------------------------
 
-::Routine NextBlockID Private
+::Routine NextBlockID Public
   If .environment~hasIndex( Rexx.Parser.BlockID )
     Then n = .environment~Rexx.Parser.BlockID + 1
     Else n = 1
@@ -318,3 +329,112 @@ If \.environment~hasIndex( HTML.Highlighter ) Then
   Return string~changeStr( "&", "&amp;" ) -
                ~changeStr( ">", "&gt;"  ) -
                ~changeStr( "<", "&lt;"  )
+
+/******************************************************************************/
+/*                                                                            */
+/* ShowBlanks -- draw the blanks of a listing (blanks= / {.blanks})           */
+/*                                                                            */
+/* A blank is the one character a listing cannot show, and in Rexx it is the  */
+/* one that most often has to be counted: "a  b" is not "a b", and `Say A B`  */
+/* concatenates with a blank where `Say A||B` abuts. So each marked blank is  */
+/* wrapped in a span of its own, which the stylesheet draws as an open box.   */
+/*                                                                            */
+/* WHICH blanks is a question only a parser can answer, and that is the whole */
+/* reason this lives here rather than in a stylesheet or a post-pass over the */
+/* HTML. The decision is made on the ELEMENT CATEGORY the parser produced:    */
+/*                                                                            */
+/*   data   the blanks inside a literal (all eight kinds of string), which    */
+/*          the program can see, and the blank concatenation operator, which  */
+/*          IS an operator that happens to look like nothing.                 */
+/*   all    every blank, indentation included.                                */
+/*                                                                            */
+/* Indentation and the air around an = are left alone under "data" because    */
+/* marking them says nothing and buries the two that do. An editor cannot     */
+/* make that distinction: it has no idea which blanks the program can see.    */
+/*                                                                            */
+/* The real blank stays in the text -- only a span is wrapped around it -- so  */
+/* the listing can still be copied out of the page and run.                   */
+/*                                                                            */
+/******************************************************************************/
+
+::Routine ShowBlanks Public
+  Use Strict Arg Options., category, escaped
+
+  -- Anything that is not one of the two granularities means "not asked for",
+  -- which covers an unset tail as well as a caller that never went through
+  -- ParseOptions.
+  If Options.blanks \== "data", Options.blanks \== "all" Then Return escaped
+  If Verify(escaped, " "||"09"x, "M") == 0               Then Return escaped
+  If Options.blanks == "data", \ MeaningfulBlank(category) Then Return escaped
+
+  prefix = Options.classprefix
+  If prefix == "" | prefix == 0 Then prefix = "rx-"
+  open  = '<span class="'prefix'blank-mark">'
+  tab   = '<span class="'prefix'tab-mark">'"09"x'</span>'
+
+  out  = ""
+  rest = escaped
+  Loop Forever
+    p = Verify(rest, " "||"09"x, "M")
+    If p == 0 Then Do
+      out = out || rest
+      Leave
+    End
+    out  = out || rest~substr(1, p - 1)
+    rest = rest~substr(p)
+    -- A TAB is whitespace to Rexx as much as a blank is, and it used to go
+    -- unmarked: `A<tab><tab>=` showed a gap and no mark at all, the one place
+    -- blanks=all was asked to show everything. It is not a blank either, and
+    -- it is as wide as the next tab stop, not one cell, so it gets a mark of
+    -- its own -- a line to the stop, as editors draw it -- one span per tab.
+    If rest~left(1) == "09"x Then Do
+      out  = out || tab
+      rest = rest~substr(2)
+      Iterate
+    End
+    -- The whole run travels in ONE span: the stylesheet tiles the mark per
+    -- character cell, so a run of three blanks draws three boxes without
+    -- three spans to do it.
+    n = Verify(rest, " ", "N")
+    If n == 0 Then n = rest~length + 1
+    out  = out || open || Copies(" ", n - 1) || '</span>'
+    rest = rest~substr(n)
+  End
+
+  Return out
+
+--------------------------------------------------------------------------------
+-- MeaningfulBlank -- is a blank of this element one the PROGRAM can see?     --
+--                                                                            --
+-- The eight string categories carry data; .EL.OP.BLANK is the concatenation  --
+-- operator. Everything else that holds a blank -- .EL.WHITESPACE, a comment  --
+-- -- is layout or prose, and is only marked under blanks=all.                --
+--------------------------------------------------------------------------------
+
+::Routine MeaningfulBlank
+  Use Strict Arg category
+
+  -- Compared as OBJECTS, never as words of a string: these are element
+  -- categories, and a blank inside one of their names would turn a word
+  -- search into a silent no-match.
+  Return .Array~of( .EL.STRING,       .EL.BINARY_STRING,     .EL.HEX_STRING, -
+                    .EL.BYTES_STRING, .EL.CODEPOINTS_STRING, .EL.GRAPHEMES_STRING, -
+                    .EL.TEXT_STRING,  .EL.UNICODE_STRING,    .EL.OP.BLANK -
+                  )~hasItem( category )
+
+/******************************************************************************/
+/* AttrText - a value made safe inside a double-quoted HTML attribute.        */
+/*                                                                            */
+/* Rony, 28-Sep: spot='trap:["DATE"()]' went out as data-spot="trap:["DATE"   */
+/* ...: the first '"' of the value closed the attribute, and the runtime read */
+/* "trap:[". Pandoc writes its own attributes this way, so whoever reads      */
+/* them (getAttribute, or md2slides on the HTML text) gets the same thing     */
+/* from our blocks as from Pandoc's.                                          */
+/******************************************************************************/
+
+::Routine AttrText
+  Use Strict Arg v
+  v = v~changeStr("&", "&amp;")
+  v = v~changeStr('"', "&quot;")
+  v = v~changeStr("<", "&lt;")
+  Return v~changeStr(">", "&gt;")

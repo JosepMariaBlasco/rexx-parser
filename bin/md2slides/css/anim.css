@@ -7,9 +7,17 @@
 /* classes and sets --anim-dur; every effect below is pure CSS.                 */
 /*                                                                            */
 /* The one thing an identity may legitimately set is the TEMPO: a sober CI and  */
-/* a lively one disagree about how long 'brisk' is. That is what               */
-/* --theme-anim-duration is for. It is the only hook an identity has here, and it  */
-/* does not let a CI change WHICH effects exist -- the catalogue stays closed.  */
+/* a lively one disagree about how long 'brisk' is. But PAGE and ELEMENT tempos */
+/* are independent: how long a slide takes to arrive and how long a bullet      */
+/* takes to appear are separate decisions -- our own house deck (Rony's) proves */
+/* it, using no page transition at all yet a full second on every fragment. So  */
+/* an identity has TWO hooks: --skin-anim-duration-page (default 0s: a cut, no */
+/* page transition) and --skin-anim-duration-elem (default 1s). These do not   */
+/* let a CI change WHICH effects exist -- the catalogue stays closed.           */
+/*                                                                            */
+/* Each family seeds its own --anim-dur from its skin hook; the per-element    */
+/* anim-duration="N" override still works because the runtime writes --anim-dur */
+/* inline on the very element, which wins over the family default below.        */
 /*                                                                            */
 /* PAGE transitions: put anim="NAME" on a slide heading. Applied as the slide   */
 /*   becomes .current. Names: fade (default), slide, fade-color, cut.           */
@@ -22,7 +30,11 @@
 /* "ms" suffix is still honoured. The runtime writes it into --anim-dur.        */
 /* -------------------------------------------------------------------------- */
 
-:root { --anim-dur: var(--theme-anim-duration, 320ms); }
+/* Each family seeds --anim-dur from its own skin hook. A page reads the page  */
+/* tempo, a fragment reads the element tempo; the runtime's inline --anim-dur   */
+/* (from anim-duration="N") overrides either one on the element it is set on.   */
+.slide    { --anim-dur: var(--skin-anim-duration-page, 0s); }
+.fragment { --anim-dur: var(--skin-anim-duration-elem, 1s); }
 
 /* ---- PAGE transitions -------------------------------------------------- */
 /* The runtime adds .anim-in to a slide the moment it becomes current, and     */
@@ -51,14 +63,21 @@
                            to   { opacity: 1; transform: translateX(0); } }
 @keyframes pg-fadecol {
   0%   { opacity: 0; }
-  40%  { opacity: 0; background: var(--theme-accent, #0096d3); }
+  40%  { opacity: 0; background: var(--skin-accent, #0096d3); }
   100% { opacity: 1; }
 }
 
 /* ---- ELEMENT (fragment) transitions ------------------------------------ */
 /* Fragments occupy their space while hidden, so nothing reflows on reveal.   */
 
+/* Reveal travel is proportional to the DECK, not a fixed pixel count, so the  */
+/* gesture reads the same on a projector and a phone -- and matches our house  */
+/* deck, whose fade-ups move a tenth of the slide height (ODP "y+.1"). The     */
+/* vertical shift is that tenth of --deck-h; the horizontal shift keeps the    */
+/* catalogue's old 2:1 ratio to it. A skin may retune --anim-shift-y/-x.      */
 .fragment {
+  --anim-shift-y: calc(var(--deck-h, 720) * 0.10 * 1px);
+  --anim-shift-x: calc(var(--deck-h, 720) * 0.20 * 1px);
   opacity: 0;
   transition: opacity var(--anim-dur) ease-out,
               transform var(--anim-dur) ease-out,
@@ -67,16 +86,16 @@
 .fragment.revealed { opacity: 1; }
 
 /* Pre-reveal offsets per effect. On reveal, the offset returns to zero.      */
-.fragment[data-anim="fade-up"]              { transform: translateY(14px); }
+.fragment[data-anim="fade-up"]              { transform: translateY(var(--anim-shift-y)); }
 .fragment[data-anim="fade-up"].revealed     { transform: translateY(0); }
 
-.fragment[data-anim="fade-down"]            { transform: translateY(-14px); }
+.fragment[data-anim="fade-down"]            { transform: translateY(calc(-1 * var(--anim-shift-y))); }
 .fragment[data-anim="fade-down"].revealed   { transform: translateY(0); }
 
-.fragment[data-anim="fade-left"]            { transform: translateX(-28px); }
+.fragment[data-anim="fade-left"]            { transform: translateX(calc(-1 * var(--anim-shift-x))); }
 .fragment[data-anim="fade-left"].revealed   { transform: translateX(0); }
 
-.fragment[data-anim="fade-right"]           { transform: translateX(28px); }
+.fragment[data-anim="fade-right"]           { transform: translateX(var(--anim-shift-x)); }
 .fragment[data-anim="fade-right"].revealed  { transform: translateX(0); }
 
 .fragment[data-anim="scale-in"]             { transform: scale(0.9); }
@@ -93,4 +112,35 @@
 @media (prefers-reduced-motion: reduce) {
   .fragment { transition: opacity 1ms; transform: none !important; filter: none !important; }
   .slide.current.anim-in { animation: none !important; }
+}
+
+/* ---- LEAFING: Alt+PageDown / Alt+PageUp -------------------------------- */
+/* The runtime puts .leafing on the root for the instant it changes slide    */
+/* that way, and takes it off once the slide is in its final state: no page  */
+/* transition, no fragment animation, the finished slide at once.            */
+.leafing .slide.current { animation: none !important; }
+.leafing .fragment      { transition: none !important; }
+
+/* ---- PRINT: every fragment is revealed --------------------------------- */
+/* On screen a fragment starts at opacity:0 and the runtime adds .revealed as */
+/* you click through. Print has no clicks: a slide you never walked to keeps  */
+/* all its fragments hidden, so the sheet comes out with only the parts that  */
+/* are NOT fragments -- title and footer -- and a blank body. That is Rony's  */
+/* 20-Sep report: most slides printed as title+footer only, and forcing each  */
+/* page to render by hand (walking the whole deck first) was the workaround,  */
+/* because walking is exactly what adds .revealed. Printing means "the finished*/
+/* slide, all fragments shown", so here we put every fragment in its revealed  */
+/* end-state regardless of .revealed: full opacity, no pre-reveal offset, no   */
+/* blur, no transition. runtime.css's @media print dismantles the SCREEN       */
+/* scaffolding (stage, scaling, one-slide clipping); this dismantles the       */
+/* ANIMATION scaffolding, the other half of the same "screen state leaking     */
+/* into paper" bug. .static content was never a fragment, so it already        */
+/* printed -- which is why the first line of a slide often survived alone.     */
+@media print {
+  .fragment {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
 }

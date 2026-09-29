@@ -30,7 +30,8 @@ Early checking is controlled by the `earlycheck`
 entry of the options passed to the [Rexx.Parser](..) class.
 The value associated with `earlycheck` has to be
 an array of uppercase strings chosen between
-`"BIFS"`, `"GUARD"`, `"ITERATE"`, `"LEAVE"` and `"SIGNAL"`. The effect of
+`"BIFS"`, `"EXPOSE"`, `"GUARD"`, `"ITERATE"`, `"LEAVE"`, `"PARSE"`, `"SIGNAL"`
+and `"USELOCAL"`. The effect of
 specifiying these options is described below.
 
 ## BIFS
@@ -142,6 +143,24 @@ depending on the options chosen; this is not checked.
 
 `STREAM` and `RXQUEUE` are not early-checked at this time.
 
+## EXPOSE
+
+`EXPOSE` instructions are only allowed in the body of a method, and they
+have to be the first instruction of that body. An `EXPOSE` instruction that is
+not the first instruction of its body is always an error, at parse time
+(code 99.907: `"EXPOSE must be the first instruction executed after a method invocation"`),
+as in ooRexx. On the other hand, an `EXPOSE` instruction that is the first
+instruction of a code body which is not a method body (the prolog, a `::ROUTINE`)
+is only an error when it is _executed_: the ooRexx interpreter raises then a SYNTAX
+condition (code 98.992: `"The EXPOSE instruction may only be used from method invocations"`).
+When the `earlychecks` array contains an item whose value is `"EXPOSE"`, the
+Rexx Parser will exit with a 98.992 error code in that case.
+
+```rexx
+::Routine R
+  Expose x                    -- The EXPOSE instruction may only be used from method invocations
+```
+
 ## GUARD
 
 `GUARD` instructions are only allowed in the body of a method. The ooRexx interpreter
@@ -183,6 +202,36 @@ at parse time. Namely,
   of a containing repetitive loop or `SELECT` instruction,
   a 28.3 syntax error is raised.
 
+
+## PARSE
+
+When the `earlychecks` array has an item equal to
+`"PARSE"`, the positional patterns of `PARSE` templates
+are checked at parse time: if a positional pattern,
+absolute or relative, is a constant symbol that is not a whole number,
+a 26.4 syntax error is raised
+(`"Positional pattern of PARSE template must be a whole number; found "&1""`).
+Without this check, the pattern is accepted, and the error is raised
+when the `PARSE` instruction is executed, as in ooRexx.
+
+```rexx
+  If .False Then Parse Var a 1y   -- Positional pattern of PARSE template must be a whole number; found "1Y"
+```
+
+## USELOCAL
+
+`USE LOCAL` follows the same rules as `EXPOSE`: out of the first
+instruction of a body, it is always an error at parse time (code 99.910:
+`"USE LOCAL must be the first instruction executed after a method invocation"`);
+as the first instruction of a code body which is not a method body,
+it is an error when it is executed (code 98.993:
+`"The USE LOCAL instruction may only be used from method invocations"`).
+When the `earlychecks` array contains an item whose value is `"USELOCAL"`, the
+Rexx Parser will exit with a 98.993 error code in that case.
+
+```rexx
+  Use Local                   -- The USE LOCAL instruction may only be used from method invocations
+```
 
 ## SIGNAL
 

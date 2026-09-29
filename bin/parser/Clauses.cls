@@ -26,6 +26,21 @@
 /* 20260522    0.5  CMS: Implement DO and SELECT clauses                      */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
 /* 20260601         Implement empty assignments                               */
+/* 20260924    0.7  SELECT CASE: the clause ends at its end, not at the last  */
+/*                  token of the expression                                   */
+/* 20260924         A repetitive DO without END is 14.5, as for LOOP; only a  */
+/*                  simple DO (DO or DO LABEL name) is 14.1, as in ooRexx     */
+/* 20260927         The look ahead of a DO clause left the blanks after its   */
+/*                  first symbol ignorable: "do a b 2" repeated "AB 2" times  */
+/*                  (Lookahead; a simple repetitive DO puts them back)        */
+/* 20260928         "DO symbol ==" (LABEL and COUNTER too) is 35.1, as in     */
+/*                  ooRexx                                                    */
+/* 20260928         A label before THEN is 18.1 (IF) or 18.2 (WHEN), as in    */
+/*                  ooRexx (it was 47.3, 47.4); a label before the END of a   */
+/*                  SELECT with no OTHERWISE is 47.4 (it was accepted). In a  */
+/*                  block, a label is an error as soon as it is seen, before  */
+/*                  the clause that follows it is parsed, as in ooRexx        */
+/*                  ("DO; x: SAY (" is 47.2, not 35.1).                       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -164,7 +179,11 @@
 ::Method Next.Instruction.Fragment
   Expose package bufferedInstructionFragment
 
-  Use Strict Arg
+  -- labelError: where a label is not allowed (in a block), the error that
+  -- a label is, raised as soon as the label is seen (before the clause
+  -- that follows it is parsed), as ooRexx: (code) for 47.x (the label is
+  -- the insert), or (code, insert).
+  Use Strict Arg labelError = .Nil
 
   -- This allows us to implement a very simple backtrack mechanism
   If bufferedInstructionFragment \== .Nil Then Do
@@ -180,7 +199,10 @@
 
   Loop
     Select Case clause~class
-      When .Label.Clause Then labels     ~append( clause )
+      When .Label.Clause Then Do
+        If labelError \== .Nil Then Signal LabelError
+        labels~append( clause )
+      End
       When .Null.Clause  Then nullClauses~append( clause )
       Otherwise Leave
     End
@@ -197,6 +219,12 @@
 
   Return clause
 
+LabelError:
+  If labelError~items == 1 Then
+    Syntax( labelError[1], clause~label, clause~label )
+  Else
+    Syntax( labelError[1], clause~label, labelError[2] )
+
 /******************************************************************************/
 /* NEXTINSTRUCTION                                                            */
 /*   Get a instruction. This can be a simple instruction (i.e., a keyword     */
@@ -209,9 +237,10 @@
 
 ::Method Next.Instruction
 
-  Use Strict Arg ENDClauseIsOK = .False, Source.Literal = .False
+  Use Strict Arg ENDClauseIsOK = .False, Source.Literal = .False, -
+    labelError = .Nil
 
-  clause = self~Next.Instruction.Fragment
+  clause = self~Next.Instruction.Fragment( labelError )
 
   firstElement = TheElementAfter( clause~begin )
 
@@ -303,13 +332,16 @@
   currentBody = package~currentBodies~top
 
   Loop
-    instruction = self~Next.Instruction( ENDClauseIsOK )
+    instruction = self~Next.Instruction( ENDClauseIsOK, , .Array~of( 47.002 ) )
     If \instruction~labels~isEmpty Then Signal 47.002
     instrClass = instruction~class
     Select Case instrClass
       When .End.Clause                Then Signal End.Clause
       When .Expose.Instruction        Then Signal 99.907
-      When .Implicit.Exit.Instruction Then Signal 14.001
+      When .Implicit.Exit.Instruction Then Do
+        If doClause~isA( .Simple.Do.Clause ) Then Signal 14.001
+        Signal 14.005
+      End
       When .Use.Arg.Instruction, .Arg.Instruction
                                       Then currentBody~signature = .Nil
       When .Parse.Instruction Then If instruction~variant == "ARG"
@@ -344,6 +376,9 @@ End.Clause:
 -- DO instruction on line &1 requires matching END.
 14.001: Syntax( 14.001, instruction~end, doLine )
 
+-- DO or LOOP instruction on line &1 requires matching END.
+14.005: Syntax( 14.005, instruction~end, doLine )
+
 -- Labels are not allowed within a DO/LOOP block; found "&1".
 47.002: Syntax( 47.002, instruction~end, instruction~labels[1]~label )
 
@@ -361,15 +396,17 @@ End.Clause:
 
   IF = TheElementAfter( ifClause~begin )
 
-  thenClause = self~Next.Instruction.Fragment
+  thenClause = self~Next.Instruction.Fragment( -
+    .Array~of( 18.001, Word( IF~from, 1 ) ) -
+  )
 
   THEN = TheElementAfter( thenClause~begin )
 
+  -- A label before THEN: the THEN clause is not there (ooRexx: 18.1).
   If \thenClause~isA( .Then.Clause ) Then Signal 18.001
+  If \thenClause~labels~isEmpty      Then Signal 18.001
 
-  Call NoLabels thenClause
-
-  thenInstruction = self~Next.Instruction
+  thenInstruction = self~Next.Instruction( , , .Array~of( 47.003 ) )
 
   Call NoLabels thenInstruction
 
@@ -399,7 +436,7 @@ End.Clause:
 
   ELSE = TheElementAfter( elseClause~begin )
 
-  elseInstruction = self~Next.Instruction
+  elseInstruction = self~Next.Instruction( , , .Array~of( 47.003 ) )
 
   Call NoLabels elseInstruction
 
@@ -459,7 +496,7 @@ NoLabels:
   currentBody = package~currentBodies~top
 
   Loop
-    instruction = self~Next.Instruction( ENDClauseIsOK )
+    instruction = self~Next.Instruction( ENDClauseIsOK, , .Array~of( 47.002 ) )
     If \instruction~labels~isEmpty    Then Signal 47.002
     Select Case instruction~class
       When .End.Clause                Then Signal End.Clause
@@ -523,7 +560,7 @@ End.Clause:
 
   otherwiseSequence    = Array()
 
-  whenClause = self~Next.Instruction.Fragment
+  whenClause = self~Next.Instruction.Fragment( .Array~of( 47.004 ) )
 
   Call NoLabels whenClause
 
@@ -537,16 +574,18 @@ End.Clause:
 
   Loop
 
-    thenClause = self~next.Instruction.Fragment
+    thenClause = self~next.Instruction.Fragment( -
+      .Array~of( 18.002, WHEN~from~word(1) ) -
+    )
 
-    Call NoLabels thenClause
-
+    -- A label before THEN: the THEN clause is not there (ooRexx: 18.2).
     If \thenClause~isA(.Then.Clause) Then Signal 18.002
+    If \thenClause~labels~isEmpty     Then Signal 18.002
 
     THEN     = TheElementAfter( thenClause~begin )
     thenLine = THEN~from~word(1)
 
-    thenInstruction = self~Next.Instruction
+    thenInstruction = self~Next.Instruction( , , .Array~of( 47.004 ) )
 
     Call NoLabels thenInstruction
 
@@ -562,12 +601,15 @@ End.Clause:
 
     whenThenInstructions~append( (whenClause, thenClause, thenInstruction) )
 
-    next = self~Next.Instruction.Fragment
+    next = self~Next.Instruction.Fragment( .Array~of( 47.004 ) )
 
     Select Case next~class
       When .When.Clause               Then whenClause = next
       When .Otherwise.Clause          Then Signal Otherwise
-      When .End.Clause                Then Signal End
+      When .End.Clause                Then Do
+        Call NoLabels next
+        Signal End
+      End
       When .Implicit.Exit.Instruction Then Signal 14.002
       Otherwise                            Call    7.002 next
     End
@@ -589,7 +631,7 @@ Otherwise:
   last            = otherwiseClause
 
   Loop
-    next = self~Next.Instruction( ENDClauseIsOK )
+    next = self~Next.Instruction( ENDClauseIsOK, , .Array~of( 47.004 ) )
     Call NoLabels next
     Select Case next~class
       When .End.Clause Then Signal End
@@ -950,7 +992,7 @@ Done:
   element   = TheElementAfter( keyword )
   If element < .EL.END_OF_CLAUSE Then Signal Done
 
-  next    = TheElementAfter( element, ignoreBlanks )
+  next    = Lookahead( element )
 
   label   = \ .Features.Do.Label
   counter = \ .Features.Do.Counter
@@ -960,6 +1002,9 @@ Continue:
   If element < .ALL.SYMBOLS Then Do
     tValue = element~value
     If next < .EL.OP.EQUAL           Then Signal "Classic Do/Loop"
+    -- "symbol ==" (LABEL and COUNTER too): any equal sign makes it the
+    -- controlled form, and "==" is 35.1, as in ooRexx.
+    If next < .EL.OP.STRICT.EQUAL    Then Signal 35.001
     If \label,   tValue == "LABEL"   Then Signal "Label option"
     If \counter, tValue == "COUNTER" Then Signal "Counter option"
     If next < .ALL.SYMBOLS Then Do
@@ -1049,11 +1094,27 @@ Continue:
   End
 
 "Simple Repetitive Do/Loop":
+  -- The symbol the look ahead passed is the start of the expression: the
+  -- blanks after it are not ignorable (they are concatenations).
+  Do blank Over lookaheadBlanks
+    blank~ignorable = 0
+  End
   Call PrepareExpression package, element, "WHILE UNTIL"
   expression = Expression.List( package, element )
   options.exprr = expression
   element = expression~end
   Signal Conditional
+
+-- The element after Arg(1), blanks ignored. TheElementAfter marks those
+-- blanks ignorable: the ones it marks are kept in lookaheadBlanks.
+Lookahead:
+  lookaheadBlanks = .Array~new
+  lookaheadNext = Arg(1)~next
+  Do While lookaheadNext~ignorable | lookaheadNext < .ALL.WHITESPACE_LIKE
+    If \ lookaheadNext~ignorable Then lookaheadBlanks~append( lookaheadNext )
+    lookaheadNext = lookaheadNext~next
+  End
+  Return TheElementAfter( Arg(1), ignoreBlanks )
 
 ControlVariable:
   c = Left( element~value, 1 )
@@ -1148,7 +1209,7 @@ Keyword:
   options.["LABEL"] = labelName
   element = TheElementAfter( labelName, ignoreBlanks )
   If element < .EL.END_OF_CLAUSE Then Signal Continue
-  next  = TheElementAfter( element    , ignoreBlanks )
+  next  = Lookahead( element )
   Signal Continue
 
 "Counter option":
@@ -1163,7 +1224,7 @@ Keyword:
   options.["COUNTER"] = counterVar
   element = TheElementAfter( counterVar, ignoreBlanks )
   If element < .EL.END_OF_CLAUSE Then Signal Continue
-  next  = TheElementAfter( element     , ignoreBlanks )
+  next  = Lookahead( element )
   Signal Continue
 
 "Do/Loop Forever":
@@ -1256,6 +1317,9 @@ Keyword:
 
 -- Missing initial expression for DO or LOOP control variable.
 35.904: Syntax( 35.904, keyword )
+
+-- Incorrect expression detected at "&1".
+35.001: Syntax( 35.001, next, next )
 
 -- Missing expression following BY keyword.
 35.905: Syntax( 35.905, keyword )
@@ -1544,6 +1608,7 @@ Message.Instruction:
 
   Call PrepareExpression package, element
   options.case = Expression.List( package, element )
+  element = end                         -- The clause ends after the expression
 
 Done:
   selectClause = .Select.Clause~new( package, begin, element, options. )

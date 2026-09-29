@@ -1,0 +1,451 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* MarginBoxes.testGroup - the six Paged-Media margin boxes                    */
+/* ======================================================                      */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260922         First version                                             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED                                                          */
+/*                                                                            */
+/* Rony asked for a version string and date (and the file's own date/time) in */
+/* the footer, on all slides or one. Rather than bolt on fields, the footer   */
+/* was rebuilt as the Paged-Media model: six named boxes (header/footer x     */
+/* left/center/right), each an author-fillable template with {placeholders}.  */
+/* The old fixed presenter/affiliation/date divs are gone. Without a dedicated */
+/* test the box resolution -- skin default, deck override, per-slide override, */
+/* {field} expansion, and {page}/{total} left for the runtime -- would be a   */
+/* silent thing that a wrong render only reveals in a lecture hall.           */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.MarginBoxes.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "parser/YAMLFrontMatter.cls"
+
+::Class MarginBoxes.testGroup Subclass ooTestCase Public
+
+/* -- ExpandFields: {field} -> value, {page}/{total} left for the runtime -- */
+
+::Method test_expand_fills_known_fields
+  f = .StringTable~new
+  f["presenter"] = "Rony"
+  f["version"]   = "0.7"
+  out = self~run("ExpandFields", .Array~of("{presenter} v{version}", f))
+  self~assertEquals("Rony v0.7", out, "known fields are substituted")
+
+::Method test_expand_leaves_page_and_total_for_the_runtime
+  f = .StringTable~new
+  out = self~run("ExpandFields", .Array~of("{page} / {pages} · {total}", f))
+  self~assertEquals("{page} / {pages} · {total}", out, "page, pages and total survive to the DOM")
+
+::Method test_expand_unknown_field_is_empty
+  f = .StringTable~new
+  out = self~run("ExpandFields", .Array~of("<{missing}>", f))
+  self~assertEquals("<>", out, "an unknown field expands to nothing")
+
+/* [ ... ] around a field is an optional group: all of it when a field in it */
+/* has a value, none of it when not; the brackets never show (26-Sep: they  */
+/* used to stay, as `[]`). Brackets with no field inside are text.          */
+::Method test_expand_optional_groups
+  f = .StringTable~new
+  f["presenter"] = "Rony"
+  out = self~run("ExpandFields", .Array~of("{presenter}[ · v{version}]", f))
+  self~assertEquals("Rony", out, "no version: the whole group goes")
+  f["version"] = "1.2"
+  out = self~run("ExpandFields", .Array~of("{presenter}[ · v{version}]", f))
+  self~assertEquals("Rony · v1.2", out, "a version: the group, without its brackets")
+  out = self~run("ExpandFields", .Array~of("[draft] [{page}]", .StringTable~new))
+  self~assertEquals("[draft] {page}", out, "plain brackets stay; a runtime field keeps its group")
+
+::Method test_expand_is_case_insensitive
+  f = .StringTable~new
+  f["presenter"] = "Rony"
+  out = self~run("ExpandFields", .Array~of("{Presenter}", f))
+  self~assertEquals("Rony", out, "field names fold case")
+
+/* -- ResolveBoxes: skin default, overridden by the deck header:/footer: -- */
+
+::Method test_resolveboxes_reads_the_skin_default
+  css = ':root{ --skin-footer-right: "{page} / {total}"; }'
+  fields = .StringTable~new
+  rexxpub = .StringTable~new
+  self~runVoid("ResolveBoxes", .Array~of(fields, css, rexxpub))
+  self~assertEquals("{page} / {total}", fields["__box-footer-right"], "skin default is read")
+
+::Method test_deck_overrides_the_skin
+  css = ':root{ --skin-footer-left: "{presenter}"; }'
+  fields = .StringTable~new
+  rexxpub = .StringTable~new
+  footer = .StringTable~new
+  footer["left"] = "{affiliation}"
+  rexxpub["footer"] = footer
+  self~runVoid("ResolveBoxes", .Array~of(fields, css, rexxpub))
+  self~assertEquals("{affiliation}", fields["__box-footer-left"], "the deck wins over the skin")
+
+::Method test_all_six_boxes_are_resolved
+  fields = .StringTable~new
+  self~runVoid("ResolveBoxes", .Array~of(fields, ":root{}", .StringTable~new))
+  Do edge Over .Array~of("header", "footer")
+    Do side Over .Array~of("left", "center", "right")
+      self~assertTrue(fields~hasIndex("__box-"edge"-"side), edge"-"side "is present")
+    End
+  End
+
+/* -- AutoFields: today / file-date / file-time, without clobbering -- */
+
+::Method test_autofields_adds_today
+  fields = .StringTable~new
+  self~runVoid("AutoFields", .Array~of(fields, self~projectRoot"/bin/md2slides.rex"))
+  self~assertTrue(fields~hasIndex("today"), "today is seeded")
+  self~assertTrue(fields["today"]~matchChar(5, "-") \== 0, "today looks ISO")
+
+::Method test_autofields_does_not_clobber_a_declared_field
+  fields = .StringTable~new
+  fields["file-date"] = "2020-01-01"
+  self~runVoid("AutoFields", .Array~of(fields, self~projectRoot"/bin/md2slides.rex"))
+  self~assertEquals("2020-01-01", fields["file-date"], "a declared field wins over the file stamp")
+
+/* -- SlideIdentity: the six boxes emitted, plus per-slide override -- */
+
+::Method test_slideidentity_emits_six_boxes
+  fields = .StringTable~new
+  Do edge Over .Array~of("header", "footer")
+    Do side Over .Array~of("left", "center", "right")
+      fields["__box-"edge"-"side] = ""
+    End
+  End
+  parsed = self~run("SlideIdentity", .Array~of("<p>body</p>", fields))
+  chrome = parsed[2]
+  self~assertTrue(chrome~pos('class="margin header"') > 0, "a header region")
+  self~assertTrue(chrome~pos('class="margin footer"') > 0, "a footer region")
+  self~assertEquals(2, chrome~countStr('class="m-left"'),   "two left boxes (header+footer)")
+  self~assertEquals(2, chrome~countStr('class="m-center"'), "two center boxes")
+  self~assertEquals(2, chrome~countStr('class="m-right"'),  "two right boxes")
+
+::Method test_a_slide_zone_overrides_one_box
+  fields = .StringTable~new
+  Do edge Over .Array~of("header", "footer")
+    Do side Over .Array~of("left", "center", "right")
+      fields["__box-"edge"-"side] = "default"
+    End
+  End
+  body = '<p>x</p>' || "0a"x || '<div class="footer-center">' || "0a"x || "<p>local</p>" || "0a"x || "</div>"
+  parsed = self~run("SlideIdentity", .Array~of(body, fields))
+  chrome = parsed[2]
+  self~assertTrue(chrome~pos(">local<") > 0, "the slide zone fills its box")
+
+::Method test_a_slide_zone_keeps_its_markup
+  /* v216 (Rony, 27-Sep): `{page}/{pages}<br>Cf. rexxref.pdf` in a            */
+  /* ::: footer-center lost its <br> -- the zone was reduced to its text --   */
+  /* and the two lines ran into one. A template in the front matter keeps its */
+  /* markup; a zone does too. Only Pandoc's <p> goes, and two paragraphs are  */
+  /* two lines.                                                               */
+  fields = .StringTable~new
+  Do edge Over .Array~of("header", "footer")
+    Do side Over .Array~of("left", "center", "right")
+      fields["__box-"edge"-"side] = ""
+    End
+  End
+  body = '<p>x</p>' || "0a"x || '<div class="footer-center">' || "0a"x || -
+         "<p>{page}/{pages}<br>Cf. <em>rexxref</em></p>" || "0a"x || "</div>"
+  chrome = self~run("SlideIdentity", .Array~of(body, fields))[2]
+  self~assertTrue(chrome~pos('>{page}/{pages}<br>Cf. <em>rexxref</em><') > 0, -
+    "the <br> and the emphasis survive, the <p> does not ("chrome")")
+  body = '<p>x</p>' || "0a"x || '<div class="footer-center">' || "0a"x || -
+         "<p>one</p>" || "0a"x || "<p>two</p>" || "0a"x || "</div>"
+  chrome = self~run("SlideIdentity", .Array~of(body, fields))[2]
+  self~assertTrue(chrome~pos('>one<br>two<') > 0, "two paragraphs are two lines")
+
+::Method test_a_field_zone_still_overrides_the_field
+  /* Back-compat: :::presenter in a slide sets the presenter FIELD, so a box   */
+  /* template of {presenter} shows the slide's value.                          */
+  fields = .StringTable~new
+  fields["presenter"] = "Deck Default"
+  Do edge Over .Array~of("header", "footer")
+    Do side Over .Array~of("left", "center", "right")
+      fields["__box-"edge"-"side] = ""
+    End
+  End
+  fields["__box-footer-left"] = "{presenter}"
+  body = '<p>x</p>' || "0a"x || '<div class="presenter">' || "0a"x || "<p>Guest</p>" || "0a"x || "</div>"
+  parsed = self~run("SlideIdentity", .Array~of(body, fields))
+  chrome = parsed[2]
+  self~assertTrue(chrome~pos(">Guest<") > 0, "the slide's presenter wins for this slide")
+
+::Method test_any_field_can_be_set_per_slide
+  /* v214: not only presenter, affiliation and date. Any field the deck has   */
+  /* is set for one slide by a zone of its name, in the boxes and in the text. */
+  fields = self~emptyBoxes
+  fields["course"] = "Rexx 101"
+  fields["__box-footer-left"] = "{course}"
+  body = '<p>In {course}</p>' || "0a"x || '<div class="course">' || "0a"x || -
+         "<p>Guest course</p>" || "0a"x || "</div>"
+  parsed = self~run("SlideIdentity", .Array~of(body, fields))
+  self~assertTrue(parsed[2]~pos(">Guest course<") > 0, "the box follows the slide's value")
+  self~assertTrue(parsed[3]~pos("In Guest course") > 0, "and so does the text ("parsed[3]")")
+  self~assertEquals(0, parsed[3]~pos('class="course"'), "the zone is consumed")
+
+::Method test_a_reserved_name_keeps_its_own_meaning
+  /* A field called title (rexxpub: title:) must not swallow the ::: title   */
+  /* zone of a marker slide, nor a field called row a ::: row of columns.    */
+  fields = self~emptyBoxes
+  fields["title"] = "Deck title"
+  fields["row"]   = "x"
+  body = '<div class="title">' || "0a"x || "<p>Slide title</p>" || "0a"x || "</div>" || "0a"x || -
+         '<div class="row">' || "0a"x || "<p>cols</p>" || "0a"x || "</div>"
+  parsed = self~run("SlideIdentity", .Array~of(body, fields))
+  self~assertTrue(parsed[3]~pos('<div class="title">') > 0, "::: title stays")
+  self~assertTrue(parsed[3]~pos('<div class="row">') > 0, "::: row stays")
+  self~assertTrue(self~run("IsReservedZone", .Array~of("col-6")), "col-N is reserved")
+  self~assertFalse(self~run("IsReservedZone", .Array~of("course")), "course is not")
+
+::Method emptyBoxes
+  fields = .StringTable~new
+  Do edge Over .Array~of("header", "footer")
+    Do side Over .Array~of("left", "center", "right")
+      fields["__box-"edge"-"side] = ""
+    End
+  End
+  Return fields
+
+/* -- the runtime knows how to fill {page}/{total} in the boxes -- */
+
+::Method test_runtime_fills_page_placeholders
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  self~assertTrue(src~pos("fillPagePlaceholders") > 0, "the runtime has the filler")
+  self~assertTrue(src~pos("m-left") > 0,                "and reaches the boxes")
+
+/* ----------------------------------------------------------------------- */
+
+/* -- 23-Sep: Rony's second round on the boxes -------------------------------- */
+
+::Method test_autofields_adds_now_and_the_file_names
+  f = .StringTable~new
+  me = self~projectRoot"/tests/suites/MarginBoxes.testGroup"
+  self~runVoid("AutoFields", .Array~of(f, me))
+  self~assertTrue(f["now"]~verify("0123456789:") == 0 & f["now"]~length == 8, "now is HH:MM:SS")
+  self~assertEquals("MarginBoxes.testGroup", f["file-name"], "file-name is the bare name")
+  /* Compared with / for separators: on Windows they are \ (as the author  */
+  /* will see them there), and the test must pass on both.                 */
+  full = ChangeStr("\", f["file-name-full"], "/")
+  path = ChangeStr("\", f["file-path"], "/")
+  self~assertTrue(full~endsWith("tests/suites/MarginBoxes.testGroup"), "file-name-full is qualified")
+  self~assertTrue(path~endsWith("tests/suites"), "file-path is the folder")
+  self~assertTrue(\path~endsWith("/"), "without a final separator")
+
+::Method test_a_skin_specific_field_wins_under_its_skin
+  y = .StringTable~new
+  y["affiliation"] = "Generic"
+  y["skin-mu-affiliation"] = "MU"
+  f = self~run("FooterFields", .Array~of(y, "mu"))
+  self~assertEquals("MU", f["affiliation"], "under skin-mu.css")
+  f = self~run("FooterFields", .Array~of(y, "wu"))
+  self~assertEquals("Generic", f["affiliation"], "under any other skin")
+
+/* The fields reach the slide's own text too (Rony, 26-Sep: a link that    */
+/* depends on the skin). Only declared fields: braces are ordinary text in */
+/* a slide, and code is never touched.                                     */
+::Method test_fields_fill_the_slide_text_and_links
+  f = .StringTable~new
+  f["regulations"] = "https://example.org/r?a=1"
+  f["affiliation"] = 'The "Uni"'
+  body = '<p>See <a href="%7Bregulations%7D">them</a>: {Regulations}.</p>'
+  out = self~run("BodyFields", .Array~of(body, f))
+  self~assertEquals('<p>See <a href="https://example.org/r?a=1">them</a>: https://example.org/r?a=1.</p>', out)
+  out = self~run("BodyFields", .Array~of('<a title="{affiliation}">{affiliation}</a>', f))
+  self~assertEquals('<a title="The &quot;Uni&quot;">The "Uni"</a>', out, "an attribute is escaped, text is not")
+
+::Method test_fields_leave_unknown_braces_and_code_alone
+  f = .StringTable~new
+  f["regulations"] = "R"
+  body = '<p>{niX } and {unknown} and {page}</p><p><code>{regulations}</code> {regulations}</p>' || -
+         '<pre><code class="x">{regulations}</code></pre>{regulations}'
+  out = self~run("BodyFields", .Array~of(body, f))
+  self~assertEquals('<p>{niX } and {unknown} and {page}</p><p><code>{regulations}</code> R</p>' || -
+                    '<pre><code class="x">{regulations}</code></pre>R', out)
+
+/* A list is a field too (v214, now that the front matter has lists): its  */
+/* items joined by ", ", as Pandoc's templates do; a mapping item gives its */
+/* name:, as Pandoc and Quarto write an author with an affiliation.         */
+::Method test_a_list_field_is_its_items_joined
+  src = .Array~of("---", "rexxpub:", -
+    "  author:", "    - Josep Maria Blasco", "    - name: Rony G. Flatscher", -
+    "      affiliation: WU", "    - [nested]", "  editors: [A, B]", -
+    "  master-pages: [x.css, y.css]", "  box: { a: 1 }", "---")
+  f = self~run("FooterFields", .Array~of(YAMLFrontMatter(src)["rexxpub"]))
+  self~assertEquals("Josep Maria Blasco, Rony G. Flatscher", f["author"], -
+    "a block list, with a mapping item")
+  self~assertEquals("A, B", f["editors"], "a flow list")
+  self~assertFalse(f~hasIndex("master-pages"), "a reserved key stays out, list or not")
+  self~assertFalse(f~hasIndex("box"), "a mapping is not a field")
+  out = self~run("BodyFields", .Array~of("<p>By {author}.</p>", f))
+  self~assertEquals("<p>By Josep Maria Blasco, Rony G. Flatscher.</p>", out, "in the text")
+
+::Method test_skin_tag_from_the_sheet_name
+  self~assertEquals("mu",        self~run("SlideSkinTag", .Array~of("/x/skins/skin-mu.css")), "skin-mu.css")
+  self~assertEquals("corporate", self~run("SlideSkinTag", .Array~of("C:\s\Corporate.css")),   "any other sheet")
+
+::Method test_font_size_in_a_band_block_is_not_a_field
+  y = .StringTable~new
+  b = .StringTable~new
+  b["font-size"] = "12px"
+  b["center"] = "{page}"
+  y["footer"] = b
+  f = self~run("FooterFields", .Array~of(y))
+  self~assertFalse(f~hasIndex("font-size"), "font-size is the band's, not a field")
+  css = self~run("MarginSizeCSS", .Array~of(y))
+  self~assertTrue(css~pos("#stage .slide .margin.footer > * { font-size: 12px; }") > 0, "it sizes the band's boxes")
+
+::Method test_a_bad_font_size_is_reported
+  y = .StringTable~new
+  b = .StringTable~new
+  b["font-size"] = "12"
+  y["header"] = b
+  said = self~warned("MarginSizeCSS", .Array~of(y))
+  self~assertTrue(said~pos("not a CSS length") > 0, "a bare number is reported")
+
+/* {footer} in a skin's box is a keyword, not a field: nothing can fill it.   */
+/* The message says where the box came from and what the author can do.      */
+::Method test_the_footer_warning_says_where_and_what_to_do
+  fields = .StringTable~new
+  css = ':root{ --skin-footer-center: "{footer}"; --skin-footer-left: "{course}"; }'
+  self~runVoid("ResolveBoxes", .Array~of(fields, css, .StringTable~new))
+  said = self~warned("CheckFooter", .Array~of(css, fields))
+  self~assertTrue(said~pos("as the skin lays it out") > 0,       "it names the skin as the source")
+  self~assertTrue(said~pos("'footer' is a rexxpub: keyword") > 0, "footer is not settable")
+  self~assertTrue(said~pos("(course: ...)") > 0,                 "a real field says how to set it")
+  self~assertTrue(said~pos("[{course}]") > 0,                    "and how to make it optional")
+
+::Method test_the_sample_skins_no_longer_ask_for_footer
+  /* The sample skins live in JMB's skins tree, not in the project; this   */
+  /* pins the doc instead: the author doc must not show {footer} as a box.  */
+  doc = self~projectRoot"/doc/utilities/md2slides/readme.md"
+  src = CharIn(doc, 1, Stream(doc, "C", "QUERY SIZE"))
+  Call Stream doc, "C", "CLOSE"
+  self~assertEquals(0, src~pos("'{footer}'"), "the doc no longer puts {footer} in a box")
+
+/* The runtime shrinks a box that does not fit its band, on every slide      */
+/* before printing, and diagnose reports one that still does not fit.        */
+::Method test_runtime_fits_the_boxes
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  self~assertTrue(src~pos("function fitMargins(") > 0,                 "the fitter exists")
+  self~assertTrue(src~pos("b.style.zoom") > 0,                         "it shrinks by zoom")
+  self~assertTrue(src~pos('addEventListener("beforeprint", fitAllBoxes)') > 0, "every slide before printing")
+  self~assertTrue(src~pos('kind: "margin-clipped"') > 0,               "diagnose reports what still overflows")
+
+/* Titles, too (Rony, 23-Sep: a title of too many lines "gets distorted and  */
+/* reaches" the top of the slide). The title's content is zoomed inside its  */
+/* zone, which never moves; the subtitle yields first on a cover.            */
+::Method test_one_size_per_band
+  /* Rony: the boxes of a footer shrunk to different sizes read as three    */
+  /* footers; every box of a band takes the smallest zoom any of them needs. */
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  self~assertTrue(src~pos("zmin = Math.min(zmin, parseFloat(b.style.zoom))") > 0, "the smallest zoom")
+  self~assertTrue(src~pos("b.style.zoom = zmin.toFixed(3)") > 0, "applied to every box")
+
+::Method test_runtime_fits_the_titles
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  self~assertTrue(src~pos("function fitTitles(") > 0,        "the fitter exists")
+  self~assertTrue(src~pos("ch.style.zoom") > 0,              "it zooms the content, not the zone")
+  self~assertTrue(src~pos("fitTitles(slide);") > 0,          "fitBoxes runs it")
+  self~assertTrue(src~pos("zones.unshift(c)") > 0,           "the subtitle yields first")
+  self~assertTrue(src~pos('kind: "title-clipped"') > 0,      "diagnose reports a title that still does not fit")
+
+::Method warned
+  Use Strict Arg name, args
+  rtn     = self~md2slides~findRoutine(name~upper)
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  Signal On Syntax Name WarnedDone
+  discard = rtn~callWith(args)
+WarnedDone:
+  discard = .Error~destination(prev)
+  Return sink~text
+
+::Method run
+  Use Strict Arg name, args
+  Return self~md2slides~findRoutine(name~upper)~callWith(args)
+
+/* For routines that mutate an argument and Return nothing (ResolveBoxes,      */
+/* AutoFields): callWith on a result-less routine raises 91.999, so send the   */
+/* message and ignore the (absent) result.                                     */
+::Method runVoid
+  Use Strict Arg name, args
+  rtn = self~md2slides~findRoutine(name~upper)
+  Signal On Syntax Name VoidDone
+  discard = rtn~callWith(args)
+VoidDone:
+  Return
+
+::Method md2slides
+  pkg = .local["MARGINBOXES.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["MARGINBOXES.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/MarginBoxes.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+::Class Collect
+::Method init
+  Expose text
+  text = ""
+::Method text
+  Expose text
+  Return text
+::Method lineOut
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+::Method say
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+::Method lineOut
+  Return 0
+::Method say
+  Return 0
+::Method string
+  Return ""

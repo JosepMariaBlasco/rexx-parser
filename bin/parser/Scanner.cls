@@ -49,6 +49,16 @@
 /* 20260521         CMS: Don't recognize extended assignments                 */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
 /* 20260620         CMS: Implement multi-line strings                         */
+/* 20260924    0.7  INTERPRET option: ::RESOURCE is not special (the          */
+/*                  PreClauser rejects it as any other directive).            */
+/* 20260924         An explicit ";" with an unclosed "(" or "[" no longer     */
+/*                  gives 37.2: the parser diagnoses it as at a line end      */
+/* 20260928         Hex and binary strings: the whitespace and the grouping   */
+/*                  are checked before the characters, right to left, as      */
+/*                  ooRexx ("] ["b is 15.6, not 15.4).                        */
+/*                  A continuation character at the end of the last line is  */
+/*                  a continuation too, followed by the end of the clause,    */
+/*                  as in ooRexx ("x = 1 -" was 35.1); not under CMS.         */
 /*                                                                            */
 /******************************************************************************/
 
@@ -597,19 +607,20 @@ Return 0                                -- 0: Error encountered
   If len = 0, col = 1 Then Signal InsertSemicolon
 
   -- Continuations in the last source line are not accepted as such
-  -- by the ANSI standard (see 6.2.2.1), but are happily processed by
-  -- ooRexx. We produce an implied semicolon when we find a
-  -- continuation just before EOS.
+  -- by the ANSI standard (see 6.2.2.1), nor by CMS, but are happily
+  -- processed by ooRexx: the continuation character is dropped, and the
+  -- clause ends there ("x = 1 -" as the last line is "x = 1"). We produce
+  -- an implied semicolon when we find a continuation just before EOS.
 
   -- Don't recognize "-" as a continuation when it is not supported
   -- We cannot use the set ALL.CONTINUATION_CHARACTERS here because
   -- it is created before recognizing the Parser options.
-  If line < lines, previous < .ALL.CONTINUATION_CHARACTERS, -
+  If line < lines | \.Options.CMS, previous < .ALL.CONTINUATION_CHARACTERS, -
     (.Features.Continuation.Minus | previous < .EL.COMMA) Then Do
     previous~category = .EL.CONTINUATION
     If TheElementBefore( previous ) < .IGNORE_WHITESPACE_AFTER Then
       previous~ignorable = 1
-    Return -- Do not generate an end-of-clause
+    If line < lines Then Return -- Do not generate an end-of-clause
   End
 
   -- No continuation? Insert an implied semicolon (EL.END_OF_CLAUSE)
@@ -671,6 +682,9 @@ Return
   Expose tail lastEndOfClause
 
   ignoreBlanks = .True
+
+  -- INTERPRET data: a directive is an error, reported by the PreClauser.
+  If .Options.Interpret Then Signal NotAResourceDirective
 
   -- "::"
   first = TheElementAfter( lastEndOfClause )
@@ -745,9 +759,11 @@ NotAResourceDirective:
   delimiterLength = Length( delimiter )
 
   -- No more lines? That's an error
-  If fromLine >= lines Then Signal 99.943
+  If fromLine > lines Then Signal 99.943
 
+  -- (A null delimiter starts every line: "abc"~startsWith("") is false.)
   Do lineNo = fromLine To lines
+    If delimiter == "" Then Signal EndDelimiterFound
     If source[lineNo]~startsWith(delimiter) Then Signal EndDelimiterFound
   End
 
@@ -1386,15 +1402,13 @@ Return
       -- (plus an additional check for inserted semicolons)
       -- should be enough to guarantee that parentheses and square bracket
       -- pairs occur inside a clause.
-      If \bracketStack~isEmpty Then Do
-        save = element
-          element = bracketStack~top
-          Select Case element~value
-            When "{" Then Nop -- Inside a source literal
-            When "(" Then Signal 37.002
-            When "[" Then Signal 37.901
-          End
-        element = save
+      -- An unclosed "(" or "[" is diagnosed by the parser (see
+      -- PrepareExpression), as when the clause ends at the end of a line;
+      -- they are dropped here, so that the next clause starts afresh.
+      -- ("{" starts a source literal, which spans clauses.)
+      Loop While \bracketStack~isEmpty
+        If bracketStack~top~value == "{" Then Leave
+        bracketStack~pop
       End
     End
     Otherwise Nop
@@ -1729,14 +1743,18 @@ BinaryString:
     Return
   End
 
-  -- The DATATYPE function has complained: determine the cause of the error
+  -- The DATATYPE function has complained: determine the cause of the error,
+  -- in ooRexx's order (packBinaryLiteral): the whitespace and the groups,
+  -- right to left, and then the characters.
+
+  Select Case WhitespaceProblem( 4 )
+    When "EDGE"  Then Call 15.002 i
+    When "GROUP" Then Signal 15.006
+    Otherwise Nop
+  End
 
   bad = Verify(string, "01"whitespace)
   If bad \== 0 Then Signal 15.004
-
-  If Pos(string[1],      whitespace) > 0 Then Call 15.002 1
-  length = Length(string)
-  If Pos(string[length], whitespace) > 0 Then Call 15.002 length
 
   Signal 15.006
 
@@ -1760,14 +1778,18 @@ HexString:
     Return
   End
 
-  -- The DATATYPE function has complained: determine the cause of the error
+  -- The DATATYPE function has complained: determine the cause of the error,
+  -- in ooRexx's order (packHexLiteral): the whitespace and the groups,
+  -- right to left, and then the characters.
+
+  Select Case WhitespaceProblem( 2 )
+    When "EDGE"  Then Call 15.001 i
+    When "GROUP" Then Signal 15.005
+    Otherwise Nop
+  End
 
   bad = Verify(string, .String~XDigit || whitespace)
   If bad \== 0 Then Signal 15.003
-
-  If Pos(string[1],      whitespace) > 0 Then Call 15.001 1
-  length = Length(string)
-  If Pos(string[length], whitespace) > 0 Then Call 15.001 length
 
   Signal 15.005
 
@@ -1782,6 +1804,26 @@ HexString:
 -- Hexadecimal strings must be grouped in units
 -- that are multiples of two characters.
 15.005: Syntax( 15.005, anchor )
+
+--------------------------------------------------------------------------------
+-- WhitespaceProblem: the first scan of ooRexx's packHexLiteral and
+-- packBinaryLiteral, right to left: whitespace at an end of the string is
+-- "EDGE" (at position i), a group (but the first) whose size is not a
+-- multiple of Arg(1) is "GROUP"; "" when there is none.
+--------------------------------------------------------------------------------
+
+WhitespaceProblem:
+  length = Length(string)
+  group  = 0
+  Do i = length To 1 By -1
+    If Pos(string[i], whitespace) > 0 Then Do
+      If i == 1 | i == length   Then Return "EDGE"
+      If group // Arg(1) \== 0  Then Return "GROUP"
+      group = 0
+    End
+    Else group += 1
+  End
+  Return ""
 
 --------------------------------------------------------------------------------
 -- CheckUTF8: Check that currentline[col, length] is valid UTF8

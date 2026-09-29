@@ -1,21 +1,21 @@
 /* Background for non-Rexx ("other") code. The Rexx block is owned entirely by
-   the Highlighter (themes.css) and must not be tinted from the outside; this
+   the Highlighter (skins.css) and must not be tinted from the outside; this
    sheet only governs code that does NOT go through it -- today, the Python
    blocks Pandoc emits as div.sourceCode, and inline code in the body.
 
    The colour is opt-in per identity: a CI that wants to tint its other-code
-   declares --theme-othercode-bg; one that does not simply omits it, and the
+   declares --skin-othercode-bg; one that does not simply omits it, and the
    var() fallback (transparent) lets the block inherit the panel ground.
 
    There are THREE kinds of <code> in a slide body, and each wants a different
    ground -- getting this apart is the whole job of this sheet:
 
      1. Non-Rexx inline code (`plain`, a Python snippet): gets the identity's
-        --theme-othercode-bg tint. The broad rule below.
+        --skin-othercode-bg tint. The broad rule below.
      2. A prose MENTION -- `x`{.rexx-*} -- is <code class="rexx rx-..."> inside a
-        .highlight-rexx-<style> wrapper. It WANTS the theme's chip
+        .highlight-rexx-<style> wrapper. It WANTS the skin's chip
         (.highlight-rexx-X .rexx sets its background+colour), exactly like the
-        one that renders in a title. So this sheet must NOT touch it: the theme
+        one that renders in a title. So this sheet must NOT touch it: the skin
         owns it. It is told apart by carrying the class "rexx" on the <code>.
      3. A fenced block's per-line <code lineNo> -- also inside a wrapper, but
         WITHOUT the "rexx" class (the block's ground is the <pre>'s, not each
@@ -24,24 +24,27 @@
         reaches. So THIS one, and only this one, we reset to transparent. */
 
 div.sourceCode > pre {
-  background: var(--theme-othercode-bg, transparent);
+  background: var(--skin-othercode-bg, transparent);
 }
 
 /* (1) Non-Rexx inline code in the body gets the identity's other-code tint.
    :not(.rexx) keeps it OFF a prose mention, whose <code> carries the "rexx"
-   class -- a mention must keep the theme's own chip (case 2), not this tint.
+   class -- a mention must keep the skin's own chip (case 2), not this tint.
    :not(.rexx) is a simple (single-class) negation: plain CSS3, safe on any
    engine, unlike a Level-4 :not() with a combinator inside. */
 .slide .body code:not(.rexx) {
-  font-family: var(--theme-font-mono);
-  font-size: 0.85em;
-  background: var(--theme-othercode-bg, transparent);
+  font-family: var(--skin-font-mono);
+  /* The size every code in text has (runtime.css): the text's, times the
+     skin's --skin-inline-mono-scale. It was a fixed 0.85em here, while a Rexx
+     mention beside it had the text's own size. */
+  font-size: calc(var(--skin-inline-mono-scale, 1) * 1em);
+  background: var(--skin-othercode-bg, transparent);
   padding: 1px 5px;
   border-radius: 3px;
 }
 
 /* (2) A prose mention's <code class="rexx"> is deliberately NOT matched above,
-   so nothing here tints it: the theme's own .highlight-rexx-<style> .rexx rule
+   so nothing here tints it: the skin's own .highlight-rexx-<style> .rexx rule
    paints its chip (background + colour), exactly as it does for a mention that
    renders in a title. This sheet leaves it entirely to the Highlighter. */
 
@@ -57,3 +60,25 @@ div.sourceCode > pre {
   border-radius: 0;
   font-size: inherit;
 }
+
+/* Paper is a photograph of the screen (refresh.md, v193), and Pandoc's sheets
+   say otherwise for its listings: under @media print they wrap long lines and
+   hang them (pre-wrap, inline-block, text-indent -5em, padding-left 5em). Right
+   for md2pdf, which shares those sheets; wrong on a slide, where it re-lays a
+   numbered listing that fits on screen -- one line became two, and an arrow
+   drawn from it on screen pointed at empty paper. Undo it here, after the
+   Pandoc sheet. A marked spotlight line keeps its own inline-block. */
+@media print {
+  pre > code.sourceCode { white-space: pre; }
+  pre > code.sourceCode > span { text-indent: 0; padding-left: 0; }
+  pre > code.sourceCode > span:not([data-spot-beat]) { display: inline; }
+}
+
+/* A slide never scrolls, and Pandoc's sheets give div.sourceCode overflow:auto
+   on screen. A numbered listing then showed a horizontal scroll bar under
+   lines that fit (Rony, 27-Sep, in Firefox on Windows; Chromium had the same
+   overflow, with overlay bars that hide it): Pandoc lays each line out with its
+   number 4em wide and then moves the whole line 4em left (position: relative),
+   and the box the line was laid out in still reaches 4em past the right edge.
+   What does not fit on a slide is not fitted by scrolling, so no scrolling. */
+.slide div.sourceCode { overflow: visible; }

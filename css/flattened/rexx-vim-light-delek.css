@@ -500,3 +500,92 @@
 /* END OF BASE SELECTOR highlight-rexx-dark                                   */
 /******************************************************************************/
 /******************************************************************************/
+
+
+/******************************************************************************/
+/* SPOTLIGHT - this style's pens                                              */
+/*                                                                            */
+/* The mechanism (line box, transition, @media print) lives in spotlight.css  */
+/* and knows no colours. The TINTS live here, beside this style's token       */
+/* palette, because they are the same decision: whoever changes the palette   */
+/* must see the pens without leaving the file.                                */
+/*                                                                            */
+/* Ground of this style: #ffffff.                                             */
+/* Recipe "light". Pale wash, saturated bar: on a light ground a strong wash  */
+/* competes with the token colours instead of sitting beneath them.           */
+/*                                                                            */
+/* These are DECLARATIONS on the base selector, not nested rules, for two     */
+/* reasons. They inherit, so a marked line inside a block of this style picks */
+/* its pen up with no selector at all -- and the runtime can copy them onto   */
+/* listings that sit OUTSIDE any style scope (a ~~~output block is Pandoc's   */
+/* and carries no highlight-rexx-* class), which is what keeps a program line */
+/* and its output line the same colour. And being plain declarations they add */
+/* no nested rule, so they do not trip the restricted CSS nesting of the      */
+/* Chromium pinned by pagedjs-cli (115), which rejects a nested rule that     */
+/* starts with a type selector.                                               */
+/******************************************************************************/
+
+  .highlight-rexx-vim-light-delek {
+    --spot-pen-1-bar: #E8833C;                 /* pen 1: peach */
+    --spot-pen-1-bg:  rgba(255,196,150,.55);
+    --spot-pen-2-bar: #34A96B;                 /* pen 2: green */
+    --spot-pen-2-bg:  rgba(150,230,190,.55);
+    --spot-pen-3-bar: #2E86DE;                 /* pen 3: blue  */
+    --spot-pen-3-bg:  rgba(160,205,245,.55);
+    --spot-pen-4-bar: #D8447F;                 /* pen 4: rose  */
+    --spot-pen-4-bg:  rgba(250,175,205,.55);
+  }
+
+/******************************************************************************/
+/* Visible blanks (blanks= / {.blanks})                                      */
+/*                                                                            */
+/* One open box per blank, DRAWN rather than typed: U+2423 is not in every    */
+/* typeface -- IBM Plex has no glyph for it at any subset -- and a missing    */
+/* glyph in a monospaced listing does not merely look wrong, it shifts the    */
+/* column and makes the reader count something that is not there. Three       */
+/* gradients tile at one character cell, so a run of three blanks draws three */
+/* boxes from a single span, and the real blanks stay in the text: the        */
+/* listing can still be copied out of the page and run.                       */
+/*                                                                            */
+/* The ink follows the element the blank belongs to (a blank inside a string  */
+/* is the string's colour); a theme that wants its own sets --rx-blank-ink.   */
+/* The proportions come from the real glyph: ink across 12%..87% of the cell, */
+/* a bar .07em thick and ticks .3em tall, all sitting low, below the baseline */
+/* as U+2423 does.                                                            */
+/******************************************************************************/
+
+.highlight-rexx-vim-light-delek .rx-blank-mark {
+  background-image:
+    linear-gradient(to right, transparent 12%, var(--rx-blank-ink, currentColor) 12%,
+                    var(--rx-blank-ink, currentColor) 87%, transparent 87%),
+    linear-gradient(to right, transparent 12%, var(--rx-blank-ink, currentColor) 12%,
+                    var(--rx-blank-ink, currentColor) 23%, transparent 23%),
+    linear-gradient(to right, transparent 76%, var(--rx-blank-ink, currentColor) 76%,
+                    var(--rx-blank-ink, currentColor) 87%, transparent 87%);
+  /* All three layers hang from the BOTTOM of the inline box -- the descent
+     line -- and never from a measured baseline: how tall that box is depends
+     on the font in use (1.31em in one, 1.18em in another), and an em-based
+     offset that fits one font puts the bar outside the box in the next, where
+     the browser clips it away without a word. Anchored at 100% the mark sits
+     right, whatever the listing is set in. */
+  background-size: 1ch .07em, 1ch .3em, 1ch .3em;
+  background-position: 0 100%, 0 100%, 0 100%;
+  background-repeat: repeat-x;
+}
+.highlight-rexx-vim-light-delek .rx-tab-mark {
+  /* A tab, drawn as editors draw it: an arrow running into a wall, --->|, the
+     wall being the tab stop. Drawn once however wide the tab is -- not the
+     blank's box, because a tab is not a blank and is not one cell wide.
+     Four layers: the shaft, the two strokes of the arrowhead, and the wall.
+     A stroke is the diagonal of its own small box: with a corner keyword,
+     the 50% line of a gradient runs through the other two corners. */
+  background-image:
+    linear-gradient(var(--rx-blank-ink, currentColor), var(--rx-blank-ink, currentColor)),
+    linear-gradient(to top right, transparent 42%, var(--rx-blank-ink, currentColor) 42%, var(--rx-blank-ink, currentColor) 58%, transparent 58%),
+    linear-gradient(to bottom right, transparent 42%, var(--rx-blank-ink, currentColor) 42%, var(--rx-blank-ink, currentColor) 58%, transparent 58%),
+    linear-gradient(var(--rx-blank-ink, currentColor), var(--rx-blank-ink, currentColor));
+  background-size: calc(100% - .45ch) .07em, .28em .2em, .28em .2em, .07em .5em;
+  background-position: left .1ch bottom .25em, right .3ch bottom .285em,
+                       right .3ch bottom .085em, right .2ch bottom .03em;
+  background-repeat: no-repeat;
+}

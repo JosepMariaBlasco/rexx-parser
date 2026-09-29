@@ -24,6 +24,20 @@
 /* 20251201         (Executor) Add support for source literals                */
 /* 20260521    0.5  Add support for CMS                                       */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
+/* 20260924    0.7  INTERPRET option: the source is INTERPRET data            */
+/* 20260926         METHOD option: the prolog is the body of a method (the    */
+/*                  source of Method~new: EXPOSE, USE LOCAL, GUARD).          */
+/*                  EXPOSE and USE LOCAL as the first instruction out of a    */
+/*                  method are errors when they run (98.992, 98.993), as in   */
+/*                  ooRexx; at parse time only with earlyCheck EXPOSE and     */
+/*                  USELOCAL.                                                 */
+/* 20260928         Rexx.Package~constantCalls: the function calls of the     */
+/*                  ::CONSTANT expressions, which are in no body.             */
+/*                  ::ANNOTATE: the target must be defined before (99.945),   */
+/*                  as in ooRexx.                                             */
+/*                  ::METHOD and ::ATTRIBUTE: an EXTERNAL specification that  */
+/*                  is not "LIBRARY lib [entry]" is 99.917 (in ooRexx's       */
+/*                  order with the body errors).                              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -76,6 +90,7 @@
  .environment~Options.Executor     = 0
  .environment~Options.CMS          = 0
  .environment~Options.Unicode      = 0
+ .environment~Options.Interpret    = 0
   If Arg(3,'E') Then Do
     .Validate~classType("options",options,.Array)
     If \ options~isEmpty Then Do
@@ -93,6 +108,10 @@
         .environment~Options.CMS          = 1
       If .Parser.Options~hasIndex("UNICODE") Then
         .environment~Options.Unicode      = 1
+      -- INTERPRET data: labels, directives, EXPOSE, FORWARD, GUARD,
+      -- REPLY and USE LOCAL are not allowed.
+      If .Parser.Options~hasIndex("INTERPRET") Then
+        .environment~Options.Interpret    = 1
     End
   End
 
@@ -179,6 +198,9 @@
   Use Strict Arg package, directive
 
   inAMethodBody = directive~class == .Method.Directive
+  -- The METHOD option: the prolog is a method's body (Method~new).
+  If directive == .Nil, .Parser.Options~hasIndex("METHOD") Then
+    inAMethodBody = 1
 
   If directive~isA(.Attribute.Directive) Then Do
     -- Logic for attributes w and w/o bodies:
@@ -187,7 +209,7 @@
     --   ABSTRACT       -> No body
     options. = directive~options.
     If options.get | options.set Then inAMethodBody = 1
-    If options.abstract \== ""   Then inAMethodBody = 1
+    If options.abstract          Then inAMethodBody = 1
   End
 
   body = .Code.Body~new( package, directive )
@@ -203,10 +225,15 @@
 
   NoFinalENDClause = 0
   checkguard       = 0
+  checkexpose      = 0
+  checkuselocal    = 0
   ExposeFound      = 0
 
-  If .Parser.Options~hasIndex( earlyCheck ) Then
+  If .Parser.Options~hasIndex( earlyCheck ) Then Do
     checkguard     = .Parser.Options~earlyCheck~hasItem( guard )
+    checkexpose    = .Parser.Options~earlyCheck~hasItem( expose )
+    checkuselocal  = .Parser.Options~earlyCheck~hasItem( uselocal )
+  End
 
   -- TODO EXPOSE, USE LOCAL and GUARD should be checked recursively.
 
@@ -240,10 +267,13 @@ CheckThatGuardIsValid:
 -- GUARD can only be issued in an object method invocation.
 99.911: Syntax( 99.911, TheElementAfter(instruction~begin) )
 
+-- EXPOSE as the first instruction out of a method is an error when it runs
+-- (ooRexx raises 98.992 then); at parse time, only as an early check.
 CheckThatExposeIsValid:
   ExposeFound = 1
   If n == 1 Then Do
     If inAMethodBody Then Return
+    If \checkExpose Then Return
     Signal 98.992
   End
   Signal 99.907
@@ -254,9 +284,11 @@ CheckThatExposeIsValid:
 -- The EXPOSE instruction may only be used from method invocations.
 98.992: Syntax( 98.992, TheElementAfter(instruction~begin) )
 
+-- The same for USE LOCAL (98.993).
 CheckThatUseLocalIsValid:
   If n == 1 Then Do
     If inAMethodBody Then Return
+    If \checkUseLocal Then Return
     Signal 98.993
   End
   Signal 99.910
@@ -461,6 +493,7 @@ CheckThatUseLocalIsValid:
 ::Attribute scanner                 -- The scanner
 ::Attribute currentClass            -- Current class (.Nil --> prolog)
 ::Attribute currentBodies           -- Stack of bodies being currently parsed
+::Attribute constantCalls           -- Function calls in ::CONSTANT exprs
 ::Attribute directives              -- Sequential list of directives
 ::Attribute source                  -- [Similar to the ooRexx Package class]
 ::Attribute prolog                  -- [Similar to the ooRexx Package class]
@@ -499,6 +532,7 @@ CheckThatUseLocalIsValid:
     definedMethods          -
     currentClass            -
     currentBodies           -
+    constantCalls           -
     directives              -
     blockInstructionsStacks -
     resources               -
@@ -520,6 +554,7 @@ CheckThatUseLocalIsValid:
   resources               = .StringTable~new
   currentClass            = .Nil
   currentBodies           = .Stack~new
+  constantCalls           = .Array~new
   directives              =  Array()
   blockInstructionsStacks = .Stack~new
   options                 = .Set~new
@@ -586,9 +621,61 @@ CheckThatUseLocalIsValid:
 
 ::Routine Annotate
   Use Strict Arg package, directive
+  options. = directive~options.
+  type = options.["DIRECTIVE"]
+  If type \== "PACKAGE" Then Do
+    name = Upper( options.["NAME"]~value )
+    If \AnnotationTargetExists( package, type, name ) Then Signal 99.945
+  End
   directive~body = Empty.Body( package, directive )
   package~addDirective(directive)
   Return
+
+-- ::ANNOTATE target &1 "&2" not found.
+99.945: Syntax( 99.945, TheElementAfter( directive~begin ), Lower( type ), name )
+
+--------------------------------------------------------------------------------
+-- The target of an ::ANNOTATE, as ooRexx's annotateDirective: it has to be
+-- defined before. A class or a routine of the package; a method (any: an
+-- instance one, else a class one) of the active class, or a floating one
+-- before the first ::CLASS; a constant is a method made by ::CONSTANT; an
+-- attribute, a method made by ::ATTRIBUTE or ::METHOD ... ATTRIBUTE, the
+-- getter or the setter (the instance ones, or else the class ones).
+
+::Routine AnnotationTargetExists
+  Use Strict Arg package, type, name
+  Select Case type
+    When "CLASS"   Then Return package~classes~hasIndex( name )
+    When "ROUTINE" Then Return package~routines~hasIndex( name )
+    Otherwise Nop
+  End
+  If package~inTheProlog Then Do
+    instanceMethods = package~definedMethods
+    classMethods    = .StringTable~new
+  End
+  Else Do
+    instanceMethods = package~currentClass~instanceMethods
+    classMethods    = package~currentClass~classMethods
+  End
+  Select Case type
+    When "METHOD" Then
+      Return instanceMethods~hasIndex( name ) | classMethods~hasIndex( name )
+    When "CONSTANT" Then Do
+      method = instanceMethods[ name ]
+      If method == .Nil Then method = classMethods[ name ]
+      Return method~isA( .Constant.Method )
+    End
+    When "ATTRIBUTE" Then
+      Do methods Over .Array~of( instanceMethods, classMethods )
+        Do n Over .Array~of( name, name"=" )
+          method = methods[ n ]
+          If method~isA( .Attribute.Method ) Then Return .True
+          If method~isA( .Rexx.Method ), method~directive~isAttribute Then
+            Return .True
+        End
+      End
+  End
+  Return .False
 
 /******************************************************************************/
 /* ATTRIBUTE                                                                  */
@@ -603,8 +690,11 @@ CheckThatUseLocalIsValid:
     If options.get & options.set        Then Signal 99.937
     Else If options.abstract            Then Signal 99.940
     Else If options.delegateName \== "" Then Signal 99.947
-    Else If options.external \== ""     Then Signal 99.935
+    Else If options.external \== .Nil   Then Signal 99.935
   End
+  -- The EXTERNAL specification, after the body (ooRexx's order).
+  If options.external \== .Nil, \ExternalSpecIsValid( options.external ) Then
+    Signal 99.917
   name = directive~name
   attribute = .Attribute.Method~new(name, directive, codeBody)
   name = Upper( name~value )
@@ -650,6 +740,9 @@ Return
 
 -- Duplicate ::ATTRIBUTE directive instruction.
 99.931: Syntax( 99.931, TheElementAfter( directive~begin ) )
+
+-- Incorrect external name specification "&1".
+99.917: Syntax( 99.917, TheElementAfter( directive~begin ), options.external )
 
 -- External attributes cannot have a method body.
 99.935: Syntax( 99.935, instructionBegin )
@@ -815,6 +908,10 @@ Return
 ::Routine Method
   Use Strict Arg package, directive
   codeBody = Code.Body( package, directive )
+  -- The EXTERNAL specification: before the body errors, but after them with
+  -- ATTRIBUTE (ooRexx's order).
+  external = directive~external
+  If external \== .Nil, \directive~isAttribute Then Call CheckExternal
   If \codeBody~isEmpty Then Do
     firstInstruction = codeBody~instructions[1]
     instructionBegin = TheElementAfter( firstInstruction~begin )
@@ -823,6 +920,7 @@ Return
     Else If directive~external \== .Nil     Then Signal 99.936
     Else If directive~delegateName \== .Nil Then Signal 99.946
   End
+  If external \== .Nil, directive~isAttribute Then Call CheckExternal
   name = Upper( directive~name~value )
   method = .Rexx.Method~new(name, directive, codeBody)
   If package~inTheProlog Then Do
@@ -857,6 +955,12 @@ Return
 
 -- Duplicate ::METHOD directive instruction.
 99.902: Syntax( 99.902, TheElementAfter( directive~begin ) )
+
+CheckExternal:
+  If ExternalSpecIsValid( external ) Then Return
+
+-- Incorrect external name specification "&1".
+99.917: Syntax( 99.917, TheElementAfter( directive~begin ), external )
 
 -- Abstract methods cannot have a method body.
 99.933: Syntax( 99.933, instructionBegin )

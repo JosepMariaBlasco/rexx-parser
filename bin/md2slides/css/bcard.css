@@ -11,30 +11,36 @@
   max-width: 900px;
 }
 .business-card .vcard {
-  border: 1px solid var(--theme-accent);
-  border-top: 6px solid var(--theme-accent);
+  border: 1px solid var(--skin-accent);
+  border-top: 6px solid var(--skin-accent);
   padding: 18px 22px;
   background: #fff;
 }
 .business-card .vcard .name {
-  font-family: var(--theme-font-title);
+  font-family: var(--skin-font-title);
   font-size: 1.05em;
   font-weight: 700;
-  color: var(--theme-deep);
+  color: var(--skin-deep);
   margin: 0 0 2px 0;
 }
 .business-card .vcard .role {
   font-size: 0.82em;
-  color: var(--theme-accent);
+  color: var(--skin-accent);
   margin: 0 0 10px 0;
 }
 .business-card .vcard .detail {
   font-size: 0.82em;
-  color: var(--theme-fg);
+  color: var(--skin-fg);
   margin: 3px 0;
   line-height: 1.4;
 }
 /* The label ("Email", "Web") is separated from its value here, not by a
    non-breaking space typed into the source: an author writing Markdown should
    never have to type an HTML entity to get spacing right. */
-.business-card .vcard .detail b { color: var(--theme-deep); margin-right: 0.45em; }
+.business-card .vcard .detail b,
+.business-card .vcard .detail strong { color: var(--skin-deep); margin-right: 0.45em; }
+/* ::: {.card .tight}: an address block (an institution's card). There is no
+   role -- every line after the name is a detail -- and the lines sit close,
+   as in a printed address. */
+.business-card .vcard.tight .name { margin-bottom: 4px; }
+.business-card .vcard.tight .detail { margin: 0; line-height: 1.25; }

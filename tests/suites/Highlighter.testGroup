@@ -696,7 +696,7 @@ Else
 ::Method test_html_syntax_error
   options. = self~htmlOptions
   self~expectSyntax(36.901)
-  hl = .Highlighter~new("test", .Array~of('Say (('), options.)
+  hl = .Highlighter~new("test", .Array~of('Say ((1'), options.)
   hl~parse
 
 /******************************************************************************/

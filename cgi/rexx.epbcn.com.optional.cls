@@ -351,6 +351,7 @@ Crumb:
     When dochl"/examples"          Then Return "Highlighting examples"
     When dochl"/htmlclasses"       Then Return "HTMLClasses"
     When dochl"/fencedcode"        Then Return "Fenced Code Blocks"
+    When dochl"/inline"            Then Return "Highlighting Inline Code"
 
     -- "/rexx-parser/doc/highlighter/features"
 

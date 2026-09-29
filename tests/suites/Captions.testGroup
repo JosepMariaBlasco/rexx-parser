@@ -1,0 +1,235 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Captions.testGroup - Captions of listings and figures in md2slides         */
+/* ==================================================================         */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260926         First version (v214)                                      */
+/* 20260927         caption= on a bare <pre> (v217)                           */
+/* 20260927         File boxes, ```output {.file} (v219)                      */
+/* 20260927         Every captioned box: its step goes to the figure (v220)   */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED AT ALL                                                  */
+/*                                                                            */
+/* caption= on a code block reached the deck as data-caption and nobody read  */
+/* it: the caption was simply not there, in silence. The article pipelines   */
+/* turn it into a <figure class="listing"> in the browser (numberFigures.js); */
+/* md2slides does the same at build (Captions), with the same options         */
+/* (rexxpub: listings: / figures:, number-figures:, lang:).                   */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Captions.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "parser/RexxPubOptions.cls"
+::Requires "parser/YAMLFrontMatter.cls"
+
+::Class Captions.testGroup Subclass ooTestCase Public
+
+::Method test_a_captioned_listing_becomes_a_figure
+  html = '<p>x</p><div id="rx1" class="code rx-blockwrap" data-caption="Hello"><pre>say 1</pre></div><p>y</p>'
+  out = self~captions(html, ParseRexxPubYAML(.Nil))
+  self~assertEquals('<p>x</p><figure class="listing"><figcaption>Hello</figcaption>' || -
+    '<div id="rx1" class="code rx-blockwrap"><pre>say 1</pre></div></figure><p>y</p>', out, -
+    "caption above, attribute consumed, no number by default")
+
+::Method test_a_nested_div_stays_inside_the_figure
+  html = '<div class="sourceCode" data-caption="C"><div class="inner"><pre>a</pre></div></div>after'
+  out = self~captions(html, ParseRexxPubYAML(.Nil))
+  self~assertTrue(out~pos('</div></div></figure>after') > 0, "the whole block, nested divs and all ("out")")
+
+::Method test_below_numbered_and_localized
+  opts = self~opts("lang: es", "rexxpub:", "  number-figures: true", -
+                   "  listings:", "    caption-position: below")
+  html = '<div data-caption="Uno"><pre>1</pre></div><div data-caption="Dos"><pre>2</pre></div>'
+  out = self~captions(html, opts)
+  self~assertTrue(out~pos('<pre>1</pre></div><figcaption><span class="figure-number">Listado&nbsp;1:&ensp;</span>Uno</figcaption></figure>') > 0, -
+    "below, numbered, in Spanish ("out")")
+  self~assertTrue(out~pos('Listado&nbsp;2:&ensp;</span>Dos') > 0, "the count goes on")
+
+::Method test_a_custom_label
+  opts = self~opts("rexxpub:", "  number-figures: true", "  listings:", "    label: Program")
+  out = self~captions('<div data-caption="P"><pre>1</pre></div>', opts)
+  self~assertTrue(out~pos('>Program&nbsp;1:&ensp;</span>P<') > 0, "label: wins ("out")")
+
+::Method test_a_figure_is_numbered_and_moved_above
+  opts = self~opts("rexxpub:", "  number-figures: true", "  figures:", "    caption-position: above")
+  html = '<figure>' || "0a"x || '<img src="a.png" alt="A" />' || "0a"x || -
+         '<figcaption aria-hidden="true">A</figcaption>' || "0a"x || '</figure>'
+  out = self~captions(html, opts)
+  self~assertEquals('<figure><figcaption aria-hidden="true"><span class="figure-number">Figure&nbsp;1:&ensp;</span>A</figcaption>' || -
+    "0a"x || '<img src="a.png" alt="A" />' || "0a"x || "0a"x || '</figure>', out, "above, numbered")
+
+::Method test_listings_and_figures_count_apart
+  opts = self~opts("rexxpub:", "  number-figures: true")
+  html = '<div data-caption="L"><pre>1</pre></div><figure><img/><figcaption>F</figcaption></figure>'
+  out = self~captions(html, opts)
+  self~assertTrue(out~pos("Listing&nbsp;1:") > 0, "listing 1")
+  self~assertTrue(out~pos("Figure&nbsp;1:") > 0,  "figure 1, not 2")
+
+/* v217: Pandoc puts caption= of a language it does not highlight (```output) */
+/* on the bare <pre>, not on a <div>. Captions took "the last <div before the  */
+/* attribute" and wrapped whatever div was open around it: in a ::: fragment   */
+/* the caption showed before its listing; in a ::: col-N the whole column went */
+/* into the figure.                                                           */
+::Method test_a_captioned_pre_is_wrapped_alone
+  html = '<div class="fragment">' || "0a"x || -
+         '<pre class="output" data-caption="F"><code>x</code></pre>' || "0a"x || '</div>'
+  out = self~captions(html, ParseRexxPubYAML(.Nil))
+  self~assertEquals('<div class="fragment">' || "0a"x || -
+    '<figure class="listing"><figcaption>F</figcaption><pre class="output"><code>x</code></pre></figure>' || -
+    "0a"x || '</div>', out, "the figure goes inside the fragment, around the <pre> only")
+
+::Method test_a_captioned_pre_leaves_the_column_alone
+  html = '<div class="row"><div class="col-6"><p>L</p></div><div class="col-6">' || -
+         '<pre class="output" data-caption="C"><code>x</code></pre></div></div>'
+  out = self~captions(html, ParseRexxPubYAML(.Nil))
+  self~assertTrue(out~pos('<div class="col-6"><figure class="listing"><figcaption>C</figcaption><pre') > 0, -
+    "the column keeps its figure inside ("out")")
+  self~assertEquals(0, out~pos('<figure class="listing"><figcaption>C</figcaption><div'), -
+    "no div is swallowed")
+
+/* v219: ```output {.file caption=...} is a file box (Rony, 27-Sep). The box  */
+/* is the figure, so the id (an arrow's end), the step, its timing, anim=,    */
+/* group= and level- go up to it; spot= and the rest stay on the <pre>. The   */
+/* name is inside the box, on top, and is not a numbered listing.             */
+::Method test_a_file_box_takes_the_box_attributes
+  html = '<pre id="input" class="output file fragment afterPrevious" data-anim="fade-up"' || -
+         ' data-spot="s:[und]" data-caption="myinput.txt:"><code>und</code></pre>'
+  out = self~captions(html, ParseRexxPubYAML(.Nil))
+  self~assertEquals('<figure id="input" class="listing file fragment afterPrevious" data-anim="fade-up">' || -
+    '<figcaption>myinput.txt:</figcaption>' || -
+    '<pre class="output" data-spot="s:[und]"><code>und</code></pre></figure>', out, -
+    "the figure is the box; the text keeps what is about the text")
+
+::Method test_a_file_box_is_not_numbered_and_stays_on_top
+  opts = self~opts("rexxpub:", "  number-figures: true", -
+                   "  listings:", "    caption-position: below")
+  html = '<pre class="output file" data-caption="f.txt"><code>1</code></pre>' || -
+         '<pre class="output" data-caption="L"><code>2</code></pre>'
+  out = self~captions(html, opts)
+  self~assertTrue(out~pos('<figure class="listing file"><figcaption>f.txt</figcaption><pre class="output">') > 0, -
+    "the name on top, no number ("out")")
+  self~assertTrue(out~pos("Listing&nbsp;1:&ensp;</span>L") > 0, -
+    "the next listing is still number 1 ("out")")
+
+::Method test_a_file_box_without_caption_is_left_alone
+  html = '<pre id="f" class="output file fragment"><code>x</code></pre>'
+  self~assertEquals(html, self~captions(html, ParseRexxPubYAML(.Nil)), "the <pre> is the box")
+
+/* v220: every captioned box is a figure the same way, not only a file box.   */
+/* A ```output {.fragment caption=...} showed its caption a step early.       */
+::Method test_a_listing_takes_the_box_attributes
+  html = '<pre id="o" class="output fragment withPrevious level-2" data-group="2"' || -
+         ' data-spot="s:1" data-caption="Out"><code>x</code></pre>'
+  out = self~captions(html, ParseRexxPubYAML(.Nil))
+  self~assertEquals('<figure id="o" class="listing fragment withPrevious level-2" data-group="2">' || -
+    '<figcaption>Out</figcaption><pre class="output" data-spot="s:1"><code>x</code></pre></figure>', -
+    out, "the caption comes with the listing")
+
+::Method test_a_pandoc_listing_is_looked_at_inside
+  -- Pandoc: the id on the <div class="sourceCode">, the classes on its <pre>
+  html = '<div class="sourceCode" id="p" data-caption="Py">' || -
+         '<pre class="sourceCode python fragment numberLines" data-anim="fade"><code>1</code></pre></div>'
+  out = self~captions(html, ParseRexxPubYAML(.Nil))
+  self~assertEquals('<figure id="p" class="listing fragment" data-anim="fade"><figcaption>Py</figcaption>' || -
+    '<div class="sourceCode"><pre class="sourceCode python numberLines"><code>1</code></pre></div></figure>', -
+    out, "both tags give what goes up")
+
+::Method test_a_rexx_listing_keeps_its_own_id
+  html = '<div id="rx1" class="code rx-blockwrap" data-caption="R"><pre>say 1</pre></div>'
+  out = self~captions(html, ParseRexxPubYAML(.Nil))
+  self~assertTrue(out~startsWith('<figure class="listing"><figcaption>R</figcaption><div id="rx1"'), -
+    "the highlighter's id is not the author's ("out")")
+
+::Method test_a_picture_gives_its_step_to_the_figure
+  html = '<figure id="i">' || "0a"x || -
+         '<img src="a.png" class="fragment afterPrevious wide" data-group="2" alt="A" />' || "0a"x || -
+         '<figcaption aria-hidden="true">A</figcaption>' || "0a"x || '</figure>'
+  out = self~captions(html, ParseRexxPubYAML(.Nil))
+  self~assertEquals('<figure id="i" class="fragment afterPrevious" data-group="2">' || "0a"x || -
+    '<img src="a.png" class="wide" alt="A" />' || "0a"x || -
+    '<figcaption aria-hidden="true">A</figcaption>' || "0a"x || '</figure>', out, -
+    "the caption comes with the picture")
+
+::Method test_a_picture_with_an_id_is_numbered_and_moved
+  -- '<figure id="x">' was missed: only a literal '<figure>' was looked for
+  opts = self~opts("rexxpub:", "  number-figures: true", -
+                   "  figures:", "    caption-position: above")
+  html = '<figure id="x"><img src="a.png" /><figcaption>A</figcaption></figure>'
+  out = self~captions(html, opts)
+  self~assertEquals('<figure id="x"><figcaption><span class="figure-number">' || -
+    'Figure&nbsp;1:&ensp;</span>A</figcaption><img src="a.png" /></figure>', out, -
+    "numbered and above")
+
+::Method test_no_caption_no_change
+  html = '<div class="sourceCode"><pre>x</pre></div><figure><img/></figure>'
+  self~assertEquals(html, self~captions(html, ParseRexxPubYAML(.Nil)), "untouched")
+
+/******************************************************************************/
+/* Plumbing                                                                   */
+/******************************************************************************/
+
+::Method opts
+  -- ParseRexxPubYAML of a front matter written line by line
+  src = .Array~of("---")
+  Do i = 1 To Arg()
+    src~append(Arg(i))
+  End
+  src~append("---")
+  Return ParseRexxPubYAML(YAMLFrontMatter(src))
+
+::Method captions
+  Use Strict Arg html, opts
+  Return self~md2slides~findRoutine("CAPTIONS")~call(html, opts)
+
+::Method md2slides
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* routines without running it as one. The prologue does run, finds no      */
+  /* input file and complains; that complaint is swallowed here.               */
+  pkg = .local["CAPTIONS.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["CAPTIONS.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/Captions.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0

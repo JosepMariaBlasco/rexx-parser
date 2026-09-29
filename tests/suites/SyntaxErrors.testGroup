@@ -16,6 +16,14 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260316    0.5  Migrated from ParserChecks.test to ooRexxUnit             */
+/* 20260928    0.7  A label before THEN (18.1, 18.2), in a block (47.x before */
+/*                  the clause after it), and before the END of a             */
+/*                  SELECT (47.4); 99.913; ::ATTRIBUTE, ::METHOD and          */
+/*                  ::ROUTINE options and EXTERNAL specifications; ::ANNOTATE */
+/*                  targets (99.945) and signed values; hex and binary        */
+/*                  groups; a continuation at the end of the source; EXPOSE   */
+/*                  and USE LOCAL with no early checks; the calls of the      */
+/*                  ::CONSTANT expressions.                                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -105,6 +113,11 @@ Else
 
 ::Method test_error_14
   self~parserError(14.001,  "Do; Nop; i = 1                             ")
+  self~parserError(14.001,  "Do Label x; Nop                            ")
+  self~parserError(14.005,  "Do 3; Nop                                  ")
+  self~parserError(14.005,  "Do i = 1 To 2; Nop                         ")
+  self~parserError(14.005,  "Do Forever; Nop                            ")
+  self~parserError(14.005,  "Do While a; Nop                            ")
   self~parserError(14.002,  "Select; When 0 Then Say 1                  ")
   self~parserError(14.003,  "If a; Then                                 ")
   self~parserError(14.003,  "Select Case a; When 'A'; Then              ")
@@ -428,6 +441,33 @@ Else
 ::Method test_error_36
   self~parserError(36.901,  "a(b")
   self~parserError(36.902,  "a[b")
+  self~parserError(36.901,  "Say (1")
+  self~parserError(36.901,  "Say (a b")
+  self~parserError(36.901,  "Say (1 -")
+  self~parserError(36.901,  "Say (1,")
+  self~parserError(36.901,  "x = f(")
+  self~parserError(36.901,  "Call (")
+  self~parserError(36.901,  "Do While (1; End")
+
+/******************************************************************************/
+/* An unclosed "(": what it holds is diagnosed first, as in ooRexx            */
+/******************************************************************************/
+
+::Method test_unclosed_parenthesis
+  self~parserError(35.001,  "Say (")
+  self~parserError(35.001,  "Say (;")
+  self~parserError(35.001,  "Say ((")
+  self~parserError(35.001,  "Say (-")
+  self~parserError(35.001,  "Say (,")
+  self~parserError(35.001,  "Say 1 + (")
+  self~parserError(35.001,  "Say (1 +")
+  self~parserError(35.001,  "Say (1 ||")
+  self~parserError(35.001,  "Say (1 +;")
+  self~parserError(35.001,  "x = f(1 *")
+  self~parserError(35.001,  "Say [")
+  self~parserError(35.901,  "Say (+")
+  self~parserError(35.901,  "Say (1 + +")
+  self~parserError(35.001,  "Say (1 + -")
 
 /******************************************************************************/
 /* Error 37 — Unexpected right paren/bracket                                  */
@@ -569,24 +609,148 @@ Else
   -- Same error code (47.003), but different label in the message.
   -- (47.003.else.clause.rexx)
   -- self~parserError(47.003, ("If 1", "Then", "Nop", "X: Else", "Nop"))
-  -- Known divergence: parser gives 47.003, interpreter gives 18.001.
-  -- The label "consumes" the THEN, so the interpreter sees a missing THEN.
-  -- (47.003.then.clause.rexx)
-  -- self~parserError(47.003, ("If 1", "X: Then", "Nop"))
+  -- A label before THEN: the THEN clause is missing, as in ooRexx
+  -- (47.003.then.clause.rexx).
+  self~parserError(18.001, ("If 1", "X: Then", "Nop"))
+  self~parserError(18.001, "If 1; X: Then Nop")
 
 ::Method test_multiline_error_47_004
-  -- Known divergence: parser gives 47.004, interpreter gives 18.002.
-  -- Same issue as 47.003 then.clause: the label consumes the THEN.
+  -- A label before THEN: the THEN clause is missing, as in ooRexx.
   -- (47.004.then.clause.1.rexx)
-  -- self~parserError(47.004, ("Select", "  When 1 ", "  X: Then Nop", "End"))
+  self~parserError(18.002, ("Select", "  When 1 ", "  X: Then Nop", "End"))
   -- (47.004.then.clause.n.rexx)
-  -- self~parserError(47.004, ("Select", "  When 1 Then Nop", "  When 1 ", "  X: Then Nop", "End"))
-  Nop
+  self~parserError(18.002, ("Select", "  When 1 Then Nop", "  When 1 ", "  X: Then Nop", "End"))
+  -- A label before the END of a SELECT (with or without OTHERWISE).
+  self~parserError(47.004, "Select; When 1 Then Nop; X: End")
+  self~parserError(47.004, "Select; When 1 Then Nop; Otherwise; X: End")
+  -- In a block, a label is an error before the clause after it is parsed.
+  self~parserError(47.002, "Do; X: Say (; End")
+  self~parserError(47.003, "If 1 Then; X: Say (")
+  self~parserError(47.004, "Select; When 1 Then Nop; Otherwise; X: Say (; End")
+  self~parserError(18.002, "Select; When 1; X: Then Say (; End")
 
 ::Method test_multiline_error_99_913
-  -- EXPOSE before GUARD in a method (99.913.expose.rexx)
-  -- This is a second-pass error that is not detected when earlyCheck
-  -- options are active (the parser stops before reaching second pass).
-  -- The interpreter correctly raises 99.913.
-  -- self~parserError(99.913, ("::Method M", "  Expose a", "  Guard On when b > 0"))
-  Nop
+  -- GUARD WHEN with no reference to an exposed variable (99.913.expose.rexx)
+  self~parserError(99.913, ("::Method M", "  Expose a", "  Guard On when b > 0"))
+  self~parserError(99.913, ("::Method M", "  Guard On when b > 0"))
+  self~parserError(99.913, ("::Method M", "  Use Local b", "  Guard On when b > 0"))
+  self~parserError(99.913, ("::Method M", "  Use Local", "  Guard On when rc > 0"))
+  self~parserError(99.913, ("::Method M", "  Expose (a)", "  Guard On when a > 0"))
+  self~parserError(99.913, ("::Method M", "  Expose a.b", "  Guard On when a.b > 0"))
+  self~parserError(99.913, ("::Method M", "  Expose a", "  Guard Off when 1"))
+  self~parserOK(("::Method M", "  Expose a", "  Guard On when a > 0"))
+  self~parserOK(("::Method M", "  Expose a.", "  Guard On when a.b > 0"))
+  self~parserOK(("::Method M", "  Expose i", "  Guard On when z.i > 0"))
+  self~parserOK(("::Method M", "  Use Local b", "  Guard On when a > 0"))
+  self~parserOK(("::Method M", "  Expose a", "  Guard On when 1, f(a)"))
+
+::Method test_directive_options_v07
+  -- ::ATTRIBUTE: ABSTRACT, DELEGATE and EXTERNAL exclude each other.
+  self~parserError(25.925, "::Class C; ::Attribute x Delegate t External 'LIBRARY l'")
+  self~parserError(25.925, "::Class C; ::Attribute x External 'LIBRARY l' Delegate t")
+  self~parserError(25.925, "::Class C; ::Attribute x Abstract External 'LIBRARY l'")
+  self~parserError(25.925, "::Class C; ::Attribute x Delegate t Abstract")
+  -- The DELEGATE target is a symbol; EXTERNAL needs a string.
+  self~parserError(20.926, "::Class C; ::Attribute x Delegate 't'")
+  self~parserError(20.926, "::Class C; ::Method m Delegate 't'")
+  self~parserError(19.905, "::Class C; ::Attribute x External abc")
+  self~parserError(19.905, "::Class C; ::Attribute x External")
+  self~parserError(19.905, "::Routine R External")
+  self~parserError(19.905, "::Routine R External abc")
+  -- The EXTERNAL specifications.
+  self~parserError(99.917, "::Class C; ::Attribute x External ''")
+  self~parserError(99.917, "::Class C; ::Attribute x Get External 'foo bar'")
+  self~parserError(99.917, "::Class C; ::Attribute x Set External 'LIBRARY a b c'")
+  self~parserError(99.917, "::Class C; ::Method m External ''")
+  self~parserError(99.917, "::Class C; ::Method m External 'LIBRARY'")
+  self~parserError(99.917, "::Class C; ::Method m External 'foo bar'; Say 1")
+  self~parserError(99.917, "::Routine R External 'LIBRARY'")
+  self~parserError(99.917, "::Routine R External 'REGISTERED'")
+  self~parserError(99.917, "::Routine R External 'lib x'")
+  -- The body errors go first with ATTRIBUTE (as in ooRexx).
+  self~parserError(99.937, "::Class C; ::Attribute x External 'foo'; Say 1")
+  self~parserError(99.935, "::Class C; ::Attribute x Get External 'foo'; Say 1")
+  self~parserError(99.934, "::Class C; ::Method m Attribute External 'foo'; Say 1")
+
+::Method test_annotate_v07
+  -- The target must be defined before (99.945).
+  self~parserError(99.945, "::Annotate Class Foo a 1")
+  self~parserError(99.945, "::Annotate Class Foo; ::Class Foo")
+  self~parserError(99.945, "::Annotate Routine R; ::Routine R")
+  self~parserError(99.945, "::Annotate Method M")
+  self~parserError(99.945, "::Class A; ::Method M; ::Class B; ::Annotate Method M")
+  self~parserError(99.945, "::Class A; ::Method M; ::Annotate Constant M")
+  self~parserError(99.945, "::Class A; ::Method M; ::Annotate Attribute M")
+  self~parserError(99.945, "::Method M; ::Annotate Constant M")
+  self~parserOK("::Class Foo; ::Annotate Class Foo a 1")
+  self~parserOK("::Routine R; ::Annotate Routine R x y")
+  self~parserOK("::Class A; ::Method M Class; ::Annotate Method M")
+  self~parserOK("::Class A; ::Constant M 1; ::Annotate Constant M")
+  self~parserOK("::Class A; ::Constant M 1; ::Annotate Method M")
+  self~parserOK("::Class A; ::Attribute M Set; ::Annotate Attribute M")
+  self~parserOK("::Class A; ::Attribute M Class Get; ::Annotate Attribute M")
+  self~parserOK("::Class A; ::Method M Attribute; ::Annotate Attribute M")
+  self~parserOK("::Attribute M; ::Annotate Attribute M")
+  -- A signed value is a number.
+  self~parserError(19.923, "::Annotate Package a -abc")
+  self~parserError(19.923, "::Annotate Package a -'3'")
+  self~parserError(19.923, "::Annotate Package a -1abc")
+  self~parserError(19.923, "::Annotate Package a -.abc")
+  self~parserOK("::Annotate Package a -1e3 b +.5 c - 12")
+
+::Method test_hex_binary_groups_v07
+  -- The whitespace and the groups are checked before the characters.
+  self~parserError(15.006, 'x = "] ["b')
+  self~parserError(15.006, 'x = "1 2 3"b')
+  self~parserError(15.005, 'x = "g 1"x')
+  self~parserError(15.004, 'x = "01 0012"b')
+  self~parserError(15.003, 'x = "12 g2"x')
+  self~parserError(15.002, 'x = " 01 "b')
+  self~parserError(15.001, 'x = " 1g "x')
+
+::Method test_continuation_at_the_end_v07
+  -- A continuation at the end of the last line: the clause ends there.
+  self~parserOK("x = 1 -")
+  self~parserOK("x = 1; y = 2 -")
+  self~parserOK("x = 1 - /* comment */")
+  self~parserOK(("::Class C", "::Constant c 1 -"))
+  self~parserError(19.924, "::Annotate Package a -")
+
+::Method test_expose_uselocal_no_early_checks
+  -- Out of a method, EXPOSE and USE LOCAL as the first instruction are
+  -- errors only when they run (98.992, 98.993): with no early checks,
+  -- they parse.
+  sources = .Array~of( "Expose x", "Use Local", -
+    .Array~of( "::Routine R", "  Expose x" ), -
+    .Array~of( "::Routine R", "  Use Local x" ) )
+  Do source Over sources
+    If source~isA( .Array ) Then label = source~makeString( "L", "; " )
+    Else label = source
+    self~assertEquals( "", ParseWithNoOptions( source ), -
+      "No early checks:" label )
+  End
+
+::Method test_constant_calls_v07
+  -- The function calls of a ::CONSTANT expression are classified with no
+  -- labels, as in ooRexx: a BIF, a ::ROUTINE, or an external routine.
+  source = .Array~of( "x = 1", "Exit", "lab: Return 2", "::Class A",  -
+    "::Constant r (Length('abc'))", "::Constant s (Twice('x'))",     -
+    "::Constant t (lab())", "::Routine Twice", "  Return Arg(1)Arg(1)" )
+  calls = .Rexx.Parser~new( "", source )~package~constantCalls
+  self~assertEquals( 3, calls~items, "Three calls in ::CONSTANTs" )
+  self~assertTrue( calls[1][1]~subCategory == .BUILTIN.FUNCTION.NAME,  -
+    "LENGTH is a BIF" )
+  self~assertTrue( calls[2][1]~subCategory == .PACKAGE.FUNCTION.NAME,  -
+    "TWICE is a ::ROUTINE" )
+  self~assertTrue( calls[3][1]~subCategory == .EXTERNAL.FUNCTION.NAME, -
+    "LAB is external (the labels are not seen)" )
+
+::Routine ParseWithNoOptions
+  Use Strict Arg source
+  Signal On Syntax
+  .Rexx.Parser~new( "", source )~package
+  Return ""
+Syntax:
+  co = Condition("O")
+  If co~code == 98.900 Then Return co~additional~lastItem~code
+  Return co~code

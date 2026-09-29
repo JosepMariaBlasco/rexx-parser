@@ -32,6 +32,8 @@
 /*                  options (now YAML-only)                                   */
 /* 20260314         Use InitCLI() from CLISupport.cls                         */
 /* 20260315         Extract FindFile internal routine for file search         */
+/* 20260926         Front matter read with yaml.cls; invalid YAML is fatal;   */
+/*                  exit code 1 when the single file given fails              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -315,11 +317,14 @@ DoSingleFile:
   Call ProcessFile fileObj, destDir, fileObj~absolutePath, template, -
     cssbase, jsbase, itrace, attributes, continue, sectionNumbers, -
     singleFileMode, numberFigures, highlightStyle
+  -- 0 when it went well; 1, or no result at all, when the file was in error
+  fileRC = 1
+  If Var("RESULT") Then fileRC = result
 
   Say Copies("-",80)
   Say Time("Long") "Processed 1 file, took" Time("E") "seconds."
 
-  Exit
+  Exit fileRC
 
 --------------------------------------------------------------------------------
 -- FindFile -- Search for a file in the standard search path.                 --
@@ -392,7 +397,8 @@ Help:
   --   everything else: YAML > default  (author's intent prevails)            --
   ------------------------------------------------------------------------------
 
-  yaml = YAMLFrontMatter(source)
+  yaml = CheckedYAMLFrontMatter(source, file)
+  If yaml == "" Then Exit 1             -- Invalid YAML, already reported
   opts = ParseRexxPubYAML(yaml)
 
   -- For structural options, YAML always wins
@@ -463,8 +469,17 @@ Help:
 
   Signal On Syntax Name IndividualFileFailed
 
+  -- Dialects are additive: enabled if requested via --default OR in the
+  -- document's YAML front matter. (The fence adds its own on top, via
+  -- FencedCode.) md2html has no dedicated dialect CLI flags; the only
+  -- meaningful YAML value is "true".
+  combinedAttributes = attributes
+  If opts["executor"]     == "true" Then combinedAttributes = Strip(combinedAttributes "executor")
+  If opts["experimental"] == "true" Then combinedAttributes = Strip(combinedAttributes "experimental")
+  If opts["unicode"]      == "true" Then combinedAttributes = Strip(combinedAttributes "unicode")
+
   defaultOptions. = 0
-  defaultOptions.default  = attributes
+  defaultOptions.default  = combinedAttributes
 
   If singleFileMode Then defaultOptions.["CONTINUE"] = 1
   Else If continue Then defaultOptions.["CONTINUE"] = 1

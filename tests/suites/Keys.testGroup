@@ -1,0 +1,187 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Keys.testGroup - Tests for key caps in a transcript                        */
+/* ===================================================                        */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260918         First version                                             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* THE RULE THIS GROUP GUARDS                                                 */
+/*                                                                            */
+/*   A block that asked for keys turns <Enter> into a cap. Every other block  */
+/*   is left exactly as it was.                                               */
+/*                                                                            */
+/* The second half is the one worth testing. An output block is a claim --    */
+/* this is what the program printed -- and <...> is ordinary text in a great  */
+/* deal of real output: a shell prompt, a Rexx <> operator, an XML tag, a     */
+/* mail address. If the opt-in ever stops being honoured, decks that never    */
+/* asked for any of this quietly grow key caps in the middle of their output, */
+/* and nothing raises.                                                        */
+/*                                                                            */
+/* The edges are here for the same reason. Inside a marked block the cap runs */
+/* from < to the next > ON THE SAME LINE: without that bound, one stray <     */
+/* would swallow the rest of the transcript into a single cap -- which is     */
+/* visible, but only to whoever looks at that slide before the talk.          */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Keys.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class Keys.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* A block that asked for keys                                                */
+/******************************************************************************/
+
+::Method test_a_marked_block_gets_its_caps
+  out = self~mark('<pre class="output keys"><code>rexx hi.rex &lt;Enter&gt;</code></pre>')
+  self~assertTrue(out~pos('<span class="key">Enter</span>') > 0, -
+    "keys: <Enter> in a marked block becomes a cap")
+  self~assertEquals(0, out~pos("&lt;Enter&gt;"), -
+    "keys: and the escaped angle brackets are gone")
+
+::Method test_several_caps_in_one_block
+  out = self~mark('<pre class="keys"><code>a &lt;Ctrl+C&gt; b &lt;Enter&gt;</code></pre>')
+  self~assertEquals(2, out~countStr('<span class="key">'), -
+    "keys: every key in the block is capped, not just the first")
+  self~assertTrue(out~pos('<span class="key">Ctrl+C</span>') > 0, -
+    "keys: a chord is one cap, written as the author wrote it")
+
+::Method test_the_cap_carries_the_text_as_written
+  /* No catalogue and no symbols: the cap says what the author typed. Measured */
+  /* in the browser -- whether the deck's fonts have a return arrow depends on */
+  /* the machine the deck is shown from, and a missing glyph is a box on the   */
+  /* wall in the middle of a talk.                                             */
+  out = self~mark('<pre class="keys"><code>&lt;any key at all&gt;</code></pre>')
+  self~assertTrue(out~pos('<span class="key">any key at all</span>') > 0, -
+    "keys: the cap is the author's text, whatever it says")
+
+/******************************************************************************/
+/* Every other block                                                          */
+/******************************************************************************/
+
+::Method test_an_unmarked_block_is_untouched
+  html = '<pre class="output"><code>3 &lt;&gt; 4, a &lt;b&gt; c, &lt;Enter&gt;</code></pre>'
+  self~assertEquals(html, self~mark(html), -
+    "keys: a block that did not ask is byte-identical")
+
+::Method test_keys_is_matched_as_a_word
+  /* 'monkeys' is not a transcript. Substring matching on a class list is the  */
+  /* classic way this goes wrong, and the block it breaks is someone else's.   */
+  html = '<pre class="monkeys"><code>&lt;Enter&gt;</code></pre>'
+  self~assertEquals(html, self~mark(html), -
+    "keys: a class that merely CONTAINS 'keys' is not the keys class")
+  html = '<pre class="keyspress"><code>&lt;Enter&gt;</code></pre>'
+  self~assertEquals(html, self~mark(html), -
+    "keys: nor one that starts with it")
+
+::Method test_prose_outside_any_block_is_untouched
+  html = '<p>a &lt;b&gt; c</p><pre class="keys"><code>&lt;Enter&gt;</code></pre>' -
+         || '<p>d &lt;e&gt; f</p>'
+  out  = self~mark(html)
+  self~assertEquals(2, out~countStr("&lt;"), -
+    "keys: the two prose angle brackets are still there")
+  self~assertEquals(1, out~countStr('<span class="key">'), -
+    "keys: and only the block produced a cap")
+
+::Method test_one_marked_block_does_not_leak_into_the_next
+  html = '<pre class="keys"><code>&lt;Enter&gt;</code></pre>' -
+         || '<pre class="output"><code>&lt;Enter&gt;</code></pre>'
+  out  = self~mark(html)
+  self~assertEquals(1, out~countStr('<span class="key">'), -
+    "keys: the block after a marked one is on its own again")
+
+/******************************************************************************/
+/* The edges                                                                  */
+/******************************************************************************/
+
+::Method test_an_empty_pair_is_not_a_cap
+  /* <> is the Rexx 'not equal' operator, and an empty cap is nobody's         */
+  /* intention.                                                                */
+  html = '<pre class="keys"><code>if a &lt;&gt; b</code></pre>'
+  self~assertEquals(html, self~mark(html), -
+    "keys: <> is left as it is")
+
+::Method test_a_cap_does_not_cross_a_line
+  out = self~mark('<pre class="keys"><code>a &lt; b' || "0a"x || -
+                  'next &lt;Enter&gt;</code></pre>')
+  self~assertTrue(out~pos("a &lt; b") > 0, -
+    "keys: an unclosed < stays an unclosed <")
+  self~assertTrue(out~pos('<span class="key">Enter</span>') > 0, -
+    "keys: and the next line still works -- the damage stops at the newline")
+
+::Method test_an_unclosed_bracket_at_the_end_is_kept
+  html = '<pre class="keys"><code>ends with &lt;</code></pre>'
+  self~assertEquals(html, self~mark(html), -
+    "keys: a < with no > after it is text")
+
+::Method test_a_second_open_bracket_closes_nothing
+  /* '&lt;a &lt;Enter&gt;' -- the first < is not a cap that swallows the       */
+  /* second one; the second is the real key.                                   */
+  out = self~mark('<pre class="keys"><code>&lt;a &lt;Enter&gt;</code></pre>')
+  self~assertTrue(out~pos('<span class="key">Enter</span>') > 0, -
+    "keys: the inner pair is the cap")
+  self~assertTrue(out~pos("&lt;a ") > 0, -
+    "keys: the stray < before it is kept as text")
+
+/******************************************************************************/
+/* Plumbing                                                                   */
+/******************************************************************************/
+
+::Method mark
+  Use Strict Arg html
+  Return self~md2slides~findRoutine("MARKKEYS")~callWith(.Array~of(html))
+
+::Method md2slides
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* public routines without running it as one. The prologue does run, finds   */
+  /* no input file and complains; that complaint is swallowed here.            */
+  pkg = .local["KEYS.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  /* Assigned, never a bare message instruction: a bare send is a clause whose */
+  /* value lands in RESULT.                                                    */
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["KEYS.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/Keys.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0

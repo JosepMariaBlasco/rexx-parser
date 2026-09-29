@@ -4,10 +4,10 @@
 /*                                                                            */
 /*  This is the LAYOUT axis: where things sit. It knows nothing about fonts,   */
 /*  colours or logos -- those come from an identity (CI) stylesheet, which     */
-/*  supplies the --theme-* custom properties consumed here.                      */
+/*  supplies the --skin-* custom properties consumed here.                      */
 /*                                                                            */
 /*  Every visual value below is either structural (positions, proportions)     */
-/*  or a var(--theme-*) reference. Adding an institution must never require       */
+/*  or a var(--skin-*) reference. Adding an institution must never require       */
 /*  editing this file.                                                        */
 /*                                                                            */
 /******************************************************************************/
@@ -18,29 +18,35 @@
 /* -------------------------------------------------------------------------- */
 
 :root {
-  --theme-font-prose:   'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --theme-font-mono:    Consolas, 'Courier New', monospace;
-  --theme-accent:       #00529B;
-  --theme-fg:           #1a1a1a;
-  --theme-bg:           #ffffff;
-  --theme-muted:        #767676;
-  --theme-rule:         var(--theme-accent);
-  --theme-output-bg:    #e8e8e8;
-  --theme-title-weight: 700;
+  --skin-font-prose:   'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --skin-font-mono:    Consolas, 'Courier New', monospace;
+  --skin-accent:       #00529B;
+  --skin-fg:           #1a1a1a;
+  --skin-bg:           #ffffff;
+  --skin-muted:        #767676;
+  --skin-rule:         var(--skin-accent);
+  --skin-output-bg:    #e8e8e8;
+  --skin-file-bg:      rgba(255, 204, 51, 0.25);   /* ```output {.file} (v219) */
+  --skin-file-name:    #8c8c8c;
+  --skin-title-weight: 700;
+  /* Code inside text, relative to the text around it (v221): 1 is the same */
+  /* size. A wide mono face such as IBM Plex Mono looks bigger than the     */
+  /* prose at the same size; its skin can take it down (0.9).               */
+  --skin-inline-mono-scale: 1;
 
   /* Code size is DERIVED from prose size, not an independent absolute. There is
-     one source of truth for text size -- --theme-body-size -- and code keeps a
-     declared PROPORTION to it via --theme-code-ratio, so the two never drift out
+     one source of truth for text size -- --skin-body-size -- and code keeps a
+     declared PROPORTION to it via --skin-code-ratio, so the two never drift out
      of relation: raise the prose and the code follows. The default ratio is a
      harmonious 0.7 (code noticeably smaller than prose but clearly of the same
-     type family). A theme is free to override the ratio -- Rony's ODP set code
-     deliberately small (10pt against 21pt prose, ~0.47), so his theme declares
-     --theme-code-ratio: 0.47 and recovers that look WITHIN the proportion model,
-     rather than pinning an absolute --theme-code-size that would sever the
+     type family). A skin is free to override the ratio -- Rony's ODP set code
+     deliberately small (10pt against 21pt prose, ~0.47), so his skin declares
+     --skin-code-ratio: 0.47 and recovers that look WITHIN the proportion model,
+     rather than pinning an absolute --skin-code-size that would sever the
      relation. A per-slide :::code-font-size still overrides the result with an
      absolute when a single slide needs it. */
-  --theme-code-ratio: 0.7;
-  --theme-code-size:  calc(var(--theme-body-size, 34px) * var(--theme-code-ratio));
+  --skin-code-ratio: 0.7;
+  --skin-code-size:  calc(var(--skin-body-size, 34px) * var(--skin-code-ratio));
 
   /* Deck geometry. 16:9, matching the slides class page size.               */
   --deck-w: 1280;
@@ -70,7 +76,7 @@ html, body {
   height: calc(var(--deck-h) * 1px);
   transform: translate(-50%, -50%) scale(var(--deck-scale, 1));
   transform-origin: center center;
-  background: var(--theme-bg);
+  background: var(--skin-bg);
   overflow: hidden;
 }
 
@@ -82,20 +88,20 @@ html, body {
   position: absolute;
   inset: 0;
   display: none;
-  /* Content inset is GEOMETRY, so it belongs to the theme/master, not to this
-     shared runtime. The runtime only supplies fallbacks; a theme sets its own
-     --theme-pad-top / --theme-pad-x to control how much air the content gets
-     above and at the sides. The footer band stays --theme-footer-height as
+  /* Content inset is GEOMETRY, so it belongs to the skin/master, not to this
+     shared runtime. The runtime only supplies fallbacks; a skin sets its own
+     --skin-pad-top / --skin-pad-x to control how much air the content gets
+     above and at the sides. The footer band stays --skin-footer-height as
      before. This is what lets a deck tighten its margins without editing the
      runtime. */
   padding:
-    var(--theme-pad-top, 42px)
-    var(--theme-pad-x, 56px)
-    var(--theme-footer-height, 64px)
-    var(--theme-pad-x, 56px);
+    var(--skin-pad-top, 42px)
+    var(--skin-pad-x, 56px)
+    var(--skin-footer-height, 64px)
+    var(--skin-pad-x, 56px);
   box-sizing: border-box;
-  font-family: var(--theme-font-prose);
-  color: var(--theme-fg);
+  font-family: var(--skin-font-prose);
+  color: var(--skin-fg);
   font-size: 26px;
   line-height: 1.3;
   text-align: left;
@@ -104,58 +110,60 @@ html, body {
 
 .slide.current { display: block; }
 
-/* FLAT (absolute-layout) regime. The ODP places every box by explicit page
-   coordinates against the full physical canvas (0cm = the slide's own edge),
-   so the theme's content padding — which exists to inset normal text flow —
-   must not apply here, or a box at left:0 lands 56px in and nothing reaches
-   the edge. Zero it so the absolute canvas owns the whole slide. The classic
-   <h1> regime keeps the padding. */
-.slide.flat { padding: 0; }
-
-/* The ODP measures a box's width as its TOTAL width — the frame edge to edge,
-   border and inner padding included — the way CSS border-box does. The browser
-   default (content-box) instead adds border and padding OUTSIDE the declared
-   width, so a box with a left padding (a process arrow whose label is indented
-   to clear its logo, padding-left:3.8cm) renders far wider than the ODP frame
-   and overflows to the right. border-box makes the emitted svg:width the real
-   rendered width, padding and border folded in, matching the source. Scoped to
-   the absolute boxes (direct children of .slide.flat). */
-.slide.flat > div { box-sizing: border-box; }
-
-/* A box's text is a <p> (one per box, its lines joined by <br>). Two browser
-   defaults fight the ODP here. First, the <p>'s default margin (~1em) does not
-   collapse inside the box's flex column, so it pushes the lines to opposite
-   ends — zeroed. Second, the <p> inherits the slide's 26px font-size, so the
-   <br> advances by ~26px even though the label text is smaller (13pt spans),
-   splitting a two-line label with a gap the source never had. Setting the <p>
-   itself to font-size:0 makes the line box take its height from the SPANS (each
-   carrying its real pt size) and from line-height, not from an inherited 26px;
-   the visible text is unaffected because every run is wrapped in a sized span.
-   A tight line-height then seats the two lines together as in the ODP. Scoped
-   to the absolute boxes (direct children of .slide.flat) so semantic <p>
-   regimes are untouched. */
-.slide.flat > div > p { margin: 0; font-size: 0; line-height: 1.2; }
-
-/* Master footer split across a right tab-stop (address left, author right).
-   The emitter emits two segment <span>s in a flex-row div, but Pandoc folds
-   them into a single <p>, which becomes the sole flex child and defeats
-   justify-content:space-between. Promote that <p> to the flex row itself so
-   the two segments land at opposite edges, as the ODP's tab-stop intends. */
-.slide.flat > div.master-footer-split > p {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  align-items: baseline;
+/* -------------------------------------------------------------------------- */
+/* Margin boxes -- the Paged-Media model.                                     */
+/*                                                                            */
+/* Every slide carries a header region and a footer region, each three boxes  */
+/* (left / center / right). The build fills them from the skin's              */
+/* --skin-{header,footer}-{left,center,right} templates, the deck's           */
+/* header:/footer: front-matter, and per-slide :::header-left ... zones; the  */
+/* runtime substitutes {page}/{pages}. This runtime owns only the PLACEMENT:  */
+/* the two bands pinned to the top and bottom edges, three columns each, so a */
+/* master never re-invents corner coordinates. A master may still restyle     */
+/* (colour, hide a box, nudge) -- but the geometry lives here, once.          */
+/*                                                                            */
+/* The bands sit ON the padding the .slide already reserves: the footer band  */
+/* is --skin-footer-height (as before), the header band --skin-header-height  */
+/* (default 0, so a deck with no header loses no content room and old decks   */
+/* are unchanged). They are position:absolute chrome, OUT of the flow, so     */
+/* fitHeight ignores them (it skips absolutely-positioned children).          */
+.slide .margin {
+  position: absolute;
+  left:  var(--skin-pad-x, 56px);
+  right: var(--skin-pad-x, 56px);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;   /* left | center | right */
+  align-items: center;
+  column-gap: 1em;
+  pointer-events: none;
+  font-size: var(--skin-margin-size, 15px);
+  color: var(--skin-footer-muted, #808080);
+  font-family: var(--skin-font-prose, sans-serif);
 }
-
-/* Default page transition: a fade, applied only via the runtime's .anim-in    */
-/* marker so the animation catalogue (data-anim on a slide) can override it.    */
-.slide.current.anim-in:not([data-anim]) { animation: slide-in var(--anim-dur, 320ms) ease-out; }
-
-@keyframes slide-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+.slide .margin.header {
+  top: 0;
+  height: var(--skin-header-height, 0px);
 }
+.slide .margin.footer {
+  bottom: 0;
+  height: var(--skin-footer-height, 64px);
+}
+/* An empty header band paints nothing and takes no room; only when a deck    */
+/* declares --skin-header-height does the header become a visible band.       */
+.slide .margin.header:empty { display: none; }
+.slide .m-left   { justify-self: start;  text-align: left;   }
+.slide .m-center { justify-self: center; text-align: center; }
+.slide .m-right  { justify-self: end;    text-align: right;  }
+/* A box with no text draws nothing (the grid column just stays empty). */
+.slide .m-left:empty, .slide .m-center:empty, .slide .m-right:empty { visibility: hidden; }
+
+/* Default page transition: NONE (a cut). An unmarked slide simply appears --   */
+/* how long a slide takes to arrive is a separate decision from how long a      */
+/* fragment takes to appear, and our house default is Rony's: no page           */
+/* transition, a full second on elements. A deck that wants a default fade sets  */
+/* --skin-anim-duration-page and marks slides anim="fade" (or its identity     */
+/* seeds a fade), so nothing is lost -- the floor is just honest now: no rule    */
+/* here means no animation, rather than a fade with a hidden duration.          */
 
 @media (prefers-reduced-motion: reduce) {
   .slide.current { animation: none; }
@@ -171,27 +179,42 @@ html, body {
 /* kicker -- the small line above the title ("Basics", "History")             */
 .kicker {
   font-size: 0.72em;
-  color: var(--theme-fg);
+  color: var(--skin-fg);
   margin: 0 0 2px 0;
   font-weight: 400;
+}
+
+/* On a slide, the kicker is placed, not flowed. In the flow it sat ABOVE the
+   title band and pushed the band down by its own height, so a slide with a
+   kicker had its title, its rule and all its content lower than the slide
+   before it -- a jump on every change of slide. Taken out of the flow it
+   costs nothing: each master says where it goes (usually the upper part of
+   its title band); this is only the fallback. */
+.slide > .kicker {
+  position: absolute;
+  top: var(--skin-kicker-top, 14px);
+  left: var(--skin-pad-x, 56px);
+  right: var(--skin-pad-x, 56px);
+  margin: 0;
+  z-index: 3;
 }
 
 /* title -- the slide heading                                                 */
 .title {
   font-size: 1.30em;
-  font-weight: var(--theme-title-weight);
-  color: var(--theme-fg);
+  font-weight: var(--skin-title-weight);
+  color: var(--skin-fg);
   margin: 0 0 0.34em 0;
   padding-bottom: 0.20em;
-  border-bottom: 3px solid var(--theme-rule);
+  border-bottom: 3px solid var(--skin-rule);
 }
 
 /* body -- ordinary prose and lists                                           */
-/* Prose base size. The body's level-1 text takes --theme-body-size (Rony's
+/* Prose base size. The body's level-1 text takes --skin-body-size (Rony's
    outline level 1 is 21pt ≈ 34px, larger than the slide's own 26px base). The
-   per-level cascade below scales down from THIS size. A theme with no prose can
+   per-level cascade below scales down from THIS size. A skin with no prose can
    omit it; then the body falls back to the slide's inherited size. */
-.body { margin: 0.5em 0; font-size: var(--theme-body-size, 1em); }
+.body { margin: 0.5em 0; font-size: var(--skin-body-size, 1em); }
 
 /* The .body owns the separation from its neighbours (its own 0.5em margin). Its
    first and last children must not ADD their own edge margins on top -- a lead
@@ -222,9 +245,11 @@ html, body {
 /* dominant (22,18,16,14)pt cascade and its rescaled siblings (32,28,24,20 ...). */
 /* Applied on the child ul so each level scales relative to the level above; a   */
 /* floor at level 4 stops the shrink where the corpus does (level 4+ is flat).   */
-.body ul ul       { font-size: 0.82em; }
-.body ul ul ul    { font-size: 0.89em; }
-.body ul ul ul ul { font-size: 0.88em; }   /* level 4; deeper stays at this size */
+/* A numbered list is a level like any other: `ol` counts as `ul` does (Rony, */
+/* 28-Sep: a `1.` list under a bullet kept the level-1 size).                  */
+.body :is(ul, ol) :is(ul, ol)                         { font-size: 0.82em; }
+.body :is(ul, ol) :is(ul, ol) :is(ul, ol)             { font-size: 0.89em; }
+.body :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) { font-size: 0.88em; }   /* level 4; deeper stays at this size */
 
 /* -------------------------------------------------------------------------- */
 /* Two-dimensional layout -- a 12-unit grid (Bootstrap-shaped, no responsive).  */
@@ -288,6 +313,21 @@ html, body {
    rhythm between stacked blocks outside a row is untouched. */
 .slide .row > * > :first-child { margin-top: 0; }
 
+/* The same at the BOTTOM, for the same reason and one more. A column is a flex
+   item, so its content's margins cannot collapse through it: the last
+   paragraph's 1em stayed inside the row, and then the next block's own top
+   margin was added on top -- a row followed by a paragraph sat 2em above it,
+   and two rows of one-line text were a whole paragraph apart (Rony's slide of
+   operators, one row per line, "unexplainably" loose). Zero it, and put the
+   space between rows where it can be seen and changed: on the row. */
+.slide .row > * > :last-child { margin-bottom: 0; }
+.slide .row + .row {
+  margin-top: calc(var(--skin-body-size, 1em) * var(--contents-scale, 1));
+}
+/* ::: {.row .tight} sits right under the row before it: rows used as the
+   lines of a small table, not as paragraphs. */
+.slide .row + .row.tight { margin-top: 0; }
+
 /* Contents scale -- one knob to shrink a whole block's text at once. A chunk
    of content that fits but runs a little tall can be dialled down with a single
    number instead of re-picking the code/body font-size zones by hand and
@@ -308,7 +348,7 @@ html, body {
    this stylesheet is flat: every group already carries its final factor.
 
    We scale where the size is CONSUMED (font-size on the blocks), never by
-   redefining --theme-*-size in terms of themselves. The outline's per-level
+   redefining --skin-*-size in terms of themselves. The outline's per-level
    cascade (0.82em...) rides on the already-scaled .body; unitless line-heights
    follow the font down on their own. TITLE and footer are OUT of scope: they
    are chrome placed by the master, not content the author flowed. */
@@ -327,12 +367,28 @@ html, body {
 .slide .row .col-10 > p, .slide .row .col-11 > p, .slide .row .col-12 > p,
 .slide .contents [class*="col-"] > ul,
 .slide .row [class*="col-"] > ul,
-.slide .contents > ul, .slide .contents > ol {
-  font-size: calc(var(--theme-body-size, 1em) * var(--contents-scale));
+.slide .contents > ul, .slide .contents > ol,
+/* A .fragment is a reveal wrapper, transparent to size: it sets opacity and
+   transform, never font-size (anim.css). So a size-consuming block wrapped in
+   one -- the overwhelmingly common case, since incremental slides put nearly
+   every block in its own :::fragment -- must still take the scale. The child
+   combinators above stop at the fragment and the scale is silently lost; these
+   rows let the same consumers be reached through exactly one interposed
+   .fragment. We interpose ONE level (not a descendant `.fragment ul`) so the
+   per-level `em` cascade still rides on the block where the size is set, never
+   double-applied to a nested list that already inherits it. `.body` above is
+   already a descendant match, so it needs no fragment variant; a bare `- list`
+   in a .plain fragment lands as `.fragment > ul` with no .body, which is why
+   the ul/ol and .code/.output consumers below each gain a `.fragment >` twin. */
+.slide .contents > .fragment > p,
+.slide .contents > .fragment > ul, .slide .contents > .fragment > ol,
+.slide .row > .fragment > p,
+.slide .row [class*="col-"] > .fragment > ul {
+  font-size: calc(var(--skin-body-size, 1em) * var(--contents-scale));
 }
 .slide .contents .code > pre, .slide .row .code > pre,
-.slide .contents .output,     .slide .row .output {
-  font-size: calc(var(--theme-code-size) * var(--contents-scale));
+.slide .contents pre.output, .slide .row pre.output {
+  font-size: calc(var(--skin-code-size) * var(--contents-scale));
 }
 
 /* Anything placed DIRECTLY inside a :::row that is not a column is an          */
@@ -351,7 +407,7 @@ html, body {
 .slide .row > :not(.col-1):not(.col-2):not(.col-3):not(.col-4):not(.col-5):not(.col-6):not(.col-7):not(.col-8):not(.col-9):not(.col-10):not(.col-11):not(.col-12)::before {
   content: "\26A0 not in a :::col-N";
   display: block;
-  font: 600 14px var(--theme-font-prose, sans-serif);
+  font: 600 14px var(--skin-font-prose, sans-serif);
   color: #c9211e;
 }
 
@@ -360,6 +416,183 @@ html, body {
   font-size: 0.78em;
   font-weight: 600;
   margin: 0.7em 0 0.28em 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Pictures in layers -- a background, and a stack.                           */
+/*                                                                            */
+/* Two zones, both plain Pandoc divs, both about pictures that share a place: */
+/*                                                                            */
+/*   ::: background   pictures behind the whole slide. Everything else -- the */
+/*                    title, the prose, the master's bands and chrome -- sits */
+/*                    on top of them.                                         */
+/*   ::: layers       pictures stacked in ONE spot of the content, the first  */
+/*                    giving the size and each later one drawn over it. This  */
+/*                    is how a diagram is built up a part at a time: cut it   */
+/*                    into transparent PNGs of the same size, and mark every  */
+/*                    layer after the first as a .fragment.                   */
+/*                                                                            */
+/* A picture inside either zone is still a picture: {.fragment} reveals it,   */
+/* data-anim animates it, and it arrives in DOCUMENT order with the rest of   */
+/* the slide's fragments. That is why the zone stays where the author wrote   */
+/* it instead of being moved to the top of the slide: moving it would move    */
+/* its steps. A background placed after the first bullet builds after it.    */
+/*                                                                            */
+/* The slide is its own stacking context (isolation), so the background's    */
+/* negative z-index puts it behind the slide's content but never behind the   */
+/* slide itself -- it cannot fall through to the stage or to other slides.    */
+/* -------------------------------------------------------------------------- */
+
+.slide { isolation: isolate; }
+
+.slide .background {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  margin: 0;
+}
+.slide .background > * { margin: 0; }
+.slide .background img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;               /* fill the slide; crop rather than squash */
+}
+
+.slide .layers {
+  position: relative;
+  display: inline-block;           /* as wide as the first picture, no wider */
+}
+.slide .layers > * { margin: 0; }
+.slide .layers > :not(:first-child) {
+  position: absolute;
+  inset: 0;
+}
+.slide .layers img {
+  display: block;
+  max-width: 100%;
+}
+/* cols=1:5 on the wrapper: the columns are given shares of the table, so the
+   table itself has to have a width to share out -- that of its holder. */
+.slide table.cols { width: 100%; }
+
+/* flow=N: a list flowed into N columns (TranslateFlow). Column by column by
+   default -- CSS columns, which balance the heights, 67 items in five going
+   14-14-14-14-11 -- and row by row with fill=rows, a grid. An item is never
+   split across two columns, and a nested list stays with its item. The list
+   is found where the build leaves it: right in the :::, or in its .body. */
+.slide .flow > ul, .slide .flow > ol,
+.slide .flow > .body > ul, .slide .flow > .body > ol {
+  columns: var(--flow);
+  column-gap: 1.5em;
+}
+.slide .flow li { break-inside: avoid; }
+/* An item's space above and below collapse into one in a column, but not at
+   the top of one -- where the first column kept it and the others lost it,
+   so the columns did not line up -- and not in a grid, where rows came out
+   further apart than in columns. Space below only: the same gap between
+   items as before, and the tops of the columns level. */
+.slide .flow > ul > li, .slide .flow > ol > li,
+.slide .flow > .body > ul > li, .slide .flow > .body > ol > li { margin-top: 0; }
+.slide .flow-rows > ul, .slide .flow-rows > ol,
+.slide .flow-rows > .body > ul, .slide .flow-rows > .body > ol {
+  columns: auto;
+  display: grid;
+  grid-template-columns: repeat(var(--flow), minmax(0, 1fr));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Tables.                                                                    */
+/*                                                                            */
+/* A Markdown table used to reach the slide with no rule of its own: no lines, */
+/* no air, the cells run together. This is the plain reading of a table on a  */
+/* slide -- a thin grid, a firmer line under the header, room in each cell --  */
+/* and a master may restyle any of it. `::: {.plain}` around a table (or      */
+/* `::: {.incremental .plain}`) drops the grid, for tables that are really    */
+/* two aligned columns. Wrapped in `::: incremental`, a table is revealed one */
+/* row at a time.                                                             */
+/* -------------------------------------------------------------------------- */
+
+.slide table {
+  /* Separate borders, drawn by the cells themselves: a row revealed later is
+     then invisible WITH its lines. In the collapsed model the table paints
+     the grid, and the hidden rows showed as an empty grid waiting below. */
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0.4em 0;
+  font-size: calc(var(--skin-body-size, 1em) * 0.9 * var(--contents-scale, 1));
+  /* As wide as its contents, never wider than its holder. Pandoc used to hand
+     a table with one long source row a <colgroup> of percentage widths, which
+     stretched it to the full width of the slide (or column) while a short
+     table beside it stayed tight; md2slides now keeps Pandoc from doing that
+     (--columns), so every table sizes to its cells. The cap is for a table
+     that really is too wide: it wraps its cells instead of leaving the canvas. */
+  max-width: 100%;
+}
+.slide th,
+.slide td {
+  padding: 0.22em 0.7em;
+  border-right:  1px solid var(--skin-table-rule, color-mix(in srgb, var(--skin-fg) 28%, transparent));
+  border-bottom: 1px solid var(--skin-table-rule, color-mix(in srgb, var(--skin-fg) 28%, transparent));
+  text-align: left;
+  vertical-align: top;
+}
+.slide tr > :first-child {
+  border-left: 1px solid var(--skin-table-rule, color-mix(in srgb, var(--skin-fg) 28%, transparent));
+}
+.slide table > :first-child > tr:first-child > *,
+.slide table > colgroup + * > tr:first-child > * {
+  border-top: 1px solid var(--skin-table-rule, color-mix(in srgb, var(--skin-fg) 28%, transparent));
+}
+/* The header row stands on a tint of the skin's accent (Rony, 26-Sep: take
+   it from the skin's palette). A skin that wants another colour says so with
+   --skin-table-head-bg (and --skin-table-head-fg for the text on it). A .plain
+   table is the table without its decoration, so its header has no background
+   either -- unless the skin gives one on purpose, --skin-plain-table-head-bg. */
+.slide thead th {
+  font-weight: 700;
+  border-bottom: 2px solid var(--skin-rule, currentColor);
+  background: var(--skin-table-head-bg,
+                  color-mix(in srgb, var(--skin-accent) 12%, var(--skin-bg)));
+  color: var(--skin-table-head-fg, inherit);
+}
+.slide .plain thead th {
+  background: var(--skin-plain-table-head-bg, transparent);
+}
+.slide .plain th,
+.slide .plain td,
+.slide .plain tr > :first-child,
+.slide .plain table > :first-child > tr:first-child > *,
+.slide .plain table > colgroup + * > tr:first-child > * {
+  border: 0;
+  padding-left: 0;
+  padding-right: 1.4em;
+}
+
+/* .plain on a LIST: no bullets. The same word as on a table (no grid): the
+   thing without its decoration. Rony asked for it as "noBullet", the way a
+   presentation program offers it per paragraph. Only the marker goes; the
+   text stays where it was, so a .plain item lines up with the text of its
+   bulleted neighbours, and indent= still moves the whole thing in. Nested
+   lists inside lose their markers too: plain is plain all the way down. */
+.slide .plain ul,
+.slide .plain ol { list-style: none; }
+/* ...and on ONE item, `- [text]{.plain}`: that bullet only (Rony, 27-Sep: a
+   line of code among the items). A list nested in it keeps its markers: it
+   is the item's ::marker that goes, not its list-style, which is inherited
+   and would take the nested items' markers too. */
+.slide li.plain::marker { content: ""; }
+
+/* ::: {.plain .tight} -- or .tight on any table's wrapper: the rows sit close,
+   like the lines of a list. The air between rows is the cells' vertical
+   padding (0.22em each way, so ~0.45em a row); .tight takes it away and
+   leaves the line-height to keep the rows apart. Same word as on a .row,
+   same meaning: "right under the one before". */
+.slide .tight th,
+.slide .tight td {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -376,18 +609,18 @@ html, body {
 /* replace it.                                                                */
 /*                                                                            */
 
-.code, .output {
+.code, pre.output {
   margin: 0.25em 0;
   box-sizing: border-box;
   line-height: 1.35;
   tab-size: 4;
   width: 100%;                     /* default: full content width. A deck that
                                       wants Rony's centred, narrower box sets
-                                      its own width/margin in the theme/master. */
+                                      its own width/margin in the skin/master. */
 }
 
-.code > pre, .output {
-  font-family: var(--theme-font-mono);
+.code > pre, pre.output {
+  font-family: var(--skin-font-mono);
   margin: 0;
   padding: 14px 18px;
   white-space: pre;                /* NEVER wrap: a broken statement may be  */
@@ -396,7 +629,102 @@ html, body {
   border-radius: 0;
 }
 
-.output { background: var(--theme-output-bg); }
+.output { background: var(--skin-output-bg); }
+
+/* An output MENTION -- `3 4`{.output} in a sentence or a table cell -- is a  */
+/* <code class="output"> in running text, not the <pre> of an output block.   */
+/* The block rules above (padding, width, margins, the code size) are the     */
+/* <pre>'s alone: on the mention they made it taller than its line, and in a  */
+/* table every row painted its background over the bottom of the row above    */
+/* (Rony's "Execution, 1", 24-Sep). The mention is text, like a Rexx mention: */
+/* the size and the line of what surrounds it, the output's font and colour. */
+/* Every <code> takes the deck's mono face -- a Rexx mention, a plain code  */
+/* span, an output mention -- as `font-mono:` promises (readme). They used   */
+/* to get the browser's generic monospace, so in a Code/Output table the two */
+/* columns were set in two different faces.                                  */
+.slide code { font-family: var(--skin-font-mono); }
+
+/* Code in text is the size of the text around it, times the skin's        */
+/* --skin-inline-mono-scale (Rony, 27-Sep: IBM Plex Mono at the prose's size */
+/* looks larger than the prose). Only code in text: the <code> of a block  */
+/* is the child of its <pre>, and a block has its own --skin-code-size.     */
+.slide :not(pre) > code {
+  font-size: calc(var(--skin-inline-mono-scale, 1) * 1em);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Visible blanks in an output block.                                          */
+/*                                                                             */
+/* A Rexx listing gets this rule from its palette, which is inlined with the    */
+/* deck; an output block is not inside a .highlight-rexx-<style> and would be   */
+/* missed by it, so the same mark is declared here, unscoped. Same class, same  */
+/* drawing: three gradients tiling at one character cell, hung from the bottom  */
+/* of the inline box so no font's metrics can push the bar out of it.           */
+/* -------------------------------------------------------------------------- */
+
+.rx-blank-mark {
+  background-image:
+    linear-gradient(to right, transparent 12%, var(--rx-blank-ink, currentColor) 12%,
+                    var(--rx-blank-ink, currentColor) 87%, transparent 87%),
+    linear-gradient(to right, transparent 12%, var(--rx-blank-ink, currentColor) 12%,
+                    var(--rx-blank-ink, currentColor) 23%, transparent 23%),
+    linear-gradient(to right, transparent 76%, var(--rx-blank-ink, currentColor) 76%,
+                    var(--rx-blank-ink, currentColor) 87%, transparent 87%);
+  background-size: 1ch .07em, 1ch .3em, 1ch .3em;
+  background-position: 0 100%, 0 100%, 0 100%;
+  background-repeat: repeat-x;
+}
+
+/* A tab in an output block: the arrow into the tab stop, --->|, as in the
+   palettes' rule for a Rexx listing. */
+.rx-tab-mark {
+  background-image:
+    linear-gradient(var(--rx-blank-ink, currentColor), var(--rx-blank-ink, currentColor)),
+    linear-gradient(to top right, transparent 42%, var(--rx-blank-ink, currentColor) 42%, var(--rx-blank-ink, currentColor) 58%, transparent 58%),
+    linear-gradient(to bottom right, transparent 42%, var(--rx-blank-ink, currentColor) 42%, var(--rx-blank-ink, currentColor) 58%, transparent 58%),
+    linear-gradient(var(--rx-blank-ink, currentColor), var(--rx-blank-ink, currentColor));
+  background-size: calc(100% - .45ch) .07em, .28em .2em, .28em .2em, .07em .5em;
+  background-position: left .1ch bottom .25em, right .3ch bottom .285em,
+                       right .3ch bottom .085em, right .2ch bottom .03em;
+  background-repeat: no-repeat;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Key caps.                                                                   */
+/*                                                                             */
+/* A pressed key is not text, and a transcript that shows one as text leaves    */
+/* the room guessing whether the command was sent. Two places produce these:    */
+/* [Enter]{.key} in prose, and <Enter> inside a ~~~output {.keys} block.        */
+/*                                                                             */
+/* Everything is in em, so a cap rides whatever type it sits in -- prose at     */
+/* body size, a transcript at code size, and both again inside a :::contents    */
+/* that scales them. A cap in a <pre> must not change the line's height        */
+/* either, or one key in a transcript would push its line apart from the rest:  */
+/* hence padding on the sides only, and a border that does not add to it.       */
+/* -------------------------------------------------------------------------- */
+
+.key {
+  font-family: var(--skin-font-mono);
+  font-size: 0.82em;
+  line-height: 1;
+  padding: 0.04em 0.42em;
+  border: 1px solid var(--skin-key-border, currentColor);
+  border-radius: 0.35em;
+  box-shadow: 0 0.08em 0 var(--skin-key-border, currentColor);
+  background: var(--skin-key-bg, transparent);
+  color: inherit;
+  white-space: nowrap;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* Inside a transcript the cap sits on the output's own ground, so it needs a
+   little air from the characters either side and none above: a <pre> line box
+   is the font's, and a taller inline would open the whole line. */
+.output .key, .code .key {
+  margin: 0 0.15em;
+  vertical-align: baseline;
+}
 
 /* An output block numbered by Pandoc (~~~output {.numberLines}) carries the
    .output class on the <pre> ITSELF, and Pandoc gives that same <pre> a
@@ -430,13 +758,13 @@ pre.output.numberSource { width: auto; }
 /* selector, but :has(+ ...) reaches this <p> from the block that FOLLOWS it,   */
 /* which is exactly the label. Chromium/paged.js render this deck, so :has is   */
 /* available.                                                                  */
-p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
+p:has(+ .code), p:has(+ pre.output) { margin: 0.25em 0; }
 
-/* Code size is a FIXED value the theme declares (--theme-code-size), not a  */
+/* Code size is a FIXED value the skin declares (--skin-code-size), not a  */
 /* per-block size computed to fill a box. There is deliberately no fallback:  */
-/* a theme that shows code declares the size; a theme with no code needs      */
-/* none. (Per-slide override: --theme-code-size can be set on the section.)   */
-.code > pre, .output { font-size: var(--theme-code-size); }
+/* a skin that shows code declares the size; a skin with no code needs      */
+/* none. (Per-slide override: --skin-code-size can be set on the section.)   */
+.code > pre, pre.output { font-size: var(--skin-code-size); }
 
 /* -------------------------------------------------------------------------- */
 /* Fragments -- stepped reveal.                                               */
@@ -448,6 +776,52 @@ p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------------------------------------------------------- */
+/* Arrows -- []{.arrow from=a to=b}.                                          */
+/*                                                                            */
+/* The carrier is the arrow (runtime.js, "Arrows"): it stays where the author */
+/* wrote it, so it steps and animates as any fragment does, but it takes no   */
+/* room -- absolute, no size, pinned to its containing block's corner (the   */
+/* slide, unless a positioned box sits between) -- and its SVG, as big as the */
+/* slide, is shifted back by the runtime so that it draws in slide pixels.    */
+/* Above the content, and never in the way of a click.                       */
+/*                                                                            */
+/* A skin sets the look: --skin-arrow-color (default: the accent),            */
+/* --skin-arrow-width (the stroke; the head grows with it) and                */
+/* --skin-arrow-gap (how far short of each box an arrow stops).               */
+/* -------------------------------------------------------------------------- */
+.arrow {
+  --arrow-color: var(--skin-arrow-color, var(--skin-accent));
+  --arrow-width: var(--skin-arrow-width, 3px);
+  --arrow-gap:   var(--skin-arrow-gap, 4px);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.arrow-svg {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+.arrow-shaft {
+  fill: none;
+  stroke: var(--arrow-color);
+  stroke-width: var(--arrow-width);
+}
+.arrow-head {
+  fill: var(--arrow-color);
+  stroke: none;
+}
+/* Two arrow spans on consecutive lines are one paragraph: keep it out of the */
+/* flow too, or it leaves a blank line where it was written.                 */
+.arrow-holder { margin: 0; height: 0; overflow: visible; }
+
+/* -------------------------------------------------------------------------- */
 /* Furniture: the parts supplied by the identity rather than by the slide.     */
 /* -------------------------------------------------------------------------- */
 
@@ -456,7 +830,7 @@ p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
    at the bottom of a slide is the master's CSS to decide. The runtime's only
    contribution to the bottom of the slide is DATA -- data-page / data-total and
    the --page / --total custom properties, written by numberSlides() -- plus the
-   reserved band height (--theme-footer-height) that fitHeight reads so the body
+   reserved band height (--skin-footer-height) that fitHeight reads so the body
    never climbs into that space. The ".footer" class still arrives on the
    author's zone (Pandoc emits <div class="footer">), but it is unstyled here;
    the master positions it. */
@@ -475,9 +849,130 @@ p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
   left: 0;
   bottom: 0;
   height: 3px;
-  background: var(--theme-accent);
+  background: var(--skin-accent);
   transition: width 200ms ease-out;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Diagnose (d). Author-only deck-health mode. Everything here paints ONLY     */
+/* under body.diagnose, so a deck at rest -- and every projected deck -- shows */
+/* none of it. The mode is ephemeral (runtime.js), and @media print drops it   */
+/* below, so it can never reach a handout or a projector by accident.          */
+/* -------------------------------------------------------------------------- */
+
+/* In-situ mark: a slide that overflows gets a red band drawn across the very  */
+/* bottom of its footer zone, so when you navigate to it in diagnose you see   */
+/* exactly where content is spilling. --skin-footer-height is the band the     */
+/* content is not meant to enter; the mark sits on that line.                  */
+body.diagnose .slide[data-diag] {
+  outline: 2px solid rgba(200, 30, 30, 0.55);
+  outline-offset: -2px;
+}
+body.diagnose .slide[data-diag]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--skin-footer-height, 64px);
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(200, 30, 30, 0.10),
+    rgba(200, 30, 30, 0.10) 8px,
+    rgba(200, 30, 30, 0.18) 8px,
+    rgba(200, 30, 30, 0.18) 16px);
+  border-top: 2px solid rgba(200, 30, 30, 0.55);
+  pointer-events: none;
+}
+body.diagnose .slide[data-diag="overflow-slide"]::after {
+  /* Worse than touching the footer: content past the slide edge. Deeper red. */
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(200, 30, 30, 0.16),
+    rgba(200, 30, 30, 0.16) 8px,
+    rgba(200, 30, 30, 0.28) 8px,
+    rgba(200, 30, 30, 0.28) 16px);
+}
+
+/* HUD. Fixed to the viewport (not the scaled stage), so it stays put and      */
+/* legible whatever the deck scale. Collapsible: open, it lists every finding; */
+/* collapsed, it is a small badge you keep on screen while you navigate to the */
+/* slides it named.                                                            */
+#diag-hud {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  display: none;
+  width: 360px;
+  max-height: 60vh;
+  flex-direction: column;
+  font: 13px/1.4 var(--skin-font-prose, sans-serif);
+  color: #fff;
+  background: #2a2a33;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+#diag-hud.open { display: flex; }
+
+.dg-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #34343f;
+}
+.dg-toggle {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.dg-count {
+  font-weight: 700;
+  white-space: nowrap;
+}
+#diag-hud.clean .dg-count { color: #7dd08a; }
+#diag-hud:not(.clean) .dg-count { color: #ff9a9a; }
+.dg-title { flex: 1; opacity: 0.85; }
+.dg-close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.dg-close:hover { opacity: 1; }
+
+.dg-list { overflow-y: auto; }
+#diag-hud.collapsed .dg-list,
+#diag-hud.collapsed .dg-title { display: none; }
+.dg-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 12px;
+  cursor: pointer;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.dg-row:hover { background: rgba(255, 255, 255, 0.08); }
+.dg-slide {
+  font-weight: 700;
+  min-width: 1.5em;
+  text-align: right;
+  color: #ff9a9a;
+}
+.dg-label { opacity: 0.9; }
+/* Build warnings are sentences, not labels: smaller, so a few fit at once. */
+.dg-build .dg-label { font-size: 12px; }
+.dg-row[data-i="-1"] { cursor: default; }
+.dg-empty { padding: 12px; opacity: 0.7; }
 
 /* -------------------------------------------------------------------------- */
 /* Reader controls. Highlight style is the reader's choice and stays live;     */
@@ -491,63 +986,6 @@ p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
 /* and future, gets a legible bar without having to say anything.              */
 /* -------------------------------------------------------------------------- */
 
-#controls {
-  position: absolute;
-  right: 20px;
-  bottom: 8px;
-  max-width: calc(var(--deck-w) * 1px - 40px);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 7px;
-  /* On-demand (F8) means the box only shows when the presenter wants it, so it
-     no longer needs to hide -- it announces itself. A solid indigo panel with a
-     bright accent ring reads clearly as "controls active" over any slide, light
-     band or dark, and does not lean on the theme (it must stand out under -t
-     null too, where the theme vars are neutral). */
-  background: #1e2140;
-  color: #f2f3fb;
-  border: 1px solid #4c5bd4;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(76, 91, 212, 0.35);
-  font: 12px/1.2 var(--theme-font-prose);
-  opacity: 1;
-}
-
-/* The control box is hidden by default and toggled on with F8: it stays live
-   (jump and code-style still work) but only shows when asked, so it never sits
-   over the slide's own footer during a talk. The runtime flips .controls-hidden
-   on #controls; display:none takes it fully out of layout when hidden. */
-#controls.controls-hidden { display: none; }
-
-#controls label {
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;                 /* let the label shrink so its select can too */
-}
-#controls select {
-  font: inherit;
-  min-width: 0;                 /* shrink below content width when space is tight */
-  flex: 0 1 auto;
-  max-width: 22ch;
-  text-overflow: ellipsis;
-  background: #f2f3fb;
-  color: #16181c;
-  border: 1px solid #4c5bd4;
-  border-radius: 3px;
-  padding: 2px 4px;
-}
-#controls .controls-help {
-  cursor: help;
-  opacity: 0.85;
-  font-size: 14px;
-  flex: 0 0 auto;
-}
-
 /* -------------------------------------------------------------------------- */
 /* Print. The screen layout is a single scaled #stage centred in the viewport  */
 /* with only the current slide shown; that is exactly wrong on paper. Printing  */
@@ -560,8 +998,8 @@ p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
 
 @media print {
 
-  /* Every slide keeps its theme background and ink on paper. Without this the   */
-  /* browser drops backgrounds by default, so the theme ground vanishes and any  */
+  /* Every slide keeps its skin background and ink on paper. Without this the   */
+  /* browser drops backgrounds by default, so the skin ground vanishes and any  */
   /* ink that assumed it (title, footer) reads as black on white.                */
   * {
     -webkit-print-color-adjust: exact;
@@ -569,9 +1007,11 @@ p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
   }
 
   /* Drop the black viewport ground and the screen clipping. The page itself is  */
-  /* the ground now; each slide paints its own theme background.                 */
+  /* the ground now; each slide paints its own skin background.                 */
   html, body {
     height: auto;
+    margin: 0;
+    padding: 0;
     background: #fff;
     overflow: visible;
   }
@@ -590,21 +1030,31 @@ p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
     background: none;
   }
 
-  /* Show ALL slides, not just .current, and give each its own sheet. The slide  */
-  /* fills the whole page rather than keeping its screen pixel size: the @page    */
-  /* below is sized to the deck's own 16:9 aspect, so a slide at 100%/100% covers */
-  /* the sheet edge to edge -- theme background included -- with no blank band.   */
-  /* One slide == one page via break-after; break-inside:avoid keeps it whole.   */
+  /* Show ALL slides, not just .current, and give each its own sheet.           */
+  /*                                                                          */
+  /* On paper a slide keeps EXACTLY its screen geometry, the deck's 1280x720   */
+  /* px canvas, and the sheet (@page below) is that same size. It used to be   */
+  /* 100% x 100vh, which is whatever the browser takes a page to be -- and     */
+  /* Firefox takes 100vh from its WINDOW, not the sheet. So there every slide  */
+  /* was taller than its page and broke across two (62 pages for 31 slides),  */
+  /* the title slide lost its lower half, the footer landed wherever the vh   */
+  /* put it, and on an A4 sheet the text re-flowed to a width it was never    */
+  /* laid out for. At a fixed size the page is a picture of the screen: the   */
+  /* same line breaks, the same footer, one slide per sheet. On a different   */
+  /* paper the browser scales it whole ("Fit to page width" in Firefox,       */
+  /* "Fit to printable area" in Chrome), and that is all it has to do.        */
   .slide {
     display: block !important;
     position: relative;
     inset: auto;
-    width: 100%;
-    height: 100vh;             /* one full printed page */
+    width:  calc(var(--deck-w) * 1px);
+    height: calc(var(--deck-h) * 1px);
     margin: 0;
-    background: var(--theme-bg);
+    background: var(--skin-bg);
     break-inside: avoid;
     break-before: page;        /* each slide starts a fresh page */
+    page-break-inside: avoid;  /* the same, for engines that still read the  */
+    page-break-before: always; /* CSS 2 names                                 */
     animation: none !important;
     overflow: hidden;
   }
@@ -613,15 +1063,36 @@ p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
   /* break BEFORE every slide (not after) is what makes the count exact -- a      */
   /* trailing break-after on the last slide would emit a blank final page, and a  */
   /* break-after between siblings can collapse; break-before does neither.        */
-  .slide:first-of-type { break-before: auto; }
+  .slide:first-of-type { break-before: auto; page-break-before: auto; }
 
   /* Footer and logo are part of the slide and print with it; their absolute     */
   /* positioning is now relative to the static slide box, which is what we want. */
 
-  /* Screen-only furniture never reaches paper. */
-  #controls,
+  /* Screen-only furniture never reaches paper. The diagnose HUD and its       */
+  /* in-situ marks are author tools, never handout content: even if the deck   */
+  /* is printed with diagnose still on, paper comes out clean.                 */
   #progress,
-  #jump-overlay { display: none !important; }
+  #jump-overlay,
+  #style-overlay,
+  #diag-hud { display: none !important; }
+  body.diagnose .slide[data-diag] { outline: none !important; }
+  body.diagnose .slide[data-diag]::after { display: none !important; }
+
+  /* Visible blanks, redrawn for paper -- in Firefox. On screen a blank mark  */
+  /* is three CSS gradients with hard stops; Firefox PRINTS a one-cell mark    */
+  /* of that kind as a solid block (a run of several prints right), so every  */
+  /* single blank -- between two words of a string, after SAY -- came out as  */
+  /* a smear. There the mark is a vector shape instead: the element painted   */
+  /* in the ink and masked to the glyph (bar and two ticks, the proportions   */
+  /* of U+2423), one tile per character cell. Only there: Chromium prints the */
+  /* gradients correctly, and prints this mask as closed boxes. The @supports */
+  /* test is true in Gecko alone. #stage outranks the palettes' own rule.     */
+  @supports (-moz-appearance: none) {
+    #stage .rx-blank-mark {
+      background: var(--rx-blank-ink, currentColor);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 30' preserveAspectRatio='none'%3E%3Cpath d='M12 0H23V23H76V0H87V30H12Z'/%3E%3C/svg%3E") 0 100% / 1ch .3em repeat-x;
+    }
+  }
 
   /* Size the sheet to the deck's own 16:9 geometry (13.333in x 7.5in, i.e.      */
   /* 1280x720 at 96dpi) with zero margin, so each slide maps to exactly one page */
@@ -629,8 +1100,76 @@ p:has(+ .code), p:has(+ .output) { margin: 0.25em 0; }
   /* next sheet. Derived from --deck-w/--deck-h; if the deck geometry changes,    */
   /* this stays a plain 16:9 sheet, which is the right default for slides.        */
   @page {
-    size: 13.333in 7.5in;
+    size: 1280px 720px;        /* = 13.333in x 7.5in, the canvas exactly     */
     margin: 0;
   }
 }
 
+
+/* A prose mention keeps its blanks. `saY    "x"` is meant to show four blanks
+   -- that is often the whole point of writing it -- but inline text collapses
+   runs of blanks to one unless told otherwise. pre-wrap keeps every blank and
+   still lets a long mention wrap at the end of a line. A fenced block needs
+   no rule: its code sits inside a <pre>. */
+span[class^="highlight-rexx-"] > code {
+  white-space: pre-wrap;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Captions (v214). A code block with caption= becomes a listing figure with  */
+/* a figcaption (md2slides, Captions). Only listings are styled here: a       */
+/* picture's figure and caption (Pandoc's) look as they always did, so decks  */
+/* with pictures do not change. The selectors are the article pipelines'      */
+/* (css/print/rexxpub-base.css), and as plain as theirs on purpose: the       */
+/* options of rexxpub: listings: and figures: arrive as CSS with those same   */
+/* selectors, after this sheet, and must win.                                 */
+/* -------------------------------------------------------------------------- */
+
+figure.listing { margin: 0.5em 0; text-align: left; }
+figure.listing figcaption {
+  font-size: 0.75em;
+  opacity: 0.85;
+  text-align: left;
+  margin: 0 0 0.3em 0;
+}
+figure.listing > div + figcaption { margin: 0.3em 0 0 0; }
+.figure-number { font-weight: bold; }
+
+/* -------------------------------------------------------------------------- */
+/* File boxes (v219). ```output {.file caption="myinput.txt:"} is data kept   */
+/* in a file (Rony's slides, 27-Sep): a translucent yellow box with the file  */
+/* name inside it, on top, in italics and grey. With a caption the box is the */
+/* figure (Captions moves the id, the step and the timing up to it); with     */
+/* none it is the pre. The two colours are the skin's to change               */
+/* (--skin-file-bg, --skin-file-name); the rest is the same in every skin, so */
+/* a file reads as a file wherever it is shown. The selectors are one class   */
+/* stronger than the listings: options' so the name stays inside the box.     */
+/* -------------------------------------------------------------------------- */
+
+pre.output.file { background: var(--skin-file-bg); }
+figure.listing.file {
+  background: var(--skin-file-bg);
+  box-sizing: border-box;
+  margin: 0.25em 0;
+  padding: 14px 18px;
+}
+figure.listing.file > pre.output,
+figure.listing.file > .code > pre {
+  background: transparent;
+  padding: 0;
+}
+figure.listing.file > .code { margin: 0; background: transparent; }
+figure.listing.file > figcaption {
+  font-family: var(--skin-font-mono);
+  font-size: var(--skin-code-size);
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--skin-file-name);
+  opacity: 1;
+  white-space: pre;
+  margin: 0;
+}
+.slide .contents figure.listing.file > figcaption,
+.slide .row figure.listing.file > figcaption {
+  font-size: calc(var(--skin-code-size) * var(--contents-scale));
+}

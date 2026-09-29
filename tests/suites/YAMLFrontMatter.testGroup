@@ -16,6 +16,8 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260316    0.5  Migrated from YAMLFrontMatter.test to ooRexxUnit          */
+/* 20260926    0.6  YAMLFrontMatter.cls reads through yaml.cls: booleans,     */
+/*                  nulls, sequences, flow style, escapes, errors             */
 /*                                                                            */
 /******************************************************************************/
 
@@ -47,6 +49,31 @@ Else
 ::Method test_no_yaml_unclosed
   self~assertEquals(.Nil, YAMLFrontMatter(.resources~Unclosed), -
     "No YAML: unclosed front matter returns .Nil")
+
+/******************************************************************************/
+/* A UTF-8 byte order mark before the opening "---" (Windows editors)         */
+/******************************************************************************/
+
+::Method test_bom_front_matter_read
+  source = .Array~of("EFBBBF"x"---", "presenter: Rony", "---", "Text")
+  yaml = YAMLFrontMatter(source)
+  self~assertTrue(yaml~isA(.StringTable), -
+    "BOM: the front matter is still read")
+  self~assertEquals("Rony", yaml["presenter"], -
+    "BOM: its keys are there")
+
+::Method test_bom_removed_from_source
+  source = .Array~of("EFBBBF"x"---", "a: 1", "---")
+  Call YAMLFrontMatter source
+  self~assertEquals("---", source[1], -
+    "BOM: removed from the caller's line 1")
+
+::Method test_bom_no_front_matter
+  source = .Array~of("EFBBBF"x"# Title", "Text")
+  self~assertEquals(.Nil, YAMLFrontMatter(source), -
+    "BOM: no front matter is still no front matter")
+  self~assertEquals("# Title", source[1], -
+    "BOM: removed even when there is no front matter")
 
 /******************************************************************************/
 /* Basic key-value pairs                                                      */
@@ -135,6 +162,50 @@ Else
     "Comments: comment line is not parsed as key")
 
 /******************************************************************************/
+/* Comments at the end of a line (YAML: "#" at the start or after a blank)    */
+/******************************************************************************/
+
+::Method test_trailing_comment_plain
+  yaml = YAMLFrontMatter(.resources~TrailingComments)
+  self~assertEquals("45", yaml["timer"]["total"], -
+    "Trailing comment: removed from a plain value")
+
+::Method test_trailing_comment_opens_group
+  yaml = YAMLFrontMatter(.resources~TrailingComments)
+  self~assertTrue(yaml["timer"]~isA(.StringTable), -
+    "Trailing comment: a key with only a comment opens a group")
+
+::Method test_trailing_comment_list
+  yaml = YAMLFrontMatter(.resources~TrailingComments)
+  self~assertEquals("5:1", yaml["timer"]["warn"], -
+    "Trailing comment: a value with a colon keeps it")
+
+::Method test_trailing_comment_quoted
+  yaml = YAMLFrontMatter(.resources~TrailingComments)
+  self~assertEquals("{page} / {total}", yaml["footer"], -
+    "Trailing comment: removed after a quoted value")
+
+::Method test_trailing_hash_in_quotes
+  yaml = YAMLFrontMatter(.resources~TrailingComments)
+  self~assertEquals("a # b", yaml["hashquoted"], -
+    "Trailing comment: a # inside quotes is text")
+
+::Method test_trailing_hash_no_blank
+  yaml = YAMLFrontMatter(.resources~TrailingComments)
+  self~assertEquals("red#1", yaml["hashword"], -
+    "Trailing comment: a # with no blank before it is text")
+
+::Method test_trailing_doubled_quote
+  yaml = YAMLFrontMatter(.resources~TrailingComments)
+  self~assertEquals("it's", yaml["apostrophe"], -
+    "Trailing comment: '' is a quote inside a single-quoted value")
+
+::Method test_trailing_only_comment_null
+  yaml = YAMLFrontMatter(.resources~TrailingComments)
+  self~assertFalse(yaml~hasIndex("empty"), -
+    "Trailing comment: a value that is only a comment is null: left out")
+
+/******************************************************************************/
 /* Two-level nesting                                                          */
 /******************************************************************************/
 
@@ -207,23 +278,38 @@ Else
     "Three-level: sibling of sub-tables is parsed")
 
 /******************************************************************************/
-/* Empty group                                                                */
+/* Null values: "key:", "key: ~", "key: null" are left out ("not given")      */
 /******************************************************************************/
 
-::Method test_empty_group_is_stringtable
+::Method test_null_empty_key_left_out
   yaml = YAMLFrontMatter(.resources~EmptyGroup)
-  self~assertTrue(yaml["group"]~isA(.StringTable), -
-    "Empty group: returns an empty StringTable")
+  self~assertFalse(yaml~hasIndex("group"), -
+    "Null: a key with no value is left out")
 
-::Method test_empty_group_no_items
+::Method test_null_tilde_left_out
   yaml = YAMLFrontMatter(.resources~EmptyGroup)
-  self~assertEquals(0, yaml["group"]~items, -
-    "Empty group: StringTable has no items")
+  self~assertFalse(yaml~hasIndex("tilde"), -
+    "Null: a key whose value is ~ is left out")
 
-::Method test_empty_group_after
+::Method test_null_word_left_out
   yaml = YAMLFrontMatter(.resources~EmptyGroup)
-  self~assertEquals("yes", yaml["after"], -
-    "Empty group: key after empty group is parsed")
+  self~assertFalse(yaml~hasIndex("word"), -
+    "Null: a key whose value is null is left out")
+
+::Method test_null_quoted_is_text
+  yaml = YAMLFrontMatter(.resources~EmptyGroup)
+  self~assertEquals("null", yaml["quoted"], -
+    "Null: a quoted null is the text null")
+
+::Method test_null_after
+  yaml = YAMLFrontMatter(.resources~EmptyGroup)
+  self~assertEquals("true", yaml["after"], -
+    "Null: the key after a null one is parsed")
+
+::Method test_null_nested_left_out
+  yaml = YAMLFrontMatter(.resources~EmptyGroup)
+  self~assertEquals(1, yaml["block"]~items, -
+    "Null: a null key inside a block is left out too")
 
 /******************************************************************************/
 /* Value with colon (e.g. URLs, times)                                        */
@@ -254,7 +340,7 @@ Else
 
 ::Method test_double_marker_first
   yaml = YAMLFrontMatter(.resources~DoubleMarker)
-  self~assertEquals("yes", yaml["first"], -
+  self~assertEquals("true", yaml["first"], -
     "Double marker: first key is parsed")
 
 ::Method test_double_marker_second_excluded
@@ -305,6 +391,215 @@ Else
   fig = yaml["rexxpub"]["figures"]
   self~assertEquals("Fig.", fig["label"], -
     "Realistic: figure label is parsed")
+
+/******************************************************************************/
+/* Empty front matter, and front matter that is not a mapping                 */
+/******************************************************************************/
+
+::Method test_empty_front_matter
+  yaml = YAMLFrontMatter(.Array~of("---", "---", "# Text"))
+  self~assertTrue(yaml~isA(.StringTable), -
+    "Empty front matter: a StringTable")
+  self~assertEquals(0, yaml~items, -
+    "Empty front matter: with no items")
+
+::Method test_only_comments_front_matter
+  yaml = YAMLFrontMatter(.Array~of("---", "# nothing", "---"))
+  self~assertEquals(0, yaml~items, -
+    "Front matter with only a comment: an empty StringTable")
+
+::Method test_not_a_mapping
+  yaml = YAMLFrontMatter(.Array~of("---", "- a", "- b", "---"))
+  self~assertTrue(yaml~isA(.StringTable), -
+    "Front matter that is a sequence: a StringTable")
+  self~assertEquals(0, yaml~items, -
+    "Front matter that is a sequence: with no items")
+
+/******************************************************************************/
+/* Booleans: "true" or "false", whatever the word                             */
+/******************************************************************************/
+
+::Method test_boolean_true_words
+  yaml = YAMLFrontMatter(.resources~Booleans)
+  Do key Over .Array~of("t1", "t2", "t3", "t4")
+    self~assertEquals("true", yaml[key], -
+      "Boolean: '"key"' is true")
+  End
+
+::Method test_boolean_false_words
+  yaml = YAMLFrontMatter(.resources~Booleans)
+  Do key Over .Array~of("f1", "f2", "f3", "f4")
+    self~assertEquals("false", yaml[key], -
+      "Boolean: '"key"' is false")
+  End
+
+::Method test_boolean_is_a_string
+  yaml = YAMLFrontMatter(.resources~Booleans)
+  self~assertTrue(yaml["t1"]~isA(.String), -
+    "Boolean: the value is a String, not a YamlBoolean")
+
+::Method test_boolean_quoted_is_text
+  yaml = YAMLFrontMatter(.resources~Booleans)
+  self~assertEquals("yes", yaml["quoted"], -
+    "Boolean: a quoted yes is the text yes")
+
+/******************************************************************************/
+/* Sequences: an Array                                                        */
+/******************************************************************************/
+
+::Method test_sequence_block
+  yaml = YAMLFrontMatter(.resources~Sequences)
+  list = yaml["block"]
+  self~assertTrue(list~isA(.Array), -
+    "Sequence: a block sequence is an Array")
+  self~assertEquals("a b c", list~makeString("L", " "), -
+    "Sequence: with its items, in order")
+
+::Method test_sequence_flow
+  yaml = YAMLFrontMatter(.resources~Sequences)
+  self~assertEquals("x y", yaml["flow"]~makeString("L", " "), -
+    "Sequence: a flow sequence is an Array")
+
+::Method test_sequence_nested_under_block
+  yaml = YAMLFrontMatter(.resources~Sequences)
+  self~assertEquals(2, yaml["rexxpub"]["master-pages"]~items, -
+    "Sequence: a sequence inside a block")
+
+::Method test_sequence_of_mappings
+  yaml = YAMLFrontMatter(.resources~Sequences)
+  item = yaml["author"][2]
+  self~assertTrue(item~isA(.StringTable), -
+    "Sequence: a mapping item is a StringTable")
+  self~assertEquals("RexxLA", item["affiliation"], -
+    "Sequence: with its values")
+
+::Method test_sequence_null_item
+  yaml = YAMLFrontMatter(.resources~Sequences)
+  list = yaml["holes"]
+  self~assertEquals(3, list~items, -
+    "Sequence: a null item keeps its place")
+  self~assertEquals("", list[2], -
+    "Sequence: a null item is empty")
+
+::Method test_sequence_boolean_item
+  yaml = YAMLFrontMatter(.resources~Sequences)
+  self~assertEquals("true", yaml["holes"][3], -
+    "Sequence: a boolean item is true or false")
+
+/******************************************************************************/
+/* Flow mappings, deep nesting                                                */
+/******************************************************************************/
+
+::Method test_flow_mapping
+  yaml = YAMLFrontMatter(.resources~Flow)
+  page = yaml["rexxpub"]["anim"]["page"]
+  self~assertTrue(page~isA(.StringTable), -
+    "Flow mapping: a StringTable")
+  self~assertEquals("cut", page["effect"], -
+    "Flow mapping: first value")
+  self~assertEquals("0", page["duration"], -
+    "Flow mapping: second value")
+
+::Method test_flow_empty_mapping
+  yaml = YAMLFrontMatter(.resources~Flow)
+  self~assertEquals(0, yaml["none"]~items, -
+    "Flow mapping: {} is an empty StringTable")
+
+::Method test_four_levels
+  yaml = YAMLFrontMatter(.resources~Flow)
+  self~assertEquals("deep", yaml["a"]["b"]["c"]["d"], -
+    "Nesting: four levels")
+
+/******************************************************************************/
+/* Scalars: escapes, block scalars, numbers, anchors                          */
+/******************************************************************************/
+
+::Method test_scalar_double_quoted_escape
+  yaml = YAMLFrontMatter(.resources~Scalars)
+  self~assertEquals("a"||"09"x||"b", yaml["tab"], -
+    "Scalar: \t in double quotes is a tab")
+
+::Method test_scalar_single_quoted_no_escape
+  yaml = YAMLFrontMatter(.resources~Scalars)
+  self~assertEquals("a\tb", yaml["raw"], -
+    "Scalar: no escapes in single quotes")
+
+::Method test_scalar_literal_block
+  yaml = YAMLFrontMatter(.resources~Scalars)
+  self~assertEquals("one"||"0a"x||"two"||"0a"x, yaml["literal"], -
+    "Scalar: a literal block keeps its line ends")
+
+::Method test_scalar_folded_block
+  yaml = YAMLFrontMatter(.resources~Scalars)
+  self~assertEquals("one two", yaml["folded"], -
+    "Scalar: a folded block (>-) joins its lines")
+
+::Method test_scalar_number_canonical
+  yaml = YAMLFrontMatter(.resources~Scalars)
+  self~assertEquals("12", yaml["octal"], -
+    "Scalar: 012 is the integer 12")
+
+::Method test_scalar_number_quoted
+  yaml = YAMLFrontMatter(.resources~Scalars)
+  self~assertEquals("012", yaml["zip"], -
+    "Scalar: a quoted 012 is the text 012")
+
+::Method test_scalar_decimal
+  yaml = YAMLFrontMatter(.resources~Scalars)
+  self~assertEquals("7.5", yaml["total"], -
+    "Scalar: 7.5 is 7.5")
+
+::Method test_scalar_alias
+  yaml = YAMLFrontMatter(.resources~Scalars)
+  self~assertEquals("Josep Maria", yaml["copy"], -
+    "Scalar: an alias gives the anchored value")
+
+/******************************************************************************/
+/* Invalid YAML: SYNTAX 98.900, "line N: invalid YAML front matter: ..."      */
+/*                                                                            */
+/* N is a line of the Markdown source. The numbers below come from yaml.cls   */
+/* as it is in ooRexx 5.2.0 and 5.3.0; if one changes, check the message.     */
+/******************************************************************************/
+
+::Method test_error_colon_in_plain_value
+  msg = self~errorOf(.Array~of("---", "a: 1", "title: A: B", "---"))
+  self~assertEquals("line 3: invalid YAML front matter:" -
+    "Mapping value is not allowed in this context: A: B", msg, -
+    "Error: a colon and a blank inside a plain value")
+
+::Method test_error_unknown_alias
+  msg = self~errorOf(.Array~of("---", "a: 1", "b: 2", "s: *nope", "---"))
+  self~assertEquals("line 4: invalid YAML front matter:" -
+    "Unknown alias: *nope", msg, -
+    "Error: an alias with no anchor")
+
+::Method test_error_tab_indent
+  msg = self~errorOf(.Array~of("---", "a: 1", "b:", "09"x"c: 1", "---"))
+  self~assertEquals("line 4: invalid YAML front matter:" -
+    "Tab character in indentation (YAML 1.2 forbids tabs for indentation)", -
+    msg, "Error: a tab in the indentation, with the line found by us")
+
+::Method test_error_unclosed_flow
+  msg = self~errorOf(.Array~of("---", "a: 1", "x: [1, 2", "z: 3", "---"))
+  self~assertTrue(msg~startsWith("line 4: invalid YAML front matter:"), -
+    "Error: an unclosed flow sequence ("msg")")
+
+::Method test_error_code
+  Signal On Syntax
+  Call YAMLFrontMatter .Array~of("---", "title: A: B", "---")
+  self~fail("Error: no condition was raised")
+  Return
+Syntax:
+  self~assertEquals("98.900", Condition("O")["CODE"], -
+    "Error: the condition is SYNTAX 98.900")
+
+::Method errorOf
+  Use Strict Arg source
+  Signal On Syntax
+  Call YAMLFrontMatter source
+  Return "(no error)"
+Syntax:
+  Return Condition("O")["ADDITIONAL"][1]
 
 /******************************************************************************/
 /* Test data                                                                  */
@@ -379,7 +674,13 @@ rexxpub:
 ::Resource EmptyGroup
 ---
 group:
+tilde: ~
+word: null
+quoted: "null"
 after: yes
+block:
+  here: 1
+  gone:
 ---
 ::END
 
@@ -426,4 +727,84 @@ rexxpub:
 # Introduction
 
 This is a sample RexxPub article.
+::END
+
+::Resource TrailingComments
+---
+timer:         # the presenter's timer
+  total: 45    # minutes
+  warn: 5:1    # warn at 5 and at 1 minute before the end
+footer: '{page} / {total}'   # pages
+hashquoted: "a # b"
+hashword: red#1
+apostrophe: 'it''s'  # an apostrophe
+empty:   # nothing here
+---
+::END
+
+::Resource Booleans
+---
+t1: true
+t2: yes
+t3: On
+t4: TRUE
+f1: false
+f2: no
+f3: off
+f4: No
+quoted: "yes"
+---
+::END
+
+::Resource Sequences
+---
+block:
+  - a
+  - b
+  - c
+flow: [x, y]
+rexxpub:
+  master-pages:
+    - cover
+    - body
+author:
+  - Josep Maria Blasco
+  - name: Rony G. Flatscher
+    affiliation: RexxLA
+holes:
+  - one
+  -
+  - yes
+---
+::END
+
+::Resource Flow
+---
+rexxpub:
+  anim:
+    page: { effect: cut, duration: 0 }
+none: {}
+a:
+  b:
+    c:
+      d: deep
+---
+::END
+
+::Resource Scalars
+---
+tab: "a\tb"
+raw: 'a\tb'
+literal: |
+  one
+  two
+folded: >-
+  one
+  two
+octal: 012
+zip: "012"
+total: 7.5
+name: &who Josep Maria
+copy: *who
+---
 ::END

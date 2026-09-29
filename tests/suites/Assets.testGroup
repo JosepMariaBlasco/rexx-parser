@@ -1,0 +1,947 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Assets.testGroup - Tests for the img/ contract (deck and master/skin)      */
+/* =====================================================================     */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260916         First version                                             */
+/* 20260920         The fixture moves to the temporary directory              */
+/* 20260926         A picture used more than once is embedded once            */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* THE CONTRACT THIS GROUP GUARDS                                             */
+/*                                                                            */
+/*   img/ is always relative to the FILE THAT NAMES IT.                       */
+/*   img/ means "embed me"; anything else means "leave me alone".             */
+/*                                                                            */
+/* The deck's markdown resolves img/ against the deck's directory; a master   */
+/* or skin resolves its own url(img/...) against ITS OWN directory. Two files */
+/* in two folders may both name img/rexx.svg and mean different pictures.     */
+/*                                                                            */
+/* WHY THESE TESTS LOOK LIKE THIS                                             */
+/*                                                                            */
+/* Every way this refactor can go wrong is silent. Not one of them raises:    */
+/*                                                                            */
+/*   - A sheet resolved against the WRONG directory finds nothing, so the     */
+/*     picture is simply not there. The deck builds, opens and presents.      */
+/*   - './img/x.png' is valid Markdown. Miss the normalisation and the deck   */
+/*     renders perfectly on the author's machine -- where img/ is right       */
+/*     there beside the .html -- and arrives blank anywhere else.             */
+/*   - A relative src that is not img/ is left alone BY CONTRACT, which is    */
+/*     right, and is also a picture that will be missing. Only a warning      */
+/*     tells the difference between "I meant that" and "I mistyped".          */
+/*   - Embedding used to hurt (base64 by hand), and that pain was the only    */
+/*     thing keeping deck sizes down. With a directory it is a drag and drop. */
+/*                                                                            */
+/* So the assertions are on exact bytes -- which file got embedded, not       */
+/* whether something got embedded -- and on exact warning TEXT, because the   */
+/* warnings are the whole of the safety net and nothing would notice if they  */
+/* stopped coming out.                                                        */
+/*                                                                            */
+/* HOW THE ROUTINES ARE REACHED                                               */
+/*                                                                            */
+/* They live in bin/md2slides.rex, which is a program, not a module. Loading  */
+/* it with .Package~new gives its public routines WITHOUT running it as a     */
+/* program -- except for the prologue, which runs, finds no input file and    */
+/* complains. That complaint is swallowed (see md2slides), and the same       */
+/* mechanism is then what lets these tests read the warnings back.            */
+/*                                                                            */
+/* The package is loaded ONCE for the whole group and cached, because the     */
+/* prologue shells out to pandoc every time it runs.                          */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Assets.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "parser/YAMLFrontMatter.cls"
+
+::Class Assets.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* The fixture: two owners, one shared file name.                             */
+/*                                                                            */
+/*   <fix>/deck/img/logo.svg   "deck-logo"   CONTENT, the deck's own          */
+/*   <fix>/deck/img/pic.svg    "deck-pic"                                     */
+/*   <fix>/skin/img/logo.svg   "skin-logo"   CHROME, the skin's own           */
+/*                                                                            */
+/* logo.svg is deliberately the same NAME in both, with different CONTENT.    */
+/* That pair is what proves there is no namespace and no priority: each       */
+/* owner gets its own picture, and a test that confuses the two fails on the  */
+/* bytes rather than on a count.                                              */
+/*                                                                            */
+/* SVG is used because it is text: the fixture needs no binary and the        */
+/* expected data URI is computed here, from the same bytes on disk.           */
+/******************************************************************************/
+
+::Method setUp
+  Expose fix
+  /* The fixture lives in the system's temporary directory, not under tests/.  */
+  /* It used to, and a cleanup that failed on Windows (v180) left it in JMB's  */
+  /* working copy -- and even after the cleanup was fixed (v181) a stale       */
+  /* .assets-fixture/ turned up there again. Whatever the cause on that       */
+  /* platform, a fixture outside the tree cannot dirty the repository: if the  */
+  /* removal ever fails again, what is left behind is a folder in %TEMP%.     */
+  fix = self~tempDir"/rexx-parser-assets-fixture"
+  self~rmTree(fix)
+  Call SysMkDir fix
+  Call SysMkDir fix"/deck"
+  Call SysMkDir fix"/deck/img"
+  Call SysMkDir fix"/skin"
+  Call SysMkDir fix"/skin/img"
+  self~put(fix"/deck/img/logo.svg", '<svg id="deck-logo"/>')
+  self~put(fix"/deck/img/pic.svg",  '<svg id="deck-pic"/>')
+  self~put(fix"/skin/img/logo.svg", '<svg id="skin-logo"/>')
+  /* Two shared folders for the --img pool. logo.svg is a THIRD file of that
+     name: deck, skin and shared each have one, which is what makes shadowing
+     assertable on bytes rather than on a count. common.svg exists in both
+     pools, so the order the folders were named has to decide.              */
+  Call SysMkDir fix"/shared"
+  Call SysMkDir fix"/shared/sub"
+  Call SysMkDir fix"/pool2"
+  Call SysMkDir fix"/pool2/img"
+  self~put(fix"/shared/logo.svg",     '<svg id="shared-logo"/>')
+  self~put(fix"/shared/common.svg",   '<svg id="shared-common"/>')
+  self~put(fix"/shared/sub/deep.svg", '<svg id="shared-deep"/>')
+  self~put(fix"/pool2/common.svg",    '<svg id="pool2-common"/>')
+  self~put(fix"/pool2/img/trap.svg",  '<svg id="pool2-trap"/>')
+
+::Method tearDown
+  Expose fix
+  self~rmTree(fix)
+
+/******************************************************************************/
+/* 1. The deck side                                                           */
+/******************************************************************************/
+
+::Method test_deck_img_is_embedded
+  Expose fix
+  html = '<p><img src="img/pic.svg" alt="x"/></p>'
+  out  = self~run("EmbedImages", .Array~of(html, fix"/deck/"))
+  self~assertTrue(out~pos(self~uriFor(fix"/deck/img/pic.svg")) > 0, -
+    "deck: img/pic.svg is embedded as a data URI")
+  self~assertEquals(0, out~pos('src="img/pic.svg"'), -
+    "deck: the relative reference is gone once embedded")
+  self~assertEquals(0, self~warnings~items, -
+    "deck: embedding a picture that is there says nothing")
+
+::Method test_dot_slash_names_the_same_picture
+  /* THE SILENT TRAP. './img/x' and 'img/x' are the same file, and the first  */
+  /* spelling is what people write out of habit. Before the normalisation it  */
+  /* slipped past the test and shipped a deck that worked only where it was   */
+  /* built. It gets worse now that img/ is a contract rather than a           */
+  /* convention: writing './img/' stops being a typo and becomes opting out   */
+  /* of the rule without being told.                                          */
+  Expose fix
+  plain  = self~run("EmbedImages", .Array~of('<img src="img/pic.svg"/>',   fix"/deck/"))
+  dotted = self~run("EmbedImages", .Array~of('<img src="./img/pic.svg"/>', fix"/deck/"))
+  self~assertEquals(plain, dotted, -
+    "deck: './img/x' and 'img/x' produce byte-identical output")
+  self~assertTrue(dotted~pos(self~uriFor(fix"/deck/img/pic.svg")) > 0, -
+    "deck: './img/x' is embedded, not passed through")
+
+::Method test_deck_leaves_everything_else_alone
+  /* The other half of the contract. An author who WANTS an external picture  */
+  /* says so by not writing img/, and nothing may touch it.                   */
+  Expose fix
+  Do src Over self~untouchable
+    html = '<img src="'src'"/>'
+    out  = self~run("EmbedImages", .Array~of(html, fix"/deck/"))
+    self~assertEquals(html, out, -
+      "deck: '"src"' is left exactly as it is")
+  End
+
+::Method test_a_findable_bare_name_is_still_not_embedded
+  /* The one that matters, and the one an "is anything different?" test       */
+  /* cannot catch: pic.svg IS there, right beside the deck. A pipeline that   */
+  /* lost the img/ guard would embed it and every assertion about absolute    */
+  /* paths and URLs would go on passing, because those files do not exist and */
+  /* so nothing visible happens to them. Only a file that WOULD be found      */
+  /* proves the guard is still there.                                         */
+  Expose fix
+  self~put(fix"/deck/pic.svg", '<svg id="beside-the-deck"/>')
+  html = '<img src="pic.svg"/>'
+  out  = self~run("EmbedImages", .Array~of(html, fix"/deck/"))
+  self~assertEquals(html, out, -
+    "deck: a bare name beside the deck is NOT embedded -- only img/ is")
+
+/******************************************************************************/
+/* 2. The sheet side -- the heart of the refactor                             */
+/******************************************************************************/
+
+::Method test_sheet_resolves_against_its_own_directory
+  /* If this one goes, everything still builds: the picture is just not       */
+  /* there. It is the whole reason the five master-images-<skin>.css files    */
+  /* can stop existing, so it is asserted on the BYTES of the file that came  */
+  /* in, not on "a data URI appeared".                                        */
+  Expose fix
+  css = '.chrome::before{background-image:url(img/logo.svg)}'
+  out = self~run("EmbedCSSImages", .Array~of(css, fix"/skin/", "master 'm.css'"))
+  self~assertTrue(out~pos(self~uriFor(fix"/skin/img/logo.svg")) > 0, -
+    "sheet: url(img/logo.svg) resolves against the SHEET's directory")
+  self~assertEquals(0, out~pos(self~uriFor(fix"/deck/img/logo.svg")), -
+    "sheet: it must NOT have reached for the deck's logo.svg")
+
+::Method test_one_name_two_owners_no_conflict
+  /* The same spelling, in one document, meaning two different pictures --    */
+  /* because they are named by two different files. No namespace, no prefix,  */
+  /* no priority: this is the payoff of "relative to the file that names it". */
+  Expose fix
+  deck  = self~run("EmbedImages",    .Array~of('<img src="img/logo.svg"/>', fix"/deck/"))
+  sheet = self~run("EmbedCSSImages", .Array~of('a{background:url(img/logo.svg)}', -
+                                               fix"/skin/", "skin 's.css'"))
+  both = deck || sheet
+  self~assertTrue(both~pos(self~uriFor(fix"/deck/img/logo.svg")) > 0, -
+    "collision: the deck's own logo.svg is in")
+  self~assertTrue(both~pos(self~uriFor(fix"/skin/img/logo.svg")) > 0, -
+    "collision: the skin's own logo.svg is in")
+  self~assertNotEquals(self~uriFor(fix"/deck/img/logo.svg"), -
+                       self~uriFor(fix"/skin/img/logo.svg"), -
+    "collision: the fixture's two logo.svg really are different files")
+
+::Method test_sheet_accepts_the_three_url_spellings
+  /* url(x), url("x") and url('x') are all legal CSS and all mean the same    */
+  /* file. Whichever quote the author used has to survive, or the sheet stops */
+  /* parsing -- silently, because a broken url() is simply ignored by the     */
+  /* browser.                                                                 */
+  Expose fix
+  uri = self~uriFor(fix"/skin/img/logo.svg")
+  Do spec Over .Array~of("url(img/logo.svg)", 'url("img/logo.svg")', -
+                         "url('img/logo.svg')", "url( img/logo.svg )")
+    out = self~run("EmbedCSSImages", .Array~of("a{background:"spec"}", -
+                                               fix"/skin/", "skin 's.css'"))
+    self~assertTrue(out~pos(uri) > 0, -
+      "sheet: "spec" is embedded")
+    self~assertTrue(out~left(13) == "a{background:", -
+      "sheet: "spec" keeps the declaration around it")
+    self~assertTrue(out~right(1) == "}", -
+      "sheet: "spec" closes as it did")
+  End
+
+::Method test_dot_slash_names_the_same_picture_in_css
+  /* The same trap, the CSS side. It is a separate test because it is a       */
+  /* separate piece of code: the deck normalises the whole string up front,   */
+  /* the sheet normalises each url() as it parses it. Removing either one     */
+  /* leaves the other passing.                                                */
+  Expose fix
+  plain  = self~run("EmbedCSSImages", .Array~of("a{background:url(img/logo.svg)}", -
+                                                fix"/skin/", "skin 's.css'"))
+  dotted = self~run("EmbedCSSImages", .Array~of("a{background:url(./img/logo.svg)}", -
+                                                fix"/skin/", "skin 's.css'"))
+  self~assertEquals(plain, dotted, -
+    "sheet: url(./img/x) and url(img/x) produce byte-identical output")
+  self~assertTrue(dotted~pos(self~uriFor(fix"/skin/img/logo.svg")) > 0, -
+    "sheet: url(./img/x) is embedded, not passed through")
+  self~assertEquals(0, self~warnings~items, -
+    "sheet: url(./img/x) is not a complaint, it is the same picture")
+
+::Method test_sheet_leaves_everything_else_alone
+  Expose fix
+  Do ref Over self~untouchable
+    css = "a{background:url("ref")}"
+    out = self~run("EmbedCSSImages", .Array~of(css, fix"/skin/", "skin 's.css'"))
+    self~assertEquals(css, out, -
+      "sheet: url("ref") is left exactly as it is")
+    /* Silence matters as much as the output here: a pipeline that stopped    */
+    /* testing for img/ would try to read <sheetDir>//absolute/path/x.png,    */
+    /* fail, change nothing -- and complain. The equality above would still   */
+    /* pass. This is the assertion that notices.                              */
+    self~assertEquals(0, self~warnings~items, -
+      "sheet: url("ref") needs nothing from us, so it says nothing")
+  End
+
+::Method test_a_findable_bare_name_is_still_not_embedded_in_css
+  /* The CSS twin of the deck test: logo.svg IS beside the sheet. Lose the    */
+  /* img/ guard and it gets embedded, while every other test goes on passing. */
+  Expose fix
+  self~put(fix"/skin/beside.svg", '<svg id="beside-the-sheet"/>')
+  css = "a{background:url(beside.svg)}"
+  out = self~run("EmbedCSSImages", .Array~of(css, fix"/skin/", "skin 's.css'"))
+  self~assertEquals(css, out, -
+    "sheet: a bare name beside the sheet is NOT embedded -- only img/ is")
+  self~assertEquals(1, self~warnings~items, -
+    "sheet: but it IS reported -- inlined CSS makes it just as broken")
+
+::Method test_sheet_reports_a_loose_relative_url
+  /* A relative url() survives into the inlined <style>, where it resolves    */
+  /* beside the .html -- and the deck travels alone. Same failure as a loose  */
+  /* <img src>, same reasoning, so the same warning.                          */
+  Expose fix
+  self~run("EmbedCSSImages", .Array~of("@font-face{src:url(fonts/x.woff2)}", -
+                                       fix"/skin/", "master 'm.css'"))
+  self~assertEquals(1, self~warnings~items, -
+    "sheet: a relative url() that is not img/ is reported")
+  self~assertTrue(self~warnings[1]~pos("fonts/x.woff2") > 0, -
+    "sheet: the warning names the reference")
+
+::Method test_sheet_says_nothing_about_a_fragment_url
+  /* url(#gradient) points inside the same document -- an SVG filter, a       */
+  /* gradient, a clip path. It is not a file and never was, so warning about  */
+  /* it would train the author to ignore the warnings that matter.            */
+  Expose fix
+  css = "a{fill:url(#gradient)}"
+  out = self~run("EmbedCSSImages", .Array~of(css, fix"/skin/", "skin 's.css'"))
+  self~assertEquals(css, out, -
+    "sheet: url(#gradient) is left alone")
+  self~assertEquals(0, self~warnings~items, -
+    "sheet: url(#gradient) is not a missing file")
+
+::Method test_sheet_ignores_url_inside_a_comment
+  /* The header of the old master-images.css documented its own usage with a  */
+  /* url(img/...) in prose. Embedding that would both bloat the sheet and     */
+  /* complain about a file nobody asked for.                                  */
+  Expose fix
+  css = "/* apply with url(img/logo.svg) */ a{color:red}"
+  out = self~run("EmbedCSSImages", .Array~of(css, fix"/skin/", "skin 's.css'"))
+  self~assertEquals(css, out, -
+    "sheet: a url() inside a comment is copied through untouched")
+  self~assertEquals(0, self~warnings~items, -
+    "sheet: a url() inside a comment does not warn")
+
+/******************************************************************************/
+/* 2b. The pool (--img / img:)                                                */
+/*                                                                            */
+/* A deck's pictures are beside the deck. --img adds another folder to look   */
+/* in, which is how two talks share one logo without two copies of it. It     */
+/* ADDS: replacing the deck's own folder would force an author's own pictures */
+/* out of their deck to reach a shared one, and every deck has both.          */
+/*                                                                            */
+/* Everything here fails in silence too. A pool searched in the wrong order   */
+/* embeds the wrong picture and builds a perfect deck with the wrong logo in  */
+/* it; a pool that reaches the sheets brings back the collisions the contract */
+/* exists to prevent, and nothing raises either way.                          */
+/******************************************************************************/
+
+::Method test_front_matter_names_one_or_a_list
+  /* img: and master-pages: in the front matter: one name (blanks and all),   */
+  /* or a YAML list, in block or flow style (v214; before, one line of names  */
+  /* separated by blanks, because the reader had no lists).                   */
+  self~assertEquals("my pics", self~names("img: my pics"), -
+    "front matter: a plain value is ONE name, blanks included")
+  self~assertEquals("a|b c", self~names("img: [a, b c]"), -
+    "front matter: a flow list")
+  self~assertEquals("x.css|y.css", self~names("master-pages:", -
+    "    - x.css", "    - y.css"), "front matter: a block list, in order")
+  self~assertEquals("x.css", self~names("master-pages:", "    - x.css", -
+    "    -", "    - ''"), "front matter: empty items are skipped")
+  self~assertEquals("", self~said, -
+    "front matter: the good forms say nothing")
+
+::Method test_front_matter_names_bad_forms
+  self~assertEquals(".nil", self~names("img:", "    a: 1"), -
+    "front matter: a block is not a list of names")
+  self~assertTrue(self~said~pos("img: in the front matter has a block") > 0, -
+    "front matter: and it is reported")
+  self~assertEquals(".nil", self~names("master-pages: [a, [b]]"), -
+    "front matter: a list inside the list is not a name")
+  self~assertTrue(self~said~pos("a list or a block as item 2") > 0, -
+    "front matter: reported with its place")
+
+::Attribute said   -- what the last self~names said on .Error
+
+::Method names
+  /* rexxpub: <lines> through the real reader, then FrontMatterNames         */
+  Use Arg first, ...
+  src = .Array~of("---", "rexxpub:", "  "first)
+  Do i = 2 To Arg()
+    src~append(Arg(i))
+  End
+  src~append("---")
+  rp  = YAMLFrontMatter(src)["rexxpub"]
+  key = first~left(first~pos(":") - 1)
+  sink = .WarnSink~new
+  prev = .Error~destination
+  discard = .Error~destination(sink)
+  out = self~md2slides~findRoutine("FRONTMATTERNAMES")~callWith(.Array~of(rp[key], key))
+  discard = .Error~destination(prev)
+  self~said = sink~lines~makeString("L", " ")
+  If out == .Nil Then Return ".nil"
+  Return out~makeString("L", "|")
+
+::Method test_a_pool_supplies_what_the_deck_lacks
+  Expose fix
+  out = self~run("EmbedImages", .Array~of('<img src="img/common.svg"/>', -
+                                          fix"/deck/", .Array~of(fix"/shared")))
+  self~assertTrue(out~pos(self~uriFor(fix"/shared/common.svg")) > 0, -
+    "pool: a picture the deck does not have comes from the pool")
+  self~assertEquals(0, self~warnings~items, -
+    "pool: finding it in the pool is a success and says nothing")
+
+::Method test_the_decks_own_picture_shadows_the_pool
+  /* Three files called logo.svg -- deck, skin, shared. The deck's own wins,   */
+  /* which is what lets one talk override a shared picture for itself. The     */
+  /* assertion is on BYTES: a count would pass whichever one was embedded.     */
+  Expose fix
+  out = self~run("EmbedImages", .Array~of('<img src="img/logo.svg"/>', -
+                                          fix"/deck/", .Array~of(fix"/shared")))
+  self~assertTrue(out~pos(self~uriFor(fix"/deck/img/logo.svg")) > 0, -
+    "pool: the deck's own logo.svg is the one embedded")
+  self~assertEquals(0, out~pos(self~uriFor(fix"/shared/logo.svg")), -
+    "pool: the shared logo.svg of the same name is NOT the one embedded")
+
+::Method test_the_pools_are_searched_in_the_order_named
+  Expose fix
+  first  = self~run("EmbedImages", .Array~of('<img src="img/common.svg"/>', -
+             fix"/deck/", .Array~of(fix"/shared", fix"/pool2")))
+  second = self~run("EmbedImages", .Array~of('<img src="img/common.svg"/>', -
+             fix"/deck/", .Array~of(fix"/pool2", fix"/shared")))
+  self~assertTrue(first~pos(self~uriFor(fix"/shared/common.svg")) > 0, -
+    "pool: named first, shared/common.svg wins")
+  self~assertTrue(second~pos(self~uriFor(fix"/pool2/common.svg")) > 0, -
+    "pool: named first, pool2/common.svg wins -- the order IS the rule")
+
+::Method test_a_pool_is_a_folder_of_pictures
+  /* Not a parent that contains an img/. `--img ../shared` means the pictures  */
+  /* are IN ../shared; the img/ in the reference is the mark that says "embed  */
+  /* me", not a path segment to repeat. pool2/img/trap.svg is there to fail    */
+  /* the day someone joins the folder to the whole reference again.            */
+  Expose fix
+  out = self~run("EmbedImages", .Array~of('<img src="img/trap.svg"/>', -
+                                          fix"/deck/", .Array~of(fix"/pool2")))
+  self~assertEquals(0, out~pos(self~uriFor(fix"/pool2/img/trap.svg")), -
+    "pool: a picture under <pool>/img/ is NOT what <pool> means")
+  self~assertEquals(1, self~warnings~items, -
+    "pool: so it counts as missing, and says so")
+
+::Method test_subfolders_work_in_a_pool
+  Expose fix
+  out = self~run("EmbedImages", .Array~of('<img src="img/sub/deep.svg"/>', -
+                                          fix"/deck/", .Array~of(fix"/shared")))
+  self~assertTrue(out~pos(self~uriFor(fix"/shared/sub/deep.svg")) > 0, -
+    "pool: img/sub/x resolves to <pool>/sub/x")
+
+::Method test_a_missing_picture_names_every_place_tried
+  /* With a pool, a warning that named only the deck's own folder would send   */
+  /* the author to check the one folder they had already ruled out by writing  */
+  /* --img.                                                                    */
+  Expose fix
+  self~run("EmbedImages", .Array~of('<img src="img/nope.svg"/>', -
+           fix"/deck/", .Array~of(fix"/shared", fix"/pool2")))
+  self~assertEquals(1, self~warnings~items, -
+    "pool: one missing picture is still one warning")
+  self~assertTrue(self~warnings[1]~pos(fix"/deck/img/nope.svg") > 0, -
+    "pool: the warning names the deck's own folder")
+  self~assertTrue(self~warnings[1]~pos(fix"/shared/nope.svg") > 0, -
+    "pool: ...and the first pool")
+  self~assertTrue(self~warnings[1]~pos(fix"/pool2/nope.svg") > 0, -
+    "pool: ...and the second")
+
+::Method test_a_pool_never_reaches_a_sheet
+  /* Decks only. A skin or master keeps its img/ beside itself, and that is    */
+  /* what stops one flag from reaching into two owners and bringing back the   */
+  /* name collisions the contract was written to end. The sheet here asks for  */
+  /* common.svg, which the pool HAS and the skin has not: it must still go     */
+  /* unembedded and reported.                                                  */
+  Expose fix
+  out = self~run("EmbedCSSImages", .Array~of("a{background:url(img/common.svg)}", -
+                                             fix"/skin/", "master 'm.css'"))
+  self~assertEquals(0, out~pos(self~uriFor(fix"/shared/common.svg")), -
+    "pool: a sheet cannot see the deck's pool")
+  self~assertTrue(out~pos("url(img/common.svg)") > 0, -
+    "pool: the sheet's reference is left as it was")
+  self~assertEquals(1, self~warnings~items, -
+    "pool: and the sheet is told its picture is missing")
+
+/******************************************************************************/
+/* 2c. Finding the pool folders themselves                                    */
+/******************************************************************************/
+
+::Method test_a_relative_pool_is_found_beside_the_deck
+  Expose fix
+  self~assertEquals(fix"/shared/", -
+    self~run("ResolveImgDir", .Array~of("shared", fix"/")), -
+    "pool: a relative folder is looked for beside the deck first")
+
+::Method test_an_absolute_pool_is_taken_as_given
+  Expose fix
+  self~assertEquals(fix"/shared/", -
+    self~run("ResolveImgDir", .Array~of(fix"/shared", fix"/deck/")), -
+    "pool: an absolute folder is exactly where it says")
+
+::Method test_a_pool_that_is_not_there_resolves_to_nothing
+  /* "" is how the caller is told to complain. A folder the author named and   */
+  /* that is not there is an error, not a shrug: the alternative is a deck     */
+  /* built without the pictures they asked for.                                */
+  Expose fix
+  self~assertEquals("", -
+    self~run("ResolveImgDir", .Array~of("no-such-folder", fix"/deck/")), -
+    "pool: a folder that is not there resolves to nothing")
+  /* Both spellings: the absolute branch and the relative one are two pieces   */
+  /* of code doing the same job, and testing one leaves the other free to      */
+  /* start accepting files without anything failing.                           */
+  self~assertEquals("", -
+    self~run("ResolveImgDir", .Array~of(fix"/deck/img/logo.svg", fix"/deck/")), -
+    "pool: a FILE named absolutely is not a folder of pictures")
+  self~assertEquals("", -
+    self~run("ResolveImgDir", .Array~of("img/logo.svg", fix"/deck/")), -
+    "pool: a FILE named relative to the deck is not one either")
+
+/******************************************************************************/
+/* 3. The warnings. They ARE the safety net -- nothing else notices.          */
+/******************************************************************************/
+
+::Method test_missing_picture_warns_and_keeps_the_reference
+  Expose fix
+  out = self~run("EmbedImages", .Array~of('<img src="img/nope.svg"/>', fix"/deck/"))
+  self~assertTrue(out~pos('src="img/nope.svg"') > 0, -
+    "missing: the reference is kept -- losing it would be worse")
+  self~assertEquals(1, self~warnings~items, -
+    "missing: exactly one warning for one missing picture")
+  self~assertTrue(self~warnings[1]~pos("img/nope.svg") > 0, -
+    "missing: the warning names the picture")
+  self~assertTrue(self~warnings[1]~caselessPos("cannot be read") > 0, -
+    "missing: the warning says what is wrong")
+
+::Method test_missing_sheet_picture_names_the_sheet
+  /* With several sheets in the cascade, "a picture is missing" is useless.   */
+  /* The label says WHICH file asked for it.                                  */
+  Expose fix
+  self~run("EmbedCSSImages", .Array~of("a{background:url(img/nope.svg)}", -
+                                       fix"/skin/", "master 'master-rony.css'"))
+  self~assertEquals(1, self~warnings~items, -
+    "missing: one warning from the sheet")
+  self~assertTrue(self~warnings[1]~pos("master-rony.css") > 0, -
+    "missing: the warning names the sheet that asked for it")
+
+::Method test_loose_relative_src_is_reported
+  /* 'images/x.png', '../shared/y.png' -- valid Markdown, left alone by       */
+  /* contract, and silently missing everywhere but the author's machine.      */
+  Do src Over .Array~of("images/oops.png", "../shared/y.png", "pics/z.jpg")
+    self~run("WarnLooseImages", .Array~of('<img src="'src'"/>'))
+    self~assertEquals(1, self~warnings~items, -
+      "loose: '"src"' is reported")
+    self~assertTrue(self~warnings[1]~pos(src) > 0, -
+      "loose: the warning names '"src"'")
+  End
+
+::Method test_self_contained_src_is_not_reported
+  Do src Over self~untouchable
+    self~run("WarnLooseImages", .Array~of('<img src="'src'"/>'))
+    self~assertEquals(0, self~warnings~items, -
+      "loose: '"src"' needs nothing beside the .html, so it says nothing")
+  End
+
+::Method test_a_missing_img_is_not_reported_twice
+  /* An img/ path only survives embedding when the file could not be read,    */
+  /* and EmbedImages already said so with a better message. Two warnings for  */
+  /* one picture is how a warning starts being ignored.                       */
+  Do src Over .Array~of("img/nope.svg", "./img/nope.svg")
+    self~run("WarnLooseImages", .Array~of('<img src="'src'"/>'))
+    self~assertEquals(0, self~warnings~items, -
+      "loose: '"src"' is left to EmbedImages to report")
+  End
+
+/******************************************************************************/
+/* 4. The size brake                                                          */
+/******************************************************************************/
+
+::Method test_a_heavy_picture_warns
+  /* The guard that used to exist by accident: embedding meant base64'ing a   */
+  /* file by hand, and that pain is what kept decks small. The MU template    */
+  /* still reached 25MB of bitmaps. With an img/ directory it is a drag and   */
+  /* a drop, so the brake has to be said out loud or it is gone.              */
+  Expose fix
+  limit = self~run("ImageWarnBytes", .Array~new)
+  self~put(fix"/deck/img/big.svg", "<!--" || "x"~copies(limit + 4096) || "-->")
+  self~resetBudget
+  self~run("EmbedImages", .Array~of('<img src="img/big.svg"/>', fix"/deck/"))
+  self~assertEquals(1, self~warnings~items, -
+    "size: a picture over the limit warns")
+  self~assertTrue(self~warnings[1]~pos("big.svg") > 0, -
+    "size: the warning names the picture")
+  self~assertTrue(self~warnings[1]~caselessPos("base64") > 0, -
+    "size: the warning quotes what the deck grows by, not just the file size")
+
+::Method test_a_light_picture_says_nothing
+  Expose fix
+  self~run("EmbedImages", .Array~of('<img src="img/pic.svg"/>', fix"/deck/"))
+  self~assertEquals(0, self~warnings~items, -
+    "size: a small picture is not mentioned")
+
+::Method test_the_deck_budget_adds_the_sheets_in
+  /* Per-picture and per-deck are different questions: forty half-megabyte    */
+  /* pictures trip nothing individually. And the master's chrome counts too   */
+  /* -- it is in the same .html.                                              */
+  Expose fix
+  limit = self~run("DeckWarnBytes", .Array~new)
+  each  = limit % 3 + 4096
+  self~put(fix"/deck/img/a.svg", "<!--" || "x"~copies(each) || "-->")
+  self~put(fix"/deck/img/b.svg", "<!--" || "y"~copies(each) || "-->")
+  self~put(fix"/skin/img/c.svg", "<!--" || "z"~copies(each) || "-->")
+  self~resetBudget
+  self~run("EmbedImages", .Array~of('<img src="img/a.svg"/><img src="img/b.svg"/>', -
+                                    fix"/deck/"))
+  self~run("EmbedCSSImages", .Array~of("a{background:url(img/c.svg)}", -
+                                       fix"/skin/", "master 'm.css'"))
+  self~run("CheckImageBudget", .Array~new)
+  self~assertEquals(1, self~warnings~items, -
+    "size: the deck budget counts deck and sheets together")
+  self~assertTrue(self~warnings[1]~caselessPos("this deck embeds") > 0, -
+    "size: the deck-wide warning is about the deck, not one picture")
+
+::Method test_an_ordinary_deck_trips_no_budget
+  Expose fix
+  self~resetBudget
+  self~run("EmbedImages", .Array~of('<img src="img/pic.svg"/>', fix"/deck/"))
+  self~run("CheckImageBudget", .Array~new)
+  self~assertEquals(0, self~warnings~items, -
+    "size: a deck with one small picture is not lectured")
+
+/******************************************************************************/
+/* 4b. A picture used more than once is embedded once                         */
+/*                                                                            */
+/* A logo on ten slides used to be ten copies of its bytes in the .html, and  */
+/* ten "this picture is heavy" warnings. The first <img> carries the bytes    */
+/* and data-pic="n"; each repeat, a 1x1 placeholder and data-pic-copy="n",    */
+/* which the runtime resolves on load.                                        */
+/******************************************************************************/
+
+::Method test_a_repeated_picture_is_embedded_once
+  Expose fix
+  uri = self~uriFor(fix"/deck/img/pic.svg")
+  out = self~run("EmbedImages", .Array~of( -
+    '<img src="img/pic.svg" alt="a"/><img src="img/pic.svg" alt="b"/>', fix"/deck/"))
+  self~assertEquals(1, out~countStr(uri), -
+    "repeat: the bytes are in the deck once")
+  self~assertEquals('<img src="'uri'" data-pic="1" alt="a"/>' || -
+    '<img src="'self~run("PlaceholderPic", .Array~new)'" data-pic-copy="1" alt="b"/>', out, -
+    "repeat: the first carries data-pic, the repeat a placeholder that names it")
+
+::Method test_no_repeat_no_mark
+  /* A deck without repeats comes out exactly as it did before: the mark is   */
+  /* only resolved into data-pic when a copy needs it.                        */
+  Expose fix
+  out = self~run("EmbedImages", .Array~of( -
+    '<img src="img/pic.svg"/><img src="img/logo.svg"/>', fix"/deck/"))
+  self~assertEquals('<img src="'self~uriFor(fix"/deck/img/pic.svg")'"/>' || -
+    '<img src="'self~uriFor(fix"/deck/img/logo.svg")'"/>', out, -
+    "repeat: two different pictures are both embedded, and neither is marked")
+
+::Method test_dot_slash_is_a_repeat_too
+  Expose fix
+  out = self~run("EmbedImages", .Array~of( -
+    '<img src="img/pic.svg"/><img src="./img/pic.svg"/>', fix"/deck/"))
+  self~assertEquals(1, out~countStr(self~uriFor(fix"/deck/img/pic.svg")), -
+    "repeat: './img/x' after 'img/x' is the same picture, embedded once")
+  self~assertTrue(out~pos('data-pic-copy="1"') > 0, -
+    "repeat: and it names the first")
+
+::Method test_a_repeated_heavy_picture_warns_once
+  Expose fix
+  limit = self~run("ImageWarnBytes", .Array~new)
+  self~put(fix"/deck/img/heavy.svg", "<!--" || "x"~copies(limit + 4096) || "-->")
+  self~resetBudget
+  self~run("EmbedImages", .Array~of('<img src="img/heavy.svg"/><img src="img/heavy.svg"/>', -
+                                    fix"/deck/"))
+  self~assertEquals(1, self~warnings~items, -
+    "repeat: a heavy picture used twice is reported once")
+  self~assertEquals(limit + 4096 + 7, .local["MD2SLIDES.IMAGEBYTES"], -
+    "repeat: and it counts once against the deck budget")
+
+::Method test_a_sheet_naming_a_heavy_picture_twice_warns_once
+  /* A sheet cannot share one embedding between two rules, so the bytes go in */
+  /* twice and the budget counts both; the warning, though, is said once.     */
+  Expose fix
+  limit = self~run("ImageWarnBytes", .Array~new)
+  self~put(fix"/skin/img/heavy.svg", "<!--" || "x"~copies(limit + 4096) || "-->")
+  self~resetBudget
+  self~run("EmbedCSSImages", .Array~of("a{background:url(img/heavy.svg)}" || -
+    "b{background:url(img/heavy.svg)}", fix"/skin/", "master 'm.css'"))
+  self~assertEquals(1, self~warnings~items, -
+    "repeat: a sheet naming a heavy picture twice is reported once")
+  self~assertEquals(2 * (limit + 4096 + 7), .local["MD2SLIDES.IMAGEBYTES"], -
+    "repeat: but the budget counts both copies, which are really there")
+
+::Method test_the_runtime_resolves_the_copies
+  /* Without this the repeats would show a transparent pixel. Nothing raises. */
+  src = self~source(self~projectRoot"/bin/md2slides/js/runtime.js")
+  self~assertTrue(src~pos('img[data-pic-copy]') > 0, -
+    "wiring: runtime.js looks for the repeats")
+  self~assertTrue(src~pos('img[data-pic="') > 0, -
+    "wiring: and takes their src from the first occurrence")
+
+/******************************************************************************/
+/* 5. The wiring. md2slides.rex has to actually CALL all of this.             */
+/*                                                                            */
+/* Reverting any of these lines to the old ReadFile leaves a pipeline that    */
+/* builds a perfectly good deck with no chrome in it. Nothing raises. These   */
+/* are file-level assertions on purpose: no pandoc, no browser, no deck.      */
+/******************************************************************************/
+
+::Method test_md2slides_reads_its_sheets_through_ReadSheet
+  src = self~source(self~projectRoot"/bin/md2slides.rex")
+  self~assertTrue(src~pos('ReadSheet(skinSheet, "skin")') > 0, -
+    "wiring: the skin is read through ReadSheet, so its img/ is embedded")
+  self~assertTrue(src~pos('ReadSheet(ms, "master")') > 0, -
+    "wiring: every master is read through ReadSheet")
+  self~assertEquals(0, src~pos("ReadFile(ms)"), -
+    "wiring: no master is read with the plain ReadFile any more")
+
+::Method test_sheets_are_addressed_by_path_only
+  /* "img/ is relative to the file that names it" only means something while a
+   * sheet HAS a place of its own. The brand vocabulary -- `-s wu` resolving to
+   * assets/wu/skin.css, `-mp banded` to masters/banded.css -- put sheets on a
+   * shelf inside the product, where an author could not keep an img/ folder
+   * beside them. It is gone, along with the directories it indexed and the
+   * --assets flag that let the caller move the product's own machinery.
+   *
+   * Bringing any of it back would not fail: decks would build, and a sheet
+   * resolved off the shelf would quietly find no pictures.
+   */
+  src = self~source(self~projectRoot"/bin/md2slides.rex")
+  self~assertTrue(src~pos("ResolveSheet(skin, deckDir)") > 0, -
+    "wiring: the skin is resolved as a path")
+  self~assertTrue(src~pos("ResolveSheet(mp, deckDir)") > 0, -
+    "wiring: every master is resolved as a path")
+  Do gone Over .Array~of('"/assets/"', '"/masters/"', '"--assets"')
+    self~assertEquals(0, src~pos(gone), -
+      "wiring: "gone" is brand-shelf resolution and must not come back")
+  End
+
+::Method test_the_product_ships_no_sheets
+  /* The other half: no shelf on disk either. bin/md2slides holds md2slides'
+   * OWN parts and nothing else -- the deck template, the runtime sheets, the
+   * runtime script. A skin or a master under there would be a sheet with no
+   * img/ of its own and no author to own it.
+   */
+  home = self~projectRoot"/bin/md2slides"
+  Do shelf Over .Array~of("assets", "masters", "samples")
+    self~assertFalse(SysIsFileDirectory(home"/"shelf), -
+      "contract: bin/md2slides/"shelf" is a shelf of sheets and must not exist")
+  End
+  /* Top level only (no "S"): css/ below it holds the five runtime sheets the
+   * program reads into every deck, which ARE its own parts. What must not
+   * appear is a sheet dropped beside them as if md2slides had a house style.
+   */
+  Call SysFileTree home"/*.css", "loose", "FO"
+  self~assertEquals(0, loose.0, -
+    "contract: md2slides ships no skin or master sheets of its own")
+
+::Method test_md2slides_calls_the_warnings
+  src = self~source(self~projectRoot"/bin/md2slides.rex")
+  self~assertTrue(src~pos("Call WarnLooseImages") > 0, -
+    "wiring: loose <img> references are reported at build time")
+  self~assertTrue(src~pos("Call CheckImageBudget") > 0, -
+    "wiring: the deck size budget is checked before the file is written")
+
+/******************************************************************************/
+/* 6. The contract's other half: a style is a palette, and nothing else.      */
+/*                                                                            */
+/* The rule deliberately stops at the deck and the master/skin. Extending it  */
+/* to the styles would mean css/flattened/img/ existing as a duplicate of     */
+/* css/img/, and a picture added to the nested form but not the flattened     */
+/* one would be lost in silence -- the same mute failure this whole group is  */
+/* about. That decision has no other enforcement, so it is enforced here.     */
+/******************************************************************************/
+
+::Method test_styles_carry_no_pictures
+  root = self~projectRoot
+  Do dir Over .Array~of("/css/", "/css/flattened/")
+    self~assertFalse(SysIsFileDirectory(root || dir || "img"), -
+      "contract: "dir" must not grow an img/ directory")
+    Call SysFileTree root || dir || "rexx-*.css", "sheets", "FO"
+    self~assertTrue(sheets.0 > 0, -
+      "contract: the style sheets in "dir" were found")
+    Do i = 1 To sheets.0
+      src = self~source(sheets.i)
+      self~assertEquals(0, src~caselessPos("url(img/"), -
+        "contract: "FileSpec("Name", sheets.i)" is a palette, not a picture box")
+      self~assertEquals(0, src~caselessPos("url(./img/"), -
+        "contract: "FileSpec("Name", sheets.i)" names no pictures, './' or not")
+    End
+  End
+
+::Method test_the_fixture_can_actually_be_removed
+  /* A tearDown that fails is invisible: every test still passes, because      */
+  /* setUp rebuilds what it needs on top of whatever survived. This group ran  */
+  /* green on Windows for a day while leaving its whole fixture on disk, and   */
+  /* the only reason anyone found out was that JMB saw the directory.          */
+  /*                                                                          */
+  /* So the cleanup is tested like anything else, on the platform it is        */
+  /* running on: a small tree, three levels deep, removed to nothing. This     */
+  /* fails ON WINDOWS if the removal ever goes back to depending on a path     */
+  /* pattern or on the order a listing comes back in.                          */
+  Expose fix
+  probe = fix"/rmtree-probe"
+  Call SysMkDir probe
+  Call SysMkDir probe"/one"
+  Call SysMkDir probe"/one/two"
+  self~put(probe"/top.svg",         "<svg/>")
+  self~put(probe"/one/mid.svg",     "<svg/>")
+  self~put(probe"/one/two/deep.svg","<svg/>")
+  self~assertTrue(SysIsFileDirectory(probe), "the probe tree is there to start with")
+
+  self~rmTree(probe)
+
+  self~assertEquals(0, SysIsFileDirectory(probe), -
+    "rmTree leaves nothing behind, files, subdirectories and all")
+
+/******************************************************************************/
+/* Plumbing for the tests themselves                                          */
+/******************************************************************************/
+
+::Attribute warnings Get
+
+::Method run
+  /* Call one of md2slides' public routines, capturing everything it says on  */
+  /* .Error into self~warnings. The capture is the point: the warnings are    */
+  /* the deliverable here, so they have to be assertable, and a routine that  */
+  /* quietly stopped warning would otherwise pass every test in this file.    */
+  Expose warnings
+  Use Strict Arg name, args
+  warnings = .Array~new
+  sink = .WarnSink~new
+  prev = .Error~destination
+  /* Assigned, never left as a bare message instruction: a bare message send  */
+  /* is a Rexx clause whose return value lands in the variable RESULT, and    */
+  /* the first version of this method spent an afternoon returning the sink   */
+  /* instead of the routine's answer for exactly that reason.                 */
+  discard = .Error~destination(sink)
+  Signal On Syntax Name Failed
+  value   = self~md2slides~findRoutine(name~upper)~callWith(args)
+  discard = .Error~destination(prev)
+  Do line Over sink~lines
+    Parse Var line . "warning:" text
+    warnings~append(text~strip)
+  End
+  Return value
+Failed:
+  discard = .Error~destination(prev)   -- never leave stderr redirected
+  Raise Propagate
+
+::Method md2slides
+  /* Loaded once for the group: the prologue runs on every .Package~new and   */
+  /* it shells out to pandoc. It also complains about the input file it was   */
+  /* not given, which is swallowed here and is not an error.                  */
+  pkg = .local["ASSETS.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .WarnSink~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["ASSETS.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method resetBudget
+  /* The running total lives in .local, so a test that cares about the deck   */
+  /* budget has to start from zero -- otherwise it passes or fails depending  */
+  /* on which tests ran before it.                                            */
+  .local["MD2SLIDES.IMAGEBYTES"] = 0
+  -- The heavy-picture warning is said once per picture, and that memory lives
+  -- in .local too.
+  .local["MD2SLIDES.HEAVYWARNED"] = .Set~new
+
+::Method untouchable
+  /* Everything that means "leave me alone": already embedded, absolute,      */
+  /* or a URL. None of these may be rewritten and none may be warned about.   */
+  Return .Array~of("data:image/svg+xml;base64,PHN2Zy8+", -
+                   "/absolute/path/x.png", -
+                   "https://example.org/x.png", -
+                   "//cdn.example.org/x.png")
+
+::Method uriFor
+  /* The data URI a file MUST turn into -- computed here from the same bytes  */
+  /* on disk, so the assertion is on identity, not on shape. */
+  Use Strict Arg path
+  Return "data:image/svg+xml;base64," || self~source(path)~encodeBase64
+
+::Method source
+  Use Strict Arg path
+  size = Stream(path, "C", "QUERY SIZE")
+  If size == 0 Then Return ""
+  text = CharIn(path, 1, size)
+  Call Stream path, "C", "CLOSE"
+  Return text
+
+::Method put
+  Use Strict Arg path, text
+  s = .Stream~new(path)
+  s~open("write replace")
+  s~charOut(text)
+  s~close
+
+::Method rmTree
+  /* Remove the fixture, whatever platform this is running on.                */
+  /*                                                                          */
+  /* The first version walked SysFileTree with a wildcard pattern built from  */
+  /* the directory name, and then removed the directories in the reverse of   */
+  /* the order it had listed them.                                            */
+  /* It worked here and did nothing at all on Windows, where the fixture       */
+  /* survived a green run -- and a tearDown that fails is invisible: every     */
+  /* test still passes, because setUp rebuilds the files it needs on top of    */
+  /* whatever was left. What it does NOT rebuild is a file some older version  */
+  /* of this fixture created, which then sits there being found by tests that  */
+  /* should not find it.                                                       */
+  /*                                                                          */
+  /* So: no path patterns (a "/" in one is not a separator everywhere), and no */
+  /* assumption about the order a directory listing comes back in. Depth-first */
+  /* recursion deletes children before their parent by construction, which is  */
+  /* the only property that ever mattered.                                     */
+  Use Strict Arg dir
+  f = .File~new(dir)
+  If \ f~exists Then Return
+  If f~isDirectory Then
+    Do child Over f~listFiles
+      self~rmTree( child~absolutePath )
+    End
+  discard = f~delete
+
+::Method tempDir
+  /* Where the platform keeps temporary files: TMPDIR/TEMP/TMP, else /tmp.   */
+  Do name Over ("TMPDIR", "TEMP", "TMP")
+    dir = Value(name, , "ENVIRONMENT")
+    If dir \== "" Then Return dir~strip("T", "/")~strip("T", "\")
+  End
+  Return "/tmp"
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/Assets.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/******************************************************************************/
+/* WarnSink - stands in for stderr while a routine runs.                      */
+/*                                                                            */
+/* .Error is a Monitor; what it forwards depends on how it was written to, so */
+/* the sink answers all three and keeps the text.                             */
+/******************************************************************************/
+
+::Class WarnSink
+
+::Method init
+  Expose lines
+  lines = .Array~new
+
+::Attribute lines Get
+
+::Method lineOut
+  Expose lines
+  If Arg() > 0 Then lines~append(Arg(1))
+  Return 0
+
+::Method say
+  Expose lines
+  If Arg() > 0 Then lines~append(Arg(1))
+  Return 0
+
+::Method charOut
+  Return 0

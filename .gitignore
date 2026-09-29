@@ -1,3 +1,5 @@
 pack.rex
 *.zip
 bin/tree.rex
+bin/modules/rvm
+bin/modules/rvm/*

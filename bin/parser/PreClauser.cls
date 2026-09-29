@@ -29,6 +29,11 @@
 /* 20260521    0.5  CMS: Ignore ooRexx-specific keyword instructions          */
 /* 20260521         CMS: Allow UPPER instruction                              */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
+/* 20260924         A shebang line is a null clause, not a command with an    */
+/*                  empty expression (the shebang element stays in the        */
+/*                  element chain: highlighting and trident are unchanged).   */
+/* 20260924    0.7  INTERPRET option: labels (47.1) and directives (99.914)   */
+/*                  are not allowed.                                          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -234,10 +239,10 @@ Error:
 
   elements = Array()
 
+  -- A shebang line is a clause with no instruction in it: a null clause
+  -- (the shebang element stays in the element chain).
   If begin~next < .EL.SHEBANG Then Do
-    shebang = begin~next
-    elements[1] = shebang
-    end = shebang~next
+    end = begin~next~next
     Return
   End
 
@@ -421,6 +426,10 @@ Error:
 ::Method directive
   Expose package elements directives lastClauseWas
 
+  -- INTERPRET data must not contain directive instructions.
+  directive_start = elements[1]
+  If .Options.Interpret Then Signal 99.914
+
   If package~sourceLiteralStack~isEmpty, -
     lastClauseWas \== Implicit.Exit.Instruction Then
     Exit self~Implicit.Exit.Instruction
@@ -456,6 +465,9 @@ Error:
 
 -- Unrecognized directive instruction.
 99.916: Syntax( 99.916, directive_start )
+
+-- INTERPRET data must not contain directive instructions.
+99.914: Syntax( 99.914, directive_start )
 
 /******************************************************************************/
 /* KEYWORD INSTRUCTIONS                                                       */
@@ -546,6 +558,9 @@ IF: WHEN:
   label = elements[1]
   colon = elements[2]
 
+  -- INTERPRET data must not contain labels.
+  If .Options.Interpret Then Signal 47.001
+
   elements = ( label, colon )
 
   -- Don't insert a semicolon if we already have one
@@ -553,6 +568,9 @@ IF: WHEN:
   Else end = InsertSemicolonAfter( colon )
 
   Return self~return( Label.Clause )
+
+-- INTERPRET data must not contain labels; found "&1".
+47.001: Syntax( 47.001, label, label )
 
 --------------------------------------------------------------------------------
 -- ISAMESSAGEINSTRUCTION                                                      --

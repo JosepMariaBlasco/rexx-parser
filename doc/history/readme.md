@@ -8,8 +8,11 @@ Version history
 <table class="table">
   <thead><tr><th>Date<th>Version<th>Comments</thead>
   <tbody>
-<tr><td>20260906<td>0.7<td>  
+<tr><td>20260906<td>0.7<td>
   <li> Jump release level to mark addition of inline code highlighting.
+  <li> Implement split code blocks (20260912).
+  <li> Intense work on md2slides (thanks, Rony!) (September 2026).
+  <li> Start work on the tree interpreter (alpha) (20260920).
 <tr><td>20260522<td>0.6<td>
 <ul>
   <li> Jump release level to mark addition of support for Rexx/VM.

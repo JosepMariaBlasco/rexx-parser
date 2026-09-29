@@ -31,6 +31,11 @@
 /* 20260102         Standardize help options to -h and --help                 */
 /* 20260314    0.5  Use InitCLI() from CLISupport.cls                         */
 /* 20260521         Add support for CMS                                       */
+/* 20260926    0.7  Add "[+|-]expose" and "[+|-]uselocal" (EXPOSE and USE     */
+/*                  LOCAL out of a method: 98.992, 98.993 at run time)        */
+/* 20260928         Add "[+|-]parse" (a PARSE positional pattern that is not  */
+/*                  a whole number: 26.4 at run time)                         */
+/*                  The help lists "[+|-]leave" and "[+|-]iterate".           */
 /*                                                                            */
 /******************************************************************************/
 
@@ -43,6 +48,9 @@
 
   signal           = 1
   guard            = 1
+  expose           = 1
+  uselocal         = 1
+  parsepos         = 1
   leave            = 1
   iterate          = 1
   bifs             = 1
@@ -60,18 +68,24 @@
     Select Case Lower(option)
       When "-h", "--help" Then Signal Help
       When "-all" Then Do
-        signal  = 0
-        guard   = 0
-        bifs    = 0
-        leave   = 0
-        iterate = 0
+        signal   = 0
+        guard    = 0
+        expose   = 0
+        uselocal = 0
+        parsepos = 0
+        bifs     = 0
+        leave    = 0
+        iterate  = 0
       End
       When "+all" Then Do
-        signal  = 1
-        guard   = 1
-        bifs    = 1
-        leave   = 1
-        iterate = 1
+        signal   = 1
+        guard    = 1
+        expose   = 1
+        uselocal = 1
+        parsepos = 1
+        bifs     = 1
+        leave    = 1
+        iterate  = 1
       End
       When "-signal"       Then signal   = 0
       When "+signal"       Then signal   = 1
@@ -81,6 +95,12 @@
       When "+iterate"      Then iterate  = 1
       When "-guard"        Then guard    = 0
       When "+guard"        Then guard    = 1
+      When "-expose"       Then expose   = 0
+      When "+expose"       Then expose   = 1
+      When "-uselocal"     Then uselocal = 0
+      When "+uselocal"     Then uselocal = 1
+      When "-parse"        Then parsepos = 0
+      When "+parse"        Then parsepos = 1
       When "-bifs"         Then bifs     = 0
       When "+bifs"         Then bifs     = 1
       When "-debug"        Then debug    = 0
@@ -129,11 +149,14 @@
 Code:
 
   check = .Array~new
-  If signal  Then check~append("SIGNAL")
-  If guard   Then check~append("GUARD")
-  If bifs    Then check~append("BIFS")
-  If leave   Then check~append("LEAVE")
-  If iterate Then check~append("ITERATE")
+  If signal   Then check~append("SIGNAL")
+  If guard    Then check~append("GUARD")
+  If expose   Then check~append("EXPOSE")
+  If uselocal Then check~append("USELOCAL")
+  If parsepos Then check~append("PARSE")
+  If bifs     Then check~append("BIFS")
+  If leave    Then check~append("LEAVE")
+  If iterate  Then check~append("ITERATE")
   Options = .Array~of( (earlyCheck, check ) )
 
   If extraletters \== "" Then Options~append(("EXTRALETTERS", extraletters))
@@ -202,7 +225,15 @@ Toggles:
   +all          Activate all toggles. This is the default.
   -all          Deactivate all toggles.
   [+|-]signal   Toggle detecting SIGNAL to inexistent labels.
+  [+|-]leave    Toggle detecting incorrect LEAVEs, or LEAVEs to
+                inexistent targets.
+  [+|-]iterate  Toggle detecting incorrect ITERATEs, or ITERATEs to
+                inexistent targets.
   [+|-]guard    Toggle checking that GUARD is in a method body.
+  [+|-]expose   Toggle checking that EXPOSE is in a method body.
+  [+|-]uselocal Toggle checking that USE LOCAL is in a method body.
+  [+|-]parse    Toggle checking that PARSE positional patterns are
+                whole numbers.
   [+|-]bifs     Check BIF arguments.
 
   [+|-]debug    (De)activate debug mode (not affected by "all").

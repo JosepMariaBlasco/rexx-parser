@@ -13,6 +13,8 @@
 /* Date     Version Details                                                   */
 /* -------- ------- --------------------------------------------------------- */
 /* 20260323    0.1  First version                                             */
+/* 20260926         Front matter read with yaml.cls; invalid YAML is fatal;   */
+/*                  exit code 1 when the single file given fails              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -167,7 +169,7 @@ ProcessOptions:
       End
       Call Directory .File~new(file)~parentFile~absolutePath
       Call ProcessFile file, ""
-      Exit
+      Exit result                        -- 1 if the file failed
     End
     When 2 Then Do
       arg1 = args[1]
@@ -271,7 +273,8 @@ ProcessFile: Procedure Expose rootDir cssDir cssFile check fail -
   -- Parse YAML front matter for RexxPub options                              --
   ------------------------------------------------------------------------------
 
-  yaml = YAMLFrontMatter(source)
+  yaml = CheckedYAMLFrontMatter(source, file)
+  If yaml == "" Then Return 1           -- Invalid YAML, already reported
   opts = ParseRexxPubYAML(yaml)
 
   -- style: CLI > YAML > default
@@ -308,10 +311,13 @@ ProcessFile: Procedure Expose rootDir cssDir cssFile check fail -
 
   Signal On Syntax Name IndividualFileFailed
 
+  -- Dialects are additive: enabled if requested on the CLI OR in the
+  -- document's YAML front matter. (The fence adds its own on top, via
+  -- FencedCode.) "true" is the only meaningful YAML value.
   combinedDefaults = defaultOptions
-  If executor     Then combinedDefaults = Strip(combinedDefaults "executor")
-  If experimental Then combinedDefaults = Strip(combinedDefaults "experimental")
-  If unicode      Then combinedDefaults = Strip(combinedDefaults "unicode")
+  If executor     | opts["executor"]     == "true" Then combinedDefaults = Strip(combinedDefaults "executor")
+  If experimental | opts["experimental"] == "true" Then combinedDefaults = Strip(combinedDefaults "experimental")
+  If unicode      | opts["unicode"]      == "true" Then combinedDefaults = Strip(combinedDefaults "unicode")
 
   options. = 0
   options.default  = combinedDefaults
@@ -384,7 +390,7 @@ AllWentWell:
 
   ------------------------------------------------------------------------------
   -- Extract the title from the Markdown source                               --
-  -- Look for a Setext h1 (underlined with ===) or ATX h1 (# Title)          --
+  -- Look for a Setext h1 (underlined with ===) or ATX h1 (# Title)           --
   ------------------------------------------------------------------------------
 
   title = ""

@@ -8,7 +8,7 @@
      in. Loaded from Google Fonts so the deck-dominant font vote (font-prose /
      font-mono in the front matter) resolves to the real face. If the network is
      unavailable the CSS falls back to the generic sans-serif / monospace baked
-     into --theme-font-prose / --theme-font-mono, so an offline deck still reads
+     into --skin-font-prose / --skin-font-mono, so an offline deck still reads
      sanely -- it just loses the exact IBM Plex shapes. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,35 +21,22 @@
 %extraCSS%
 </style>
 <style>
-%themesCSS%
+%skinsCSS%
 </style>
 </head>
 <body>
 <div id="stage"%stageAttrs%>
 %stage%
   <div id="progress"></div>
-  <div id="controls" class="controls-hidden">
-  <label>section
-    <select id="section-jump"><option value="">&mdash; jump &mdash;</option></select>
-  </label>
-  &nbsp;&middot;&nbsp;
-  <label>code style
-    <select id="rexx-style">
-%rexxStyleOptions%
-    </select>
-  </label>
-  &nbsp;&middot;&nbsp;
-  <span class="controls-help" title="&#9664; &#9654; navigate  &middot;  F fullscreen  &middot;  F8 controls">&#9432;</span>
-  </div>
 </div>
+<script type="application/json" id="build-warnings">%buildWarnings%</script>
+<script type="application/json" id="deck-about">%about%</script>
+<script type="application/json" id="deck-timer">%timer%</script>
+<script>
+%spotlightJS%
+</script>
 <script>
 %runtimeJS%
-</script>
-<script>
-%chooserJS%
-</script>
-<script>
-%jumpJS%
 </script>
 </body>
 </html>

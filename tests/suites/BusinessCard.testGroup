@@ -1,0 +1,272 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* BusinessCard.testGroup - Tests for the business-card role                  */
+/* =========================================================                  */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260918         First version                                             */
+/* 20260927         Fields with no value on a card; .tight (v220)             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED AT ALL                                                  */
+/*                                                                            */
+/* Rony wrote {.business-card} on a slide, typed his name and address under   */
+/* it, and got an ordinary slide: the role only acted on ::: card zones, and  */
+/* nothing said so. A role that silently does nothing reads as a role that    */
+/* does not exist. Everything here fails in silence too -- a wrong card still */
+/* builds and presents.                                                       */
+/*                                                                            */
+/*   - Lose the fallback and the bare form is an ordinary slide again.        */
+/*   - Let the fallback fire beside real cards and a slide with two cards     */
+/*     grows a third one out of its prose.                                    */
+/*   - Lose the name/role/detail order and every card is unstyled text.       */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.BusinessCard.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class BusinessCard.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* The bare form: a business-card slide with no card zone                     */
+/******************************************************************************/
+
+::Method test_bare_prose_becomes_one_card
+  html = "<p>Rony G. Flatscher</p>" || "0a"x || "<p>Professor</p>" || "0a"x -
+      || "<p><strong>Email</strong> rony@wu.ac.at</p>"
+  self~assertEquals( -
+    '<div class="cards"><div class="vcard">' || -
+    '<p class="name">Rony G. Flatscher</p>' || -
+    '<p class="role">Professor</p>' || -
+    '<p class="detail"><strong>Email</strong> rony@wu.ac.at</p>' || -
+    '</div></div>', -
+    self~cards(html), -
+    "no ::: card: the slide's prose is the one card")
+
+::Method test_bare_form_keeps_what_is_around_it
+  /* Only the prose is the card: a block before the first paragraph or after */
+  /* the last one stays where it was, outside the cards container.           */
+  html = "<hr />"||"0a"x"<p>Name</p>"||"0a"x"<p>Role</p>"||"0a"x"<hr />"
+  out  = self~cards(html)
+  self~assertEquals("<hr />", out~left(6), "what came before the prose stays before")
+  self~assertEquals("<hr />", out~right(6), "what came after the prose stays after")
+
+::Method test_no_prose_no_card
+  self~assertEquals("", self~cards(""), -
+    "an empty business-card slide does not grow an empty card")
+
+/******************************************************************************/
+/* Explicit cards                                                             */
+/******************************************************************************/
+
+::Method test_explicit_cards_are_not_wrapped_again
+  html = '<div class="card">' || "0a"x || "<p>A</p>" || "0a"x || "<p>B</p>" -
+      || "0a"x || "</div>" || "0a"x || '<div class="card">' || "0a"x -
+      || "<p>C</p>" || "0a"x || "</div>"
+  out = self~cards(html)
+  self~assertEquals(2, out~countStr('<div class="vcard">'), -
+    "two ::: card zones give two cards, not three")
+  self~assertEquals(1, out~countStr('<div class="cards">'), -
+    "and one container around them")
+
+::Method test_a_card_with_more_classes_is_still_a_card
+  /* {.card .fragment} arrives as class="card fragment". It used to be no    */
+  /* card at all (the match was on class="card" exactly), and the fallback   */
+  /* must not mistake it for a slide without cards either.                   */
+  html = '<div class="card fragment">' || "0a"x || "<p>A</p>" || "0a"x || "</div>"
+  out  = self~cards(html)
+  self~assertEquals(1, out~countStr("vcard"), "one card, not zero and not two")
+  self~assertEquals(1, out~countStr('<div class="vcard fragment">'), -
+    "the extra class rides on the vcard, so the card is revealed")
+
+::Method test_a_card_keeps_its_other_attributes
+  html = '<div class="card fragment" data-anim="fade-up"><p>A</p></div>'
+  self~assertEquals(1, -
+    self~cards(html)~countStr('<div class="vcard fragment" data-anim="fade-up">'), -
+    "data-anim survives, so a card can be animated in")
+
+::Method test_the_container_is_not_a_card
+  self~assertEquals(0, self~cards('<div class="cards"></div>')~countStr("vcard"), -
+    "cards is not card: the word must match whole")
+
+::Method test_order_is_name_role_detail
+  html = '<div class="card">'"<p>N</p><p>R</p><p>D1</p><p>D2</p></div>"
+  out = self~cards(html)
+  self~assertEquals(1, out~countStr('class="name"'),   "one name")
+  self~assertEquals(1, out~countStr('class="role"'),   "one role")
+  self~assertEquals(2, out~countStr('class="detail"'), "the rest are details")
+
+/******************************************************************************/
+/* One line, one line of the card                                             */
+/******************************************************************************/
+
+::Method test_a_hard_break_splits_a_card_paragraph
+  html = "<p>Rony G. Flatscher<br />" || "0a"x || "Modul University<br />" || -
+         "0a"x || "Vienna</p>"
+  out = self~cards(html)
+  self~assertTrue(out~pos('<p class="name">Rony G. Flatscher</p>') > 0, "first line: name")
+  self~assertTrue(out~pos('<p class="role">Modul University</p>') > 0,  "second: role")
+  self~assertTrue(out~pos('<p class="detail">Vienna</p>') > 0,          "third: a detail")
+
+::Method test_card_lines_are_broken_on_a_card_slide
+  src = .Array~of("--- {.slide .business-card}", "", "Rony", "Modul", "", "Vienna")
+  out = self~cardLines(src)
+  self~assertTrue(out~pos("Rony\"||"0a"x) > 0, "a line followed by a line gets a break")
+  self~assertEquals(0, out~pos("Modul\"), "the last line before a blank does not")
+
+::Method test_only_card_slides_are_touched
+  src = .Array~of("--- {.slide}", "", "Line one", "line two")
+  self~assertEquals(0, self~cardLines(src)~pos("\"), "ordinary prose is left alone")
+
+::Method test_a_title_zone_on_a_card_slide_is_left_alone
+  src = .Array~of("--- {.slide .business-card}", "::: title", "One", "Two", ":::", "Name", "Role")
+  out = self~cardLines(src)
+  self~assertEquals(0, out~pos("One\"),  "a title's lines are not the card's")
+  self~assertTrue(out~pos("Name\") > 0,  "the card's are")
+
+::Method test_card_zones_count_anywhere_on_a_card_slide
+  src = .Array~of("# Contact {.business-card}", "", "::: {.card .fragment}", "Name", "Role", ":::")
+  self~assertTrue(self~cardLines(src)~pos("Name\") > 0, "inside ::: {.card ...} too")
+
+::Method test_code_on_a_card_slide_is_left_alone
+  src = .Array~of("--- {.slide .business-card}", "```", "a", "b", "```")
+  self~assertEquals(0, self~cardLines(src)~pos("a\"), "code is never touched")
+
+/******************************************************************************/
+/* Fields on a card (v220, Rony 27-Sep: address-1..3, not all on every card)  */
+/******************************************************************************/
+
+::Method test_an_empty_field_leaves_no_line
+  f = self~fields("address-1", "Am Kahlenberg 1", "address-2", "")
+  out = self~cardFields('<div class="card"><p>{address-1}<br />' || "0a"x || -
+                        '{address-2}<br />' || "0a"x || 'Wien</p></div>', f)
+  self~assertEquals('<div class="card"><p>{address-1}<br />' || "0a"x || 'Wien</p></div>', out, -
+    "the empty line goes; the filled one is left to BodyFields")
+
+::Method test_a_line_with_all_its_fields_empty_goes_label_and_all
+  f = self~fields("email", "", "zip", "1190", "city", "")
+  out = self~cardFields("<p>N</p><p><strong>Email</strong> {email}</p><p>{zip} {city}</p>", f)
+  self~assertEquals("<p>N</p><p>{zip} </p>", out, -
+    "no label with nothing after it; one field filled keeps the line")
+
+::Method test_an_undeclared_field_on_a_card_is_left_out
+  out = self~cardFields("<p>N</p><p>{no-such-field}</p><p>ho1</p>", self~fields())
+  self~assertEquals("<p>N</p><p>ho1</p>", out, "left out (and reported)")
+
+::Method test_braces_that_are_not_a_field_stay
+  out = self~cardFields("<p>N</p><p>a {b c} d</p><p><code>{x}</code></p>", self~fields())
+  self~assertEquals("<p>N</p><p>a {b c} d</p><p><code>{x}</code></p>", out, -
+    "not a name, or in code: as written")
+
+::Method test_only_the_cards_are_touched
+  f = self~fields()
+  html = '<div class="title"><p>{x}</p></div><div class="card"><p>{x}</p><p>N</p></div><p>{x}</p>'
+  self~assertEquals('<div class="title"><p>{x}</p></div><div class="card"><p>N</p></div><p>{x}</p>', -
+    self~cardFields(html, f), "the title and the prose beside the cards keep theirs")
+
+::Method test_declared_empty_keys_are_found
+  src = .Array~of("---", "rexxpub:", "  a:", "  b: 1", "  c:   # none", "  d: ~", -
+                  "  timer:", "    total: 90", "  list:", "  - x", "  skin-mu-e:", -
+                  "title: T", "e2:", "---")
+  self~assertEquals("a c d skin-mu-e", self~declaredEmpty(src)~makeString("L", " "), -
+    "no value, a comment, ~; not a block, a list, or a key outside rexxpub:")
+
+::Method test_empty_fields_follow_the_skin
+  f = self~fields("x", "plain")
+  src = .Array~of("---", "rexxpub:", "  x: plain", "  skin-mu-x:", "  y:", "  z:", "  style:", "---")
+  f["y"] = "Y"                                  -- as FooterFields' skin pass left it
+  self~md2slides~findRoutine("EMPTYFIELDS")~call(f, src, "mu")
+  self~assertEquals("", f["x"], "an empty skin key empties the field under that skin")
+  self~assertEquals("Y", f["y"], "a value is not emptied")
+  self~assertEquals("", f["z"], "declared empty")
+  self~assertFalse(f~hasIndex("style"), "a reserved key is not a field")
+
+::Method test_a_tight_card_has_no_role
+  out = self~cards('<div class="card tight"><p>N</p><p>Street</p><p>City</p></div>')
+  self~assertTrue(out~pos('<div class="vcard tight"><p class="name">N</p>' || -
+    '<p class="detail">Street</p><p class="detail">City</p></div>') > 0, "name, then details ("out")")
+
+/******************************************************************************/
+/* Plumbing                                                                   */
+/******************************************************************************/
+
+::Method fields
+  f = .StringTable~new
+  Do i = 1 To Arg() By 2
+    f[Arg(i)] = Arg(i + 1)
+  End
+  Return f
+
+::Method cardFields
+  Use Strict Arg html, fields
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  out     = self~md2slides~findRoutine("CARDFIELDS")~call(html, fields, "t")
+  discard = .Error~destination(prev)
+  Return out
+
+::Method declaredEmpty
+  Use Strict Arg source
+  Return self~md2slides~findRoutine("DECLAREDEMPTY")~call(source)
+
+::Method cardLines
+  Use Strict Arg lines
+  Return self~md2slides~findRoutine("CARDLINES")~call(lines~makeString("L", "0a"x))
+
+::Method cards
+  Use Strict Arg html
+  Return self~md2slides~findRoutine("CARDS")~callWith(.Array~of(html))
+
+::Method md2slides
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* public routines without running it as one. The prologue does run, finds   */
+  /* no input file and complains; that complaint is swallowed here.            */
+  pkg = .local["BUSINESSCARD.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  /* Assigned, never a bare message instruction: a bare send is a clause whose */
+  /* value lands in RESULT.                                                    */
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["BUSINESSCARD.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/BusinessCard.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0

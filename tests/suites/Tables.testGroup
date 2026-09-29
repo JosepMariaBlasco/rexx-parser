@@ -1,0 +1,470 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Tables.testGroup - Incremental tables, and ::: {.incremental attrs}        */
+/* ===================================================================        */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260920         First version                                             */
+/* 20260920         The table is a step of its own (header first)             */
+/* 20260920         head= and steps=                                          */
+/* 20260920         A long row no longer stretches the table (Pandoc widths)  */
+/* 20260920         cols=1:5 -- the proportions of the columns                */
+/* 20260920         .tight closes the rows up                                 */
+/* 20260920         An empty cell is no step of its own (fragment with)       */
+/* 20260920         .plain on a list drops the bullets                        */
+/* 20260927         Code in text: --skin-inline-mono-scale                    */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED AT ALL                                                  */
+/*                                                                            */
+/* Rony needed a table revealed row by row, and had no way to get one: a      */
+/* Markdown table cannot carry .fragment on a row, and ::: incremental knew   */
+/* only list items. Building it from rows and columns instead cost him a      */
+/* forest of closing fences. And `::: {.incremental anim=scale-in}` -- the    */
+/* form he was told to write -- was not recognised as incremental at all,     */
+/* because the opening tag was matched as one exact string.                   */
+/*                                                                            */
+/* Then the header stood on the slide from the start -- before the bullet     */
+/* that introduces the table had even appeared. Now the TABLE is a fragment:  */
+/* its first step shows the header, and each press adds a row. A table with   */
+/* no header comes in with its first row, since an empty grid shows nothing.  */
+/*                                                                            */
+/* Rony then asked for both to be the author's choice, per table: the header  */
+/* on its own step or with the first row (head=before | with-row), and the    */
+/* body row by row or cell by cell (steps=rows | cells).                      */
+/*                                                                            */
+/* Then two tables written the same way came out one wide, one tight. Pandoc  */
+/* measures pipe-table rows against --columns (72): a table with a longer     */
+/* row gets a <colgroup> of percentage widths and the browser stretches it    */
+/* to fill its container. The source line length means nothing on a slide,   */
+/* so md2slides pushes the limit away and every table sizes to its contents.  */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Tables.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class Tables.testGroup Subclass ooTestCase Public
+
+::Method test_an_incremental_table_reveals_its_rows
+  html = '<div class="incremental">'"0a"x"<table><thead><tr class=""header""><th>A</th></tr></thead>" || -
+         '<tbody><tr class="odd"><td>1</td></tr><tr class="even"><td>2</td></tr></tbody></table>'"0a"x"</div>"
+  out = self~mark(html)
+  self~assertEquals(2, out~countStr('<tr class="fragment '), "each body row is a fragment")
+  self~assertTrue(out~pos('<tr class="header">') > 0, "the header row is not a step of its own")
+
+::Method test_the_table_itself_is_the_first_step
+  /* The header must not stand before the text that introduces the table.    */
+  html = '<div class="incremental">'"<table><thead><tr class=""header""><th>A</th></tr></thead>" || -
+         '<tbody><tr class="odd"><td>1</td></tr></tbody></table></div>'
+  out = self~mark(html)
+  self~assertTrue(out~pos('<table class="fragment">') == 1, "the table is a fragment")
+  self~assertTrue(out~pos('<table class="fragment">') < out~pos('<tr class="fragment'), -
+    "and comes before its rows, in document order")
+
+::Method test_a_headerless_table_comes_in_with_its_first_row
+  html = '<div class="incremental">'"<table><tbody><tr class=""odd""><td>1</td></tr>" || -
+         '<tr class="even"><td>2</td></tr></tbody></table></div>'
+  out = self~mark(html)
+  self~assertTrue(out~pos('<tr class="odd">') > 0,           "row 1 rides with the table")
+  self~assertTrue(out~pos('<tr class="fragment even">') > 0, "row 2 is a step")
+
+::Method test_the_table_carries_the_blocks_animation
+  html = '<div class="incremental" data-anim="fade-left">'"<table><thead><tr><th>A</th></tr></thead>" || -
+         '<tbody><tr><td>1</td></tr></tbody></table></div>'
+  out = self~mark(html)
+  self~assertTrue(out~pos('<table class="fragment" data-anim="fade-left">') > 0, "the table step")
+  self~assertTrue(out~pos('<tr class="fragment" data-anim="fade-left">') > 0,    "and the row steps")
+
+::Method test_head_with_row_brings_the_first_row_along
+  out = self~mark(self~table('head="with-row"'))
+  self~assertTrue(out~pos('<table class="fragment">') > 0, "the table is still a step")
+  self~assertTrue(out~pos('<tr class="odd">') > 0,          "row 1 comes with it")
+  self~assertTrue(out~pos('<tr class="fragment even">') > 0, "row 2 is a step")
+
+::Method test_steps_cells_makes_every_cell_a_step
+  out = self~mark(self~table('steps="cells"'))
+  self~assertEquals(4, out~countStr('<td class="fragment">'), "two rows of two cells")
+  self~assertEquals(0, out~countStr('<tr class="fragment'),   "and no row is a step")
+
+::Method test_cells_with_row_brings_the_first_cell_along
+  out = self~mark(self~table('steps="cells" data-head="with-row"'))
+  self~assertEquals(3, out~countStr('<td class="fragment">'), "all cells but the first")
+  self~assertTrue(out~pos("<td>1a</td>") > 0, "the first cell comes with the header")
+
+::Method test_an_unknown_value_falls_back
+  out = self~mark(self~table('steps="columns"'))
+  self~assertEquals(2, out~countStr('<tr class="fragment'), "rows, the default")
+
+::Method test_an_unknown_value_warns_with_its_slide
+  check   = self~md2slides~findRoutine("CHECKBODYANIMS")
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  Call CallRoutine check, '<div class="incremental" data-head="after">', "cmp"
+  discard = .Error~destination(prev)
+  said = sink~text
+  self~assertTrue(said~pos('head="after"') > 0,   "the value is named")
+  self~assertTrue(said~pos('"cmp"') > 0,          "and the slide")
+  self~assertTrue(said~pos("before with-row") > 0, "and what is known")
+
+::Method table
+  Use Strict Arg attrs
+  If attrs~left(6) == 'steps=' | attrs~left(5) == 'head=' Then attrs = "data-"attrs
+  Return '<div class="incremental" 'attrs'>'"<table><thead><tr class=""header""><th>A</th><th>B</th></tr></thead>" || -
+         '<tbody><tr class="odd"><td>1a</td><td>1b</td></tr><tr class="even"><td>2a</td><td>2b</td></tr></tbody></table></div>'
+
+::Method test_incremental_with_attributes_is_recognised
+  html = '<div class="incremental" data-anim="scale-in">'"0a"x"<ul class=""incremental"">" || -
+         "<li>a</li><li>b</li></ul>"||"0a"x"</div>"
+  out = self~mark(html)
+  self~assertEquals(2, out~countStr('<li class="fragment" data-anim="scale-in">'), -
+    "the items are fragments, and carry the block's animation")
+
+::Method test_an_extra_class_keeps_a_wrapper
+  html = '<div class="incremental plain">'"<table><tbody><tr><td>1</td></tr></tbody></table></div>"
+  out = self~mark(html)
+  self~assertTrue(out~pos('<div class="plain">') > 0, "the wrapper keeps .plain for the stylesheet")
+  self~assertEquals(0, out~pos("incremental"), "and loses the incremental class")
+
+::Method test_a_style_keeps_a_wrapper
+  /* indent= arrives as a style; dropping the wrapper would drop the indent. */
+  html = '<div class="incremental" style="margin-inline-start: 1cm;">' || -
+         "<table><tbody><tr><td>1</td></tr></tbody></table></div>"
+  out = self~mark(html)
+  self~assertTrue(out~pos('<div style="margin-inline-start: 1cm;"><table') == 1, "the style stays")
+
+::Method test_a_kept_wrapper_around_a_list_is_its_body
+  /* WrapProse would have given the bare list a .body; a kept wrapper hides  */
+  /* the list from it, so the wrapper takes the class itself.                */
+  html = '<div class="incremental" style="margin-inline-start: 1cm;">' || -
+         '<ul class="incremental"><li>a</li></ul></div>'
+  out = self~mark(html)
+  self~assertTrue(out~pos('<div class="body" style="margin-inline-start: 1cm;"><ul>') == 1, -
+    "the list keeps its prose size")
+
+::Method test_a_plain_incremental_list_loses_its_wrapper
+  html = '<div class="incremental">'"<ul class=""incremental""><li>a</li></ul></div>"
+  self~assertEquals('<ul><li class="fragment">a</li></ul>', self~mark(html), "as before")
+
+::Method test_a_table_outside_incremental_is_untouched
+  html = "<table><tbody><tr><td>1</td></tr></tbody></table>"
+  self~assertEquals(html, self~mark(html), "no incremental, no fragments")
+
+/******************************************************************************/
+/* Width                                                                      */
+/******************************************************************************/
+
+::Method test_a_long_row_does_not_stretch_the_table
+  /* Rony's Operator / Meaning table: one cell of 70-odd characters was      */
+  /* enough for Pandoc to hand out percentage widths, and the table filled   */
+  /* the slide while the short one under it sat tight.                       */
+  long = '"exclusive or" (*true* if one argument is *true* and the other *false*)'
+  md   = .Array~of("| Operator | Meaning |", "|---|---|", "| `&&` | "long" |")
+  html = self~pandoc(md)
+  self~assertTrue(html~pos("<table>") > 0,   "it is a table")
+  self~assertEquals(0, html~countStr("<colgroup"), "and it carries no column widths")
+  self~assertEquals(0, html~countStr("<col "),     "none at all")
+
+::Method test_a_tag_is_never_split_across_lines
+  /* The detectors read Pandoc's HTML line by line; a `<span` on one line and */
+  /* its `class="static">` on the next was a .static item that animated.     */
+  /* Pandoc breaks at a blank, so the blank inside the tag is only hit when  */
+  /* it falls on the wrap column: the items below sweep the prefix length    */
+  /* one character at a time across that column, so one of them always does */
+  /* -- unless the output is not re-flowed at all.                           */
+  md = .Array~new
+  Loop n = 470 To 500
+    Loop k = 1 To 12
+      md~append("* "Copies("x", k) Copies("w ", n)"[a static item]{.static} that goes on")
+    End
+  End
+  html = self~pandoc(md)
+  self~assertEquals(md~items, html~countStr('<span class="static">'), "every marker is whole")
+  self~assertEquals(0, html~countStr("<span"||"0a"x), "no tag is broken at a line end")
+
+::Method test_a_long_attribute_list_is_translated_whole
+  /* Rony's ::: {.incremental indent=2em .contents scale=0.7 head=with-row}: */
+  /* Pandoc emitted the <div> over two lines, `data-head="with-row">` alone  */
+  /* on the second, and SugarToStyle, which reads one line at a time, found  */
+  /* no `>` on the first: substr(1, -1), error 93. Not the dash in with-row. */
+  md   = .Array~of("::: {.incremental indent=2em .contents scale=0.7 head=with-row}", -
+                   "", "| A | B |", "|---|---|", "| 1 | 2 |", "", ":::")
+  html = self~pandoc(md)
+  out  = self~md2slides~findRoutine("TRANSLATESUGAR")~call(html)
+  self~assertTrue(out~pos('margin-inline-start: 2em') > 0, "indent= is translated")
+  self~assertTrue(out~pos('--contents-scale: 0.7') > 0,   "and so is scale=")
+  self~assertTrue(out~pos('data-head="with-row"') > 0,    "head= stays for the table step")
+
+/******************************************************************************/
+/* Proportions: cols=                                                         */
+/******************************************************************************/
+
+::Method test_cols_gives_the_columns_their_shares
+  /* Rony's 1:5. Pandoc leaves `cols` bare (it is <textarea>'s attribute),   */
+  /* head= and steps= it prefixes with data-: both spellings must work.      */
+  html = self~pandoc(.Array~of("::: {.incremental cols=1:5}", "", "| A | B |", "|---|---|", "| 1 | 2 |", "", ":::"))
+  self~assertTrue(html~pos(' cols="1:5"') > 0, "Pandoc leaves cols bare")
+  out  = self~cols(html)
+  self~assertTrue(out~pos('<table class="cols"><colgroup><col style="width: 16.67%" /><col style="width: 83.33%" /></colgroup>') > 0, -
+    "a colgroup with the shares, and the class for the stylesheet")
+  self~assertEquals(0, out~pos('cols="1:5"'), "the attribute is taken off the wrapper")
+
+::Method test_an_unnamed_column_counts_as_one
+  out = self~cols('<div class="contents" data-cols="3">'"<table><tr><td>1</td><td>2</td></tr></table></div>")
+  self~assertTrue(out~pos('width: 75%" /><col style="width: 25%"') > 0, "cols=3 on two columns is 3:1")
+
+::Method test_cols_keeps_the_table_classes
+  out = self~cols('<div data-cols="1:1">'"<table class=""plain""><tr><th>a</th><th>b</th></tr></table></div>")
+  self~assertTrue(out~pos('<table class="cols plain">') > 0, "cols is added to what the table already has")
+
+::Method test_a_bad_cols_warns_and_is_ignored
+  html = '<div data-cols="1:x">'"<table><tr><td>1</td><td>2</td></tr></table></div>"
+  said = self~colsWarning(html)
+  self~assertTrue(said~pos('cols="1:x"') > 0, "the value is named")
+  self~assertTrue(said~pos('"cmp"') > 0,      "and the slide")
+  self~assertEquals(0, self~cols(html)~pos("<colgroup"), "and no colgroup is written")
+
+::Method test_too_many_cols_warns_and_is_ignored
+  html = '<div data-cols="1:2:3">'"<table><tr><td>1</td><td>2</td></tr></table></div>"
+  said = self~colsWarning(html)
+  self~assertTrue(said~pos("names 3 columns, but the table has 2") > 0, "the mismatch is spelt out")
+  self~assertEquals(0, self~cols(html)~pos("<colgroup"), "and no colgroup is written")
+
+::Method test_cols_with_no_table_warns
+  said = self~colsWarning('<div data-cols="1:5"><p>no table here</p></div>')
+  self~assertTrue(said~pos("has no table after it") > 0, "the missing table is reported")
+
+::Method test_cols_survives_the_incremental_steps
+  /* The colgroup goes in BEFORE the rows are made fragments; MarkRows must   */
+  /* keep it, and the first row still comes with the header on with-row.     */
+  html = self~cols('<div class="incremental" data-head="with-row" data-cols="1:5">' || -
+                   "<table><thead><tr><th>A</th><th>B</th></tr></thead>" || -
+                   "<tbody><tr><td>1</td><td>2</td></tr><tr><td>3</td><td>4</td></tr></tbody></table></div>")
+  out  = self~mark(html)
+  self~assertTrue(out~pos('<colgroup>') > 0,                     "the colgroup is kept")
+  self~assertEquals(1, out~countStr('<tr class="fragment'),       "one row is a step; the first rides with the header")
+
+/* Both run TableColumns with stderr caught: one returns the HTML, the other  */
+/* what was said. A test that checks the HTML of a bad value must not leak    */
+/* the warning into the run's output.                                         */
+::Method cols
+  Use Strict Arg html
+  Parse Value self~colsRun(html) With out "00"x .
+  Return out
+
+::Method colsWarning
+  Use Strict Arg html
+  Parse Value self~colsRun(html) With . "00"x said
+  Return said
+
+::Method colsRun
+  Use Strict Arg html
+  cols    = self~md2slides~findRoutine("TABLECOLUMNS")
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  out     = cols~call(html, "cmp")
+  discard = .Error~destination(prev)
+  Return out || "00"x || sink~text
+
+/******************************************************************************/
+/* .tight                                                                     */
+/******************************************************************************/
+
+::Method test_tight_closes_the_rows_up
+  /* Rony, on a larger .plain table: the rows stood too far apart. The air is */
+  /* the cells' vertical padding; .tight on the wrapper takes it away. The     */
+  /* wrapper carrying it has to survive MarkIncrementalItems, as .plain does.  */
+  self~assertTrue(self~rule(".slide .tight th,")~pos("padding-top: 0") > 0, "the rule is there")
+  html = '<div class="incremental plain tight">'"<table><tbody><tr><td>1</td></tr></tbody></table></div>"
+  out  = self~mark(html)
+  self~assertTrue(out~pos('class="plain tight"') > 0, "the classes reach the deck on the wrapper")
+
+::Method test_an_output_mention_is_text_not_a_block
+  /* Rony's "Execution, 1" (24-Sep): `3 4`{.output} in a table cell took the */
+  /* output BLOCK's padding, width and code size, stood taller than its row, */
+  /* and every row painted over the bottom of the one above. The block rules */
+  /* are the <pre>'s alone; a mention keeps only the colour, and every code  */
+  /* (a Rexx mention too) takes the deck's mono face.                        */
+  self~assertTrue(self~rule(".code, pre.output {")~pos("width: 100%") > 0,       "the width is the pre's")
+  self~assertTrue(self~rule(".code > pre, pre.output {")~pos("padding: 14px 18px") > 0, "the padding too")
+  css = self~css
+  self~assertEquals(0, css~pos("0a"x".code, .output"),       "no block rule on a bare .output")
+  self~assertEquals(0, css~pos("0a"x".code > pre, .output"), "nor its padding or size")
+  self~assertTrue(css~pos(".output { background: var(--skin-output-bg); }") > 0, "the mention keeps the colour")
+  self~assertTrue(self~rule(".slide code {")~pos("--skin-font-mono") > 0, "every code in the mono face")
+
+/* Code in text is the text's size times the skin's --skin-inline-mono-scale  */
+/* (Rony, 27-Sep: IBM Plex Mono looks bigger than the prose at its size). One */
+/* scale for every kind -- a Rexx mention, a code span, an output mention --  */
+/* and none of it on a block, whose <code> is the child of its <pre>.        */
+::Method test_code_in_text_takes_the_skins_scale
+  self~assertTrue(self~css~pos("--skin-inline-mono-scale: 1;") > 0, "1 unless the skin says otherwise")
+  self~assertTrue(self~rule(".slide :not(pre) > code {")~pos("var(--skin-inline-mono-scale, 1) * 1em") > 0, -
+    "every code in text")
+  file = self~projectRoot"/bin/md2slides/css/pycode.css"
+  py   = CharIn(file, 1, Stream(file, "C", "QUERY SIZE"))
+  Call Stream file, "C", "CLOSE"
+  Parse Var py ".slide .body code:not(.rexx) {" rule "}"
+  self~assertTrue(rule~pos("var(--skin-inline-mono-scale, 1) * 1em") > 0, "a code span too, not a fixed 0.85em")
+
+::Method css
+  file = self~projectRoot"/bin/md2slides/css/runtime.css"
+  text = CharIn(file, 1, Stream(file, "C", "QUERY SIZE"))
+  Call Stream file, "C", "CLOSE"
+  Return text
+
+::Method rule
+  /* The declarations of the rule whose selector list STARTS with this line. */
+  Use Strict Arg selector
+  file = self~projectRoot"/bin/md2slides/css/runtime.css"
+  text = CharIn(file, 1, Stream(file, "C", "QUERY SIZE"))
+  Call Stream file, "C", "CLOSE"
+  p = text~pos("0a"x || selector)
+  If p == 0 Then Return ""
+  Parse Value text~substr(p) With "{" decls "}" .
+  Return decls
+
+/******************************************************************************/
+/* Empty cells                                                                */
+/******************************************************************************/
+
+::Method test_an_empty_cell_comes_with_the_step_before
+  /* Rony's table of statements, cell by cell: the result column is empty    */
+  /* when a statement returns nothing, and that cell cost a press that showed */
+  /* nothing. It is still a fragment (hidden until its turn) but a            */
+  /* "withPrevious" one: the runtime reveals it together with the prev step.  */
+  html = '<div class="incremental" data-steps="cells">' || -
+         "<table><tbody><tr><td>say 1</td><td>1</td></tr><tr><td>call x</td><td></td></tr>" || -
+         "<tr><td>y = 2</td><td>   </td></tr></tbody></table></div>"
+  out  = self~mark(html)
+  self~assertEquals(3, out~countStr('<td class="fragment">'),               "the cells with content are steps")
+  self~assertEquals(2, out~countStr('<td class="fragment withPrevious">'), "the empty and the blank one ride along")
+
+::Method test_the_first_riding_cell_is_not_marked_withprevious
+  /* A table with no header: its first cell comes with the table itself and  */
+  /* is no fragment at all, empty or not.                                     */
+  html = '<div class="incremental" data-steps="cells">' || -
+         "<table><tbody><tr><td></td><td>b</td></tr></tbody></table></div>"
+  out  = self~mark(html)
+  self~assertTrue(out~pos("<td></td>") > 0, "the first cell rides with the table")
+  self~assertEquals(0, out~countStr("withPrevious"), "and nothing is marked withPrevious")
+
+::Method test_the_runtime_groups_withprevious_fragments_into_steps
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  self~assertTrue(src~pos('classList.contains("withPrevious")') > 0, "wiring: the runtime knows withPrevious")
+  self~assertTrue(src~pos('classList.contains("afterPrevious")') > 0, "wiring: the runtime knows afterPrevious")
+  self~assertTrue(src~pos("stepsOf(slide)") > 0,             "wiring: presses count steps, not fragments")
+
+::Method test_plain_drops_the_bullets_of_a_list
+  /* Rony's "noBullet": .plain, the word a table already uses for no grid.  */
+  self~assertTrue(self~rule(".slide .plain ul,")~pos("list-style: none") > 0, "the rule is there")
+  html = '<div class="incremental plain">'"<ul><li>a</li><li>b</li></ul></div>"
+  out  = self~mark(html)
+  self~assertTrue(out~pos('class="body plain"') > 0, "the class reaches the deck on the wrapper")
+
+::Method pandoc
+  Use Strict Arg lines
+  output = .Array~new
+  flags  = self~md2slides~findRoutine("PANDOCOPTIONS")~call
+  Address COMMAND "pandoc" flags -
+    With Input Using (lines) Output Using (output) Error Stem discard.
+  Return output~makeString("L", "0a"x)
+
+::Method mark
+  Use Strict Arg html
+  Return self~md2slides~findRoutine("MARKINCREMENTALITEMS")~call(html)
+
+::Method md2slides
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* public routines without running it as one. The prologue does run, finds   */
+  /* no input file and complains; that complaint is swallowed here.            */
+  pkg = .local["TABLES.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  /* Assigned, never a bare message instruction: a bare send is a clause whose */
+  /* value lands in RESULT.                                                    */
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["TABLES.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/Tables.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0
+
+::Routine CallRoutine
+  /* CheckBodyAnims returns nothing, so it is sent as an instruction: an   */
+  /* assignment would want a result.                                        */
+  Use Arg routine, a1, a2
+  routine~call(a1, a2)
+  Return
+
+/******************************************************************************/
+/* Collect - stands in for stderr and keeps what is said.                     */
+/******************************************************************************/
+
+::Class Collect
+
+::Method init
+  Expose text
+  text = ""
+
+::Method text
+  Expose text
+  Return text
+
+::Method lineOut
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method say
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method charOut
+  Expose text
+  Use Arg chars
+  text = text || chars
+  Return 0

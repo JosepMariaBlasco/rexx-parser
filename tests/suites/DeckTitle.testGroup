@@ -1,0 +1,182 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* DeckTitle.testGroup - Tests for the browser tab's title                    */
+/* ======================================================                     */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260917         First version                                             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED AT ALL                                                  */
+/*                                                                            */
+/* The tab is the only name a deck has while it is open. Rony compared one    */
+/* deck built with four skins, ended up with four tabs all saying "Slide      */
+/* deck", and could not tell which was which -- the literal names the KIND    */
+/* of file and never the file. Everything here fails in silence: a deck with  */
+/* the wrong tab builds, opens and presents perfectly.                        */
+/*                                                                            */
+/*   - Lose the fallback and every untitled deck is "Slide deck" again.       */
+/*   - Lose the precedence and a title the author wrote is ignored, which is   */
+/*     worse than not having the feature.                                     */
+/*   - Lose the escaping and a deck called "Rexx & Co" ships a bare & in the  */
+/*     head of the document -- and browsers repair that quietly, so it looks  */
+/*     right here and is wrong on paper.                                      */
+/*                                                                            */
+/* DeckName is tested beside it because the two are one promise: the tab is   */
+/* the name the .html gets. They are computed by the same routine so they     */
+/* cannot drift, and that is asserted rather than assumed.                    */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.DeckTitle.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class DeckTitle.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* The fallback: the deck's own file name                                     */
+/******************************************************************************/
+
+::Method test_an_untitled_deck_is_called_after_its_file
+  self~assertEquals("2026-09-21-bsf4oorexx", -
+    self~run("DeckTitle", .Array~of(.StringTable~new, "2026-09-21-bsf4oorexx")), -
+    "no title: in the front matter, so the tab takes the deck's name")
+
+::Method test_with_no_name_at_all_the_literal_remains
+  self~assertEquals("Slide deck", -
+    self~run("DeckTitle", .Array~of(.StringTable~new, "")), -
+    "nothing to be called: the old literal is still the last resort")
+
+/******************************************************************************/
+/* The precedence: what the author wrote wins                                 */
+/******************************************************************************/
+
+::Method test_the_front_matter_beats_the_file_name
+  yaml = .StringTable~new
+  yaml["title"] = "Calling Java from ooRexx"
+  self~assertEquals("Calling Java from ooRexx", -
+    self~run("DeckTitle", .Array~of(yaml, "deck")), -
+    "a title: the author wrote wins over the file name")
+
+::Method test_an_empty_title_reads_as_absent
+  /* `title:` with nothing after it is a key half-written, not a request for  */
+  /* an empty tab -- the same reading an empty font-prose: already gets.      */
+  yaml = .StringTable~new
+  yaml["title"] = ""
+  self~assertEquals("deck-roles", -
+    self~run("DeckTitle", .Array~of(yaml, "deck-roles")), -
+    "an empty title: falls through to the file name")
+
+::Method test_a_blank_title_reads_as_absent
+  yaml = .StringTable~new
+  yaml["title"] = "   "
+  self~assertEquals("deck-roles", -
+    self~run("DeckTitle", .Array~of(yaml, "deck-roles")), -
+    "a title: of blanks falls through too")
+
+/******************************************************************************/
+/* The escaping                                                               */
+/******************************************************************************/
+
+::Method test_a_title_is_escaped_for_the_head
+  yaml = .StringTable~new
+  yaml["title"] = "Rexx & <Co>"
+  self~assertEquals("Rexx &amp; &lt;Co&gt;", -
+    self~run("DeckTitle", .Array~of(yaml, "deck")), -
+    "a title with markup characters is escaped before it becomes <title>")
+
+::Method test_a_file_name_is_escaped_too
+  /* A file name is not safer than a typed title: & is legal in one on every  */
+  /* system that matters, and it arrives by the same door.                    */
+  self~assertEquals("Rexx &amp; Java", -
+    self~run("DeckTitle", .Array~of(.StringTable~new, "Rexx & Java")), -
+    "the fallback goes through the same escaping")
+
+/******************************************************************************/
+/* DeckName: the tab and the .html are the same name                          */
+/******************************************************************************/
+
+::Method test_deck_name_drops_the_directory_and_the_extension
+  self~assertEquals("deck", self~run("DeckName", .Array~of("deck.md")), -
+    "a bare file name loses its .md")
+  self~assertEquals("deck", self~run("DeckName", .Array~of("/talks/2026/deck.md")), -
+    "a path keeps only the name")
+
+::Method test_deck_name_is_case_insensitive_about_the_extension
+  self~assertEquals("deck", self~run("DeckName", .Array~of("deck.MD")), -
+    "an upper-case .MD is still the extension")
+
+::Method test_deck_name_leaves_other_extensions_alone
+  self~assertEquals("deck.markdown", -
+    self~run("DeckName", .Array~of("deck.markdown")), -
+    "only .md is dropped: the rest of the name is the author's")
+  self~assertEquals("notes.md.backup", -
+    self~run("DeckName", .Array~of("notes.md.backup")), -
+    ".md in the middle of a name is not an extension")
+
+/******************************************************************************/
+/* Plumbing                                                                   */
+/******************************************************************************/
+
+::Method run
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* public routines without running it as one. The prologue does run, finds   */
+  /* no input file and complains; that complaint is swallowed here.            */
+  Use Strict Arg name, args
+  Return self~md2slides~findRoutine(name~upper)~callWith(args)
+
+::Method md2slides
+  pkg = .local["DECKTITLE.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .NullSink~new
+  prev    = .Error~destination
+  /* Assigned, never a bare message instruction: a bare send is a clause whose */
+  /* value lands in RESULT.                                                    */
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["DECKTITLE.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/DeckTitle.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/******************************************************************************/
+/* NullSink - stands in for stderr while the package's prologue runs.         */
+/*                                                                            */
+/* .Error is a Monitor and forwards whichever of the three it was written to, */
+/* so all three are answered. Nothing is kept: this group asserts on return    */
+/* values, not on warnings.                                                    */
+/******************************************************************************/
+
+::Class NullSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0

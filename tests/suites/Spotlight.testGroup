@@ -1,0 +1,729 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Spotlight.testGroup - Tests for the spotlight (spot= / data-spot)          */
+/* ===============================================================           */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260916         First version                                             */
+/* 20260927         Beat names ignore case (v217)                             */
+/* 20260927         Arrows (v218)                                             */
+/* 20260927         Arrows in Firefox, no scroll bars (v219)                  */
+/* 20260928         spot= keeps its case; quotes in spot= and caption= (v222) */
+/* 20260928         Case counts unless caseless; the trigger animates (v224)  */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHAT THIS GROUP IS FOR, AND WHY IT LOOKS LIKE THIS                         */
+/*                                                                            */
+/* Three bugs turned up while the spotlight was being built, and not one of   */
+/* them raised an error. Each produced something that looked right:           */
+/*                                                                            */
+/*   1. js/spotlight.js was not embedded in the generated deck. Every call in */
+/*      the slide runtime is guarded with "if (window.Spotlight)", so the     */
+/*      deck built, opened and advanced -- the feature simply never happened. */
+/*   2. spot="init:2; salary:5" left "init" with no lines at all, because the */
+/*      semicolon was not a separator yet: "2;" failed the range pattern and  */
+/*      was silently dropped.                                                 */
+/*   3. The stroke stopped short of the right edge, and the obvious repair    */
+/*      (widening the line box) put a horizontal scrollbar under a listing    */
+/*      that fitted.                                                          */
+/*                                                                            */
+/* So these tests do not ask "does it work". They assert on exact strings and */
+/* exact wiring, because that is what caught all three. The last group in     */
+/* particular checks the PLUMBING -- that md2slides still reaches for both    */
+/* spotlight files and that the template still has a slot for the script.     */
+/* Those are file-level assertions on purpose: they need no pandoc, no        */
+/* browser and no deck, and they fail the moment somebody moves a file.       */
+/*                                                                            */
+/* NOT covered here: the engine itself (js/spotlight.js) is JavaScript and    */
+/* needs a DOM. Its behaviour was verified by driving a generated deck with   */
+/* real key presses and measuring the DOM. There is no JS test harness in     */
+/* this project to fold that into; see refresh.md (v178) for what was         */
+/* measured and how.                                                          */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Spotlight.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "parser/FencedCode.cls"
+
+::Class Spotlight.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* spot= travels to data-spot, verbatim                                       */
+/******************************************************************************/
+
+::Method test_spot_produces_data_spot
+  result = FencedCode("test.md", .resources~OneBeat)
+  flat = result~toString
+  self~assertTrue(flat~pos('data-spot="init:2"') > 0, -
+    "spot=: a spot= attribute produces data-spot on the wrapper")
+
+::Method test_spot_value_is_verbatim
+  /* The value is NOT interpreted here on purpose: Pandoc puts the same       */
+  /* attribute, with the same spelling, on the blocks it emits, so a single   */
+  /* parser at the far end is what makes both emitters behave alike. If this  */
+  /* test ever fails because the value was normalised, the two emitters have  */
+  /* drifted apart.                                                           */
+  result = FencedCode("test.md", .resources~TwoBeats)
+  flat = result~toString
+  self~assertTrue(flat~pos('data-spot="init:2 salary:5-7,9"') > 0, -
+    "spot=: the spec travels verbatim, unparsed, spacing included")
+
+::Method test_spot_semicolons_survive
+  /* Semicolons are a legal separator, so they must reach the runtime intact. */
+  result = FencedCode("test.md", .resources~Semicolons)
+  flat = result~toString
+  self~assertTrue(flat~pos('data-spot="init:2; salary:5"') > 0, -
+    "spot=: semicolon-separated specs travel intact")
+
+::Method test_no_spot_no_attribute
+  result = FencedCode("test.md", .resources~NoBeat)
+  flat = result~toString
+  self~assertTrue(flat~caselessPos('data-spot') == 0, -
+    "spot=: a fence without spot= emits no data-spot attribute")
+
+::Method test_spot_does_not_disturb_highlighting
+  /* A fence that carries spot= must still be highlighted exactly as before.  */
+  result = FencedCode("test.md", .resources~OneBeat)
+  flat = result~toString
+  self~assertTrue(flat~caselessPos('class="rx-kw"') > 0, -
+    "spot=: a spotted fence is still highlighted")
+  self~assertTrue(flat~caselessPos('rx-blockwrap') > 0, -
+    "spot=: a spotted fence still gets its wrapper")
+
+::Method test_spot_coexists_with_caption
+  /* data-spot sits beside data-caption on the same wrapper; neither may      */
+  /* displace the other.                                                      */
+  result = FencedCode("test.md", .resources~SpotAndCaption)
+  flat = result~toString
+  self~assertTrue(flat~pos('data-caption="A listing"') > 0, -
+    "spot=: caption survives alongside spot=")
+  self~assertTrue(flat~pos('data-spot="init:1"') > 0, -
+    "spot=: spot survives alongside caption=")
+
+::Method test_unknown_option_still_rejected
+  /* Adding spot= to the option table must not have opened the gate to        */
+  /* anything else.                                                           */
+  caught = 0
+  Signal On Syntax Name Caught
+  result = FencedCode("test.md", .resources~BadOption)
+  Signal Off Syntax
+  Signal Done
+Caught:
+  Signal Off Syntax
+  caught = 1
+Done:
+  self~assertEquals(1, caught, -
+    "spot=: an unknown fence option is still a syntax error")
+
+/******************************************************************************/
+/* Wiring. These are the tests that would have caught bug 1.                  */
+/*                                                                            */
+/* A deck is self-contained: md2slides inlines its assets. The spotlight      */
+/* lives in the project's shared css/ and js/, NOT under bin/md2slides/,      */
+/* because every HTML pipeline emits data-spot. Move either file and the      */
+/* deck goes on building perfectly while the feature quietly disappears.      */
+/******************************************************************************/
+
+::Method test_spotlight_files_exist
+  root = self~projectRoot
+  self~assertTrue(SysIsFile(root"/js/spotlight.js"), -
+    "wiring: js/spotlight.js exists at the project root")
+  self~assertTrue(SysIsFile(root"/css/spotlight.css"), -
+    "wiring: css/spotlight.css exists at the project root")
+
+::Method test_md2slides_embeds_spotlight
+  src = CharIn(self~projectRoot"/bin/md2slides.rex", 1, -
+               Stream(self~projectRoot"/bin/md2slides.rex", "C", "QUERY SIZE"))
+  self~assertTrue(src~pos("/js/spotlight.js") > 0, -
+    "wiring: md2slides.rex reads js/spotlight.js into the deck")
+  self~assertTrue(src~pos("/css/spotlight.css") > 0, -
+    "wiring: md2slides.rex reads css/spotlight.css into the deck")
+
+::Method test_deck_template_has_spotlight_slot
+  tpl = self~projectRoot"/bin/md2slides/templates/deck.template"
+  src = CharIn(tpl, 1, Stream(tpl, "C", "QUERY SIZE"))
+  self~assertTrue(src~caselessPos("%spotlightJS%") > 0, -
+    "wiring: the deck template still has a %spotlightJS% slot")
+
+::Method test_runtime_calls_the_spotlight
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  self~assertTrue(src~pos("Spotlight.mount") > 0, -
+    "wiring: the slide runtime mounts the spotlight")
+  self~assertTrue(src~pos("Spotlight.sync") > 0, -
+    "wiring: the slide runtime syncs the spotlight after revealing")
+
+::Method test_both_ends_of_the_stroke_are_measured
+  /* Both ends of the stroke fall outside the span's own box, because a       */
+  /* numbered listing paints its lines 4em left of where they lay out. The    */
+  /* right end is a box-shadow offset by --spot-bleed-r; the left end is an   */
+  /* inset strip of width --spot-bar-x that the wrapper's clip trims to the   */
+  /* bar. Both are measured by the script and consumed by the sheet, and      */
+  /* neither raises anything if it goes missing: the stroke just comes back   */
+  /* short at one end, which is how the bar was lost in the first place.      */
+  root = self~projectRoot
+  css  = root"/css/spotlight.css"
+  js   = root"/js/spotlight.js"
+  sheet  = CharIn(css, 1, Stream(css, "C", "QUERY SIZE"))
+  Call Stream css, "C", "CLOSE"
+  script = CharIn(js, 1, Stream(js, "C", "QUERY SIZE"))
+  Call Stream js, "C", "CLOSE"
+  Do var Over "--spot-bleed-r --spot-bar-x"~makeArray(" ")
+    self~assertTrue(sheet~pos("var("var) > 0, -
+      "wiring: spotlight.css reads "var)
+    self~assertTrue(script~pos('"'var'"') > 0, -
+      "wiring: spotlight.js sets "var)
+  End
+  self~assertTrue(sheet~pos("inset var(--spot-bar-x") > 0, -
+    "wiring: the bar is an inset strip, not a plain border")
+
+::Method test_beat_names_ignore_case
+  /* v217. A Rexx fence's options reach the deck lowercased (the Highlighter  */
+  /* lowers every option value but caption=), a fragment's spot= does not. So  */
+  /* spot="Init:1" on a ~~~rexx fence and {.fragment spot=Init} were two      */
+  /* beats on two clicks, silently. parseSpec reads every beat name, and it   */
+  /* must fold it: this is the one line that makes both spellings one beat.   */
+  js     = self~projectRoot"/js/spotlight.js"
+  script = CharIn(js, 1, Stream(js, "C", "QUERY SIZE"))
+  Call Stream js, "C", "CLOSE"
+  self~assertTrue(script~pos("term.slice(0, i)).trim().toLowerCase()") > 0, -
+    "parseSpec folds the beat name to lowercase")
+  /* The fence side lowered it until v222, when the Highlighter began to     */
+  /* keep spot= as written (it is text to find); the fold stays, because a    */
+  /* beat name is a name, and names ignore case.                             */
+  flat = FencedCode("test.md", .Array~of('```rexx {spot="Init:1"}', "say 1", "```"))~toString
+  self~assertTrue(flat~pos('data-spot="Init:1"') > 0, -
+    "the Highlighter keeps spot= as written")
+
+::Method test_a_text_spec_travels_intact
+  /* v217: spot="trap:[NOVALUE NAME ANY],[ANY:]". The blanks inside the       */
+  /* brackets must survive the fence's option parser (it splits on blanks and */
+  /* rejoins a quoted value). Since v222 the case does too (the Highlighter   */
+  /* used to lower it); the text is still matched ignoring case.              */
+  flat = FencedCode("test.md", .Array~of( -
+    '```rexx {spot="trap:[NOVALUE NAME ANY],[ANY:]"}', -
+    "SIGNAL ON NOVALUE NAME ANY", "ANY:", "```"))~toString
+  self~assertTrue(flat~pos('data-spot="trap:[NOVALUE NAME ANY],[ANY:]"') > 0, -
+    "the bracketed texts reach data-spot whole ("flat~left(200)")")
+  /* Rony, 28-Sep: spot='trap:["DATE"()]'. A '"' in the value closed the      */
+  /* attribute, and the runtime read "trap:[".                                */
+  flat = FencedCode("test.md", .Array~of( -
+    "```rexx {spot='trap:[""DATE""()]' caption='Say ""hi""'}", 'SAY "DATE"()', "```"))~toString
+  self~assertTrue(flat~pos('data-spot="trap:[&quot;DATE&quot;()]"') > 0, -
+    "a quote in spot= is escaped ("flat~left(200)")")
+  self~assertTrue(flat~pos('data-caption="Say &quot;hi&quot;"') > 0, "and in caption=")
+
+::Method test_text_marks_are_wired
+  /* A mark that is never drawn raises nothing: the deck builds, opens and    */
+  /* advances. So, as for the stroke, assert the wiring: the script wraps    */
+  /* texts in <mark class="spot-mark">, turns empty carriers into cues and    */
+  /* lights marks on sync; the sheet has a wash for each pen, on screen and   */
+  /* in print; and the runtime hands the spotlight's findings to d.          */
+  root   = self~projectRoot
+  js     = root"/js/spotlight.js"
+  script = CharIn(js, 1, Stream(js, "C", "QUERY SIZE"))
+  Call Stream js, "C", "CLOSE"
+  css    = root"/css/spotlight.css"
+  sheet  = CharIn(css, 1, Stream(css, "C", "QUERY SIZE"))
+  Call Stream css, "C", "CLOSE"
+  rt     = root"/bin/md2slides/js/runtime.js"
+  run    = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  self~assertTrue(script~pos('mark.className = "spot-mark"') > 0, -
+    "spotlight.js wraps a marked text in <mark class=spot-mark>")
+  self~assertTrue(script~pos("cues(slide);") > 0, -
+    "spotlight.js turns empty spot= carriers into cues when it mounts")
+  self~assertTrue(script~pos('el.classList.contains("spot-mark")') > 0, -
+    "spotlight.js lights marks when it syncs")
+  Do n = 1 To 4
+    self~assertTrue(sheet~pos('mark.spot-mark[data-spot-pen="'n'"].spot-on {') > 0, -
+      "spotlight.css: pen "n" washes a lit mark")
+    self~assertTrue(sheet~pos('  mark.spot-mark[data-spot-pen="'n'"] {') > 0, -
+      "spotlight.css: pen "n" washes a mark in print")
+  End
+  self~assertTrue(run~pos("Spotlight.findings") > 0, -
+    "runtime.js lists the spotlight's findings in d")
+
+::Method test_styles_declare_their_pens
+  /* The tints belong to each style, beside its token palette. A style that   */
+  /* declares none falls back to one neutral pen -- which is a fallback, not  */
+  /* a palette, so every shipped style must carry its own. Both forms of each */
+  /* sheet are checked: md2pdf reads css/flattened/, everything else reads    */
+  /* the nested source, and a pen added to only one of the two is a pipeline  */
+  /* that silently loses its colours.                                         */
+  /*                                                                          */
+  /* The styles are DISCOVERED, not listed. A list here would pass on the day */
+  /* somebody adds a sheet and forgets its pens -- which is the whole failure */
+  /* this group exists to catch.                                              */
+  root = self~projectRoot
+  styles = self~styleNames(root"/css/")
+  self~assertTrue(styles~items > 20, -
+    "wiring: the style sheets were found (got" styles~items")")
+  Do dir Over "/css/ /css/flattened/"~makeArray(" ")
+    found = self~styleNames(root || dir)
+    Do style Over styles
+      self~assertTrue(found~hasItem(style), -
+        "wiring: "dir" has a sheet for style '"style"'")
+      f = root || dir || "rexx-" || style || ".css"
+      src = CharIn(f, 1, Stream(f, "C", "QUERY SIZE"))
+      Call Stream f, "C", "CLOSE"
+      Do pen = 1 To 4
+        self~assertTrue(src~pos("--spot-pen-"pen"-bar") > 0, -
+          "wiring: "dir"rexx-"style".css declares pen" pen"'s bar")
+        self~assertTrue(src~pos("--spot-pen-"pen"-bg") > 0, -
+          "wiring: "dir"rexx-"style".css declares pen" pen"'s wash")
+      End
+    End
+  End
+
+::Method test_the_go_overlay_advertises_only_its_own_keys
+  /* The overlay's field takes words now, so no letter reaching it can be a    */
+  /* command: b and w are things you type. The hint used to name them, which   */
+  /* is how they came to look broken -- they worked everywhere except the one  */
+  /* place that announced them. Nothing raises if the line drifts back, so it  */
+  /* is asserted here.                                                        */
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  Parse Var src . '<div class="jo-hint">' hint '</div>' .
+  Do key Over "black white"~makeArray(" ")
+    self~assertEquals(0, hint~caselessPos(key), -
+      "the go overlay must not advertise the deck key '"key"'")
+  End
+  self~assertTrue(src~pos("applyFilter") > 0, -
+    "wiring: the go overlay filters its list")
+  self~assertTrue(src~pos("isPageNumber") > 0, -
+    "wiring: a bare page number is still a page number, not a search")
+  /* The fold has to be per character: the whole-string normalize() shortens  */
+  /* the text, and every extract is cut and marked with offsets into the      */
+  /* original. Nothing would raise -- the bold would just land beside the     */
+  /* word -- so the cheap shape test lives here.                              */
+  self~assertEquals(0, src~pos('normalize("NFD").replace'), -
+    "the accent fold must not be the whole-string one: it moves the offsets")
+  self~assertTrue(src~pos('charAt(i).normalize("NFD")') > 0, -
+    "wiring: accents are folded one character at a time")
+
+::Method test_every_letter_key_is_in_the_help
+  /* The reason F1 exists. "s" chose the highlighting style for weeks without  */
+  /* appearing anywhere -- not on screen, not in the readme -- until Rony      */
+  /* worked it out for himself and said so. A key is added in one place, the   */
+  /* switch, and forgetting the other two costs nothing at build time and      */
+  /* everything to whoever is presenting. So: every single-letter key the      */
+  /* handler answers must be listed in HELP, and this fails if it is not.      */
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+
+  /* The key column of the help table, as one line of words. */
+  Parse Var src . "var HELP = [" table "];" .
+  self~assertTrue(table \== "", "the help table must be findable")
+  listed = ""
+  rest = table
+  Do While rest~pos('["') > 0
+    Parse Var rest '["' keys '",' rest
+    listed = listed keys~changeStr("/", " ")
+  End
+
+  /* Every case "x": in the key handler whose x is one letter. */
+  rest = src
+  seen = ""
+  Do While rest~pos('case "') > 0
+    Parse Var rest 'case "' key '"' rest
+    If key~length \== 1 Then Iterate
+    If \ key~dataType("A") Then Iterate
+    key = key~lower
+    If WordPos(key, seen) > 0 Then Iterate
+    seen = seen key
+    self~assertTrue(WordPos(key, listed~lower) > 0, -
+      "the deck key '"key"' is answered by the handler but missing from HELP")
+  End
+  self~assertTrue(Words(seen) >= 5, -
+    "the letter keys were found (got '"seen~strip"')")
+
+::Method test_alt_paging_leafs_and_is_in_the_help
+  /* Rony, 23-Sep: Alt+PageDown / Alt+PageUp for "quick scrolling full-page   */
+  /* through the presentation", without animations.                          */
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  self~assertTrue(src~pos('e.altKey && (e.key === "PageDown" || e.key === "PageUp")') > 0, "the handler answers it")
+  self~assertTrue(src~pos('["Alt+PageDown / Alt+PageUp"') > 0, "HELP lists it")
+  self~assertTrue(src~pos('root.classList.add("leafing")') > 0, "it switches animations off")
+  an  = self~projectRoot"/bin/md2slides/css/anim.css"
+  css = CharIn(an, 1, Stream(an, "C", "QUERY SIZE"))
+  Call Stream an, "C", "CLOSE"
+  self~assertTrue(css~pos(".leafing .fragment") > 0, "anim.css honours it")
+
+::Method test_help_is_reachable_from_everywhere
+  /* F1 is not a character, which is the whole reason it was chosen: it is     */
+  /* the one key that can mean the same thing while a text field has the       */
+  /* keyboard. That only holds if the field answers it too -- the field stops  */
+  /* propagation, so the global handler alone would never see it.              */
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  self~assertTrue(src~countStr('e.key === "F1"') >= 2, -
+    "F1 must be answered both globally and inside the overlay's field")
+  Parse Var src . 'jumpInput.addEventListener("keydown"' field 'if (e.key === "Enter")' .
+  self~assertTrue(field \== "", "the overlay's key handler must be findable")
+  self~assertTrue(field~pos("helpOpen()") > 0, -
+    "the overlay's field must let Escape close the help, not the search")
+
+::Method test_search_skips_the_deck_identity
+  /* presenter, affiliation and date are the same on every page: searched,     */
+  /* the presenter's own name would return the whole deck. The exclusion is    */
+  /* invisible at a glance and silent if it goes, so it is named here.         */
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  Do cls Over "presenter affiliation date chrome"~makeArray(" ")
+    self~assertTrue(src~pos("."cls) > 0, -
+      "wiring: the search excludes the deck's ."cls)
+  End
+
+::Method test_every_go_dialog_key_is_written_down
+  /* The same guard as test_every_letter_key_is_in_the_help, one floor down.    */
+  /* That one watches the DECK's switch against HELP and never sees this        */
+  /* handler, because the dialog answers `e.key === "..."` and not `case`: the  */
+  /* four keys added for Rony's fifty-slide decks could have shipped with        */
+  /* nothing on screen saying they exist, which is the "s" story again.          */
+  /*                                                                           */
+  /* HELP_GO's third column is there for this: the raw e.key names each row     */
+  /* covers, so the table can be checked against the handler rather than        */
+  /* against a human reading of "&uarr;".                                      */
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+
+  Parse Var src . "var HELP_GO = [" table "];" .
+  self~assertTrue(table \== "", "the go dialog's key table must be findable")
+
+  /* Each row ends `"<names>"]`, so the names are what follows the last quote   */
+  /* of the chunk the delimiter cut. The delimiter stops at the bracket and     */
+  /* NOT at the comma after it: the last row of a JavaScript array has no       */
+  /* comma, and a delimiter that needed one would read five rows out of six --  */
+  /* quietly, and always the sixth.                                            */
+  named = ""
+  rest  = table
+  Do While rest~pos('"]') > 0
+    Parse Var rest chunk '"]' rest
+    named = named chunk~substr(chunk~lastPos('"') + 1)
+  End
+  self~assertTrue(WordPos("PageDown", named) > 0, -
+    "HELP_GO's third column must hold raw key names")
+
+  Parse Var src . 'jumpInput.addEventListener("keydown"' field "var PAD = 40" .
+  self~assertTrue(field \== "", "the go dialog's key handler must be findable")
+
+  seen = ""
+  rest = field
+  Do While rest~pos('e.key === "') > 0
+    Parse Var rest 'e.key === "' key '"' rest
+    If WordPos(key, seen) > 0 Then Iterate
+    seen = seen key
+    If key == "F1" Then Iterate            /* a deck key; HELP carries it */
+    self~assertTrue(WordPos(key, named) > 0, -
+      "the go dialog answers '"key"' but HELP_GO never mentions it")
+  End
+  self~assertTrue(Words(seen) >= 8, -
+    "the dialog's keys were found (got '"seen~strip"')")
+
+  /* And the other way round, which is the half a one-way check always misses:  */
+  /* a row left in the table after its branch went is a key the presenter is    */
+  /* told to press and nothing answers. Louder than an undocumented key, and    */
+  /* just as silent at build time.                                             */
+  Do i = 1 To Words(named)
+    key = Word(named, i)
+    self~assertTrue(WordPos(key, seen) > 0, -
+      "HELP_GO promises '"key"' but the go dialog does not answer it")
+  End
+
+::Method test_the_help_puts_the_two_tables_side_by_side
+  /* Measured in the browser: stacked, the two tables are 547px against the     */
+  /* 513px the panel has at 1366x768, so the dialog's keys sat below the fold   */
+  /* -- present, scrollable, and invisible to anyone who did not already know   */
+  /* they were there. In two columns it fits from 1024x640 up.                  */
+  /*                                                                           */
+  /* Nothing raises if the columns go: the help still opens and still lists     */
+  /* everything. It just stops showing it, which is the failure this whole      */
+  /* table was written to prevent.                                             */
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  self~assertTrue(src~pos('"hk-cols"') > 0, -
+    "wiring: the help lays its two tables out in columns")
+  self~assertEquals(2, src~countStr('"hk-col"'), -
+    "the help has exactly two columns: the deck's keys and the dialog's")
+
+  css = self~projectRoot"/bin/md2slides/css/overlay.css"
+  sheet = CharIn(css, 1, Stream(css, "C", "QUERY SIZE"))
+  Call Stream css, "C", "CLOSE"
+  self~assertTrue(sheet~pos(".hk-col {") > 0, -
+    "wiring: overlay.css gives the help's columns their widths")
+  self~assertTrue(sheet~pos("flex-wrap") > 0, -
+    "the columns must fall back to one when there is no width for two")
+
+::Method test_the_go_dialog_pages_by_measure_and_clamps
+  /* Two things that fail in silence.                                          */
+  /*                                                                           */
+  /* (1) A page has to be MEASURED. Entries are not one height -- a section     */
+  /* sits on a rule, and a filtered entry carries its extract underneath -- so  */
+  /* a fixed row count pages by the wrong amount precisely in the long or       */
+  /* searched lists that are worth paging. Nothing raises if it goes back to a  */
+  /* constant: the key still moves the selection, just not by a listful.        */
+  /*                                                                           */
+  /* (2) Pages CLAMP where arrows wrap. Turn the clamp into the arrows'         */
+  /* modulo and PageDown at the end of a fifty-slide list lands on slide 1      */
+  /* with nothing on screen to say you went anywhere.                          */
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+
+  Parse Var src . "function pageSpan(" span "function moveSection(" .
+  self~assertTrue(span \== "", "pageSpan must be findable")
+  self~assertTrue(span~pos("clientHeight") > 0, -
+    "a page is as tall as the list's viewport, measured")
+  self~assertTrue(span~pos("offsetHeight") > 0, -
+    "a page counts the entries' real heights, not an assumed row")
+
+  Parse Var src . "function moveSel(" move "function pageSpan(" .
+  self~assertTrue(move \== "", "moveSel must be findable")
+  self~assertTrue(move~pos('"PageDown"') > 0, -
+    "wiring: the list answers PageDown")
+  self~assertTrue(move~pos("Math.min") > 0, -
+    "PageDown must clamp at the end, not wrap like an arrow")
+  self~assertTrue(move~pos("Math.max") > 0, -
+    "PageUp must clamp at the top, not wrap like an arrow")
+
+  /* A section step is a walk to the next section entry, and it stops at the    */
+  /* end rather than wrapping or landing on a plain slide.                      */
+  Parse Var src . "function moveSection(" sect "function paintSel(" .
+  self~assertTrue(sect~pos("jo-section") > 0, -
+    "wiring: a section step looks for section entries")
+  self~assertEquals(0, sect~pos("%"), -
+    "a section step must not wrap: it clamps at both ends")
+
+/******************************************************************************/
+/* Arrows (v218): []{.arrow from=a to=b}                                      */
+/*                                                                            */
+/* Drawn by runtime.js and measured in a browser (Chromium, screen and PDF,   */
+/* with Rony's slides). What can go quietly wrong is the WIRING, and every    */
+/* one of these fails silently: an arrow nobody redraws points at yesterday's */
+/* layout; a cue that swallows an arrow hides it; a d that forgets arrows     */
+/* lets a misspelt id pass for a deck that works.                             */
+/******************************************************************************/
+
+::Method test_arrows_are_drawn_wherever_boxes_are_fitted
+  /* fitBoxes runs on show, at start, when the fonts land, before printing    */
+  /* and in the health scan: exactly the moments an arrow must be redrawn.    */
+  src = self~runtimeJS
+  Parse Var src . "function fitBoxes(" body "}" .
+  self~assertTrue(body~pos("drawArrows(slide)") > 0, -
+    "fitBoxes must redraw the slide's arrows")
+  self~assertTrue(src~pos("slides.forEach(mountArrows)") > 0, -
+    "init must mount the arrows")
+  self~assertTrue(src~pos("slides.forEach(mountArrows)") > -
+                  src~pos("slides.forEach(window.Spotlight.mount)"), -
+    "the arrows are mounted after the spotlight (its cues() sees them empty)")
+
+::Method test_arrows_are_measured_from_layout
+  /* A fragment flying in is painted where it does not live: an arrow taken   */
+  /* from its painted rect points at where it was mid-flight.                 */
+  src = self~runtimeJS
+  Parse Var src . "function offsetIn(" body "function boxOf(" .
+  self~assertTrue(body~pos("offsetLeft") > 0 & body~pos("offsetParent") > 0, -
+    "an arrow's ends are placed from layout, not from painted rects")
+  Parse Var src . "function rangesBox(" body "function paintsBox(" .
+  self~assertTrue(body~pos("commonAncestorContainer") > 0, -
+    "a text end is measured against its nearest element")
+  /* v219: Firefox gives every line span of a numbered listing offsetTop 0,  */
+  /* so offsets are taken from the nearest element that is NOT inline.       */
+  self~assertTrue(body~pos("blockOf(") > 0, -
+    "a text end is laid on its nearest block, not on an inline span")
+  Parse Var src . "function blockOf(" body "function rectsBox(" .
+  self~assertTrue(body~pos('"inline"') > 0 & body~pos('"contents"') > 0, -
+    "blockOf skips inline and display: contents elements")
+  Parse Var src . "function boxOf(" body "function rangesBox(" .
+  self~assertTrue(body~pos("blockOf(") > 0, -
+    "an inline end with a background is measured the same way")
+
+::Method test_d_lists_what_an_arrow_could_not_resolve
+  src = self~runtimeJS
+  Parse Var src . "function scanHealth(" body "function buildWarnings(" .
+  self~assertTrue(body~pos('kind: "arrow"') > 0, -
+    "scanHealth must list the arrows' problems")
+  self~assertTrue(body~pos("arrowProblems") > 0, -
+    "scanHealth reads the problems off the carriers")
+
+::Method test_an_arrow_with_spot_is_a_fragment_not_a_cue
+  /* An empty span with spot= is a cue, and a cue is hidden. An arrow is      */
+  /* empty too: taken for a cue it would join its beat and never be seen.    */
+  js  = self~projectRoot"/js/spotlight.js"
+  src = CharIn(js, 1, Stream(js, "C", "QUERY SIZE"))
+  Call Stream js, "C", "CLOSE"
+  Parse Var src . "function cues(" body "function mount(" .
+  arrowAt = body~pos('classList.contains("arrow")')
+  self~assertTrue(arrowAt > 0, "cues() must tell an arrow from a cue")
+  self~assertTrue(arrowAt < body~pos('"spot-cue"'), -
+    "the arrow is set apart BEFORE anything is made a hidden cue")
+  self~assertTrue(src~pos("locate: locate") > 0, -
+    "the spotlight exports locate(), which resolves an arrow's text ends")
+
+::Method test_the_arrow_css_takes_it_out_of_the_flow
+  css   = self~projectRoot"/bin/md2slides/css/runtime.css"
+  sheet = CharIn(css, 1, Stream(css, "C", "QUERY SIZE"))
+  Call Stream css, "C", "CLOSE"
+  Parse Var sheet . ".arrow {" rule "}" .
+  self~assertTrue(rule~pos("position: absolute") > 0, -
+    "an arrow's carrier takes no room in the slide")
+  Do var Over "--skin-arrow-color --skin-arrow-width --skin-arrow-gap"~makeArray(" ")
+    self~assertTrue(rule~pos(var) > 0, "the skin hook "var" must be read")
+  End
+
+::Method test_paper_does_not_rewrap_pandoc_listings
+  /* Pandoc's sheets wrap and hang listings in print; on a slide that         */
+  /* re-lays a listing that fits on screen, and its arrows miss.              */
+  css   = self~projectRoot"/bin/md2slides/css/pycode.css"
+  sheet = CharIn(css, 1, Stream(css, "C", "QUERY SIZE"))
+  Call Stream css, "C", "CLOSE"
+  Parse Var sheet . "@media print {" rule
+  self~assertTrue(rule~pos("white-space: pre;") > 0, -
+    "print keeps Pandoc listings unwrapped, as on screen")
+  self~assertTrue(rule~pos("text-indent: 0") > 0, -
+    "print drops Pandoc's hanging indent")
+
+::Method test_a_listing_on_a_slide_never_scrolls
+  /* v219: Pandoc's div.sourceCode is overflow:auto on screen, and a numbered */
+  /* listing overflows by its gutter: a scroll bar under lines that fit.      */
+  css   = self~projectRoot"/bin/md2slides/css/pycode.css"
+  sheet = CharIn(css, 1, Stream(css, "C", "QUERY SIZE"))
+  Call Stream css, "C", "CLOSE"
+  Parse Var sheet . ".slide div.sourceCode {" rule "}" .
+  self~assertTrue(rule~pos("overflow: visible") > 0, -
+    "a Pandoc listing on a slide shows no scroll bar")
+
+/******************************************************************************/
+/* Helpers                                                                    */
+/******************************************************************************/
+
+/* -- v224, Rony 28-Sep: the case counts, and the trigger's animation does   */
+/* something. None of it raises an error when missing, so the wiring is     */
+/* asserted, as for the marks.                                              */
+
+::Method test_a_text_is_found_as_written_unless_caseless
+  script = self~file("/js/spotlight.js")
+  self~assertTrue(script~pos('if (term.toLowerCase() === "caseless") { out.caseless = true; return; }') > 0, -
+    "caseless is a word of spot=, not a beat")
+  self~assertTrue(script~pos('item.caseless ? "gi" : "g"') > 0, "the case counts unless it says so")
+  self~assertTrue(script~pos("item.caseless = !!specs.caseless;") > 0, "and spot= hands it to its texts")
+  self~assertTrue(script~pos("text: t[2], caseless: true }") > 0, "an arrow's end still ignores case")
+
+::Method test_the_trigger_animates_the_marks
+  script = self~file("/js/spotlight.js")
+  self~assertTrue(script~pos("var MARK_ANIMS = { fade: 1, pen: 1, cut: 1 };") > 0, "three ways in")
+  self~assertTrue(script~pos("animateMarks(slide);") > 0, "mount hands the trigger's anim to the marks")
+  self~assertTrue(script~pos('(el.tagName === "P" || el.tagName === "SPAN")') > 0, -
+    "a trigger is an empty <p> or <span>, never an <img>")
+  sheet = self~file("/css/spotlight.css")
+  self~assertTrue(sheet~pos("transition: background-color var(--spot-dur, .28s) ease;") > 0, -
+    "anim-duration= reaches the wash")
+  self~assertTrue(sheet~pos("mark.spot-mark.spot-stroke.spot-on {") > 0, "the pen is drawn")
+  self~assertTrue(sheet~pos("background-size: 100% 100%;") > 0, "to the full width")
+  rt = self~runtimeJS
+  self~assertTrue(rt~pos('stepWaitMs(next, "before")') > 0, "wait-before= on a fragment times its step")
+  self~assertTrue(rt~pos('stepWaitMs(steps[i], "after")') > 0, "and wait-after= the one after it")
+  self~assertTrue(rt~pos('stepWaitMs(steps[0], "before")') > 0, "a slide's first step too")
+
+::Method file
+  Use Strict Arg rel
+  f   = self~projectRoot || rel
+  src = CharIn(f, 1, Stream(f, "C", "QUERY SIZE"))
+  Call Stream f, "C", "CLOSE"
+  Return src
+
+::Method runtimeJS
+  rt  = self~projectRoot"/bin/md2slides/js/runtime.js"
+  src = CharIn(rt, 1, Stream(rt, "C", "QUERY SIZE"))
+  Call Stream rt, "C", "CLOSE"
+  Return src
+
+
+::Method styleNames
+  /* The style names shipped in a css directory, taken from the file names.   */
+  /* spotlight.css is the mechanism, not a style, and carries no palette.     */
+  Use Strict Arg dir
+  names = .Array~new
+  Call SysFileTree dir"rexx-*.css", "files", "FO"
+  Do i = 1 To files.0
+    name = FileSpec("Name", files.i)
+    names~append( name~substr(6, name~length - 9) )
+  End
+  Return names
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/Spotlight.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/******************************************************************************/
+/* Resources                                                                  */
+/******************************************************************************/
+
+::Resource OneBeat
+```rexx {.numberLines spot="init:2"}
+Say "one"
+Say "two"
+```
+::END
+
+::Resource TwoBeats
+```rexx {.numberLines spot="init:2 salary:5-7,9"}
+Say "one"
+Say "two"
+```
+::END
+
+::Resource Semicolons
+```rexx {.numberLines spot="init:2; salary:5"}
+Say "one"
+Say "two"
+```
+::END
+
+::Resource NoBeat
+```rexx {.numberLines}
+Say "one"
+```
+::END
+
+::Resource SpotAndCaption
+```rexx {.numberLines caption="A listing" spot="init:1"}
+Say "one"
+```
+::END
+
+::Resource BadOption
+```rexx {.numberLines spotlite="init:1"}
+Say "one"
+```
+::END

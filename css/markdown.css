@@ -191,3 +191,12 @@ Don't use % widths, because % is relative to the container.
 }
 
 /* End of contribution by JLF */
+
+/* A prose mention keeps its blanks. `saY    "x"` is meant to show four blanks
+   -- that is often the whole point of writing it -- but inline text collapses
+   runs of blanks to one unless told otherwise. pre-wrap keeps every blank and
+   still lets a long mention wrap at the end of a line. A fenced block needs
+   no rule: its code sits inside a <pre>. */
+span[class^="highlight-rexx-"] > code {
+  white-space: pre-wrap;
+}

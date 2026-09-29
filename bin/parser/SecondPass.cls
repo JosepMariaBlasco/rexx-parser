@@ -23,6 +23,12 @@
 /* 20250418    0.2a Support for BIF early checking                            */
 /* 20250418         Fix SIGNAL early checking                                 */
 /* 20250531    0.2c Move support for doc-comments to Scanner.cls              */
+/* 20260924    0.7  INTERPRET option: when its value is a collection, it      */
+/*                  holds the labels of the calling code (as ooRexx passes    */
+/*                  them to the INTERPRET translation), to classify calls.    */
+/* 20260928         The function calls of the ::CONSTANT expressions are      */
+/*                  classified too, with no labels (as ooRexx: BIF, then      */
+/*                  ::ROUTINE, then external).                                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -49,17 +55,22 @@
     If \ body~isEmpty Then Call ProcessBody package, fragment, body
   End
 
+  -- The calls of the ::CONSTANT expressions are in no body. ooRexx resolves
+  -- them with no labels: a BIF, a ::ROUTINE, or an external routine.
+  If package~constantCalls~items > 0 Then
+    Call CheckCallTypes package, package~constantCalls, .StringTable~new
+
 --------------------------------------------------------------------------------
 
 ::Routine ProcessBody
 
   Use Strict Arg package, fragment, body
 
-  Call CheckCallTypes package, body
+  Call CheckCallTypes package, body~calledRoutineNames, BodyLabels( body )
 
   -- Check all SIGNAL and SIGNAL ON instructions.
 
-  bodyLabels    = body~labels
+  bodyLabels    = BodyLabels( body )
 
   checkSignal   = 0
   If .Parser.Options~hasIndex( earlyCheck ) Then
@@ -98,19 +109,20 @@
 -- Determine the nature of all (non namespace qualified) function
 -- and procedure calls, and perform additional checks for BIFs (only
 -- if the earlyCheck option is present and contains a BIFs item).
+-- "calls" holds (name, arguments[, trailingBlock]) items; "bodyLabels",
+-- the labels they are resolved against.
 
 ::Routine CheckCallTypes
 
-  Use Strict Arg package, body
+  Use Strict Arg package, calls, bodyLabels
 
   If .Parser.Options~hasIndex( earlyCheck ) Then
     checkBIFs = .Parser.Options~earlyCheck~hasItem( BIFs )
   Else checkBIFs = .False
 
-  bodyLabels = body~labels
   routines   = package~routines
 
-  Do routine Over body~calledRoutineNames
+  Do routine Over calls
     name  = routine[1]
     label = name~value
     type  = name~invocationType
@@ -144,3 +156,16 @@
     End
     Call SetConstantName name, subCategory
   End
+
+--------------------------------------------------------------------------------
+
+-- The labels calls and SIGNAL are resolved against: those of the body, or,
+-- for INTERPRET data, those of the calling code when the INTERPRET option
+-- holds them (INTERPRET data has no labels of its own).
+::Routine BodyLabels
+  Use Strict Arg body
+  If .Options.Interpret Then Do
+    labels = .Parser.Options~interpret
+    If labels~isA( .Collection ) Then Return labels
+  End
+  Return body~labels

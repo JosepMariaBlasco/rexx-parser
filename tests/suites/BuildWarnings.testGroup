@@ -1,0 +1,640 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* BuildWarnings.testGroup - Mistakes md2slides used to build in silence      */
+/* =====================================================================      */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260920         First version                                             */
+/* 20260926         Classes on a Rexx fence (WarnFenceWords)                  */
+/* 20260927         Broken '---' and keys set twice in the front matter       */
+/* 20260927         Something before the first slide (WarnBeforeFirstSlide)   */
+/* 20260927         A front matter shown in code is not a misplaced one       */
+/* 20260928         style= that is not CSS, a <span> left open (HtmlSlips)    */
+/* 20260928         The spot trigger's anim=, waits that wait for nothing     */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED AT ALL                                                  */
+/*                                                                            */
+/* Both came from Rony's first real deck, and both built without a word:     */
+/*                                                                            */
+/*   - A comment above the front matter. Front matter counts only at line 1, */
+/*     so footer, skin and animation defaults were all ignored -- and Pandoc  */
+/*     swallowed the block, so nothing on screen gave it away.                */
+/*   - `::::incremental {anim=scale-in}`. Pandoc wants the name inside the    */
+/*     braces; otherwise the fence is plain text, shown with its colons, and  */
+/*     nothing in it is revealed.                                             */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.BuildWarnings.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class BuildWarnings.testGroup Subclass ooTestCase Public
+
+::Method test_front_matter_below_a_comment_is_found
+  src = .Array~of("<!-- a comment -->", "", "---", "rexxpub:", "  style: dark", "---")
+  self~assertEquals(3, self~run("MisplacedFrontMatter", .Array~of(src)), -
+    "the '---' on line 3 opens a rexxpub: block")
+
+::Method test_front_matter_at_line_1_is_not_misplaced
+  src = .Array~of("---", "rexxpub:", "---", "", "--- {.slide}")
+  self~assertEquals(0, self~run("MisplacedFrontMatter", .Array~of(src)), -
+    "at line 1 it is read, and there is nothing to report")
+
+::Method test_a_slide_marker_is_not_front_matter
+  src = .Array~of("# T", "", "---", "", "Some text")
+  self~assertEquals(0, self~run("MisplacedFrontMatter", .Array~of(src)), -
+    "a horizontal rule followed by prose is not front matter")
+
+/* v221c: the RexxPub slides SHOW a front matter, inside a code fence; that */
+/* example was reported as a misplaced one.                                  */
+::Method test_front_matter_in_code_is_an_example
+  ex = .Array~of("---", "rexxpub:", "  style: print", "---")
+  src = .Array~of("# YAML", "", "```")~~appendAll(ex)~~append("```")
+  self~assertEquals(0, self~run("MisplacedFrontMatter", .Array~of(src)), "in a ``` fence")
+  src = .Array~of("# YAML", "", "~~~~ {.yaml}")~~appendAll(ex)~~append("~~~~")
+  self~assertEquals(0, self~run("MisplacedFrontMatter", .Array~of(src)), "in a ~~~ fence")
+  src = .Array~of("# YAML", "", "    ---", "    rexxpub:", "    ---")
+  self~assertEquals(0, self~run("MisplacedFrontMatter", .Array~of(src)), "indented four blanks")
+  src = .Array~of("# YAML", "", "```", "x", "```", "", "---", "rexxpub:", "---")
+  self~assertEquals(7, self~run("MisplacedFrontMatter", .Array~of(src)), "after the fence it counts again")
+
+/* v219: Rony's deck opened with '--'. No front matter was read, and the    */
+/* only sign was a footer warning about a field he had set.                  */
+::Method test_a_front_matter_opened_with_two_dashes_is_found
+  src = .Array~of("--", "rexxpub:", "  presenter: X", "---", "", "--- {.slide}")
+  self~assertEquals("1 --", self~run("BrokenFrontMatter", .Array~of(src)), -
+    "line 1 is '--' and a rexxpub: block follows")
+
+::Method test_a_front_matter_closed_wrongly_is_found
+  src = .Array~of("---", "rexxpub:", "  presenter: X", "--", "", "--- {.slide}")
+  self~assertEquals("4 --", self~run("BrokenFrontMatter", .Array~of(src)), -
+    "the closing line is the broken one")
+  src = .Array~of("E28094"x, "rexxpub:", "---")
+  self~assertEquals("1" "E28094"x, self~run("BrokenFrontMatter", .Array~of(src)), -
+    "an editor's em dash is a broken delimiter too")
+
+::Method test_dashes_without_rexxpub_are_not_front_matter
+  src = .Array~of("--", "Some text", "--- {.slide}")
+  self~assertEquals("0", self~run("BrokenFrontMatter", .Array~of(src)), -
+    "only a rexxpub: block is taken for a front matter")
+  src = .Array~of("---", "rexxpub:", "---")
+  self~assertEquals("0", self~run("BrokenFrontMatter", .Array~of(src)), -
+    "a good front matter is not broken")
+
+/* v219: Rony copied his skin-mu-... lines for WU and renamed only some; the */
+/* repeated keys kept the WU values, and the Modul card said WU.            */
+::Method test_a_key_set_twice_in_a_block_is_found
+  src = .Array~of("---", "rexxpub:", "  skin-mu-city: Wien", "  presenter: X", -
+                  "  # WU", "  skin-mu-city: Vienna", "---")
+  dups = self~run("DuplicateKeys", .Array~of(src))
+  self~assertEquals(1, dups~items, "one key twice")
+  self~assertEquals("6 3 skin-mu-city", dups[1], "where, where first, which")
+
+::Method test_the_same_key_in_two_blocks_is_fine
+  src = .Array~of("---", "rexxpub:", "  header:", "    left: a", "    right: b", -
+                  "  footer:", "    left: c", "    right: d", "  timer:", -
+                  "    total: 90", "---")
+  self~assertEquals(0, self~run("DuplicateKeys", .Array~of(src))~items, -
+    "header: left and footer: left are different keys")
+
+::Method test_lists_and_block_scalars_are_passed_over
+  src = .Array~of("---", "rexxpub:", "  items:", "    - name: a", "      x: 1", -
+                  "    - name: b", "      x: 2", "  note: |", "    a: 1", "    a: 2", -
+                  "  Note: again", "---")
+  dups = self~run("DuplicateKeys", .Array~of(src))
+  self~assertEquals(1, dups~items, "list items are blocks of their own; a | block is text")
+  self~assertEquals("11 8 note", dups[1], "keys compare ignoring case")
+
+::Method test_a_stray_fence_warns
+  said = self~warnings('<p>::::incremental {anim=scale-in} * a ::::</p>')
+  self~assertTrue(said~pos("::::incremental") > 0, "the fence is named")
+  self~assertTrue(said~pos("{.name attr=value}") > 0, "and the right form is shown")
+
+::Method test_a_paragraph_that_merely_mentions_colons_is_quiet
+  self~assertEquals("", self~warnings("<p>Write ::: to open a block.</p>"), -
+    "only a paragraph that STARTS with ::: is a stray fence")
+
+::Method test_only_the_stray_paragraph_is_named
+  /* The scan walks paragraph by paragraph: an ordinary paragraph before the */
+  /* stray one must not be reported in its place.                            */
+  said = self~warnings("<p>Hello there</p>"||"0a"x||"<p>:::box {x=1} text</p>")
+  self~assertEquals(0, said~pos("Hello"), "the ordinary paragraph is not named")
+  self~assertTrue(said~pos(":::box") > 0,   "the stray one is")
+
+::Method test_a_stray_fence_is_located
+  /* A warning that does not say where is little use in a deck of fifty      */
+  /* slides: it names the line of the file, and the slide.                   */
+  src  = .Array~of("--- {.slide}", "", "Text", "", "--- {.slide}", "", -
+                   "::::incremental {anim=fade}", "* a", "::::")
+  html = '<hr class="slide" />'"0a"x"<p>Text</p>"||"0a"x'<hr class="slide" />'"0a"x || -
+         "<p>::::incremental {anim=fade} * a ::::</p>"
+  /* Since 23-Sep (3) the fence ledger names it, with the cause, and the    */
+  /* general warning keeps quiet about a line already explained.            */
+  said = self~said("WarnFenceBalance", .Array~of(src))
+  self~assertTrue(said~pos("line 7 (slide 2)") > 0, "line 7 of the file, on slide 2")
+  self~assertTrue(said~pos("the name 'incremental' comes before the braces") > 0, "and why")
+  self~assertEquals("", self~warningsFor(html, src), "said once, not twice")
+
+::Method test_a_bare_fence_is_located_in_its_own_slide
+  src  = .Array~of("--- {.slide}", "", "::: title", "T", ":::", "", -
+                   "--- {.slide .business-card}", "Hello", "", ":::", "Name", ":::")
+  html = '<hr class="slide" />'"0a"x'<div class="title"><p>T</p></div>' || -
+         '<hr class="slide" data-master="business-card" />'"0a"x"<p>Hello</p>"||"0a"x || -
+         "<p>::: Name :::</p>"
+  said = self~warningsFor(html, src)
+  self~assertTrue(said~pos("line 10 (slide 2)") > 0, -
+    "the ':::' of slide 2, not the legitimate closer on line 5")
+
+::Method test_an_unclosed_block_is_located_at_its_opener
+  /* Rony's "Statements, 2": `::: incremental` never closed (the two ':::'  */
+  /* below it close the fragments), so Pandoc showed it as text. The warning */
+  /* named line 3 -- the slide's `::: title` -- because it looked for the    */
+  /* first line starting with ':::'. It has to look for `::: incremental`.   */
+  src  = .Array~of("--- {.slide}", "", "::: title", "T", ":::", "", -
+                   "::: incremental", "* a", "", "::: fragment", "b", ":::")
+  html = '<hr class="slide" />'"0a"x'<div class="title"><p>T</p></div>'"0a"x || -
+         "<p>::: incremental * a</p>"||"0a"x'<div class="fragment"><p>b</p></div>'
+  said = self~warningsFor(html, src)
+  self~assertTrue(said~pos("line 7 (slide 1)") > 0, "the opener on line 7, not the title on line 3")
+  self~assertTrue(said~pos("never closed") > 0,     "and the cause is among the hints")
+
+::Method test_four_spaces_after_a_fence_warn
+  /* Rony indented a `::: fragment`'s content by four spaces for air and got */
+  /* the highlighter's HTML on the slide: four spaces outside a list is a    */
+  /* Markdown code block. Reported with the line, the fence and the slide.   */
+  src  = .Array~of("--- {.slide}", "", "::: fragment", "    `say 1`{.rexx}", ":::", "", -
+                   "--- {.slide}", "", "::: {.fragment indent=2em}", "", "    ```rexx", "    say 2", "    ```", ":::")
+  said = self~indented(src)
+  self~assertTrue(said~pos("line 4 (slide 1)") > 0,  "the mention, on slide 1")
+  self~assertTrue(said~pos("':::' on line 3") > 0,   "and the fence it follows")
+  self~assertTrue(said~pos("line 11 (slide 2)") > 0, "the listing, past a blank line, on slide 2")
+  self~assertTrue(said~pos("indent=") > 0,           "and what to use for the space instead")
+
+::Method test_less_than_four_spaces_or_a_nested_fence_are_quiet
+  src = .Array~of("--- {.slide}", "", "::: fragment", "  * two spaces are a list, fine", ":::", -
+                  "  ::: {.contents scale=0.8}", "      :::: incremental", "      * a", "      ::::", "  :::", -
+                  ":::: row", "    ::: col-6", "    text", "    :::", "::::")
+  self~assertEquals("", self~indented(src), "two spaces, a nested fence and a fence's own indentation are all fine")
+
+::Method test_a_tab_counts_as_four
+  src = .Array~of("::: fragment", "09"x"`say 1`{.rexx}", ":::")
+  self~assertTrue(self~indented(src)~pos("line 2") > 0, "a tab is a code block too")
+
+/* -- 23-Sep: a fence five blanks after a list marker ----------------------- */
+/* Rony wrote `-     ```rexx`: after a list marker, five blanks make the     */
+/* item an indented code block, and the slide showed the backticks as code.  */
+::Method test_a_fence_far_from_its_marker_warns
+  src  = .Array~of("--- {.slide}", "", "* a", "  -     ```rexx", "        say 1", "        ```", -
+                   "1.      ~~~rexx", "        say 2", "        ~~~")
+  said = self~said("WarnFenceAfterMarker", .Array~of(src))
+  self~assertTrue(said~pos("line 4 (slide 1)") > 0, "the bullet item")
+  self~assertTrue(said~pos("line 7 (slide 1)") > 0, "and the numbered one")
+  self~assertTrue(said~pos("5 blanks after the list marker '-'") > 0, "with the count and the marker")
+
+::Method test_a_fence_close_to_its_marker_is_quiet
+  src = .Array~of("* a", "  - ```rexx", "    say 1", "    ```", "1.  ```rexx", "    say 2", "    ```", -
+                  "-     text, not a fence", "        ```rexx", "        say 3", "        ```")
+  self~assertEquals("", self~said("WarnFenceAfterMarker", .Array~of(src)), "one to four blanks are a fence")
+
+/* -- v215: a class on a Rexx fence ------------------------------------------ */
+/* ```rexx {.fragment} built a listing that was not a fragment, without a    */
+/* word: the highlighter makes the listing and keeps only its own options.   */
+::Method test_a_class_on_a_rexx_fence_warns
+  src  = .Array~of("--- {.slide}", "", "```rexx {.fragment}", "say 1", "```", -
+                   "- ~~~executor{fragment #x}", "  say 2", "  ~~~")
+  said = self~said("WarnFenceWords", .Array~of(src))
+  self~assertTrue(said~pos("line 3 (slide 1): ignored on '```rexx': '.fragment'") > 0, "the class is named ("said")")
+  self~assertTrue(said~pos("'::: {.fragment}'") > 0, "and the block to use instead")
+  self~assertTrue(said~pos("line 6 (slide 1): ignored on '~~~executor': 'fragment', '#x'") > 0, "in a list item too")
+  self~assertTrue(said~pos("'::: {.fragment #x}'") > 0, "a bare word gets its dot back")
+
+::Method test_the_highlighters_own_words_are_quiet
+  src = .Array~of('```rexx {.numberLines .blanks program=a caption="x {.fragment} y" style=dark}', "say 1", "```", -
+                  "```output {.fragment}", "1", "```", -
+                  "````markdown", "```rexx {.fragment}", "```", "````", -
+                  "```rexx", "say 2", "```")
+  self~assertEquals("", self~said("WarnFenceWords", .Array~of(src)), -
+    "its options, a quoted value, a Pandoc block and a fence inside code are fine")
+
+::Method test_a_word_after_a_quoted_value_is_checked
+  src = .Array~of('```rexx {caption="a b" .afterPrevious}', "say 1", "```")
+  self~assertTrue(self~said("WarnFenceWords", .Array~of(src))~pos("'.afterPrevious'") > 0, "found past the quotes")
+
+::Method indented
+  Use Strict Arg src
+  warn    = self~md2slides~findRoutine("WARNINDENTEDAFTERFENCE")
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  discard = warn~call(src)
+  discard = .Error~destination(prev)
+  Return sink~text
+
+/* -- v214: section= and title= are md2slides' own ---------------------------- */
+/* data-section marks the slides that open a section; an author's section=    */
+/* on an ordinary slide passed through as data-section, so the slide passed   */
+/* for a section opener and renamed the timer's section.                      */
+
+::Method test_section_attribute_on_an_ordinary_slide_is_dropped
+  attrs = .StringTable~new
+  attrs["data-section"] = "Oops"
+  attrs["data-anim"]    = "fade"
+  said = self~said("OwnSlideAttrs", .Array~of(attrs, "list", "A slide"))
+  self~assertTrue(said~pos('section= on slide "A slide"') > 0, "it is reported ("said")")
+  self~assertFalse(attrs~hasIndex("data-section"), "and dropped")
+  self~assertTrue(attrs~hasIndex("data-anim"), "the others stay")
+
+::Method test_section_attribute_names_a_section_opener
+  attrs = .StringTable~new
+  attrs["data-section"] = "II"
+  self~assertEquals("II", self~run("OwnSlideAttrs", .Array~of(attrs, "section", "Part Two")), -
+    "on a .section slide it is the section's name")
+  self~assertFalse(attrs~hasIndex("data-section"), "taken out: md2slides writes it itself")
+  attrs["data-section"] = "II"
+  self~assertEquals("", self~said("OwnSlideAttrs", .Array~of(attrs, "section", "Part Two")), -
+    "and it is not a mistake there")
+
+::Method test_title_attribute_is_dropped
+  attrs = .StringTable~new
+  attrs["data-title"] = "Mine"
+  said = self~said("OwnSlideAttrs", .Array~of(attrs, "list", "slide-3"))
+  self~assertTrue(said~pos("title= on slide") > 0, "it is reported")
+  self~assertFalse(attrs~hasIndex("data-title"), "and dropped")
+
+::Method warningsFor
+  Use Strict Arg html, src
+  /* The routine is looked up BEFORE stderr is redirected: loading the       */
+  /* package redirects it too, and would take our sink down with it.         */
+  warn    = self~md2slides~findRoutine("WARNSTRAYFENCES")
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  discard = warn~call(html, src)
+  discard = .Error~destination(prev)
+  Return sink~text
+
+/* -- 23-Sep: ':::' blocks balanced per slide ------------------------------- */
+/* Rony's 010_ooRexx.md left seven `::: {.contents scale=0.85}` blocks open   */
+/* (slides 22-28). Pandoc 3.1 showed the fence as text and we warned; his     */
+/* Pandoc 3.9 closes an open div at the END OF THE FILE, says so only on its  */
+/* stderr (which md2slides discards), and he got no warning at all. So the    */
+/* balance is now md2slides' own: counted per slide in the file as written,   */
+/* reported at the opener's line, and fixed up before Pandoc sees it.         */
+
+::Method test_an_open_block_is_reported_at_its_opener_per_slide
+  src = .Array~of("--- {.slide}", "::: title", "T", ":::", "::: {.contents scale=0.85}", -
+                  "::: fragment", "a", ":::", "", "--- {.slide}", "::: title", "U", ":::")
+  said = self~said("WarnFenceBalance", .Array~of(src))
+  self~assertTrue(said~pos("line 5 (slide 1): '::: {.contents scale=0.85}' is opened but") > 0, -
+    "the opener, with its line and slide")
+  self~assertEquals(0, said~pos("line 2"), "not the title, which is closed")
+
+::Method test_a_bare_fence_with_nothing_open_is_reported
+  src = .Array~of("--- {.slide}", "::: fragment", "a", ":::", ":::")
+  said = self~said("WarnFenceBalance", .Array~of(src))
+  self~assertTrue(said~pos("line 5 (slide 1): this ':::' closes nothing") > 0, "the stray closer")
+
+::Method test_fences_inside_code_are_not_counted
+  src = .Array~of("--- {.slide}", "```markdown", "::: fragment", "```", -
+                  "~~~~", ":::", "~~~~", "``x``{=html}", "::: a", ":::")
+  self~assertEquals("", self~said("WarnFenceBalance", .Array~of(src)), "listings and raw spans are skipped")
+
+::Method test_the_source_is_balanced_before_pandoc
+  src = "--- {.slide}"||"0a"x"::: {.contents}"||"0a"x"a"||"0a"x"--- {.slide}"||"0a"x":::"||"0a"x"b"
+  out = self~run("BalanceFences", .Array~of(src))
+  lines = out~makeArray("0a"x)
+  mark  = 0
+  Loop i = 1 To lines~items
+    If lines[i] == "--- {.slide}", i > 1 Then mark = i
+  End
+  self~assertTrue(mark > 0, "the second marker is there")
+  closer = 0
+  Loop i = 3 To mark - 1
+    If lines[i] == ":::" Then closer = i
+  End
+  self~assertTrue(closer > 0, "the open block is closed before the next slide")
+  self~assertEquals(0, out~substr(out~pos("--- {.slide}", 2))~pos(":::"), -
+    "and the stray closer in slide 2 is gone")
+
+::Method test_a_balanced_deck_is_left_as_it_is
+  src = "--- {.slide}"||"0a"x"::: title"||"0a"x"T"||"0a"x":::"
+  self~assertEquals(src, self~run("BalanceFences", .Array~of(src)), "byte for byte")
+
+/* The build's warnings travel inside the deck, for the diagnose panel.      */
+::Method test_warnings_reach_the_deck_as_json
+  said = self~said("Warn", .Array~of('a "quoted" </script> \ warning'))
+  json = self~run("BuildWarningsJSON", .Array~new)
+  want = '"a \"quoted\" \' || 'u003c/script> \\ warning"'   -- < is '<'
+  self~assertTrue(json~pos(want) > 0, "escaped for a script element")
+  tpl = self~file("/bin/md2slides/templates/deck.template")
+  self~assertTrue(tpl~pos('id="build-warnings">%buildWarnings%</script>') > 0, "the template has the slot")
+  rt  = self~file("/bin/md2slides/js/runtime.js")
+  self~assertTrue(rt~pos('getElementById("build-warnings")') > 0, "the runtime reads it")
+  self~assertTrue(rt~pos('kind: "build"') > 0,                    "and lists it in the panel")
+
+/* -- 23-Sep: UTF-8 only ----------------------------------------------------- */
+
+::Method test_a_windows_byte_is_named
+  self~assertEquals(4, self~run("Utf8Invalid", .Array~of("An "||"85"x"x")), "the column of the bad byte")
+  self~assertEquals(0, self~run("Utf8Invalid", .Array~of("caf"||"C3A9"x)), "valid UTF-8 passes")
+  self~assertEquals(1, self~run("Utf8Invalid", .Array~of("C0AF"x)), "an overlong form is not UTF-8")
+  said = self~said("CheckEncoding", .Array~of(.Array~of("ok", "An "||"85"x" ellipsis")))
+  self~assertTrue(said~pos("line 2: byte '85'x (column 4) is not UTF-8") > 0, "line and byte")
+  self~assertTrue(said~pos("an ellipsis") > 0, "and what it is in Windows-1252")
+
+::Method test_a_lost_character_is_reported
+  said = self~said("CheckEncoding", .Array~of(.Array~of("EFBFBD"x"and returns")))
+  self~assertTrue(said~pos("line 1 holds the replacement character") > 0, "U+FFFD")
+
+::Method test_double_encoding_is_reported
+  said = self~said("CheckEncoding", .Array~of(.Array~of("1979 "||"C3A2E282ACE2809C"x" Mike", "Ã¶Ã¤")))
+  self~assertTrue(said~pos("line 1 looks double-encoded") > 0, "an en dash read twice")
+  self~assertTrue(said~pos("line 2 looks double-encoded") > 0, "an o-umlaut read twice")
+  self~assertEquals("", self~said("CheckEncoding", .Array~of(.Array~of("naïve – “fine”"))), "real UTF-8 is quiet")
+
+/* -- 27-Sep: what comes before the first slide ---------------------------- */
+/* Both folds drop it, and used to drop it without a word. It hid Rony's     */
+/* front matter twice: opened with '--', and behind a UTF-8 BOM.             */
+
+::Method test_text_before_the_first_slide_is_named
+  said = self~said("WarnBeforeFirstSlide", .Array~of("<p>rexxpub: title: X</p>"||"0a"x))
+  self~assertTrue(said~pos("before the first slide") > 0, "reported ("said")")
+  self~assertTrue(said~pos('"rexxpub: title: X"') > 0, "quoting the lost text")
+  long = "<p>"Copies("word ", 30)"</p>"
+  self~assertTrue(self~said("WarnBeforeFirstSlide", .Array~of(long))~pos('..."') > 0, "cut short")
+
+::Method test_whitespace_and_comments_before_the_first_slide_are_quiet
+  self~assertEquals("", self~said("WarnBeforeFirstSlide", .Array~of("")), "nothing")
+  self~assertEquals("", self~said("WarnBeforeFirstSlide", .Array~of("0a"x"  "||"0a"x)), "blank lines")
+  self~assertEquals("", self~said("WarnBeforeFirstSlide", -
+    .Array~of("<!-- a note -->"||"0a"x"<!-- two"||"0a"x"lines -->")), "comments")
+
+::Method test_a_picture_before_the_first_slide_is_named
+  said = self~said("WarnBeforeFirstSlide", .Array~of('<p><img src="http://x/y.png" alt="" /></p>'))
+  self~assertTrue(said~pos("a picture (http://x/y.png)") > 0, "by its file ("said")")
+  said = self~said("WarnBeforeFirstSlide", .Array~of('<p><img src="data:image/png;base64,AAAA" /></p>'))
+  self~assertTrue(said~pos("a picture.") > 0, "an embedded one without its data ("said")")
+  said = self~said("WarnBeforeFirstSlide", .Array~of('<hr />'))
+  self~assertTrue(said~pos("an element (<hr>)") > 0, "anything else by its tag ("said")")
+
+::Method test_both_folds_report_it
+  fields = .StringTable~new
+  said = self~said("FoldIntoSlides", .Array~of("<p>lost</p>"||"0a"x"<h1>One</h1>"||"0a"x"<p>a</p>", 0, fields))
+  self~assertTrue(said~pos('not shown: "lost"') > 0, "an h1-opened deck ("said")")
+  said = self~said("FoldIntoSlides", .Array~of("<p>lost</p>"||"0a"x'<hr class="slide" />'||"0a"x"<p>a</p>", 0, fields))
+  self~assertTrue(said~pos('not shown: "lost"') > 0, "a marker-opened deck ("said")")
+  said = self~said("FoldIntoSlides", .Array~of("<h1>One</h1>"||"0a"x"<p>a</p>", 0, fields))
+  self~assertEquals(0, said~pos("before the first slide"), "and a deck that starts with a slide is quiet")
+
+/* -- 28-Sep: HTML the browser forgives in silence ------------------------- */
+/* Rony's test3.md: style='color=blue' (no colour at all), and              */
+/* `strings<span>` for `strings</span>` (a span open to the paragraph end).  */
+
+::Method test_a_style_without_a_colon_is_named
+  src = .Array~of("--- {.slide}", "* <span style='color=blue'>A()</span>", -
+                  "* <span style='color=blue'>B()</span>", "* [C()]{style=""font-size=2em""}")
+  said = self~said("WarnHtmlSlips", .Array~of(src))
+  self~assertTrue(said~pos("line 2 (slide 1) (and 1 more times): style='color=blue' is not CSS") > 0, -
+    "once per mistake, with a count ("said")")
+  self~assertTrue(said~pos("Write 'color: blue'") > 0, "and the fix")
+  self~assertTrue(said~pos("style='font-size=2em'") > 0, "a Pandoc attribute too")
+
+::Method test_good_css_and_code_are_quiet
+  src = .Array~of("--- {.slide}", "<span style='color: blue; font-weight:bold;'>x</span>", "", -
+                  "```html", "<span style='color=blue'>", "```", "", -
+                  "Write `<span style='color=blue'>` like this.", "", -
+                  "<!-- <span style='color=red'> -->", "", -
+                  "a <span class=""x"">long", "span</span> over two lines", "", -
+                  "an inline `<span", "class=""footnote"">` element")
+  self~assertEquals("", self~said("WarnHtmlSlips", .Array~of(src)), "nothing to say")
+
+::Method test_a_span_left_open_is_named
+  src = .Array~of("--- {.slide}", "", "* some to <span style='color:red'>files<span> (stream):", -
+                  "", "next paragraph")
+  said = self~said("WarnHtmlSlips", .Array~of(src))
+  self~assertTrue(said~pos("line 3 (slide 1): this paragraph has 2 '<span>' tags that are never closed") > 0, -
+    "at the line, per paragraph ("said")")
+  self~assertTrue(said~pos("slash missing: '</span>'") > 0, "a bare <span> gets the hint")
+  src = .Array~of("<span style='color:red'>open", "", "x")
+  said = self~said("WarnHtmlSlips", .Array~of(src))
+  self~assertTrue(said~pos("line 1: this paragraph has a '<span>'") > 0, "one, before any slide ("said")")
+  self~assertEquals(0, said~pos("slash missing"), "and no hint when it has attributes")
+
+/* -- 28-Sep (v224): the spot's trigger animates the marks; waits that wait  */
+/* for nothing are named.                                                    */
+
+::Method test_a_spot_trigger_takes_the_marks_effects
+  body = '<p class="afterPrevious" data-spot="trap" data-anim="pen"></p>'
+  self~assertEquals("", self~said("CheckBodyAnims", .Array~of(body, "s")), "pen on a trigger")
+  body = '<p class="afterPrevious" data-spot="trap" data-anim="scale-in"></p>'
+  said = self~said("CheckBodyAnims", .Array~of(body, "s"))
+  self~assertTrue(said~pos('unknown spot mark animation "scale-in"') > 0, "an element effect is not ("said")")
+  body = '<div class="fragment" data-anim="pen"><p>text</p></div>'
+  said = self~said("CheckBodyAnims", .Array~of(body, "s"))
+  self~assertTrue(said~pos('unknown element animation "pen"') > 0, "and pen is not an element effect")
+  body = '<p><img src="x.png" class="fragment" data-spot="amph" data-anim="fade-up" /></p>'
+  self~assertEquals("", self~said("CheckBodyAnims", .Array~of(body, "s")), "a picture in a beat is not a trigger")
+
+::Method test_the_deck_effect_skips_a_spot_trigger
+  body = '<p class="fragment afterPrevious" data-spot="trap"></p>' || -
+         '<p><img src="x.png" class="fragment" data-spot="amph" /></p><div class="fragment"><p>t</p></div>'
+  out = self~run("ApplyDefaultAnim", .Array~of(body, "fade-up"))
+  self~assertTrue(out~pos('afterPrevious" data-spot="trap">') > 0, "the trigger keeps no element effect ("out")")
+  self~assertTrue(out~pos('class="fragment" data-anim="fade-up" data-spot="amph"') > 0, "a picture does")
+  self~assertTrue(out~pos('<div class="fragment" data-anim="fade-up">') > 0, "and so does a block")
+
+::Method test_a_wait_that_waits_for_nothing_is_named
+  body = '<div class="fragment" data-wait-before="2"><p>a</p></div>'
+  said = self~said("CheckBodyWaits", .Array~of(body, "s"))
+  self~assertTrue(said~pos("wait-before= on a step that comes with a press") > 0, "a pressed step ("said")")
+  body = '<div data-wait-after="1"><p>b</p></div>'
+  said = self~said("CheckBodyWaits", .Array~of(body, "s"))
+  self~assertTrue(said~pos("wait-after= on a <div> that is not revealed step by step") > 0, "no step at all ("said")")
+  body = '<div class="fragment afterPrevious" data-wait-before="1" data-wait-after="2"><p>c</p></div>' || -
+         '<div class="fragment" data-wait-after="1"><p>d</p></div>' || -
+         '<p class="afterPrevious" data-spot="trap" data-wait-before="5"></p>'
+  self~assertEquals("", self~said("CheckBodyWaits", .Array~of(body, "s")), "where they time a step, quiet")
+
+::Method said
+  Use Strict Arg name, args
+  rtn     = self~md2slides~findRoutine(name~upper)
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  Signal On Syntax Name SaidDone
+  discard = rtn~callWith(args)
+SaidDone:
+  discard = .Error~destination(prev)
+  Return sink~text
+
+::Method file
+  Use Strict Arg rel
+  f   = self~projectRoot || rel
+  src = CharIn(f, 1, Stream(f, "C", "QUERY SIZE"))
+  Call Stream f, "C", "CLOSE"
+  Return src
+
+/* -- 23-Sep (2): the bracket, not the ':::' -------------------------------- */
+/* Rony: a block that "does not work" is often a '{' or '[' never closed; the */
+/* message should say so, instead of blaming the ':::' lines.                 */
+
+::Method test_an_opener_with_an_open_brace_is_named_as_such
+  src = .Array~of("--- {.slide}", "::: {.fragment .afterPrevious", "text", ":::")
+  said = self~said("WarnFenceBalance", .Array~of(src))
+  self~assertTrue(said~pos("line 2 (slide 1): '::: {.fragment .afterPrevious' is not read") > 0, "the opener")
+  self~assertTrue(said~pos("its '{' is never closed with a '}'") > 0, "and why")
+  self~assertTrue(said~pos("line 4 (slide 1): this ':::' closes nothing, most likely because") > 0, -
+    "the closer points back at it")
+
+::Method test_span_brackets
+  src = .Array~of("--- {.slide}", "* [one]{.afterPrevious", "* [two{.static}", -
+                  "* [ok]{.static} `a[b{.c}`{.rexx} [S2008]")
+  said = self~said("WarnSpanBrackets", .Array~of(src))
+  self~assertTrue(said~pos("line 2 (slide 1): '{.afterPrevious' opens a '{'") > 0, "a '}' missing")
+  self~assertTrue(said~pos("line 3 (slide 1): '[two...' opens a '['") > 0, "a ']' missing")
+  self~assertEquals(0, said~pos("line 4"), "code and plain brackets are left alone")
+
+::Method test_bracket_problem
+  self~assertEquals("", self~run("BracketProblem", .Array~of("{.a b=c}")))
+  self~assertEquals("it has a '}' with no '{' before it", self~run("BracketProblem", .Array~of("{.a}}")))
+
+/* -- 23-Sep (3): the attribute, not the ':::' ------------------------------ */
+/* Rony: `::: {.contents .scale=0.75 }` got the general message about ':::'   */
+/* lines, with no word about the dot. OpenerProblem follows Pandoc's grammar  */
+/* (checked against Pandoc 3.1 on 1400 generated openers).                    */
+
+::Method test_an_attribute_with_a_dot_is_named
+  src = .Array~of("--- {.slide}", "::: {.contents .scale=0.75 }", "- a", ":::")
+  said = self~said("WarnFenceBalance", .Array~of(src))
+  self~assertTrue(said~pos("line 2 (slide 1): '::: {.contents .scale=0.75 }' is not read") > 0, "the opener")
+  self~assertTrue(said~pos("'.scale=0.75' has a '.' in front") > 0, "the token")
+  self~assertTrue(said~pos("written without the '.': 'scale=0.75'") > 0, "and the fix")
+  self~assertTrue(said~pos("line 4 (slide 1): this ':::' closes nothing, most likely because") > 0, -
+    "the closer points back at it")
+
+::Method test_opener_problems
+  ok = .Array~of("title", "title :::", "{.a}", "{ .a }", "{.a} :::", "{.a}:::", "{#x .a k=""v w"" key.x=1 -}", -
+    "{.a k=""x}""}", "{.a k=[x}", "{-k='v'}", "{#a#b}", "{.a k=}", "{}", "{.é ñ=1}")
+  Loop o Over ok
+    v = self~run("OpenerProblem", .Array~of(o))
+    self~assertEquals("", v~problem, "'"o"' is a block")
+  End
+  bad = .Array~of("{.a foo}", "foo", "{.a k = v}", "no blanks around", "incremental {anim=fade}", "incremental", -
+    "{._a b}", "._a", "{.a}{.b}", "two", "{.a}}", "with no", "{.a} x", "only colons", -
+    "{.fragment .x", "never closed", "{.a @b}", "not something Pandoc reads")
+  Loop k = 1 To bad~items By 2
+    v = self~run("OpenerProblem", .Array~of(bad[k]))
+    self~assertTrue(v~problem~pos(bad[k + 1]) > 0, "'"bad[k]"': "v~problem)
+    self~assertFalse(v~odd, "'"bad[k]"' is text")
+  End
+  /* One word that does not parse as braces is still a block, of a strange */
+  /* class: it opens, and is reported as odd.                              */
+  Loop o Over .Array~of("{.scale=0.75}", "{.fragment", "{a}", "{.1a}")
+    v = self~run("OpenerProblem", .Array~of(o))
+    self~assertTrue(v~problem \== "" & v~odd, "'"o"' opens, oddly")
+  End
+
+::Method test_an_odd_opener_is_reported_and_still_opens
+  src = .Array~of("--- {.slide}", "::: {.scale=0.75}", "- a", ":::")
+  said = self~said("WarnFenceBalance", .Array~of(src))
+  self~assertTrue(said~pos("opens a block, but Pandoc takes all of '{.scale=0.75}'") > 0, "reported")
+  self~assertEquals(0, said~pos("closes nothing"), "and its ':::' closes it")
+
+::Method run
+  Use Strict Arg name, args
+  Return self~md2slides~findRoutine(name~upper)~callWith(args)
+
+::Method warnings
+  Use Strict Arg html
+  warn    = self~md2slides~findRoutine("WARNSTRAYFENCES")
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  discard = warn~call(html)
+  discard = .Error~destination(prev)
+  Return sink~text
+
+::Method md2slides
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* public routines without running it as one. The prologue does run, finds   */
+  /* no input file and complains; that complaint is swallowed here.            */
+  pkg = .local["BUILDWARNINGS.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  /* Assigned, never a bare message instruction: a bare send is a clause whose */
+  /* value lands in RESULT.                                                    */
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["BUILDWARNINGS.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/BuildWarnings.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0
+
+/******************************************************************************/
+/* Collect - stands in for stderr and keeps what is said.                     */
+/******************************************************************************/
+
+::Class Collect
+
+::Method init
+  Expose text
+  text = ""
+
+::Method text
+  Expose text
+  Return text
+
+::Method lineOut
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method say
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method charOut
+  Expose text
+  Use Arg chars
+  text = text || chars
+  Return 0

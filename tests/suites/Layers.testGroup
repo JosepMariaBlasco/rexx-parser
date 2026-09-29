@@ -1,0 +1,159 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Layers.testGroup - Tests for ::: background and ::: layers                 */
+/* ==========================================================                 */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260919         First version                                             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED AT ALL                                                  */
+/*                                                                            */
+/* Both zones are nothing but CSS in runtime.css, and md2slides has to leave  */
+/* them alone. Each way of breaking that is silent -- the deck builds, and    */
+/* the pictures simply land in the wrong place:                               */
+/*                                                                            */
+/*   - Wrap a zone in .body and its pictures flow as ordinary content.        */
+/*   - Move a zone to the top of the slide and its fragments change their     */
+/*     place in the build order.                                              */
+/*   - Lose the slide's isolation and a background with z-index -1 falls      */
+/*     behind the slide itself, where nobody sees it.                         */
+/*   - Lose the absolute positioning of later layers and a stack becomes a    */
+/*     column of pictures, one under the other.                               */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Layers.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class Layers.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* md2slides leaves the zones where they are, and unwrapped                   */
+/******************************************************************************/
+
+::Method test_zones_are_not_wrapped_as_prose
+  Loop zone Over .Array~of("background", "layers")
+    html = '<div class="'zone'">' || "0a"x || '<p><img src="x" /></p>' || -
+           "0a"x || "</div>"
+    out  = self~transform(html)
+    self~assertEquals(0, out~pos('<div class="body">'), -
+      "::: "zone" is structure, not prose: no .body around it")
+  End
+
+::Method test_zones_keep_their_place_in_the_slide
+  /* The order IS the build order: a zone between two fragments must stay   */
+  /* between them, or its own fragments step at the wrong moment.           */
+  Loop zone Over .Array~of("background", "layers")
+    html = '<p class="fragment">before</p>' || "0a"x || -
+           '<div class="'zone'">' || "0a"x || -
+           '<p><img src="x" class="fragment" /></p>' || "0a"x || "</div>" || -
+           "0a"x || '<p class="fragment">after</p>'
+    out    = self~transform(html)
+    before = out~pos("before")
+    inZone = out~pos('<div class="'zone'">')
+    after  = out~pos("after")
+    self~assertTrue(before < inZone & inZone < after, -
+      "::: "zone" stays between the fragments around it")
+  End
+
+/******************************************************************************/
+/* runtime.css carries the rules                                              */
+/******************************************************************************/
+
+::Method test_the_slide_is_its_own_stacking_context
+  self~assertTrue(self~rule(".slide")~pos("isolation: isolate") > 0, -
+    ".slide must isolate, or the background falls behind the slide")
+
+::Method test_the_background_sits_behind_the_content
+  body = self~rule(".slide .background")
+  self~assertTrue(body~pos("position: absolute") > 0, "background is taken out of the flow")
+  self~assertTrue(body~pos("inset: 0") > 0,           "background covers the whole slide")
+  self~assertTrue(body~pos("z-index: -1") > 0,        "background sits behind the content")
+
+::Method test_later_layers_are_drawn_over_the_first
+  body = self~rule(".slide .layers > :not(:first-child)")
+  self~assertTrue(body~pos("position: absolute") > 0, "later layers leave the flow")
+  self~assertTrue(body~pos("inset: 0") > 0,           "and lie exactly over the first")
+  self~assertTrue(self~rule(".slide .layers")~pos("position: relative") > 0, -
+    "the stack is the box the layers are placed in")
+
+/******************************************************************************/
+/* Plumbing                                                                   */
+/******************************************************************************/
+
+::Method transform
+  Use Strict Arg html
+  Return self~md2slides~findRoutine("TRANSFORMBODY")~callWith(.Array~of(html, "list"))
+
+::Method rule
+  /* The declarations of every rule whose selector is EXACTLY this one, all   */
+  /* run together. Exact, not pos(): ".slide .layers" is a prefix of          */
+  /* ".slide .layers img". All of them, because .slide is declared in more    */
+  /* than one place and the one that matters need not be the first.           */
+  Use Strict Arg selector
+  file = self~projectRoot"/bin/md2slides/css/runtime.css"
+  text = CharIn(file, 1, Stream(file, "C", "QUERY SIZE"))
+  Call Stream file, "C", "CLOSE"
+  decls = ""
+  rest  = "0a"x || text
+  Loop While rest~pos("0a"x || selector) > 0
+    Parse Var rest ("0a"x || selector) tail
+    rest = tail
+    If Strip(tail)~left(1) \== "{" Then Iterate
+    Parse Var tail "{" these "}" .
+    decls = decls these
+  End
+  Return decls
+
+::Method md2slides
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* public routines without running it as one. The prologue does run, finds   */
+  /* no input file and complains; that complaint is swallowed here.            */
+  pkg = .local["LAYERS.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  /* Assigned, never a bare message instruction: a bare send is a clause whose */
+  /* value lands in RESULT.                                                    */
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["LAYERS.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/Layers.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0

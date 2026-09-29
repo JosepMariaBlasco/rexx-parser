@@ -1,0 +1,392 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Blanks.testGroup - Tests for visible blanks (blanks= / {.blanks})          */
+/* ==================================================================        */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260918         First version                                             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* THE RULE THIS GROUP GUARDS                                                 */
+/*                                                                            */
+/*   blanks=data (the default, and what a bare {.blanks} means) marks the     */
+/*   blanks the PROGRAM can see -- the ones inside a literal, and the blank   */
+/*   concatenation operator -- and leaves indentation alone.                  */
+/*   blanks=all marks every blank there is.                                   */
+/*                                                                            */
+/* The distinction is the whole feature, and only a parser can draw it: an    */
+/* editor shows every blank or none, because it does not know which of them   */
+/* the program can see. If the categories ever collapse, the marks keep       */
+/* appearing and nothing raises -- a listing simply fills with boxes on its   */
+/* indentation, burying the two that were the point of the slide.             */
+/*                                                                            */
+/* WHY THE BLANK ITSELF IS ASSERTED                                           */
+/*                                                                            */
+/* The mark is drawn by CSS around a REAL blank; substituting a glyph would   */
+/* show the same thing on screen and quietly poison every copy taken from     */
+/* the page. That the span still contains ordinary blanks is therefore not a  */
+/* detail: it is the reason this is drawn rather than typed.                  */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Blanks.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "parser/FencedCode.cls"
+
+::Class Blanks.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* 1. A Rexx listing: which blanks mean something                             */
+/******************************************************************************/
+
+::Method test_a_literals_blanks_are_marked
+  html = self~html( .resources~Data )
+  self~assertTrue(html~pos('<span class="rx-str">a<span class="rx-blank-mark">  </span>b</span>') > 0, -
+    "data: the two blanks inside the literal are marked, as one span")
+
+::Method test_the_blank_operator_is_marked
+  /* `Say A B` concatenates with a blank; `Say A||B` abuts. The difference is */
+  /* a character that cannot be seen, which is exactly why it is marked.      */
+  html = self~html( .resources~Data )
+  self~assertTrue(html~pos('<span class="rx-op"><span class="rx-blank-mark"> </span></span>') > 0, -
+    "data: the blank concatenation operator is marked")
+
+::Method test_layout_blanks_are_left_alone
+  /* THE test of this group. Indentation and the air around an = say nothing  */
+  /* and would bury the two that do.                                          */
+  html = self~html( .resources~Data )
+  self~assertTrue(html~pos('<span class="rx-ws"> </span>') > 0, -
+    "data: whitespace between tokens is still plain whitespace")
+  self~assertEquals(0, html~pos('<span class="rx-ws"><span class="rx-blank-mark">'), -
+    "data: and carries no mark")
+
+::Method test_all_marks_the_layout_too
+  html = self~html( .resources~All )
+  self~assertTrue(html~pos('<span class="rx-ws"><span class="rx-blank-mark">') > 0, -
+    "all: whitespace between tokens is marked as well")
+  self~assertTrue(html~pos('rx-str">a<span class="rx-blank-mark">') > 0, -
+    "all: and the literal's blanks still are")
+
+::Method test_a_listing_that_did_not_ask_has_no_marks
+  html = self~html( .resources~Plain )
+  self~assertEquals(0, html~pos("rx-blank-mark"), -
+    "no option: not one mark anywhere")
+  self~assertTrue(html~pos('<span class="rx-str">a  b</span>') > 0, -
+    "no option: the literal's blanks are just blanks")
+
+/******************************************************************************/
+/* 2. What the mark is made of                                                */
+/******************************************************************************/
+
+::Method test_the_blanks_are_still_blanks
+  /* Drawn, not typed. A glyph substitution would look the same and would     */
+  /* turn every copy of the listing into something that no longer runs.       */
+  html = self~html( .resources~Data )
+  self~assertTrue(html~pos('<span class="rx-blank-mark">  </span>') > 0, -
+    "the span holds two ordinary blanks -- no glyph, no entity")
+  self~assertEquals(0, html~pos("&#9251;"), "no open-box entity anywhere")
+  self~assertEquals(0, html~pos("2423"),    "and no open-box codepoint either")
+
+::Method test_a_run_of_blanks_is_one_span
+  /* (The resource is not called Run: .resources~Run would reach Object's own */
+  /* run method and fail with a missing argument, which is a good hour lost   */
+  /* to a name.)                                                              */
+  /* The stylesheet tiles the mark at one character cell, so a run of three   */
+  /* draws three boxes from a single span. Emitting one span per blank would  */
+  /* look identical and trebles the markup of every listing that uses this.   */
+  html = self~html( .resources~ThreeBlanks )
+  self~assertTrue(html~pos('<span class="rx-blank-mark">   </span>') > 0, -
+    "a run of three blanks travels as ONE span")
+  self~assertEquals(1, html~countStr('class="rx-blank-mark"'), -
+    "and produces exactly one mark span")
+
+/******************************************************************************/
+/* 3. The option itself                                                       */
+/******************************************************************************/
+
+::Method test_a_bad_granularity_is_refused
+  /* The vocabulary is closed, like operator= and its siblings. A typo that   */
+  /* was accepted would build a listing with no marks and no complaint.       */
+  /*                                                                          */
+  /* Written as a FLAG and not as a call to a "this should not be reached"    */
+  /* helper: the first version of this test called one that does not exist,   */
+  /* the resulting NOMETHOD is a syntax condition, and the trap set two lines */
+  /* above swallowed it -- a test that passed whatever the code did. Seen     */
+  /* failing with blanks=sometimes accepted, which is the only way to know.   */
+  raised = 0
+  Signal On Syntax Name Refused
+  html = self~html( .resources~BadValue )
+  Signal Checked
+Refused:
+  raised = 1
+Checked:
+  Signal Off Syntax
+  self~assertEquals(1, raised, -
+    "blanks=sometimes must be refused, not quietly taken")
+
+::Method test_the_bare_form_means_data
+  /* {.blanks} and blanks=data have to be the same thing: the bare spelling   */
+  /* is the one that also works on an output fence, where Pandoc passes it    */
+  /* as a class, and two spellings that drifted apart would be worse than one.*/
+  self~assertEquals( self~marks( .resources~Data ), self~marks( .resources~DataExplicit ), -
+    "{.blanks} and blanks=data mark the same number of blanks")
+
+/******************************************************************************/
+/* 4. The other half: an output block                                         */
+/*                                                                            */
+/* An output block never reaches the highlighter -- it is not Rexx -- and     */
+/* needs no rule about WHICH blanks: everything a program printed is data.    */
+/* So a marked block marks every blank it has, and an unmarked one is left    */
+/* exactly as it was, which is the half that matters: <pre> blocks full of    */
+/* aligned columns are ordinary output, and none of them asked for boxes.     */
+/******************************************************************************/
+
+::Method test_a_marked_output_block_marks_every_blank
+  out = self~md2slides('<pre class="output blanks"><code>a  b c</code></pre>')
+  self~assertTrue(out~pos('a<span class="rx-blank-mark">  </span>b') > 0, -
+    "output: a run inside the line is marked")
+  self~assertTrue(out~pos('b<span class="rx-blank-mark"> </span>c') > 0, -
+    "output: and so is a single blank -- it is all data here")
+
+::Method test_trailing_blanks_are_marked
+  /* The most invisible thing a transcript can carry, and the reason someone  */
+  /* asks for this feature in the first place.                                */
+  out = self~md2slides('<pre class="blanks"><code>ok   </code></pre>')
+  self~assertTrue(out~pos('ok<span class="rx-blank-mark">   </span>') > 0, -
+    "output: trailing blanks are marked")
+
+::Method test_an_unmarked_output_block_is_untouched
+  html = '<pre class="output"><code>a  b   c</code></pre>'
+  self~assertEquals(html, self~md2slides(html), -
+    "output: a block that did not ask is byte-identical")
+
+::Method test_blanks_is_matched_as_a_word
+  html = '<pre class="noblanks"><code>a  b</code></pre>'
+  self~assertEquals(html, self~md2slides(html), -
+    "output: a class that merely contains 'blanks' is not the blanks class")
+
+::Method test_blanks_all_on_an_output_block_is_honoured
+  /* {blanks=all} arrives as data-blanks="all", not as a class, and a block  */
+  /* written that way was left unmarked.                                     */
+  out = self~md2slides('<pre class="output" data-blanks="all"><code>a  b</code></pre>')
+  self~assertTrue(out~pos('a<span class="rx-blank-mark">  </span>b') > 0, -
+    "output: blanks=all marks like .blanks")
+
+::Method test_an_inline_output_span_is_marked
+  /* Rony's `Hello, my  beloved ...`{.output blanks=all}: a <code> outside    */
+  /* any <pre>, which was never looked at.                                    */
+  out = self~md2slides('<p><code class="output" data-blanks="all">a  b</code></p>')
+  self~assertTrue(out~pos('a<span class="rx-blank-mark">  </span>b') > 0, -
+    "inline output: its blanks are marked")
+
+::Method test_an_inline_span_that_did_not_ask_is_untouched
+  html = '<p><code class="output">a  b</code></p>'
+  self~assertEquals(html, self~md2slides(html), "inline output that did not ask")
+
+::Method test_a_rexx_mention_is_left_to_the_highlighter
+  html = '<p><code class="rexx blanks">a  b</code></p>'
+  self~assertEquals(html, self~md2slides(html), -
+    "a Rexx mention is marked by the highlighter, not here")
+
+::Method test_a_tab_in_output_gets_the_tab_mark
+  out = self~md2slides('<pre class="output blanks"><code>a'||"09"x||'b</code></pre>')
+  self~assertTrue(out~pos('<span class="rx-tab-mark">'||"09"x||'</span>') > 0, -
+    "output: a tab is an arrow to the stop, not a box")
+
+/******************************************************************************/
+/* 4b. Prose mentions                                                         */
+/*                                                                            */
+/* A mention carries its own attributes, and they used to reach the mention    */
+/* only if their value was 1 -- true of the flag-shaped options and of no      */
+/* other. Every option that takes a VALUE was parsed and then dropped, so      */
+/* `Say A B`{.rexx .blanks} highlighted perfectly and marked nothing: the      */
+/* feature looked present and looked wrong. The fix carries over whatever      */
+/* differs from the defaults, so the guard below is on blanks= but the hole    */
+/* it watches was never only blanks'.                                          */
+/******************************************************************************/
+
+::Method test_a_mention_can_ask_for_blanks
+  html = self~html( .resources~Mention )
+  self~assertTrue(html~pos('<span class="rx-op"><span class="rx-blank-mark"> </span></span>') > 0, -
+    "mention: {.rexx .blanks} marks the blank operator")
+
+::Method test_a_mention_that_did_not_ask_has_no_marks
+  html = self~html( .resources~MentionPlain )
+  self~assertTrue(html~pos('class="rx-kw"') > 0, -
+    "mention: it is highlighted")
+  self~assertEquals(0, html~pos("rx-blank-mark"), -
+    "mention: and carries no mark, having asked for none")
+
+::Method test_a_mention_carries_a_valued_option
+  /* The general shape of the bug: blanks=all is a VALUE, and values are what  */
+  /* the old test threw away. With it the layout blank is marked too, which    */
+  /* .blanks alone would not do.                                               */
+  html = self~html( .resources~MentionAll )
+  self~assertTrue(html~pos('<span class="rx-ws"><span class="rx-blank-mark">') > 0, -
+    "mention: blanks=all reaches the mention, value and all")
+
+/******************************************************************************/
+/* 5. Every stylesheet has to draw it                                         */
+/*                                                                            */
+/* The driver emits the mark for every pipeline; what turns it into something */
+/* visible is a rule in the stylesheet that happens to be loaded. A palette    */
+/* without that rule does not fail, does not warn and does not look broken:    */
+/* the blanks simply stop being visible, in that style alone, and whoever      */
+/* notices is the audience.                                                    */
+/*                                                                            */
+/* The template matters as much as the palettes: seventeen of them are        */
+/* GENERATED from css/vim/vim.css.template by procVimColors.rex, so a         */
+/* template that lost the rule would quietly undo two thirds of this the      */
+/* next time somebody added a vim colorscheme.                                 */
+/******************************************************************************/
+
+::Method test_every_palette_draws_the_mark
+  root = self~projectRoot
+  Do dir Over .Array~of( root"/css/", root"/css/flattened/" )
+    Call SysFileTree dir"rexx-*.css", "sheets.", "FO"
+    self~assertTrue(sheets.0 > 0, "palettes found in" dir)
+    Do i = 1 To sheets.0
+      self~assertTrue(self~holdsTheMark(sheets.i), -
+        FileSpec("Name", sheets.i) "must draw .rx-blank-mark")
+    End
+  End
+
+::Method test_the_vim_template_draws_the_mark
+  tpl = self~projectRoot"/css/vim/vim.css.template"
+  self~assertTrue(SysIsFile(tpl), "the vim template is where it was")
+  self~assertTrue(self~holdsTheMark(tpl), -
+    "vim.css.template must draw .rx-blank-mark, or every palette regenerated" -
+    "from it loses the marks without a word")
+
+/******************************************************************************/
+/* Plumbing                                                                   */
+/******************************************************************************/
+
+::Method html
+  Use Strict Arg source
+  Return FencedCode("test.md", source)~makeString('L', "0A"x)
+
+::Method md2slides
+  /* The output half lives in md2slides.rex, a program and not a module:      */
+  /* .Package~new hands over its public routines without running it as one.   */
+  /* Its prologue does run, finds no input file and complains; swallowed here.*/
+  Use Strict Arg html
+  pkg = .local["BLANKS.TEST.MD2SLIDES"]
+  If pkg == .Nil Then Do
+    sink    = .QuietSink~new
+    prev    = .Error~destination
+    discard = .Error~destination(sink)
+    pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+    discard = .Error~destination(prev)
+    .local["BLANKS.TEST.MD2SLIDES"] = pkg
+  End
+  Return pkg~findRoutine("MARKBLANKS")~callWith(.Array~of(html))
+
+::Method holdsTheMark
+  /* The RULE, not the name. A plain pos(".rx-blank-mark") also matches        */
+  /* ".rx-blank-markXX" and a mention in a comment, so the first version of    */
+  /* this check passed on a palette whose selector had been renamed -- the     */
+  /* substring-for-word mistake, inside the guard against it. Seen failing     */
+  /* with the selector renamed in a palette and in the template.               */
+  Use Strict Arg file
+  text = CharIn(file, 1, Stream(file, "C", "QUERY SIZE"))
+  Call Stream file, "C", "CLOSE"
+  Return text~pos(".rx-blank-mark {") > 0
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/Blanks.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+::Method marks
+  Use Strict Arg source
+  Return self~html(source)~countStr('class="rx-blank-mark"')
+
+/******************************************************************************/
+/* Resources                                                                  */
+/******************************************************************************/
+
+::Resource Data
+```rexx {.blanks}
+Say "a  b"
+Say A B
+   x = 1
+```
+::END
+
+::Resource DataExplicit
+```rexx {blanks=data}
+Say "a  b"
+Say A B
+   x = 1
+```
+::END
+
+::Resource All
+```rexx {blanks=all}
+Say "a  b"
+Say A B
+```
+::END
+
+::Resource Plain
+```rexx
+Say "a  b"
+Say A B
+```
+::END
+
+::Resource ThreeBlanks
+```rexx {.blanks}
+Say "a   b"
+```
+::END
+
+::Resource BadValue
+```rexx {blanks=sometimes}
+Say "a  b"
+```
+::END
+
+::Resource Mention
+Inline: `Say A B`{.rexx .blanks} in a line of prose.
+::END
+
+::Resource MentionPlain
+Inline: `Say A B`{.rexx} in a line of prose.
+::END
+
+::Resource MentionAll
+Inline: `Say A B`{.rexx blanks=all} in a line of prose.
+::END
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0

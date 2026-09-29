@@ -159,7 +159,7 @@ Syntax:
 ::Requires "modules/identity/Directives.cls"
 ::Requires "modules/identity/Expressions.cls"
 ::Requires "modules/identity/Instructions.cls"
-::Requires "modules/identity/iterations.cls"
+::Requires "modules/identity/Iterations.cls"
 ::Requires "modules/identity/Parsing.cls"
 
 --------------------------------------------------------------------------------

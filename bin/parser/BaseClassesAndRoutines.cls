@@ -27,6 +27,11 @@
 /* 20251227         Add ArgArray routine                                      */
 /* 20260314         Add File2Array routine                                    */
 /* 20260519    0.5  Add LoadProgramSource routine                             */
+/* 20260924    0.7  Syntax: the error directory has the COLUMN too            */
+/* 20260924         PrepareExpression: an unclosed "(" is diagnosed as ooRexx */
+/*                  does, after what it holds (35.1, 35.901 or 36.901)        */
+/* 20260928         PrepareExpression: a symbol after "~" or "~~" is not a    */
+/*                  keyword (IF d~then THEN, DO i = 1 TO d~to)                */
 /*                                                                            */
 /******************************************************************************/
 
@@ -221,7 +226,8 @@ Return
 */
   End
   directory = .Directory~of( -
-    ("CODE",code), ("ADDITIONAL", additional~makeArray), ("POSITION", line) -
+    ("CODE",code), ("ADDITIONAL", additional~makeArray), ("POSITION", line), -
+    ("COLUMN", col) -
   )
   additional~append(directory)
   additional~insert(message, .Nil)
@@ -442,7 +448,10 @@ Error:
            .EL.EXECUTOR.FINAL.DOUBLE.EQUAL Then Leave
       When .EL.SIMPLE_VARIABLE Then Do
         Select
-          When nesting~isEmpty, IsAKeyword( element ) Then Do
+          -- After "~" or "~~" a symbol is a message name, never a keyword
+          -- ("If d~then Then", "Do i = 1 To d~to", as ooRexx).
+          When nesting~isEmpty, IsAKeyword( element ), -
+            \ IsAMessageName( element ) Then Do
             If .Options.Executor, predecessor \== .Nil, predecessor < .ALL.NUMBERS, -
               predecessor~to == element~from Then Do
               Call 35.001 "" -- Mimic Executor behaviour
@@ -504,6 +513,10 @@ Error:
         nesting~delete( nesting~last )
       End
       When .EL.WHITESPACE, .EL.CONTINUATION Then Do
+        -- "a    b" concatenates with ONE blank: the first blank is the
+        -- operator, and the rest stays whitespace (ignorable).
+        If element < .EL.WHITESPACE, element~isA( .WhiteSpace.Element ) Then
+          discard = element~splitAfterFirst
         Call SetCategory element, .EL.OP.BLANK
         element~value = " "
       End
@@ -518,10 +531,76 @@ Error:
 
   lastItem = nesting~lastItem
   Parse Value lastItem~from With line pos
+  If lastItem < .EL.LEFT_PARENTHESIS Then Call UnclosedParenthesis
+  -- An unclosed "[" that does not follow a term (a table constructor, only
+  -- with experimental features) is 35.1 in ooRexx, whatever it holds.
+  If lastItem < .EL.LEFT_BRACKET, \.Options.Experimental Then Do
+    prev = lastItem~prev
+    If prev == .Nil Then prev = lastItem
+    If prev \< .ALL.SYMBOLS_AND_STRINGS, prev \< .ALL.RIGHT_BRACES Then Do
+      element = lastItem
+      Call 35.001 "["
+    End
+  End
   Select Case nesting~lastItem~value
     When "(" Then Signal 36.901
     When "[" Then Signal 36.902
   End
+
+-- ooRexx parses what an unclosed "(" holds before it notices that the ")" is
+-- missing, so that may be the error: nothing at all (35.1 at the "(", but
+-- not after a function name or CALL, which expect arguments), a trailing
+-- binary operator (35.1 at it), or a trailing "+" or "-" where a prefix
+-- operator goes (35.901). A "-" or "," at the end of the line is a
+-- continuation, and was made a blank above.
+UnclosedParenthesis:
+  binary = .ALL.OPS.ADDITIVE || .ALL.OPS.MULTIPLICATIVE || .EL.OP.POWER || -
+    .EL.OP.CONCATENATION || .ALL.OPS.ALTERNATIVE || .EL.OP.AND || -
+    .ALL.OPS.COMPARISON
+  skip = .ALL.WHITESPACE_LIKE || .ALL.COMMENTS || .EL.OP.BLANK || -
+    .EL.OP.ABUTTAL || .EL.CONTINUATION
+  prev = lastItem~prev
+  arguments = .False
+  If prev \== .Nil Then arguments = prev < .ALL.SYMBOLS_AND_STRINGS
+  If \ arguments Then Do                 -- CALL (expr) [args]
+    prev = lastItem~prev
+    Loop While prev \== .Nil, prev < skip
+      prev = prev~prev
+    End
+    If prev \== .Nil, prev < ( .ALL.SYMBOLS || .EL.KEYWORD ), -
+       Upper( prev~value ) == "CALL" Then Do
+      prev = TheElementBefore( prev )
+      arguments = prev < .EL.END_OF_CLAUSE
+    End
+  End
+  significant = .Array~of( lastItem )
+  element = lastItem~next
+  Loop While element \< .EL.END_OF_CLAUSE
+    -- (A compound operator is its first element; the others are ignorable.)
+    If element \< skip, \ element~ignorable Then significant~append( element )
+    element = element~next
+  End
+  -- A "," or "-" that ends the clause is a continuation to nothing.
+  If significant~items > 1, significant~lastItem~value == "," | -
+    significant~lastItem~value == "-" Then significant~delete( significant~last )
+  last = significant~lastItem
+  before = .Nil
+  If significant~items > 1 Then before = significant[ significant~last - 1 ]
+  If last == lastItem Then Do
+    If arguments Then Return
+    element = lastItem
+    Call 35.001 lastItem~value
+  End
+  If last < ( .EL.OP.PLUS || .EL.OP.MINUS ), -
+    ( before == lastItem | before < binary ) Then Do
+    element = last
+    Signal 35.901
+  End
+  If last < binary Then Do
+    element = last
+    Call 35.001 last~value
+  End
+  Return
 
 FixSpuriousBlanks:
   If \predecessor~isNil, predecessor < .EL.OP.BLANK Then Do
@@ -552,6 +631,17 @@ SwitchToReference:
     End
   End
   Return
+
+-- A symbol that follows "~" or "~~" (maybe with blanks in between).
+IsAMessageName:
+  before = Arg(1)~prev
+  Loop While before \== .Nil
+    If \ before~ignorable, before \< .EL.OP.BLANK, -
+      before \< .ALL.WHITESPACE_LIKE Then Leave
+    before = before~prev
+  End
+  If before == .Nil Then Return .False
+  Return before < .ALL.OPS.MESSAGE_SEND & before \< .EL.LEFT_BRACKET
 
 CheckAbuttal:
   If predecessor~isNil Then Return
@@ -596,6 +686,9 @@ IsAKeyword:
 -- Incorrect expression detected at "&1".
 35.001: Syntax( 35.001, element, Arg(1) )
 
+-- Prefix operator "&1" is not followed by an expression term.
+35.901: Syntax( 35.901, element, element~value )
+
 -- Left parenthesis "(" in position &1 on line &2
 -- requires a corresponding right parenthesis ")".
 36.901: Syntax( 36.901, lastItem, pos, line )
@@ -628,7 +721,8 @@ IsAKeyword:
   package~blockInstructionsStacks~top~push(DO)
 
   Loop
-    instruction = package~clauser~Next.Instruction( ENDClauseIsOK )
+    instruction = package~clauser~Next.Instruction( ENDClauseIsOK, , -
+      .Array~of( 47.002 ) )
     If \instruction~labels~isEmpty Then Signal 47.002
     instrClass = instruction~class
     Select Case instrClass

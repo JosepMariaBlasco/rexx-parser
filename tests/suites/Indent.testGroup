@@ -1,0 +1,622 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* Indent.testGroup - indent= on a block, and lists inside ::: fragment       */
+/* ====================================================================       */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260920         First version                                             */
+/* 20260927         Item words in loose lists, .plain on an item, foreign      */
+/*                  options on Rexx code (v220e, Rony)                        */
+/* 20260928         A numbered list is a level too (v222, Rony)               */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED AT ALL                                                  */
+/*                                                                            */
+/* Rony built a row with an empty col-1 just to push a table in from the left */
+/* edge. `::: {indent=1cm}` does it in one attribute. A value the browser     */
+/* cannot read (indent=2, no unit) would be dropped without a word, so the    */
+/* build says so.                                                             */
+/*                                                                            */
+/* And a list inside `::: fragment` was smaller than the same list outside    */
+/* it: the fragment div hid it from WrapProse, so it never got its .body.     */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.Indent.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class Indent.testGroup Subclass ooTestCase Public
+
+::Method test_lengths_are_lengths
+  Do v Over .Array~of("1cm", "0.5cm", "2em", "40px", "5%", "0", ".5in", "-1em")
+    self~assertTrue(self~run("IsCssLength", .Array~of(v)), v "is a length")
+  End
+
+::Method test_non_lengths_are_not
+  Do v Over .Array~of("2", "1 cm", "cm", "1xx", "wide", "", "1.2.3em")
+    self~assertFalse(self~run("IsCssLength", .Array~of(v)), '"'v'" is not a length')
+  End
+
+::Method test_indent_becomes_a_margin
+  out = self~run("TranslateSugar", .Array~of('<div data-indent="1cm">'))
+  self~assertEquals('<div style="margin-inline-start: 1cm;">', out, "a style, not an attribute")
+
+::Method test_indent_joins_scale
+  out = self~run("TranslateSugar", .Array~of('<div class="contents" data-scale="0.7" data-indent="2em">'))
+  self~assertTrue(out~pos("--contents-scale: 0.7;") > 0,   "the scale is there")
+  self~assertTrue(out~pos("margin-inline-start: 2em;") > 0, "and so is the indent")
+
+::Method test_a_bad_indent_warns_with_its_slide
+  html = '<hr class="slide" />'"0a"x'<hr class="slide" />'"0a"x'<div data-indent="2">'
+  said = self~warnings(html)
+  self~assertTrue(said~pos("slide 2") > 0,      "the slide is named")
+  self~assertTrue(said~pos('indent="2"') > 0,   "and the value")
+
+::Method test_a_good_indent_is_quiet
+  self~assertEquals("", self~warnings('<div data-indent="0.5cm">'), "nothing to say")
+
+::Method test_a_list_in_a_fragment_gets_its_body
+  html = '<div class="fragment">'"0a"x"<ul>"||"0a"x"<li>a</li>"||"0a"x"</ul>"||"0a"x"</div>"
+  out  = self~run("WrapProse", .Array~of(html))
+  self~assertTrue(out~pos('<div class="fragment">'"0a"x'<div class="body">') == 1, -
+    "the list inside the fragment is wrapped like any other")
+
+/* A .plain fragment is NOT an exception any more (23-Sep). It used to be    */
+/* left without a .body, and runtime.css grew `.contents > .fragment > ul`   */
+/* rules to size the bare list. But a div that only animates, times or      */
+/* changes the look of its list -- .plain, .withPrevious, .afterPrevious,   */
+/* level-N -- is looked through like a plain `::: fragment`, so its list    */
+/* gets the same .body, spacing and size as every other list: Rony saw the  */
+/* .withPrevious and level= blocks come out at the wrong size because they  */
+/* did not. The marker stays off: `.slide .plain ul` is a DESCENDANT rule,   */
+/* so it reaches the list through the .body (checked in the browser: a      */
+/* plain and a normal item in one scale=0.75 block, both 24px, no marker on */
+/* the plain one, text aligned).                                             */
+::Method test_a_plain_fragment_gets_its_body_and_stays_plain
+  html = '<div class="fragment plain">'"0a"x"<ul>"||"0a"x"<li>a</li>"||"0a"x"</ul>"||"0a"x"</div>"
+  out  = self~run("WrapProse", .Array~of(html))
+  self~assertTrue(out~pos('<div class="fragment plain">'"0a"x'<div class="body">') == 1, -
+    "the plain list is wrapped in a body, the plain class stays on the fragment")
+
+::Method test_timing_and_level_divs_are_transparent
+  Loop cls Over .Array~of("fragment withPrevious", "fragment afterPrevious", -
+                          "level-2 fragment", "level-1 fragment plain")
+    html = '<div class="'cls'">'"0a"x"<ul>"||"0a"x"<li>a</li>"||"0a"x"</ul>"||"0a"x"</div>"
+    out  = self~run("WrapProse", .Array~of(html))
+    self~assertTrue(out~pos('<div class="body">') > 0, "'"cls"' gets its body")
+  End
+
+::Method test_a_role_div_is_still_opaque
+  html = '<div class="fragment card">'"0a"x"<ul>"||"0a"x"<li>a</li>"||"0a"x"</ul>"||"0a"x"</div>"
+  out  = self~run("WrapProse", .Array~of(html))
+  self~assertEquals(0, out~pos('class="body"'), "a class with a role of its own stays opaque")
+
+::Method test_a_row_is_still_opaque
+  html = '<div class="row">'"0a"x'<div class="col-6">'"0a"x"<p>a</p>"||"0a"x"</div>"||"0a"x"</div>"
+  out  = self~run("WrapProse", .Array~of(html))
+  self~assertEquals(0, out~pos('class="body"'), "columns size their own prose")
+
+/*----------------------------------------------------------------------------*/
+/* level=N -- render a block as if it sat at outline level N.                  */
+/*                                                                            */
+/* level=N reproduces the three things a real nested list carries: the font   */
+/* cascade (compounded), the per-level indent (scaled back to the level-1 em) */
+/* and the marker. It composes with scale= (both ride --contents-scale) and   */
+/* it has no <ul> of its own, so the generator resolves the compound size --  */
+/* exactly what scale= does. The trap the design flagged is the indent: 1.1em */
+/* per level, but measured in the level-1 em, so divided by the factor.       */
+/*----------------------------------------------------------------------------*/
+
+::Method test_level_1_is_the_identity
+  /* Level 1 IS the body level: factor 1, one 1.1em indent, disc. */
+  self~assertEquals("1", self~run("LevelCascade", .Array~of(1)), "level 1 is full size")
+
+::Method test_level_cascade_compounds
+  /* The effective size vs. level 1 is the running PRODUCT of the steps, not */
+  /* the step itself: level 3 is 0.82*0.89, not 0.89.                        */
+  self~assertEquals("0.82",   self~run("LevelCascade", .Array~of(2)), "L2 = 0.82")
+  self~assertEquals("0.7298", self~run("LevelCascade", .Array~of(3)), "L3 = 0.82*0.89")
+  self~assertEquals("0.6422", self~run("LevelCascade", .Array~of(4)), "L4 = 0.82*0.89*0.88")
+
+::Method test_level_floors_at_4
+  /* runtime.css stops stepping at .body ul ul ul ul; deeper stays flat. So */
+  /* LevelCascade must give the SAME factor at 5 as at 4.                    */
+  self~assertEquals(self~run("LevelCascade", .Array~of(4)), -
+                    self~run("LevelCascade", .Array~of(5)), "level 5 stays at the level-4 floor")
+
+/* THE CONTRACT: LevelCascade holds a copy of the between-level ratios that   */
+/* runtime.css writes structurally (.body ul ul {0.82em} ...). If the two     */
+/* ever diverge, level=N would size a block differently from the same content */
+/* in a real nested list. This reads the ratios straight out of the CSS and   */
+/* checks LevelCascade reproduces the compound. Touch one side only and it    */
+/* fails -- the same guard style as the .plain-fragment contract above.       */
+::Method test_level_cascade_matches_the_css
+  steps = self~cssCascade                       -- [0.82, 0.89, 0.88] from the CSS
+  self~assertEquals(3, steps~items, "the CSS still declares three outline steps")
+  factor = 1
+  Do i = 1 To steps~items
+    factor = (factor * steps[i])~format(, 4)~strip("T", "0")~strip("T", ".")
+    got = self~run("LevelCascade", .Array~of(i + 1))
+    self~assertEquals(factor, got, "level" (i+1) "matches the CSS compound")
+  End
+
+/* level= adds a `level-N` CLASS, not an inline style: the size has to land on */
+/* .level-N > .body to beat the .body reset, which an inline div style cannot  */
+/* do. TranslateLevel adds the class; LevelRules emits the CSS.                */
+::Method test_level_adds_a_class
+  out = self~run("TranslateLevel", .Array~of('<div class="contents" data-level="2">'))
+  self~assertEquals(0, out~pos("data-level"), "the level attribute is consumed")
+  self~assertTrue(out~pos('class="level-2 contents"') > 0, "the level-2 class is added")
+
+::Method test_level_rules_target_the_body_and_the_marker
+  css = self~run("LevelRules", .Array~of(3))
+  /* the rules anchor on `.level-N` (not `.contents.level-N`): level= is written */
+  /* on whatever block the author reaches for -- a `:::contents`, but just as    */
+  /* often a bare `:::fragment` (`{.fragment level=2}`), where the class has no  */
+  /* .contents ancestor. Tying the rule to .contents made every such case a      */
+  /* no-op. The class is DOUBLED (.level-N.level-N) to reach specificity (0,3,1) */
+  /* -- the generic content rules (.contents > .fragment > ul) are (0,3,1) too,  */
+  /* and a single-class level rule would lose the size cascade (level-1 and      */
+  /* level-2 came out the same size). The double ties it; source order (level    */
+  /* rules emitted last) wins. */
+  self~assertTrue(css~pos(".level-2.level-2 > .body") > 0,            "size targets the body")
+  self~assertTrue(css~pos(".level-2.level-2 > ul") > 0,              "and a bare ul")
+  self~assertTrue(css~pos(".level-2.level-2 > .fragment > ul") > 0,  "and a ul in a fragment")
+  /* the rule must NOT require a .contents ancestor (that was the bug) */
+  self~assertEquals(0, css~pos(".contents.level-2"),         "not tied to .contents")
+  /* the class must be doubled for specificity (that was the size sub-bug) */
+  self~assertTrue(css~pos(".level-2.level-2") > 0,           "class doubled for specificity")
+  self~assertTrue(css~pos("* 0.82 * var(--contents-scale, 1))") > 0,   "level 2 compound size")
+  self~assertTrue(css~pos("* 0.7298 * var(--contents-scale, 1))") > 0, "level 3 compound size")
+  /* The indent: everything at level N starts on one line, where the TEXT of */
+  /* a real level-N item starts -- past the padding (1.1em) of every list    */
+  /* down to level N, each in its own level's size: K = 1.1 * (f1+...+fN)   */
+  /* body sizes (L1 1.1, L2 2.002, L3 2.805). It is measured at the scale of */
+  /* the CONTEXT, --level-anchor (the generator writes it on the block), not  */
+  /* the block's own: `{level=1 scale=0.7}` under a level-1 bullet lines up   */
+  /* with that bullet's text (Rony, 26-Sep). A list brings its own padding,   */
+  /* 1.1em of its size, so its margin is K minus that (zero at level 1 when  */
+  /* nothing is scaled). The old N * 1.1 / fN on the enclosing div put a      */
+  /* level=2 item 45px past a real level-2 one (measured, 23-Sep).           */
+  anchor = "var(--level-anchor, var(--contents-scale, 1))"
+  self~assertTrue(css~pos("margin-inline-start: calc(var(--skin-body-size, 1em) * 2.002 *" anchor "- 1.1em);") > 0, "L2 list indent")
+  self~assertTrue(css~pos("margin-inline-start: calc(var(--skin-body-size, 1em) * 2.805 *" anchor "- 1.1em);") > 0, "L3 list indent")
+  self~assertTrue(css~pos("margin-inline-start: calc(var(--skin-body-size, 1em) * 1.1 *" anchor "- 1.1em);") > 0, "L1 list: zero unscaled")
+  self~assertEquals(0, css~pos(".level-2.level-2 { margin-inline-start"), "not on the group div")
+  /* A paragraph, a code block, a table have no list to add the level's      */
+  /* padding: the whole K (Rony, 23-Sep: a ```rexx in `{.fragment level=2}`  */
+  /* stayed at the left edge; 26-Sep: so did a table in `level=1`). One p in */
+  /* the .body (which stops one padding short) adds 1.1em of its own size.   */
+  self~assertTrue(css~pos(".level-2.level-2 > p, .slide .level-2.level-2 > .fragment > p { margin-inline-start: calc(var(--skin-body-size, 1em) * 2.002 *" anchor"); }") > 0, "a bare p at level 2")
+  self~assertTrue(css~pos(".level-2.level-2 > .body > p") > 0,  "a p in the body")
+  self~assertTrue(css~pos(".level-2.level-2 > .code") > 0,      "a highlighted listing")
+  self~assertTrue(css~pos(".level-2.level-2 > .fragment > pre") > 0, "an output block in a fragment")
+  self~assertTrue(css~pos("* 2.002 *" anchor"); width: auto;") > 0, "code at level 2, not past the right edge")
+  self~assertTrue(css~pos("* 1.1 *" anchor"); width: auto;") > 0,   "code at level 1")
+  self~assertTrue(css~pos(".level-1.level-1 > table, .slide .level-1.level-1 > .fragment > table { margin-inline-start: calc(var(--skin-body-size, 1em) * 1.1 *" anchor"); }") > 0, "a table at level 1")
+  /* .plain beats the level marker */
+  self~assertTrue(css~pos(".level-2.level-2 ul:not(.plain *)") > 0, "plain keeps no marker")
+  /* the marker on the inner list */
+  self~assertTrue(css~pos(".level-2.level-2 ul") > 0,                 "marker targets the ul")
+  self~assertTrue(css~pos("list-style-type: circle;") > 0,            "level 2 is a circle")
+
+::Method test_level_markers_cycle
+  self~assertEquals("disc",   self~run("LevelMarker", .Array~of(1)), "L1 disc")
+  self~assertEquals("circle", self~run("LevelMarker", .Array~of(2)), "L2 circle")
+  self~assertEquals("square", self~run("LevelMarker", .Array~of(3)), "L3 square")
+  /* A real level-4 bullet is a square (browsers stop at square), and so the */
+  /* level= marker is: it used to cycle back to disc.                       */
+  self~assertEquals("square", self~run("LevelMarker", .Array~of(4)), "L4 stays square")
+
+/* A list nested inside a level=N block is level N+1, and so on (Rony,      */
+/* 24-Sep: `* Exception` under a level=2 item had the level-2 circle and    */
+/* size). Each depth gets its level's marker and between-level step.        */
+::Method test_a_list_nested_in_a_level_block_is_one_level_deeper
+  css = self~run("LevelRules", .Array~of(3))
+  self~assertTrue(css~pos(".slide .level-2.level-2 :is(ul, ol) :is(ul, ol) { font-size: 0.89em; }") > 0, "L3 step under level 2")
+  self~assertTrue(css~pos(".slide .level-2.level-2 :is(ul, ol) ul:not(.plain *) { list-style-type: square; }") > 0, "and the L3 square")
+  self~assertTrue(css~pos(".slide .level-1.level-1 :is(ul, ol) :is(ul, ol) { font-size: 0.82em; }") > 0, "L2 step under level 1")
+  self~assertTrue(css~pos(".slide .level-1.level-1 :is(ul, ol) ul:not(.plain *) { list-style-type: circle; }") > 0, "and the L2 circle")
+  self~assertTrue(css~pos(".slide .level-3.level-3 :is(ul, ol) :is(ul, ol) :is(ul, ol) { font-size: 1em; }") > 0, "past level 4, no more steps")
+
+/* A numbered list is a level too (Rony, 28-Sep): a `1.` list under a bullet */
+/* kept the level-1 size, and in a level= block it lost its numbers.         */
+::Method test_a_numbered_list_is_a_level
+  css = self~file(self~projectRoot"/bin/md2slides/css/runtime.css")
+  self~assertTrue(css~pos(".body :is(ul, ol) :is(ul, ol)  ") > 0, "ol counts in the outline steps")
+  rules = self~run("LevelRules", .Array~of(2))
+  self~assertEquals(0, rules~pos(" ol:not(.plain *)"), "no level bullet on a numbered list")
+
+::Method test_level_composes_with_scale
+  /* scale= (inline --contents-scale) and level= (a class whose font-size     */
+  /* rule multiplies by var(--contents-scale)) land on the SAME div and       */
+  /* compose: a scaled level-2 block is 0.82 of an already-scaled base.       */
+  tag = '<div class="contents" data-scale="0.7" data-level="2">'
+  out = self~run("TranslateSugar", .Array~of(tag))
+  out = self~run("TranslateLevel", .Array~of(out))
+  self~assertTrue(out~pos("--contents-scale: 0.7;") > 0, "the scale survives as a property")
+  self~assertTrue(out~pos("level-2") > 0,                "and the level class is there too")
+
+/* Past 6, a level is 6 (sizes stop at 4, markers at 3); a level that is  */
+/* not a whole number from 1 up is reported, not silently dropped.          */
+::Method test_level_past_six_is_six
+  out = self~run("TranslateLevel", .Array~of('<div class="fragment" data-level="9">'))
+  self~assertEquals('<div class="level-6 fragment">', out, "level=9 is level 6, and the attribute goes")
+
+/* A level= block measures its indent at the scale in force OUTSIDE it      */
+/* (--level-anchor), not at its own: `{level=1 scale=0.7}` under a level-1  */
+/* bullet has to start where that bullet's text starts (Rony, 26-Sep, a     */
+/* table there). Inside a scaled group, the anchor is that group's scale;   */
+/* a group is any div whose class list holds `contents`, wherever it sits.  */
+::Method test_a_level_block_is_anchored_to_the_scale_around_it
+  html = '<div class="incremental plain contents" data-level="1" data-scale="0.7">' || "0a"x || -
+         '</div>'
+  out = self~run("TranslateSugar", .Array~of(html))
+  self~assertTrue(out~pos("--level-anchor: 1;") > 0,      "unscaled context: anchor 1")
+  self~assertTrue(out~pos("--contents-scale: 0.7;") > 0,  "its own scale still applies to its text")
+  html = '<div class="plain contents" data-scale="0.8">'                || "0a"x || -
+         '<div class="fragment" data-level="2">'                          || "0a"x || -
+         '</div>'                                                           || "0a"x || -
+         '<div class="fragment" data-level="2" data-scale="0.5">'        || "0a"x || -
+         '</div>'                                                           || "0a"x || -
+         '</div>'
+  out = self~run("TranslateSugar", .Array~of(html))
+  self~assertEquals(2, out~countStr("--level-anchor: 0.8;"), "both anchored to the group around them")
+
+/* -- v214: scale= must be a positive number ---------------------------------- */
+/* scale=abc stopped the whole build with a Rexx arithmetic error; 0 and -1   */
+/* went into the CSS. Now they are reported, with the slide, and dropped.     */
+
+::Method test_a_bad_scale_is_reported_and_dropped
+  Do bad Over .Array~of("abc", "-1", "0", "0.5x")
+    html = '<h1 id="a">A</h1>' || "0a"x || '<div class="contents" data-scale="'bad'">'
+    parse value self~sugarSaid(html) with said "00"x out
+    self~assertTrue(said~pos("slide 1: scale="bad "is not a positive number") > 0, -
+      "scale="bad "is reported ("said")")
+    self~assertEquals(0, out~pos("scale"), "scale="bad "is dropped ("out")")
+  End
+
+::Method test_a_good_scale_still_composes
+  html = '<div class="contents" data-scale="0.8">' || "0a"x || -
+         '<div class="contents" data-scale=".5">'  || "0a"x || "</div>" || "0a"x || "</div>"
+  parse value self~sugarSaid(html) with said "00"x out
+  self~assertEquals("", said, "nothing to say")
+  self~assertTrue(out~pos("--contents-scale: 0.40") > 0, "0.8 times .5 ("out")")
+
+/* -- v216: sugar on the tag that carries it (Rony, 27-Sep) ------------------ */
+/* `- [text]{level=2}` reaches us as '<li><span data-level="2">text</span>'.  */
+/* The anchor went onto the FIRST tag of the line -- the <li> -- and an <li>  */
+/* with a style is not one MarkItems makes a step of: in an incremental list  */
+/* the item came in with its parent. indent= and a bare level= went before   */
+/* the LAST '>' of the line: '</li style=...>', which does nothing.           */
+
+::Method test_a_span_level_stays_on_the_span
+  line = '<li><span class="plain" data-level="2">x</span></li>'
+  out  = self~run("TranslateSugar", .Array~of(line))
+  out  = self~run("TranslateLevel", .Array~of(out))
+  self~assertEquals('<li><span class="level-2 plain" style="--level-anchor: 1;">x</span></li>', out, -
+    "anchor and class on the span, the <li> untouched")
+  line = '<li><span data-level="2">x</span></li>'
+  out  = self~run("TranslateLevel", .Array~of(self~run("TranslateSugar", .Array~of(line))))
+  self~assertEquals('<li><span style="--level-anchor: 1;" class="level-2">x</span></li>', out, -
+    "a span with no class of its own gets one, not the closing </li>")
+
+::Method test_a_span_indent_stays_on_the_span
+  out = self~run("TranslateSugar", .Array~of('<li><span data-indent="2em">x</span></li>'))
+  self~assertEquals('<li><span style="margin-inline-start: 2em;">x</span></li>', out, -
+    "the margin is on the span, not on '</li>'")
+
+::Method test_an_item_with_a_level_span_is_still_a_step
+  /* Rony's slide, cut down: the third item must wait for its own press.      */
+  html = '<div class="incremental">'                                       || "0a"x || -
+         '<ul class="incremental">'                                        || "0a"x || -
+         '<li>one</li>'                                                    || "0a"x || -
+         '<li><span class="plain" data-level="2">three</span></li>'        || "0a"x || -
+         '</ul>'                                                           || "0a"x || -
+         '</div>'
+  out = self~run("TranslateLevel", .Array~of(self~run("TranslateSugar", .Array~of(html))))
+  out = self~run("MarkIncrementalItems", .Array~of(out))
+  self~assertEquals(2, out~countStr('<li class="fragment'), -
+    "both items are steps ("out")")
+  self~assertTrue(out~pos('<li class="fragment plain"><span class="level-2"') > 0, -
+    ".plain goes to the item (no bullet), level-2 stays on the text (v220e)")
+
+/* -- v216: scale= on any block composes (Rony, 27-Sep) ---------------------- */
+/* `::: {.fragment scale=0.85}` did nothing: the size rules only reach text   */
+/* in a .contents or .row, and inside one its 0.85 replaced the 0.85 around   */
+/* it. A block with scale= is a scaled group now.                             */
+
+::Method test_a_scaled_fragment_is_a_group
+  html = '<div class="contents" data-scale="0.85">'       || "0a"x || -
+         '<div class="fragment" data-scale="0.85">'       || "0a"x || -
+         '</div>'                                          || "0a"x || -
+         '</div>'
+  out = self~run("TranslateSugar", .Array~of(html))
+  self~assertTrue(out~pos('<div class="contents fragment" style="--contents-scale: 0.7225;">') > 0, -
+    "the fragment takes the class and the product ("out")")
+  out = self~run("TranslateSugar", .Array~of('<div data-scale="0.5">'))
+  self~assertEquals('<div class="contents" style="--contents-scale: 0.5;">', out, -
+    "a block with no class gets one")
+
+::Method test_a_list_with_classes_does_not_pop_the_scale
+  /* Pandoc writes <ul class="incremental"> in an incremental block. Only the */
+  /* '<ul>' spelling was counted as opening, every '</ul>' as closing, so the */
+  /* group around the list was closed early and what followed lost its scale. */
+  html = '<div class="contents" data-scale="0.85">'  || "0a"x || -
+         '<div class="incremental">'                  || "0a"x || -
+         '<ul class="incremental">'                   || "0a"x || -
+         '<li>a'                                      || "0a"x || -
+         '<ul class="incremental">'                   || "0a"x || -
+         '<li>b</li>'                                 || "0a"x || -
+         '</ul></li>'                                 || "0a"x || -
+         '</ul>'                                      || "0a"x || -
+         '</div>'                                     || "0a"x || -
+         '<div class="fragment" data-level="2">'      || "0a"x || -
+         '</div>'                                     || "0a"x || -
+         '</div>'
+  out = self~run("TranslateSugar", .Array~of(html))
+  self~assertTrue(out~pos("--level-anchor: 0.85;") > 0, -
+    "the block after the list is still in the 0.85 group ("out")")
+
+/* -- v216: a paragraph right above a Rexx listing (Rony, 27-Sep) ------------ */
+/* FencedCode's raw <div> straight under a line of text made Pandoc turn the  */
+/* text into a bare line, no <p>: "Example" was not sized or indented like    */
+/* "Output:" above an ```output fence, which Pandoc reads itself.             */
+
+::Method test_a_listing_under_text_gets_a_blank_line
+  src = .Array~of("Example", '<div class="highlight-rexx-dark rx-blockwrap" id="rx1">', "</div>")
+  out = self~run("BlankBeforeListings", .Array~of(src))
+  self~assertEquals("Example||<div", out[1]"|"out[2]"|"out[3]~left(4), -
+    "a blank line goes between them")
+  src = .Array~of("", '<div class="highlight-rexx-dark rx-blockwrap" id="rx1">')
+  self~assertEquals(2, self~run("BlankBeforeListings", .Array~of(src))~items, -
+    "none when there is one already")
+  src = .Array~of("- item", '  <div class="highlight-rexx-dark rx-blockwrap" id="rx1">')
+  self~assertEquals(2, self~run("BlankBeforeListings", .Array~of(src))~items, -
+    "none in a list item: it would make the list a loose one")
+
+/* -- v216: flow=N, a list flowed into N columns (Rony, 27-Sep) ------------- */
+/* Column by column by default, like his BIF and RexxUtil slides; fill=rows  */
+/* row by row. The ::: gets the class and --flow; runtime.css does the rest. */
+
+::Method test_flow_becomes_a_class_and_a_property
+  out = self~run("TranslateFlow", .Array~of('<div class="plain" data-flow="5">'))
+  self~assertEquals('<div class="flow plain" style="--flow: 5;">', out, "columns by default")
+  out = self~run("TranslateFlow", .Array~of('<div class="incremental" data-flow="3" data-fill="rows">'))
+  self~assertEquals('<div class="flow flow-rows incremental" style="--flow: 3;">', out, "fill=rows")
+  out = self~run("TranslateFlow", .Array~of('<div data-flow="2" data-fill="Columns">'))
+  self~assertEquals('<div class="flow" style="--flow: 2;">', out, "fill=columns is the default, any case")
+
+::Method test_a_bad_flow_or_fill_is_reported
+  parse value self~said("TRANSLATEFLOW", '<div data-flow="many">') with said "00"x out
+  self~assertTrue(said~pos("flow=many is not a number of columns") > 0, "flow=many is reported ("said")")
+  self~assertEquals("<div>", out, "and dropped")
+  parse value self~said("TRANSLATEFLOW", '<div data-flow="2" data-fill="diagonal">') with said "00"x out
+  self~assertTrue(said~pos("fill=diagonal is not rows or columns") > 0, "fill=diagonal is reported ("said")")
+  self~assertEquals('<div class="flow" style="--flow: 2;">', out, "and the list fills by columns")
+
+::Method test_flow_survives_an_incremental_block
+  /* MarkIncrementalItems drops a wrapper with nothing left on it; a flow    */
+  /* wrapper keeps its class and style, so the list is still in columns.     */
+  html = '<div class="incremental" data-flow="3">' || "0a"x || '<ul class="incremental">' || "0a"x || -
+         '<li>a</li>' || "0a"x || '<li>b</li>' || "0a"x || '</ul>' || "0a"x || '</div>'
+  out = self~run("TranslateFlow", .Array~of(html))
+  out = self~run("MarkIncrementalItems", .Array~of(out))
+  self~assertTrue(out~pos('class="body flow" style="--flow: 3;"') > 0, "the wrapper stays ("out")")
+  self~assertEquals(2, out~countStr('<li class="fragment"'), "and the items are steps")
+
+::Method test_flow_rules_are_in_the_stylesheet
+  css = self~file(self~projectRoot"/bin/md2slides/css/runtime.css")
+  self~assertTrue(css~pos("columns: var(--flow);") > 0, "columns by default")
+  self~assertTrue(css~pos("grid-template-columns: repeat(var(--flow), minmax(0, 1fr));") > 0, "a grid for rows")
+  self~assertTrue(css~pos(".slide .flow li { break-inside: avoid; }") > 0, "an item is never split")
+  src = self~file(self~projectRoot"/bin/md2slides.rex")
+  self~assertTrue(src~pos("flat = TranslateFlow(flat)") > 0, "wiring: the build calls it")
+
+::Method said
+  /* A routine's warnings and its output, as "warnings 00x output"           */
+  Use Strict Arg name, html
+  rtn     = self~md2slides~findRoutine(name)
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  out     = rtn~call(html)
+  discard = .Error~destination(prev)
+  Return sink~text || "00"x || out
+
+::Method file
+  Use Strict Arg path
+  s = .Stream~new(path)
+  s~open("read")
+  text = s~charIn(1, s~chars)
+  s~close
+  Return text
+
+::Method sugarSaid
+  /* TranslateSugar's warnings and its output, as "warnings 00x output"      */
+  Use Strict Arg html
+  rtn     = self~md2slides~findRoutine("TRANSLATESUGAR")
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  out     = rtn~call(html)
+  discard = .Error~destination(prev)
+  Return sink~text || "00"x || out
+
+/* -- v220e: the words written on an item (Rony, 27-Sep) -------------------- */
+/* `- [code]{.afterPrev .plain}` in a loose list (blank lines between items)  */
+/* kept its bullet and the block's timing: Pandoc wraps a loose item in <p>,  */
+/* and .plain beside the timing word made the span "not a timing span".     */
+
+::Method test_a_loose_item_takes_its_timing_and_plain
+  html = '<div class="incremental">'                                       || "0a"x || -
+         '<ul class="incremental">'                                        || "0a"x || -
+         '<li><p>one</p></li>'                                             || "0a"x || -
+         '<li><p><span class="afterPrevious plain"><code>x</code></span></p></li>' || "0a"x || -
+         '</ul>'                                                           || "0a"x || -
+         '</div>'
+  out = self~run("MarkIncrementalItems", .Array~of(html))
+  self~assertTrue(out~pos('<li class="fragment afterPrevious plain"><p><code>x</code></p></li>') > 0, -
+    "the words go to the item, the span goes, the <p> stays ("out")")
+
+::Method test_plain_on_one_item_of_a_list
+  html = '<ul><li>a</li><li><span class="plain">b</span><ul><li>c</li></ul></li>' || -
+         '<li><p class="plain">d</p></li><li><p><span class="fragment">e</span></p></li></ul>'
+  out = self~run("HoistItemWords", .Array~of(html))
+  self~assertEquals('<ul><li>a</li><li class="plain">b<ul><li>c</li></ul></li>' || -
+    '<li class="plain"><p>d</p></li><li class="fragment"><p>e</p></li></ul>', out, -
+    "tight, loose after HoistSpans, loose with a fragment; nested items untouched")
+
+::Method test_an_item_span_with_anim_is_left_alone
+  html = '<ul><li><p><span class="fragment" data-anim="zoom">e</span></p></li></ul>'
+  self~assertEquals(html, self~run("HoistItemWords", .Array~of(html)), -
+    "anim= goes with the step: not this routine's")
+
+/* A key=value the highlighter does not know stopped the build with a Rexx   */
+/* traceback (`level=2` on a mention). It is taken off, and reported.        */
+
+::Method test_foreign_options_on_a_mention_are_taken_off
+  lines = .Array~of("--- {.slide}", "- [`today=DATE()`{.rexx level=2 blanks=all}]{.plain}")
+  Parse Value self~collected("StripForeignOptions", .Array~of(lines)) With text "0"x
+  out = self~lastResult
+  self~assertEquals("- [`today=DATE()`{.rexx blanks=all}]{.plain}", out[2], "level=2 goes, blanks= stays")
+  self~assertTrue(text~pos("line 2 (slide 1): ignored on a Rexx mention: 'level=2'") > 0, -
+    "and it is reported ("text")")
+
+::Method test_foreign_options_on_a_fence_are_taken_off
+  lines = .Array~of('```rexx {anim=fade caption="A b" program="P q" .numberLines}', 'say level=2', '```')
+  Parse Value self~collected("StripForeignOptions", .Array~of(lines)) With text "0"x
+  out = self~lastResult
+  self~assertEquals('```rexx {caption="A b" program="P q" .numberLines}', out[1], -
+    "anim= goes, the rest stays (program= is FencedCode's too)")
+  self~assertEquals("say level=2", out[2], "the code is code")
+  self~assertTrue(text~pos("'::: {anim=fade}'") > 0, "the block is suggested ("text")")
+
+::Method collected
+  -- Run a routine with .Error collected; the warnings come back, and the
+  -- routine's result is kept for lastResult.
+  Use Strict Arg name, args
+  routine = self~md2slides~findRoutine(name~upper)
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  .local["INDENT.TEST.RESULT"] = routine~callWith(args)
+  discard = .Error~destination(prev)
+  Return sink~text
+
+::Method lastResult
+  Return .local["INDENT.TEST.RESULT"]
+
+::Method run
+  Use Strict Arg name, args
+  Return self~md2slides~findRoutine(name~upper)~callWith(args)
+
+::Method warnings
+  Use Strict Arg html
+  /* The routine is looked up BEFORE stderr is redirected: loading the       */
+  /* package redirects it too, and would take our sink down with it.         */
+  check   = self~md2slides~findRoutine("CHECKINDENTS")
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  discard = check~call(html)
+  discard = .Error~destination(prev)
+  Return sink~text
+
+::Method md2slides
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* public routines without running it as one. The prologue does run, finds   */
+  /* no input file and complains; that complaint is swallowed here.            */
+  pkg = .local["INDENT.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  /* Assigned, never a bare message instruction: a bare send is a clause whose */
+  /* value lands in RESULT.                                                    */
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["INDENT.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/Indent.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/* Read the outline cascade steps straight out of runtime.css: the em value  */
+/* of each `.body ul ul[...] { font-size: N em }`. Returns [0.82,0.89,0.88].  */
+::Method cssCascade
+  css = .Stream~new(self~projectRoot"/bin/md2slides/css/runtime.css")~makeArray
+  steps = .Array~new
+  Do line Over css
+    t = line~strip
+    If t~pos(".body :is(ul, ol) :is(ul, ol)") \== 1 Then Iterate  -- an outline cascade rule
+    Parse Var t . "font-size:" val "em" .
+    val = val~strip
+    If val~dataType("N") Then steps~append(val)
+  End
+  Return steps
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0
+
+/******************************************************************************/
+/* Collect - stands in for stderr and keeps what is said.                     */
+/******************************************************************************/
+
+::Class Collect
+
+::Method init
+  Expose text
+  text = ""
+
+::Method text
+  Expose text
+  Return text
+
+::Method lineOut
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method say
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method charOut
+  Expose text
+  Use Arg chars
+  text = text || chars
+  Return 0

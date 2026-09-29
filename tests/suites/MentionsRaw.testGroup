@@ -1,0 +1,104 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* MentionsRaw.testGroup - Prose mentions reach Pandoc as raw HTML            */
+/* ===============================================================            */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260920         First version                                             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED AT ALL                                                  */
+/*                                                                            */
+/* A mention's HTML goes back into a line of Markdown, and Pandoc used to     */
+/* read the text between its tags as Markdown too. Rony's slide on blanks,    */
+/*                                                                            */
+/*   `saY    "\{[]}\gulp!"  reverse(  Abc )`{.rexx blanks=all}                 */
+/*                                                                            */
+/* came out with one blank everywhere, "\{" turned into "{", and "\gulp"      */
+/* gone (read as a TeX command) -- the slide said the opposite of what it was */
+/* written to show. Every mention now reaches Pandoc as `...`{=html}, which   */
+/* Pandoc passes through as it is. Nothing here runs Pandoc: what is checked  */
+/* is that the text inside the raw inline is the text that was written.       */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.MentionsRaw.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+::Requires "parser/FencedCode.cls"
+
+::Class MentionsRaw.testGroup Subclass ooTestCase Public
+
+::Method test_a_mention_is_a_raw_inline
+  out = self~line('A `x`{.rexx} here.')
+  self~assertTrue(out~pos('`<span class="highlight-rexx-') > 0, "opens as a raw inline")
+  self~assertTrue(out~pos('</span>`{=html}') > 0,              "and closes as one")
+  self~assertEquals("A ", out~left(2), "the prose around it is untouched")
+
+::Method test_runs_of_blanks_survive_pandoc
+  html = self~pandoc('`saY    "a"  ||  x`{.rexx blanks=all}')
+  self~assertTrue(html~pos('>    <') > 0, "four blanks stay four, after Pandoc")
+  self~assertTrue(html~pos('>  <') > 0,   "two blanks stay two, after Pandoc")
+
+::Method test_the_blank_operator_is_one_blank
+  -- "a"    x concatenates with ONE blank: one is the operator, three are air
+  html = self~pandoc('`saY "a"    x`{.rexx blanks=all}')
+  self~assertTrue(html~pos('<span class="rx-op"><span class="rx-blank-mark"> </span></span>' || -
+    '<span class="rx-ws"><span class="rx-blank-mark">   </span></span>') > 0, -
+    "one blank operator, then whitespace ("html")")
+
+::Method test_backslashes_survive_pandoc
+  html = self~pandoc('`Say "\{[]}\gulp!"`{.rexx}')
+  self~assertTrue(html~pos('\{[]}\gulp!') > 0, -
+    "a backslash is text, not an escape, and \gulp is not TeX")
+
+::Method test_markdown_inside_a_string_stays_text_pandoc
+  html = self~pandoc('`Say "*a* _b_"`{.rexx}')
+  self~assertTrue(html~pos('*a* _b_') > 0, "no emphasis inside a Rexx string")
+
+::Method test_a_backtick_inside_gets_a_longer_fence
+  /* A string holding a backtick must not end the raw inline early. */
+  out = self~line('``Say "a`b"``{.rexx}')
+  self~assertTrue(out~pos('``<span') > 0, "one backtick inside: a fence of two")
+  self~assertTrue(out~pos('</span>``{=html}') > 0, "closed by the same fence")
+
+::Method test_a_line_without_mentions_is_untouched
+  self~assertEquals("Plain *text* here.", self~line("Plain *text* here."))
+
+/******************************************************************************/
+/* Plumbing                                                                   */
+/******************************************************************************/
+
+::Method pandoc
+  /* The line through the front end AND through Pandoc, which is where the    */
+  /* damage used to happen. Pandoc is a prerequisite of every pipeline.       */
+  Use Strict Arg text
+  input  = .Array~of(self~line(text))
+  output = .Array~new
+  Address COMMAND "pandoc --from markdown-smart --to html5" -
+    With Input Using (input) Output Using (output) Error Stem discard.
+  Return output~makeString("L", " ")
+
+::Method line
+  /* One line of prose through the fenced-code front end, as a deck gets it. */
+  Use Strict Arg text
+  result = FencedCode("test.md", .Array~of(text))
+  Return result~makeString("L", "0a"x)

@@ -23,6 +23,17 @@
 /* 20251128    0.3a (Executor) Implement ::EXTENSION directive                */
 /* 20251201         (Executor) Add support for source literals                */
 /* 20260308         Add GET to several attributes that are not settable       */
+/* 20260928    0.7  ::ATTRIBUTE: ABSTRACT, DELEGATE and EXTERNAL exclude      */
+/*                  each other (25.925, as ooRexx); the DELEGATE target is a  */
+/*                  symbol (20.926); EXTERNAL with no string is 19.905;       */
+/*                  options.external is .Nil when there is no EXTERNAL.       */
+/*                  ::METHOD: the DELEGATE target is a symbol (20.926).       */
+/*                  ::ROUTINE: EXTERNAL with no string is 19.905; the         */
+/*                  specification is "LIBRARY|REGISTERED lib [entry]".        */
+/*                  ExternalSpecIsValid: the forms of the EXTERNAL            */
+/*                  specifications (99.917 when it is not one).               */
+/*                  ::ANNOTATE: a signed value is a number (19.923, as        */
+/*                  ooRexx); Annotate.Directive~options. (a getter).          */
 /*                                                                            */
 /******************************************************************************/
 
@@ -47,8 +58,8 @@
 /******************************************************************************/
 
 ::Routine Annotate.Directive Public
-  -- TODO [LATER] Check that annotations refer to something existent
-  -- (and implement 99.945 )
+  -- The target must exist (99.945): see the Annotate routine in
+  -- Rexx.Parser.cls, which knows the directives seen so far.
 
   Use Strict Arg package, begin, end, elements
 
@@ -92,11 +103,17 @@
     value = TheElementAfter( name, ignoreBlanks )
     If value < .EL.END_OF_CLAUSE Then Signal 19.924
     If value < .ALL.OPS.ADDITIVE Then Do
+      -- A signed value: the sign and a number (ooRexx: a constant symbol,
+      -- and then the whole must be a number).
       sign = value
       value = TheElementAfter( sign, ignoreBlanks )
+      If value \< .ALL.NUMBERS, value \< .EL.SYMBOL_LITERAL Then
+        Call 19.923 sign
+      If \DataType( sign~value || value~value, "Number" ) Then
+        Call 19.923 Upper( sign~value || value~value )
     End
     Else sign = .Nil
-    If value \< .ALL.SYMBOLS_AND_STRINGS Then Signal 19.923
+    If value \< .ALL.SYMBOLS_AND_STRINGS Then Call 19.923 value
     Call SetConstantName value, .ANNOTATION.VALUE
     options.pairs~append( (name, sign, value) )
     name = TheElementAfter( value, ignoreBlanks )
@@ -106,7 +123,7 @@ Done:
   Return .Annotate.Directive~new( package, begin, end, options. )
 
 -- Symbol or string expected as ::ANNOTATE attribute value; found "&1".
-19.923: Syntax( 19.923, ANNOTATE, value )
+19.923: Syntax( 19.923, ANNOTATE, Arg(1) )
 
 -- Symbol or string expected as ::ANNOTATE attribute value.
 19.924: Syntax( 19.924, ANNOTATE )
@@ -126,6 +143,7 @@ Done:
 --------------------------------------------------------------------------------
 
 ::Class Annotate.Directive Public SubClass Rexx.Directive
+::Attribute options. Get
 ::Method init
   Expose options.
   Use Strict Arg package, begin, end, options.
@@ -157,7 +175,7 @@ Done:
   options.protected    = 0
   options.abstract     = 0
   options.delegateName = ""
-  options.external     = ""
+  options.external     = .Nil
   options.visibility   = "PUBLIC"
 
   ignoreBlanks = 1
@@ -202,19 +220,26 @@ Done:
         If package~inTheProlog Then Signal 99.905
         options.kValue = 1
       End
-      When "ABSTRACT" Then options.abstract = 1
+      -- ABSTRACT, DELEGATE and EXTERNAL exclude each other (ooRexx).
+      -- The EXTERNAL specification is checked when the body is known
+      -- (a body is an error first, as in ooRexx: see Rexx.Parser.cls).
+      When "ABSTRACT" Then Do
+        options.abstract = 1
+        allOptions~~remove("DELEGATE")~~remove("EXTERNAL")
+      End
       When "DELEGATE" Then Do
+        allOptions~~remove("ABSTRACT")~~remove("EXTERNAL")
         thisDelegateName = TheElementAfter( keyword )
-        If thisDelegateName \< .ALL.SYMBOLS_AND_STRINGS Then
+        If thisDelegateName \< .ALL.SYMBOLS Then
           Call 20.926 thisDelegateName
         options.delegateName = thisDelegateName
         keyword = TheElementAfter( thisDelegateName, ignoreBlanks )
         Iterate -- Jump directly to next keyword, if any
       End
-      When "EXTERNAL" Then Do -- Should check spec syntax
+      When "EXTERNAL" Then Do
+        allOptions~~remove("ABSTRACT")~~remove("DELEGATE")
         spec = TheElementAfter( keyword )
-        If spec  < .EL.END_OF_CLAUSE  Then Signal 19.905
-        If spec \< .ALL.STRINGS Then Call 20.926 spec
+        If spec \< .ALL.STRINGS Then Signal 19.905
         options.external = spec~value
         keyword = TheElementAfter( spec, ignoreBlanks )
         Iterate -- Jump directly to next keyword, if any
@@ -679,12 +704,12 @@ Return
           When "DELEGATE" Then Do
             thisDelegateName = TheElementAfter( keyword )
             ignoreBlanksToTheRight = 1
-            If thisDelegateName \< .ALL.SYMBOLS_AND_STRINGS Then
+            If thisDelegateName \< .ALL.SYMBOLS Then
               Call 20.926 thisDelegateName
-           options.delegateName = thisDelegateName
+            options.delegateName = thisDelegateName
             keyword = TheElementAfter( thisDelegateName, ignoreBlanksToTheRight )
           End
-          When "EXTERNAL" Then Do -- Should check spec syntax
+          When "EXTERNAL" Then Do -- The spec is checked with the body
             spec = TheElementAfter( keyword )
             ignoreBlanksToTheRight = 1
             If spec \< .ALL.STRINGS Then Signal 19.905
@@ -1160,12 +1185,9 @@ Done:
         external = 1
         allOptions~~remove("EXTERNAL")
         spec = TheElementAfter( keyword )
-        If spec  < .EL.END_OF_CLAUSE  Then Signal 19.925
-        If spec \< .ALL.STRINGS Then Signal 19.925
-        Parse Value spec~value With one two three four
-        -- Note: we only check a few things here.
-        If Pos(Upper(one), "LIBRARY REGISTERED") == 0 Then Signal 99.917
-        If four \= ""                                 Then Signal 99.917
+        If spec \< .ALL.STRINGS Then Signal 19.905
+        If \ExternalSpecIsValid( spec~value, "LIBRARY REGISTERED" ) Then
+          Signal 99.917
         keyword = TheElementAfter( spec, ignoreBlanks )
      End
     End
@@ -1178,14 +1200,27 @@ Done:
 -- String or symbol expected after ::ROUTINE keyword.
 19.903: Syntax( 19.903, ROUTINE, routineName )
 
--- Symbol or string expected after &1 &2 keyword.
-19.925: Syntax( 19.925, ROUTINE )
+-- String expected after EXTERNAL keyword.
+19.905: Syntax( 19.905, ROUTINE, spec )
 
 -- Unknown keyword on ::ROUTINE directive; found "&1".
 25.903: Syntax( 25.903, ROUTINE, keyword )
 
 -- Incorrect external name specification "&1".
 99.917: Syntax( 99.917, ROUTINE, spec )
+
+--------------------------------------------------------------------------------
+
+-- The forms of an EXTERNAL specification, as ooRexx: "LIBRARY lib [entry]"
+-- for methods and attributes (decodeExternalMethod), and also
+-- "REGISTERED lib [entry]" for routines. The first word is caseless.
+
+::Routine ExternalSpecIsValid Public
+  Use Strict Arg spec, forms = "LIBRARY"
+  Parse Upper Var spec type rest
+  If WordPos( type, forms ) == 0 Then Return .False
+  n = Words( rest )
+  Return n == 1 | n == 2
 
 --------------------------------------------------------------------------------
 

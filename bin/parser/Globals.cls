@@ -987,3 +987,89 @@ SkipOverTheInternalRoutines:            -- Main code continues here
     .EL.LEFT_CURLY_BRACKET,             - -- "{"
     .EL.COLON,                          - -- A colon ":"
     .EL.COMMA                             -- A comma ","
+
+/******************************************************************************/
+/* Keyword-instruction and directive-keyword vocabularies                     */
+/* ========================================================================== */
+/*                                                                            */
+/* Single source of truth for the two closed, dialect-sensitive lists a       */
+/* prose mention needs BEFORE it pays for a parse: the keyword instructions   */
+/* (so `` `Do`{.rexx} `` colours as a keyword without the parser shouting     */
+/* "Incomplete DO") and the directive keywords (so `` `::Method`{.rexx} ``    */
+/* is recognised by its `::` and keyword alone). PreClauser builds the very   */
+/* same lists in its own init from these routines, so the vocabulary lives    */
+/* in ONE place and never drifts between the parser and the prose facade.     */
+/*                                                                            */
+/* Dialect is read from an options stem, NOT from the global .Features (which */
+/* reflect the last parse, unreliable in the prose path that runs before any  */
+/* highlighter is instantiated). We accept both index conventions a caller    */
+/* may hold: the tail-symbol form (Options.cms / Options.executor, produced   */
+/* by ParseOptions) and the string form (Options.["CMS"] / Options.["EXECUTOR"] */
+/* set by the block-level language-tag path).                                 */
+/*                                                                            */
+/* The lists mirror PreClauser.cls exactly:                                   */
+/*   - the ANSI base is always present;                                       */
+/*   - the ooRexx-only instructions (expose forward guard loop raise reply    */
+/*     use) are present unless CMS;                                           */
+/*   - UPPER is present under CMS or Executor;                                */
+/*   - the directive EXTENSION is present under Executor.                     */
+/*                                                                            */
+/* Both return a Set of upper-cased names, so the caller matches with a       */
+/* single Upper() on the (trimmed) mention content.                          */
+
+::Routine KeywordInstructionSet Public
+  Use Strict Arg options.
+
+  cms      = DialectFlag( options., "cms",      "CMS"      )
+  executor = DialectFlag( options., "executor", "EXECUTOR" )
+
+  s = .Set~new
+
+  -- ANSI base (always present). These are the instruction keywords, which
+  -- INCLUDE the pure clauses (do end if select when then else otherwise): a
+  -- clause keyword is still a keyword for colouring purposes.
+  Do kw Over ( "ADDRESS", "ARG", "CALL", "DO", "DROP", "ELSE", "END",     -
+               "EXIT", "IF", "INTERPRET", "ITERATE", "LEAVE", "NOP",      -
+               "NUMERIC", "OPTIONS", "OTHERWISE", "PARSE", "PROCEDURE",   -
+               "PULL", "PUSH", "QUEUE", "RETURN", "SAY", "SELECT",        -
+               "SIGNAL", "THEN", "TRACE", "WHEN" )
+    s~put( kw )
+  End
+
+  -- ooRexx-only (absent under CMS).
+  If \cms Then
+    Do kw Over ( "EXPOSE", "FORWARD", "GUARD", "LOOP", "RAISE", "REPLY", "USE" )
+      s~put( kw )
+    End
+
+  -- Executor and CMS only.
+  If cms | executor Then s~put( "UPPER" )
+
+  Return s
+
+::Routine DirectiveKeywordSet Public
+  Use Strict Arg options.
+
+  executor = DialectFlag( options., "executor", "EXECUTOR" )
+
+  s = .Set~new
+
+  Do kw Over ( "ANNOTATE", "ATTRIBUTE", "CLASS", "CONSTANT", "METHOD", -
+               "OPTIONS", "REQUIRES", "RESOURCE", "ROUTINE" )
+    s~put( kw )
+  End
+
+  If executor Then s~put( "EXTENSION" )
+
+  Return s
+
+/* DialectFlag -- read a dialect flag from an options stem, tolerating both   */
+/* the tail-symbol convention (options.name) and the string-index convention  */
+/* (options.["STRINGKEY"]). Returns 1 if either is truthy, 0 otherwise.       */
+
+::Routine DialectFlag Private
+  Use Strict Arg options., tailName, stringKey
+
+  If options.~hasIndex( tailName ),  options.tailName == 1       Then Return 1
+  If options.~hasIndex( stringKey ), options.[ stringKey ] == 1  Then Return 1
+  Return 0

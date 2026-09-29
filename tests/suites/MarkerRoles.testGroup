@@ -1,0 +1,305 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* MarkerRoles.testGroup - Roles on a --- {.slide} marker, and the two regimes*/
+/* ===========================================================================*/
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260919         First version                                             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHY THIS IS TESTED AT ALL                                                  */
+/*                                                                            */
+/* A deck opens its slides either with headings or with --- {.slide} markers. */
+/* The marker regime took the classes written on the marker onto the slide    */
+/* and stopped there: the ROLES among them did nothing. The HTML looked right */
+/* -- class="slide business-card" -- and the slide was wrong:                 */
+/*                                                                            */
+/*   - a business-card built no cards;                                        */
+/*   - a section was labelled data-title, so the go dialog did not list it as */
+/*     a section and Ctrl+Left / Ctrl+Right stepped over it.                  */
+/*                                                                            */
+/* And a # heading in a marker deck opened no slide, silently: it became an   */
+/* <h1> inside the slide above. That one cannot be made to work -- the two    */
+/* regimes do not mix -- so it is made to be heard.                           */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.MarkerRoles.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class MarkerRoles.testGroup Subclass ooTestCase Public
+
+/******************************************************************************/
+/* Roles on the marker                                                        */
+/******************************************************************************/
+
+::Method test_a_business_card_marker_builds_the_card
+  flat = '<hr class="slide" data-master="business-card" />' || "0a"x || -
+         '<div class="title">' || "0a"x || "<p>Thank you</p>" || "0a"x || -
+         "</div>" || "0a"x || "<p>Rony G. Flatscher</p>" || "0a"x || -
+         "<p>Professor</p>"
+  out = self~fold(flat)
+  self~assertTrue(out~pos('<p class="name">Rony G. Flatscher</p>') > 0, -
+    "the first paragraph after the title is the name")
+  self~assertEquals(0, out~pos('<p class="name">Thank you</p>'), -
+    "the ::: title zone is the slide's title, not the card's first line")
+
+::Method test_a_section_marker_is_a_navigation_anchor
+  flat = '<hr class="slide" data-master="section" />' || "0a"x || -
+         '<div class="title">' || "0a"x || "<p>Part two</p>" || "0a"x || "</div>"
+  out = self~fold(flat)
+  self~assertTrue(out~pos('data-section="Part two"') > 0, -
+    "a section marker is labelled data-section, as a section heading is")
+  self~assertEquals(0, out~pos("data-title="), "and not data-title")
+
+::Method test_a_plain_marker_is_still_a_page
+  flat = '<hr class="slide" />' || "0a"x || -
+         '<div class="title">' || "0a"x || "<p>Page</p>" || "0a"x || "</div>"
+  self~assertTrue(self~fold(flat)~pos('data-title="Page"') > 0, -
+    "no role: an ordinary page, as before")
+
+/******************************************************************************/
+/* The two regimes do not mix -- and now it says so                           */
+/******************************************************************************/
+
+::Method test_a_heading_in_a_marker_deck_warns
+  flat = '<hr class="slide" />' || "0a"x || "<p>One</p>" || "0a"x || -
+         '<h1 class="title-slide">Two</h1>'
+  said = self~warnings(flat)
+  self~assertTrue(said~pos("does not open a slide") > 0, -
+    "a # heading in a marker deck is reported")
+
+::Method test_a_marker_deck_without_headings_is_quiet
+  flat = '<hr class="slide" />' || "0a"x || "<p>One</p>"
+  self~assertEquals("", self~warnings(flat), "nothing to report")
+
+::Method test_a_heading_deck_is_quiet
+  flat = "<h1>One</h1>" || "0a"x || "<p>Body</p>"
+  self~assertEquals("", self~warnings(flat), -
+    "headings in a heading deck are the slides, not a mistake")
+
+/******************************************************************************/
+/* Ids: one per slide, and never the same twice                               */
+/******************************************************************************/
+
+::Method test_marker_slides_get_distinct_ids
+  /* All of them used to be id="slide", so the address bar always said      */
+  /* #slide and a reload went back to the first slide.                      */
+  flat = '<hr class="slide" />' || "0a"x || "<p>One</p>" || "0a"x || -
+         '<hr class="slide" />' || "0a"x || "<p>Two</p>"
+  ids = self~ids(self~fold(flat))
+  self~assertEquals(2, ids~items, "two slides, two ids")
+  self~assertFalse(ids[1] == ids[2], "and not the same one")
+  self~assertEquals("slide-1", ids[1], "no title: slide-N")
+
+::Method test_the_id_comes_from_the_title
+  flat = '<hr class="slide" />' || "0a"x || '<div class="title">' || -
+         "<p>Calling Java</p></div>"
+  self~assertEquals("calling-java", self~ids(self~fold(flat))[1], -
+    "made from the ::: title, as Pandoc makes a heading's")
+
+::Method test_utf8_punctuation_stays_out_of_the_id
+  /* An em dash in a title put %E2%80%94 in the address bar, and a link    */
+  /* typed or pasted by hand did not find the slide.                        */
+  slug = self~md2slides~findRoutine("SLUG")
+  self~assertEquals("step-3--built-up", slug~call("Step 3 "||"e28094"x||" Built Up"), -
+    "the em dash goes, as Pandoc drops it")
+  self~assertEquals("hola-qu"||"c3a9"x, slug~call("c2ab"x"Hola"||"c2bb"x "c2bf"x"qu"||"c3a9"x"?"), -
+    "guillemets and inverted marks go; accented letters stay")
+
+::Method test_a_repeated_title_is_suffixed
+  one  = '<hr class="slide" />' || "0a"x || '<div class="title"><p>Same</p></div>'
+  ids  = self~ids(self~fold(one || "0a"x || one || "0a"x || one))
+  self~assertEquals("same same-1 same-2", ids~makeString("L", " "), -
+    "-1, -2 for the repeats, as Pandoc does")
+
+::Method test_an_explicit_id_wins
+  flat = '<hr class="slide" id="intro" />' || "0a"x || -
+         '<div class="title"><p>Welcome</p></div>'
+  self~assertEquals("intro", self~ids(self~fold(flat))[1], -
+    "an id written on the marker is used as it is")
+
+::Method test_the_marker_spells_out_a_pandoc_id
+  out = self~md2slides~findRoutine("SLIDEMARKERS")~callWith( -
+    .Array~of("--- {.slide #intro .section}"))
+  self~assertTrue(out~pos('id="intro"') > 0, "{#intro} becomes id=""intro""")
+  self~assertTrue(out~pos('data-master="section"') > 0, "and the class still rides")
+
+::Method test_a_title_with_an_ampersand_is_escaped_once
+  flat = '<hr class="slide" />' || "0a"x || -
+         '<div class="title"><p>Rexx &amp; Co</p></div>'
+  out = self~fold(flat)
+  self~assertTrue(out~pos('data-title="Rexx &amp; Co"') > 0, -
+    "Pandoc's &amp; is decoded before it is escaped again")
+  self~assertEquals(0, out~pos("&amp;amp;"), "never escaped twice")
+
+/******************************************************************************/
+/* Attributes on the marker reach the slide                                   */
+/******************************************************************************/
+
+::Method test_marker_attributes_become_data_attributes
+  /* They were dropped: in a marker deck no slide could choose its page      */
+  /* transition or build itself from the clock.                              */
+  flat = '<hr class="slide" anim=fade wait-before=1 wait-after="0.5" />' || -
+         "0a"x || "<p>x</p>"
+  tag = self~sectionTag(self~fold(flat))
+  self~assertTrue(tag~pos('data-anim="fade"') > 0,        "anim= becomes data-anim")
+  self~assertTrue(tag~pos('data-wait-before="1"') > 0,    "wait-before= becomes data-wait-before")
+  self~assertTrue(tag~pos('data-wait-after="0.5"') > 0,   "a quoted value loses its quotes")
+
+::Method test_bookkeeping_attributes_are_not_repeated
+  flat = '<hr class="slide" data-master="section" id="p2" anim=fade />' || "0a"x || "<p>x</p>"
+  tag = self~sectionTag(self~fold(flat))
+  self~assertEquals(0, tag~pos("data-master"), "data-master is the class, not an attribute")
+  self~assertEquals(0, tag~pos("data-id"),     "id is the id, not data-id")
+  self~assertEquals(0, tag~pos("data-class"),  "and class is the class")
+
+::Method test_a_mistyped_page_animation_on_a_marker_warns
+  said = self~warnings('<hr class="slide" anim=slidde />' || "0a"x || "<p>x</p>")
+  self~assertTrue(said~pos("slidde") > 0, "checked like a heading's anim=")
+
+/******************************************************************************/
+/* kicker=, and values with blanks                                            */
+/******************************************************************************/
+
+::Method test_a_kicker_on_a_marker_is_the_line_above_the_title
+  flat = '<hr class="slide" kicker="Part One: Basics" />' || "0a"x || -
+         '<div class="title"><p>Why Rexx?</p></div>'
+  out = self~fold(flat)
+  self~assertTrue(out~pos('<p class="kicker">Part One: Basics</p>') > 0, -
+    "kicker= becomes the kicker paragraph, as on a heading")
+  self~assertTrue(out~pos('kicker">') < out~pos('<div class="title">'), -
+    "and it comes before the title zone")
+  self~assertEquals(0, out~pos("data-kicker"), "it is content, not an attribute")
+
+::Method test_a_quoted_value_keeps_its_blanks
+  toks = self~md2slides~findRoutine("ATTRTOKENS")~call('.x kicker="Part One" #p1')
+  self~assertEquals(3, toks~items, "three tokens, not four")
+  self~assertEquals('kicker="Part One"', toks[2], "the quoted value is one token")
+
+::Method test_the_marker_line_keeps_a_quoted_value_whole
+  out = self~md2slides~findRoutine("SLIDEMARKERS")~callWith( -
+    .Array~of('--- {.slide .section kicker="Part One"}'))
+  self~assertTrue(out~pos('kicker="Part One"') > 0, "the value survives the marker")
+
+/******************************************************************************/
+/* Plumbing                                                                   */
+/******************************************************************************/
+
+::Method fold
+  Use Strict Arg flat
+  Return self~md2slides~findRoutine("FOLDINTOSLIDES")~callWith( -
+    .Array~of(flat, 64, .StringTable~new))
+
+::Method sectionTag
+  Use Strict Arg html
+  Parse Var html "<section " tag ">"
+  Return tag
+
+::Method ids
+  /* The ids of the <section>s, in order. */
+  Use Strict Arg html
+  ids = .Array~new
+  Loop While html~pos("<section ") > 0
+    Parse Var html "<section " tag ">" html
+    Parse Var tag ' id="' id '"'
+    ids~append(id)
+  End
+  Return ids
+
+::Method warnings
+  /* What FoldIntoSlides says on stderr, as one string. */
+  Use Strict Arg flat
+  /* Load the package BEFORE redirecting stderr: loading it redirects stderr */
+  /* too, and would take our sink down with it when this runs first.        */
+  discard = self~md2slides
+  sink    = .Collect~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  discard = self~fold(flat)
+  discard = .Error~destination(prev)
+  Return sink~text
+
+::Method md2slides
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* public routines without running it as one. The prologue does run, finds   */
+  /* no input file and complains; that complaint is swallowed here.            */
+  pkg = .local["MARKERROLES.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  /* Assigned, never a bare message instruction: a bare send is a clause whose */
+  /* value lands in RESULT.                                                    */
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["MARKERROLES.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/MarkerRoles.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0
+
+/******************************************************************************/
+/* Collect - stands in for stderr and keeps what is said.                     */
+/******************************************************************************/
+
+::Class Collect
+
+::Method init
+  Expose text
+  text = ""
+
+::Method text
+  Expose text
+  Return text
+
+::Method lineOut
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method say
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method charOut
+  Expose text
+  Use Arg chars
+  text = text || chars
+  Return 0

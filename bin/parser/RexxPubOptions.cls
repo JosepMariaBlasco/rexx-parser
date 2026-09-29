@@ -35,6 +35,10 @@
 /*     number-figures     - 0 or 1 (or .Nil if not set)                       */
 /*     docclass           - document class name (or .Nil if not set)          */
 /*     outline            - PDF bookmark depth (or .Nil if not set)           */
+/*     executor           - "true" if Executor set here (or .Nil)             */
+/*     experimental       - "true" if Experimental set here (or .Nil)         */
+/*     unicode            - "true" if TUTOR/Unicode set here (or .Nil);       */
+/*                          "tutor" is folded into this key                   */
 /*                                                                            */
 /*   Listing sub-options (from rexxpub: listings:):                           */
 /*     listing-caption-position  - "above" or "below"  (default: "above")     */
@@ -72,6 +76,16 @@
   opts["language"]        = .Nil
   opts["outline"]         = .Nil
   opts["chapter"]         = .Nil
+
+  -- Language-dialect defaults (.Nil = "not set by YAML"). These are
+  -- additive/monotonic: a dialect is enabled for a block if it is set
+  -- here, on the CLI, or on the fence. There is no way to disable a
+  -- dialect from the YAML (no "false"): the only meaningful value is
+  -- "true".
+  opts["executor"]        = .Nil
+  opts["experimental"]    = .Nil
+  opts["unicode"]         = .Nil
+  opts["tutor"]           = .Nil
 
   -- Listing sub-option defaults
   opts["listing-caption-position"] = "above"
@@ -139,6 +153,12 @@ ReadRexxPubBlock: -- Read rexxpub: block
   Call ConditionalCopyFrom rp, "outline"
   Call ConditionalCopyFrom rp, "chapter"
 
+  -- Language dialects (additive; only "true" has an effect)
+  Call ConditionalCopyFrom rp, "executor"    , lowerCase
+  Call ConditionalCopyFrom rp, "experimental", lowerCase
+  Call ConditionalCopyFrom rp, "unicode"     , lowerCase
+  Call ConditionalCopyFrom rp, "tutor"       , lowerCase
+
   -- Sanitize values
 
   opt = opts["number-figures"]
@@ -154,6 +174,15 @@ ReadRexxPubBlock: -- Read rexxpub: block
   outline = opts["outline"]
   If DataType(outline,"W"), outline >= 0, outline <= 6 Then Nop
   Else opts~remove("outline")
+
+  -- Dialects: keep only "true", drop anything else. "tutor" is an
+  -- alias of "unicode" (as with the --tutor/--unicode CLI flags), so
+  -- fold it into "unicode" and leave a single key for consumers.
+  Do dialect Over .Array~of("executor", "experimental", "unicode", "tutor")
+    If opts[dialect] \== "true" Then opts~remove(dialect)
+  End
+  If opts["tutor"] == "true" Then opts["unicode"] = "true"
+  opts~remove("tutor")
 
   -- Process third-level entries
 

@@ -1,0 +1,244 @@
+#!/usr/bin/env rexx
+/******************************************************************************/
+/*                                                                            */
+/* PictureSize.testGroup - Pictures bigger than a slide can show              */
+/* ============================================================              */
+/*                                                                            */
+/* This program is part of the Rexx Parser package                            */
+/* [See https://rexx.epbcn.com/rexx-parser/]                                  */
+/*                                                                            */
+/* Copyright (c) 2024-2026 Josep Maria Blasco <josep.maria.blasco@epbcn.com>  */
+/*                                                                            */
+/* License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0)  */
+/*                                                                            */
+/* Version history:                                                           */
+/*                                                                            */
+/* Date     Version Details                                                   */
+/* -------- ------- --------------------------------------------------------- */
+/* 20260926         First version                                             */
+/*                                                                            */
+/******************************************************************************/
+/*                                                                            */
+/* WHAT THIS GROUP GUARDS                                                     */
+/*                                                                            */
+/* Rony (26-sep): pictures of a resolution no slide shows make decks of many  */
+/* MB. md2slides reduces a PNG or JPEG over picture-size (1920 pixels a side) */
+/* with ImageMagick, and without it says which pictures are too big:          */
+/*                                                                            */
+/*   - The size in pixels is read from the header, in Rexx (PictureDims).    */
+/*     A JPEG keeps it in its frame header, after any number of segments.     */
+/*   - picture-size: a number, or no/false/off; anything else warns.          */
+/*   - Off, or never switched on (a test loading the package), is a no-op.    */
+/*   - Without ImageMagick: the picture goes in as it is, and ONE warning     */
+/*     lists what should have been reduced.                                   */
+/*   - With it (only tested when it is installed): the copy is smaller, is    */
+/*     cached, and the original is not touched.                               */
+/*                                                                            */
+/******************************************************************************/
+
+parse source . . fileSpec
+group = .TestGroup~new(fileSpec)
+group~add(.PictureSize.testGroup)
+If group~isAutomatedTest Then
+  Return group
+Else
+  Return group~suite~execute~~print
+
+::Requires "ooTest.frm"
+
+::Class PictureSize.testGroup Subclass ooTestCase Public
+
+::Method tearDown
+  Loop name Over .Array~of("PICTUREMAX", "PICTURECACHE", "PICTURETOOL", "BIGPICTURES", "SHRUNK")
+    .local~remove("MD2SLIDES."name)
+  End
+
+/* -- The size, from the header ---------------------------------------------- */
+
+::Method test_png_size
+  self~assertEquals("2600 1400", self~run("PictureDims", .Array~of(self~png(2600, 1400))))
+
+::Method test_gif_size
+  gif = "GIF89a" || "0A01"x || "C800"x || Copies("00"x, 20)   -- 266 x 200
+  self~assertEquals("266 200", self~run("PictureDims", .Array~of(gif)))
+
+::Method test_jpeg_size_after_other_segments
+  self~assertEquals("4000 3000", self~run("PictureDims", .Array~of(self~jpeg(4000, 3000, 10))))
+
+::Method test_a_jpeg_frame_header_is_not_a_huffman_table
+  /* C4 (DHT) sits in the SOF range and has no size in it. */
+  jpeg = "FFD8"x || "FFC4"x || "0006"x || "11223344"x || self~jpeg(640, 480, 0)~substr(3)
+  self~assertEquals("640 480", self~run("PictureDims", .Array~of(jpeg)))
+
+::Method test_anything_else_has_no_size
+  self~assertEquals("", self~run("PictureDims", .Array~of("<svg width='4000'/>")))
+  self~assertEquals("", self~run("PictureDims", .Array~of("FFD8FF"x)))
+
+/* -- picture-size: ---------------------------------------------------------- */
+
+::Method test_picture_size_values
+  self~assertEquals(1920, self~run("PictureSize", .Array~of("")),      "not given: the default")
+  self~assertEquals(1024, self~run("PictureSize", .Array~of("1024")),  "a number")
+  self~assertEquals(0,    self~run("PictureSize", .Array~of("no")),    "no")
+  self~assertEquals(0,    self~run("PictureSize", .Array~of("false")), "what yaml.cls makes of no")
+
+::Method test_a_bad_picture_size_warns
+  said = self~said("PictureSize", .Array~of("big"))
+  self~assertTrue(said~pos("picture-size: 'big' is not a number") > 0, said)
+  self~assertTrue(self~said("PictureSize", .Array~of("8"))~pos("'8'") > 0, "too small to mean it")
+
+/* -- Reducing ---------------------------------------------------------------- */
+
+::Method test_off_unless_the_build_switches_it_on
+  big = self~jpeg(4000, 3000, 200 * 1024)
+  self~assertSame(big, self~run("ShrinkPicture", .Array~of("img/x.jpg", big)))
+
+::Method test_without_imagemagick_one_warning_lists_them
+  .local["MD2SLIDES.PICTUREMAX"]  = 1920
+  .local["MD2SLIDES.PICTURETOOL"] = ""               -- as if not installed
+  big   = self~jpeg(4000, 3000, 200 * 1024)
+  small = self~jpeg(1280, 720,  200 * 1024)
+  light = self~png(2600, 1400)                       -- big, but a few bytes
+  self~assertSame(big, self~run("ShrinkPicture", .Array~of("img/a.jpg", big)), "goes in as it is")
+  discard = self~run("ShrinkPicture", .Array~of("img/b.jpg", small))
+  discard = self~run("ShrinkPicture", .Array~of("img/c.png", light))
+  discard = self~run("ShrinkPicture", .Array~of("img/d.svg", big))
+  said = self~said("ReportPictureSizes", .Array~new)
+  self~assertTrue(said~pos("1 picture(s) are bigger than a slide shows (1920 pixels a side)") > 0, said)
+  self~assertTrue(said~pos("img/a.jpg (4000x3000,") > 0, "named, with its size")
+  self~assertEquals(0, said~pos("img/b.jpg"), "one that fits is not")
+  self~assertEquals(0, said~pos("img/c.png"), "nor one of a few bytes")
+  self~assertEquals(0, said~pos("img/d.svg"), "nor an SVG")
+  self~assertTrue(said~pos("ImageMagick") > 0 & said~pos("picture-size: no") > 0, "and what to do")
+
+::Method test_with_imagemagick_the_copy_is_smaller_and_cached
+  tool = self~run("PictureTool", .Array~new)
+  If tool == "" Then Return                          -- not installed here
+  dir = self~tempDir
+  pic = dir"/photo.jpg"
+  Address COMMAND tool "-size 3000x2000 plasma:fractal -quality 95" '"'pic'"' -
+    With Output Stem o. Error Stem e.
+  orig = .File~readChars(pic)
+  .local["MD2SLIDES.PICTUREMAX"]   = 1000
+  .local["MD2SLIDES.PICTURECACHE"] = dir"/.md2slides-cache"
+  out  = self~run("ShrinkPicture", .Array~of(pic, orig))
+  self~assertTrue(out~length < orig~length, "smaller")
+  self~assertEquals("1000 667", self~run("PictureDims", .Array~of(out)), "1000 pixels a side")
+  self~assertEquals(orig, .File~readChars(pic), "the original is untouched")
+  Call SysFileTree dir"/.md2slides-cache/*", "f.", "FO"
+  self~assertEquals(1, f.0, "one copy in the cache")
+  again = self~run("ShrinkPicture", .Array~of(pic, orig))
+  self~assertEquals(out, again, "the second time, the same copy")
+  Call SysFileTree dir"/.md2slides-cache/*", "f.", "FO"
+  self~assertEquals(1, f.0, "and still one")
+  said = self~said("ReportPictureSizes", .Array~new)
+  self~assertEquals("", said, "nothing to warn about")
+  Loop i = 1 To f.0
+    Call SysFileDelete f.i
+  End
+  Call SysRmDir dir"/.md2slides-cache"
+  Call SysFileDelete pic
+  Call SysRmDir dir
+
+/* -- Helpers ----------------------------------------------------------------- */
+
+-- A PNG header of the given size (no pixels: only the header is read).
+::Method png
+  Use Strict Arg w, h
+  Return "89504E470D0A1A0A"x || "0000000D"x || "IHDR" || w~d2c(4) || h~d2c(4) || "08020000"x
+
+-- A JPEG header of the given size, an APP0 segment before the frame, and
+-- `pad` bytes after it.
+::Method jpeg
+  Use Strict Arg w, h, pad
+  app0 = "FFE0"x || "0010"x || "4A46494600010100000100010000"x
+  sof0 = "FFC0"x || "0011"x || "08"x || h~d2c(2) || w~d2c(2) || "03012200021101031101"x
+  Return "FFD8"x || app0 || sof0 || Copies("00"x, pad)
+
+::Method tempDir
+  base = Value("TMPDIR", , "ENVIRONMENT")
+  If base == "" Then base = Value("TEMP", , "ENVIRONMENT")
+  If base == "" Then base = "/tmp"
+  dir = base"/picturesize-"Date("S")Time("L")~changeStr(":", "")~changeStr(".", "")
+  Call SysMkDir dir
+  Return dir
+
+::Method run
+  Use Strict Arg name, args
+  Return self~md2slides~findRoutine(name~upper)~callWith(args)
+
+::Method said
+  Use Strict Arg name, args
+  rtn     = self~md2slides~findRoutine(name~upper)
+  sink    = .Collect~new
+  prev    = .Error~destination
+  prevOut = .Output~destination
+  discard = .Error~destination(sink)
+  discard = .Output~destination(.QuietSink~new)
+  discard = rtn~callWith(args)
+  discard = .Output~destination(prevOut)
+  discard = .Error~destination(prev)
+  Return sink~text
+
+::Method md2slides
+  /* md2slides.rex is a program, not a module: .Package~new hands over its     */
+  /* public routines without running it as one. The prologue does run, finds   */
+  /* no input file and complains; that complaint is swallowed here.            */
+  pkg = .local["PICTURESIZE.TEST.MD2SLIDES"]
+  If pkg \== .Nil Then Return pkg
+  sink    = .QuietSink~new
+  prev    = .Error~destination
+  discard = .Error~destination(sink)
+  pkg     = .Package~new(self~projectRoot"/bin/md2slides.rex")
+  discard = .Error~destination(prev)
+  .local["PICTURESIZE.TEST.MD2SLIDES"] = pkg
+  Return pkg
+
+::Method projectRoot
+  /* This file is <root>/tests/suites/PictureSize.testGroup. */
+  Parse Source . . me
+  Return .File~new(.File~new(me)~parent)~parentFile~parent
+
+/* .Error is a Monitor and forwards whichever of the three it was written to. */
+::Class QuietSink
+
+::Method lineOut
+  Return 0
+
+::Method say
+  Return 0
+
+::Method charOut
+  Return 0
+
+/******************************************************************************/
+/* Collect - stands in for stderr and keeps what is said.                     */
+/******************************************************************************/
+
+::Class Collect
+
+::Method init
+  Expose text
+  text = ""
+
+::Method text
+  Expose text
+  Return text
+
+::Method lineOut
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method say
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0
+
+::Method charOut
+  Expose text
+  Use Arg line
+  text = text || line
+  Return 0

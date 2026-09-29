@@ -17,6 +17,7 @@
 /* -------- ------- --------------------------------------------------------- */
 /* 20260519    0.5  First version                                             */
 /* 20260520         Use unique tmp-file names per test                        */
+/* 20260925         Tmp files in the system temp dir, deleted in tearDown     */
 /*                                                                            */
 /* These tests verify that LoadProgramSource() treats "1A"X (Ctrl-Z / SUB)    */
 /* as a logical end-of-file marker, mimicking the behaviour of the ooRexx    */
@@ -28,6 +29,15 @@
 /* TemporaryTestFile name, the uninit handler of an outgoing object may run  */
 /* after the create() of the incoming one, deleting the freshly-written     */
 /* file. To avoid that, each test uses a unique suffix.                      */
+/*                                                                            */
+/* The files used to be written next to this testGroup, in tests/suites/.    */
+/* When the working copy lives in a synced folder (Dropbox), the deletion    */
+/* in uninit does not always take, and lps-test-*.rex files were left in    */
+/* the tree -- and got into the release zip. They are now written to the    */
+/* system's temporary directory, and tearDown deletes them explicitly       */
+/* instead of waiting for the garbage collector to run uninit. If a        */
+/* deletion ever fails again, what is left behind is a file in the temp     */
+/* folder, never a file in the repository.                                   */
 /*                                                                            */
 /******************************************************************************/
 
@@ -46,16 +56,23 @@ Else
 ::Class LoadProgramSource.testGroup Subclass ParserTestCase Public
 
 /******************************************************************************/
-/* Helper: write content to a TemporaryTestFile with a unique name.           */
-/*   The caller must Expose the returned object so it lives until the test    */
-/*   ends; uninit then deletes the file.                                     */
+/* Helper: write content to a TemporaryTestFile with a unique name, in the    */
+/*   system's temporary directory (host .nil). The caller must Expose the     */
+/*   returned object as "tmp", so that tearDown can delete the file.          */
 /******************************************************************************/
 
 ::Method writeFile
   Use Strict Arg suffix, content
-  tmp = .TemporaryTestFile~new(self, "lps-test-"||suffix||".rex")
+  tmp = .TemporaryTestFile~new(.nil, "rexx-parser-lps-test-"||suffix||".rex")
   tmp~create(content)
   Return tmp
+
+::Method tearDown
+  Expose tmp
+  If Var("tmp"), tmp~isA(.File) Then Do
+    tmp~setWritable
+    discard = tmp~delete
+  End
 
 /******************************************************************************/
 /* Unit tests for LoadProgramSource itself                                    */

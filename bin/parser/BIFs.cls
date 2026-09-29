@@ -20,6 +20,9 @@
 /* 20251226    0.4a Send error messages to .error, not .output                */
 /* 20260521    0.5  CMS: Fix BIF list                                         */
 /* 20260601    0.6  Implement a fine-grained feature system                   */
+/* 20260923    0.7  STRIP: the ooRexx third argument is a character set (ANY) */
+/* 20260924         VAR: the argument is rANY, not rSYM (ooRexx returns 0     */
+/*                  for a non-symbol, it does not raise an error).            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -181,6 +184,9 @@
   BIFARGS.SPACE        = "rANY oLENGTH oPAD"
   -- STREAM: Order of Arg(2) is different in ooRexx
   BIFARGS.STREAM       = "rSTREAM oSDC oANY"
+  -- STRIP: in ooRexx the third argument is a SET of characters (any string,
+  -- the null string included), not a single pad character as in ANSI.
+  BIFARGS.STRIP        = "rANY oBLT oANY"
   BIFARGS.SUBSTR       = "rANY rPOS oLENGTH oPAD"
   BIFARGS.SUBWORD      = "rANY rPOS oLENGTH"
   BIFARGS.QUALIFY      = "rSTREAM"
@@ -188,7 +194,7 @@
   BIFARGS.TRANSLATE    = "rANY oANY oANY oPAD oPOS oLENGTH"
   BIFARGS.UPPER        = "rANY oPOS oLENGTH"
   BIFARGS.USERID       = ""
-  BIFARGS.VAR          = "rSYM"
+  BIFARGS.VAR          = "rANY"
   BIFARGS.VERIFY       = "rANY rANY oMN oPOS oLENGTH"
   BIFARGS.WORD         = "rANY rPOS"
   BIFARGS.WORDINDEX    = "rANY rPOS"
@@ -212,6 +218,7 @@
     BIFARGS.LINES      = "oSTREAM"                     -- no C/N arg
     BIFARGS.POS        = "rANY rANY oPOS"              -- no length arg
     BIFARGS.STREAM     = "rSTREAM oSCD oANY"
+    BIFARGS.STRIP      = "rANY oBLT oPAD"             -- a single character
     BIFARGS.TIME       = "oCEHLMNRS"                   -- 1 arg, CMS option set
     BIFARGS.TRANSLATE  = "rANY oANY oANY oPAD"         -- no start/length
     BIFARGS.VERIFY     = "rANY rANY oMN oPOS"          -- no length arg
