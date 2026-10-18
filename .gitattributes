@@ -1,1 +1,4 @@
-*.cls linguist-language=rexx
+*.cls       linguist-language=REXX
+*.testGroup linguist-language=REXX
+*.CLS       linguist-language=REXX
+*.frm       linguist-language=REXX
